@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+    postgres:
+        image: postgres:9.6.22-alpine
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_HOST_AUTH_METHOD: trust
+        # mount local host volume in .database/ folder
+        volumes:
+            - pg-data:/var/lib/postgresql
+
+volumes:
+    pg-data: {}

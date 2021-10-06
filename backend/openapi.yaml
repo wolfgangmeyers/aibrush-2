@@ -1,0 +1,194 @@
+openapi: 3.0.0
+tags:
+  - name: AIBrush
+
+info:
+  title: AIBrush API
+  description: Orchestration backend for AI Brush
+  version: 1.0.0
+  contact:
+    email: wolfgangmeyers@gmail.com
+servers:
+  - url: https://aibrush.ngrok.io
+  - url: /
+paths:
+  /images:
+    get:
+      description: Get a list of saved images
+      operationId: listImages
+      tags:
+        - AIBrush
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageList"
+    # create image
+    post:
+      description: Create a new image
+      operationId: createImage
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateImageInput"
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+  /images/{id}:
+    get:
+      description: Get a saved image by id
+      operationId: getImage
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: download
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["thumbnail", "image"]
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+
+    # update image
+    patch:
+      description: Update a saved image
+      operationId: updateImage
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateImageInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+    delete:
+      description: Delete a saved image
+      operationId: deleteImage
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+
+components:
+  schemas:
+    CreateImageInput:
+      type: object
+      properties:
+        phrases:
+          type: array
+          items:
+            type: string
+        label:
+          type: string
+        iterations:
+          type: integer
+        parent:
+          type: string
+        encoded_image:
+          type: string
+        encoded_thumbnail:
+          type: string
+
+    UpdateImageInput:
+      type: object
+      properties:
+        label:
+          type: string
+        iterations:
+          type: integer
+        current_iterations:
+          type: integer
+        phrases:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [pending, processing, completed]
+        encoded_image:
+          type: string
+        encoded_thumbnail:
+          type: string
+
+    Image:
+      properties:
+        id:
+          type: string
+        created_at:
+          type: integer
+        created_by:
+          type: string
+        updated_at:
+          type: integer
+        phrases:
+          type: array
+          items:
+            type: string
+        label:
+          type: string
+        parent:
+          type: string
+        iterations:
+          type: integer
+        current_iterations:
+          type: integer
+        score:
+          type: integer
+        status:
+          type: string
+          enum: [pending, processing, completed]
+        encoded_image:
+          type: string
+        encoded_thumbnail:
+          type: string
+    ImageList:
+      properties:
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/Image"
