@@ -57,7 +57,7 @@ export class BackendService {
         const client = await this.pool.connect()
         try {
             const result = await client.query(
-                `SELECT * FROM images ORDER BY created desc`
+                `SELECT * FROM images ORDER BY created_at desc`
             )
             return {
                 images: result.rows
