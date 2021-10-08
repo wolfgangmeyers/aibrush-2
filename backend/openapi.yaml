@@ -113,6 +113,41 @@ paths:
       responses:
         "204":
           description: Success
+  # login by email
+  /auth/login:
+    post:
+      description: Login by email
+      operationId: login
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "204":
+          description: Success
+  /auth/verify:
+    post:
+      description: Verify Login code
+      operationId: verify
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyLoginInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResult"
+        "400":
+          description: Invalid code
 
 components:
   schemas:
@@ -192,3 +227,20 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Image"
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+    VerifyLoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+        code:
+          type: string
+    LoginResult:
+      type: object
+      properties:
+        token:
+          type: string

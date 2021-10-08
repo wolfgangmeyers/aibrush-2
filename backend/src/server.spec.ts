@@ -7,12 +7,21 @@ import { Server } from "./server"
 import { BackendService } from "./backend"
 import { AIBrushApi, ImageList, Image, CreateImageInput, UpdateImageInput } from "./client/api"
 
+import nodemailer from "nodemailer";
+
 describe("server", () => {
     let server: Server
     let client: AIBrushApi
 
     beforeAll(async () => {
-        const backendService = new BackendService("", "")
+        const backendService = new BackendService({
+            secret: "test",
+            smtpHost: "localhost",
+            smtpPort: 1025,
+            smtpFrom: "noreply@test.aibrush.art",
+            databaseName: "aibrush_test_2",
+            dataFolderName: "test_data"
+        })
         const databases = await backendService.listDatabases()
         for (const db of databases) {
             if (db.startsWith("aibrush_test_")) {
@@ -34,7 +43,14 @@ describe("server", () => {
         // const sockfile = `/tmp/aibrush-backend-${uuid.v4()}.sock`
 
         const databaseName = `aibrush_test_${moment().valueOf()}`
-        const backendService = new BackendService(databaseName, "data_test")
+        const backendService = new BackendService({
+            secret: "test",
+            smtpHost: "localhost",
+            smtpFrom: "noreply@test.aibrush.art",
+            smtpPort: 1025,
+            databaseName: databaseName,
+            dataFolderName: "test_data"
+        })
 
         server = new Server(backendService, 35456)
         await server.init()
@@ -49,16 +65,17 @@ describe("server", () => {
         await server.stop()
     })
 
-    describe("when the database is empty", () => {
+    describe("when user is unauthenticated", () => {
         describe("when listing images", () => {
-            let imageResult: AxiosResponse<ImageList>
-
-            beforeEach(async () => {
-                imageResult = await client.listImages()
-            })
-
-            it("should return an empty list", () => {
-                expect(imageResult.data.images).toEqual([])
+            it("should return 401", async () => {
+                let error: any;
+                try {
+                    await client.listImages()
+                } catch (e) {
+                    error = e
+                }
+                expect(error).toBeDefined();
+                expect(error.response.status).toBe(401)
             })
         })
     })

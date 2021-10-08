@@ -1,12 +1,11 @@
-import express from "express"
-import cors from "cors"
-import * as OpenApiValidator from "express-openapi-validator"
+import fs from "fs";
 
 import { BackendService } from "./src/backend"
 import { Server } from "./src/server"
 
-const databaseName = process.env.DATABASE_NAME || "aibrush_backend_2"
-const backendService = new BackendService(databaseName, "data")
+const config: Config = JSON.parse(fs.readFileSync("aibrush-config.json").toString());
+
+const backendService = new BackendService(config)
 const server = new Server(backendService, 3000)
 
 server.init().then(() => {

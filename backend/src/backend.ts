@@ -3,9 +3,11 @@ import { createDb, migrate } from "postgres-migrations"
 import * as uuid from "uuid"
 import moment from "moment"
 import fs from "fs"
+import nodemailer from "nodemailer";
 
-import { ImageList, Image, CreateImageInput, UpdateImageInput } from "./client/api"
+import { ImageList, Image, CreateImageInput, UpdateImageInput, LoginInput, VerifyLoginInput, LoginResult } from "./client/api"
 import { sleep } from "./sleep"
+import { EmailMessage } from "./email_message"
 
 process.env.PGUSER = process.env.PGUSER || "postgres"
 
@@ -13,16 +15,35 @@ export class BackendService {
 
     private pool: Pool
 
-    constructor(private databaseName: string, private dataFolderName: string) {
+    constructor(private config: Config) {
+    }
 
+    private async sendMail(message: EmailMessage): Promise<void> {
+        const transporter = nodemailer.createTransport({
+            host: this.config.smtpHost,
+            port: this.config.smtpPort,
+            secure: !!this.config.smtpUser,
+            auth: this.config.smtpUser && {
+                user: this.config.smtpUser,
+                pass: this.config.smtpPassword
+            }
+        });
+        const mailOptions = {
+            from: this.config.smtpFrom,
+            to: message.to,
+            subject: message.subject,
+            text: message.text
+        };
+        await transporter.sendMail(mailOptions);
     }
 
     public async init(): Promise<void> {
+
         try {
             // create database
             const client = new Client()
             await client.connect()
-            await createDb(this.databaseName, { client })
+            await createDb(this.config.databaseName, { client })
             await client.end()
         } catch (error) {
             console.error(error)
@@ -31,7 +52,7 @@ export class BackendService {
 
         try {
             // migrate
-            const client = new Client({ database: this.databaseName })
+            const client = new Client({ database: this.config.databaseName })
             await client.connect()
             await migrate({ client }, "./src/migrations")
             await sleep(100)
@@ -40,10 +61,10 @@ export class BackendService {
             throw error
         }
 
-        this.pool = new Pool({ database: this.databaseName })
+        this.pool = new Pool({ database: this.config.databaseName })
         // ensure data folder exists
-        if (!fs.existsSync(`./${this.dataFolderName}`)) {
-            fs.mkdirSync(`./${this.dataFolderName}`)
+        if (!fs.existsSync(`./${this.config.dataFolderName}`)) {
+            fs.mkdirSync(`./${this.config.dataFolderName}`)
         }
     }
 
@@ -83,13 +104,13 @@ export class BackendService {
             let image: Buffer
             let thumbnail: Buffer
             if (download === "latents") {
-                latents = fs.readFileSync(`./${this.dataFolderName}/${id}.latents`)
+                latents = fs.readFileSync(`./${this.config.dataFolderName}/${id}.latents`)
             }
             if (download === "image") {
-                image = fs.readFileSync(`./${this.dataFolderName}/${id}.image`)
+                image = fs.readFileSync(`./${this.config.dataFolderName}/${id}.image`)
             }
             if (download === "thumbnail") {
-                thumbnail = fs.readFileSync(`./${this.dataFolderName}/${id}.thumbnail`)
+                thumbnail = fs.readFileSync(`./${this.config.dataFolderName}/${id}.thumbnail`)
             }
             return {
                 ...imageData,
