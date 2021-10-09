@@ -52,6 +52,10 @@ export class AuthHelper {
             }
             return payload.userId;
         } catch (err) {
+            if (err.name === "TokenExpiredError") {
+                return null;
+            }
+            console.error("Error verifying token", err)
             return null;
         }
     }
@@ -62,12 +66,16 @@ export function authMiddleware(config: Config) {
     const helper = new AuthHelper(config.secret);
 
     return (req: Request, res: Response, next: NextFunction) => {
-        const token = req.headers["authorization"];
-        if (!token) {
+        const authzHeader = req.headers["authorization"];
+        if (!authzHeader) {
+            console.log("no authz header")
             return res.status(401).send("Unauthorized");
         }
+        // parse JWT from header
+        const token = authzHeader.split(" ")[1];
         const userId = helper.verifyToken(token, "access");
         if (!userId) {
+            console.log("could not verify token")
             return res.status(401).send("Unauthorized");
         }
         req.params.userId = userId;

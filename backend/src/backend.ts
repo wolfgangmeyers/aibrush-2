@@ -174,6 +174,7 @@ export class BackendService {
                 [code]
             )
             if (result.rows.length === 0) {
+                console.log("login code not found: " + code)
                 return null
             }
             const loginCode = result.rows[0] as LoginCode;
@@ -185,6 +186,7 @@ export class BackendService {
                 [code]
             )
             if (now.isAfter(expiresAt)) {
+                console.log("code expired: " + code)
                 return null
             }
 

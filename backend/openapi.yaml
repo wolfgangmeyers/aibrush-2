@@ -148,6 +148,7 @@ paths:
                 $ref: "#/components/schemas/LoginResult"
         "400":
           description: Invalid code
+  # TODO: refresh (returns LoginResult)
 
 components:
   schemas:
@@ -242,5 +243,7 @@ components:
     LoginResult:
       type: object
       properties:
-        token:
+        accessToken:
+          type: string
+        refreshToken:
           type: string
