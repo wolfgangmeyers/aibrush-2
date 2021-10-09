@@ -1,4 +1,4 @@
-interface Config {
+export interface Config {
     secret: string;
     smtpHost: string;
     smtpPort: number;

@@ -1,5 +1,7 @@
 
+import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { Config } from "./config";
 
 export interface Authentication {
     accessToken: string;
@@ -52,5 +54,20 @@ export class AuthHelper {
         } catch (err) {
             return null;
         }
+    }
+}
+
+export function authMiddleware(config: Config) {
+    return (req: Request, res: Response, next: NextFunction) => {
+        const token = req.headers["authorization"];
+        if (!token) {
+            return res.status(401).send("Unauthorized");
+        }
+        const userId = new AuthHelper(config.secret).verifyToken(token, "access");
+        if (!userId) {
+            return res.status(401).send("Unauthorized");
+        }
+        req.params.userId = userId;
+        next();
     }
 }

@@ -5,13 +5,15 @@ import fs from "fs"
 import { createHttpTerminator, HttpTerminator } from "http-terminator"
 
 import { BackendService } from "./backend";
+import { Config } from "./config"
+import { authMiddleware } from "./auth"
 
 export class Server {
     private server: HTTPServer;
     private app: Express;
     private terminator: HttpTerminator;
 
-    constructor(private backendService: BackendService, private port: string | number) {
+    constructor(private config: Config, private backendService: BackendService, private port: string | number) {
         this.app = express()
     }
 
@@ -28,6 +30,9 @@ export class Server {
             res.status(200).send(spec)
         })
 
+
+        // authenticated routes only past this point
+        this.app.use(authMiddleware(this.config))
 
         // list images
         this.app.get("/images", async (req, res) => {

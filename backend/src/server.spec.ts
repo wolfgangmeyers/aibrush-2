@@ -43,16 +43,17 @@ describe("server", () => {
         // const sockfile = `/tmp/aibrush-backend-${uuid.v4()}.sock`
 
         const databaseName = `aibrush_test_${moment().valueOf()}`
-        const backendService = new BackendService({
+        const config = {
             secret: "test",
             smtpHost: "localhost",
             smtpFrom: "noreply@test.aibrush.art",
             smtpPort: 1025,
             databaseName: databaseName,
             dataFolderName: "test_data"
-        })
+        }
+        const backendService = new BackendService(config)
 
-        server = new Server(backendService, 35456)
+        server = new Server(config, backendService, 35456)
         await server.init()
         await server.start()
 

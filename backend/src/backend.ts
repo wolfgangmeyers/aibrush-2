@@ -8,6 +8,7 @@ import nodemailer from "nodemailer";
 import { ImageList, Image, CreateImageInput, UpdateImageInput, LoginInput, VerifyLoginInput, LoginResult } from "./client/api"
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
+import { Config } from "./config"
 
 process.env.PGUSER = process.env.PGUSER || "postgres"
 
