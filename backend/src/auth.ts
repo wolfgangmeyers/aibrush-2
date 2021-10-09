@@ -58,12 +58,15 @@ export class AuthHelper {
 }
 
 export function authMiddleware(config: Config) {
+
+    const helper = new AuthHelper(config.secret);
+
     return (req: Request, res: Response, next: NextFunction) => {
         const token = req.headers["authorization"];
         if (!token) {
             return res.status(401).send("Unauthorized");
         }
-        const userId = new AuthHelper(config.secret).verifyToken(token, "access");
+        const userId = helper.verifyToken(token, "access");
         if (!userId) {
             return res.status(401).send("Unauthorized");
         }
