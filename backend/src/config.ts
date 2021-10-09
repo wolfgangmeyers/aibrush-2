@@ -7,4 +7,5 @@ export interface Config {
     smtpFrom: string;
     databaseName: string;
     dataFolderName: string;
+    loginCodeExpirationSeconds: number;
 }

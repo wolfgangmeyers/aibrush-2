@@ -31,6 +31,16 @@ export class Server {
         })
 
 
+        this.app.post("/auth/login", async (req, res) => {
+            try {
+                const token = await this.backendService.login(req.body.email)
+                res.sendStatus(204)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
         // authenticated routes only past this point
         this.app.use(authMiddleware(this.config))
 
@@ -66,6 +76,7 @@ export class Server {
                 res.sendStatus(500)
             }
         })
+
     }
 
     start() {

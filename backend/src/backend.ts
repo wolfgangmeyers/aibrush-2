@@ -9,14 +9,18 @@ import { ImageList, Image, CreateImageInput, UpdateImageInput, LoginInput, Verif
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
 import { Config } from "./config"
+import { Authentication, AuthHelper } from "./auth";
+import { LoginCode } from "./model"
 
 process.env.PGUSER = process.env.PGUSER || "postgres"
 
 export class BackendService {
 
     private pool: Pool
+    private authHelper: AuthHelper;
 
     constructor(private config: Config) {
+        this.authHelper = new AuthHelper(config.secret)
     }
 
     private async sendMail(message: EmailMessage): Promise<void> {
@@ -132,6 +136,61 @@ export class BackendService {
                 `DELETE FROM images WHERE id=$1`,
                 [id]
             )
+        } finally {
+            client.release()
+        }
+    }
+
+    async login(email: string): Promise<void> {
+        // generate crypto random 6 digit code
+        const code = uuid.v4().substr(0, 6).toUpperCase()
+        // calculate expiration based on config.loginCodeExpirationSeconds
+        const expiresAt = moment().add(this.config.loginCodeExpirationSeconds, "seconds")
+        // insert login_code
+        const client = await this.pool.connect()
+        try {
+            await client.query(
+                `INSERT INTO login_codes (code, user_email, expires_at) VALUES ($1, $2, $3)`,
+                [code, email, expiresAt.toDate()]
+            )
+            // send email with code
+            const message: EmailMessage = {
+                from: this.config.smtpFrom,
+                to: email,
+                subject: "Login code",
+                text: `Your login code is ${code}`
+            }
+            await this.sendMail(message)
+        } finally {
+            client.release()
+        }
+    }
+
+    async verify(code: string): Promise<Authentication> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM login_codes WHERE code=$1`,
+                [code]
+            )
+            if (result.rows.length === 0) {
+                return null
+            }
+            const loginCode = result.rows[0] as LoginCode;
+            // make sure loginCode isn't expired
+            const now = moment()
+            const expiresAt = moment(loginCode.expires_at)
+            await client.query(
+                `DELETE FROM login_codes WHERE code=$1`,
+                [code]
+            )
+            if (now.isAfter(expiresAt)) {
+                return null
+            }
+
+            // generate auth tokens
+            const auth = this.authHelper.createTokens(loginCode.user_email)
+            return auth
         } finally {
             client.release()
         }
