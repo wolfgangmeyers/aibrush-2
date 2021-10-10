@@ -1,12 +1,12 @@
 
 CREATE TABLE IF NOT EXISTS "images" (
     "id" CHAR(36) NOT NULL PRIMARY KEY,
-    "created_at" INTEGER NOT NULL,
+    "created_at" BIGINT NOT NULL,
     "created_by" CHAR(36) NOT NULL,
-    "updated_at" INTEGER NOT NULL,
+    "updated_at" BIGINT NOT NULL,
     "phrases" TEXT[] NOT NULL,
     "label" TEXT NOT NULL,
-    "parent" CHAR(36),
+    "parent" VARCHAR(36),
     "iterations" INTEGER NOT NULL,
     "current_iterations" INTEGER NOT NULL,
     "score" FLOAT NOT NULL,

@@ -38,9 +38,9 @@ describe("server", () => {
     beforeEach(async () => {
         // remove all files in data folder
         try {
-            const files = fs.readdirSync("./data_test")
+            const files = fs.readdirSync("./test_data")
             for (const file of files) {
-                fs.unlinkSync("./data/" + file)
+                fs.unlinkSync("./test_data/" + file)
             }
         } catch {}
 
@@ -150,6 +150,33 @@ describe("server", () => {
                 it("should return an empty list", () => {
                     expect(images.images).toHaveLength(0)
                 })
+            })
+
+            describe("when creating an image", () => {
+                let image: Image;
+
+                beforeEach(async () => {
+                    const response = await client.createImage({
+                        phrases: ["test"],
+                        label: "test",
+                        iterations: 1,
+                        parent: "",
+                        encoded_image: "encoded-image",
+                        encoded_thumbnail: "encoded-thumbnail"
+                    })
+                    image = response.data
+                })
+
+                it("should return the image", () => {
+                    expect(image.id).toBeDefined()
+                    expect(image.phrases).toEqual(["test"])
+                    expect(image.label).toBe("test")
+                    expect(image.iterations).toBe(1)
+                    expect(image.parent).toBe("")
+                    expect(image.encoded_image).toBe("encoded-image")
+                    expect(image.encoded_thumbnail).toBe("encoded-thumbnail")
+                })
+
             })
         })
     })

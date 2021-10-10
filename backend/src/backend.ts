@@ -94,7 +94,7 @@ export class BackendService {
     }
 
     // get image by id
-    async getImage(id: string, download?: ("thumbnail" | "image" | "latents")): Promise<Image> {
+    async getImage(id: string, download?: ("thumbnail" | "image")): Promise<Image> {
         const client = await this.pool.connect()
         try {
             const result = await client.query(
@@ -105,12 +105,8 @@ export class BackendService {
             if (!imageData) {
                 return null
             }
-            let latents: Buffer
             let image: Buffer
             let thumbnail: Buffer
-            if (download === "latents") {
-                latents = fs.readFileSync(`./${this.config.dataFolderName}/${id}.latents`)
-            }
             if (download === "image") {
                 image = fs.readFileSync(`./${this.config.dataFolderName}/${id}.image`)
             }
@@ -119,7 +115,6 @@ export class BackendService {
             }
             return {
                 ...imageData,
-                encoded_latents: latents && latents.toString(),
                 encoded_image: image && image.toString(),
                 encoded_thumbnail: thumbnail && thumbnail.toString(),
             }
@@ -136,6 +131,31 @@ export class BackendService {
                 `DELETE FROM images WHERE id=$1`,
                 [id]
             )
+        } finally {
+            client.release()
+        }
+    }
+
+    async createImage(createdBy: string, body: CreateImageInput) {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `INSERT INTO images
+                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status)
+                VALUES
+                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                RETURNING *`,
+                [uuid.v4(), createdBy, new Date().getTime(), new Date().getTime(), body.label, body.parent, body.phrases, body.iterations,  0, 0, "pending"]
+            )
+            const image = result.rows[0]
+            // save image
+            fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.image`, body.encoded_image)
+            fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.thumbnail`, body.encoded_thumbnail)
+            return {
+                ...image,
+                encoded_image: body.encoded_image,
+                encoded_thumbnail: body.encoded_thumbnail,
+            }
         } finally {
             client.release()
         }

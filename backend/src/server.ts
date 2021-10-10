@@ -6,15 +6,17 @@ import { createHttpTerminator, HttpTerminator } from "http-terminator"
 
 import { BackendService } from "./backend";
 import { Config } from "./config"
-import { authMiddleware } from "./auth"
+import { AuthHelper, authMiddleware } from "./auth"
 
 export class Server {
     private server: HTTPServer;
     private app: Express;
     private terminator: HttpTerminator;
+    private authHelper: AuthHelper;
 
     constructor(private config: Config, private backendService: BackendService, private port: string | number) {
         this.app = express()
+        this.authHelper = new AuthHelper(config.secret)
     }
 
     async init() {
@@ -70,10 +72,21 @@ export class Server {
             }
         })
 
+        // create image
+        this.app.post("/images", async (req, res) => {
+            try {
+                const image = await this.backendService.createImage(this.authHelper.getUserFromRequest(req), req.body)
+                res.json(image)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
         // get image by id
         this.app.get("/images/:id", async (req, res) => {
             try {
-                const image = await this.backendService.getImage(req.params.id, req.query.download as ("thumbnail" | "image" | "latents"))
+                const image = await this.backendService.getImage(req.params.id, req.query.download as ("thumbnail" | "image"))
                 res.json(image)
             } catch (err) {
                 console.error(err)

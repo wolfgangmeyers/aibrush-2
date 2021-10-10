@@ -59,6 +59,17 @@ export class AuthHelper {
             return null;
         }
     }
+
+    public getUserFromRequest(req: Request): string {
+        const authzHeader = req.headers["authorization"];
+        if (!authzHeader) {
+            console.log("no authz header")
+            return null;
+        }
+        // parse JWT from header
+        const token = authzHeader.split(" ")[1];
+        return this.verifyToken(token, "access");
+    }
 }
 
 export function authMiddleware(config: Config) {
@@ -66,19 +77,13 @@ export function authMiddleware(config: Config) {
     const helper = new AuthHelper(config.secret);
 
     return (req: Request, res: Response, next: NextFunction) => {
-        const authzHeader = req.headers["authorization"];
-        if (!authzHeader) {
-            console.log("no authz header")
-            return res.status(401).send("Unauthorized");
-        }
-        // parse JWT from header
-        const token = authzHeader.split(" ")[1];
-        const userId = helper.verifyToken(token, "access");
+
+        const userId = helper.getUserFromRequest(req)
+
         if (!userId) {
             console.log("could not verify token")
             return res.status(401).send("Unauthorized");
         }
-        req.params.userId = userId;
         next();
     }
 }
