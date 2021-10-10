@@ -177,6 +177,12 @@ describe("server", () => {
                     expect(image.encoded_thumbnail).toBe("encoded-thumbnail")
                 })
 
+                // TODO: when listing images (authorized and non-authorized)
+
+                // TODO: when updating an image (authorized and non-authorized)
+
+                // TODO: when deleting an image (verify files are gone too) (authorized and non-authorized)
+
             })
         })
     })
