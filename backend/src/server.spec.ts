@@ -393,6 +393,34 @@ describe("server", () => {
             })
 
             // TODO: when creating an image with encoded_image
+            describe("when creating an image with encoded_image", () => {
+                let image: Image;
+
+                beforeEach(async () => {
+                    // read 512.jpg from file and base64 encode it
+                    const imageData = fs.readFileSync("512.jpg")
+                    const base64Image = Buffer.from(imageData).toString('base64')
+                    const response = await client.createImage({
+                        encoded_image: base64Image,
+                        phrases: ["test"],
+                        label: "test",
+                        iterations: 1
+                    })
+                    image = response.data
+                })
+
+                it("should save the image data", async () => {
+                    // get image data
+                    const imageDataResponse = await client.getImageData(image.id)
+                    const imageData = imageDataResponse.data
+                    expect(imageData).toBeDefined()
+                    // thumbnail should be smaller
+                    const thumbnailDataResponse = await client.getThumbnailData(image.id)
+                    const thumbnailData = thumbnailDataResponse.data
+                    expect(thumbnailData).toBeDefined()
+                    expect(thumbnailData.length).toBeLessThan(imageData.length)
+                })
+            })
 
             // TODO: when creating an image with a service acct
         })
