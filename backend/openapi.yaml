@@ -205,6 +205,8 @@ components:
           type: integer
         parent:
           type: string
+        encoded_image:
+          type: string
 
     UpdateImageInput:
       type: object
@@ -220,6 +222,8 @@ components:
         status:
           type: string
           enum: [pending, processing, completed]
+        encoded_image:
+          type: string
 
     Image:
       properties:
