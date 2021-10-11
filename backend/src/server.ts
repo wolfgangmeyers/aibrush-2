@@ -162,9 +162,10 @@ export class Server {
         // get thumbnail data by id
         this.app.get("/images/:id/thumbnail.jpg", async (req, res) => {
             try {
+                const user = this.authHelper.getUserFromRequest(req)
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
-                if (!image || image.created_by !== this.authHelper.getUserFromRequest(req)) {
+                if (!image || (!this.isServiceAccount(user) && image.created_by !== user)) {
                     res.status(404).send("not found")
                     return;
                 }

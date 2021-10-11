@@ -352,7 +352,7 @@ describe("server", () => {
                     })
                 })
 
-                describe("when updating an image with encoded_image", () => {
+                describe.only("when updating an image with encoded_image", () => {
                     let savedImageData: Buffer;
                     let savedThumbnailData: Buffer;
 
@@ -363,30 +363,61 @@ describe("server", () => {
                         await client.updateImage(image.id, {
                             encoded_image: base64Image
                         })
-                        // get image data
-                        const imageDataResponse = await client.getImageData(image.id)
-                        savedImageData = imageDataResponse.data
-                        const thumbnailDataResponse = await client.getThumbnailData(image.id)
-                        savedThumbnailData = thumbnailDataResponse.data
+
                     })
 
-                    // TODO: when getting image data (refactor beforeEach)
+                    describe("when getting image data", () => {
+                        let savedImageData: Buffer;
+                        let savedThumbnailData: Buffer;
 
-                    // TODO: when getting image data as another user
+                        beforeEach(async () => {
+                            // get image data
+                            const imageDataResponse = await client.getImageData(image.id)
+                            savedImageData = imageDataResponse.data
+                            const thumbnailDataResponse = await client.getThumbnailData(image.id)
+                            savedThumbnailData = thumbnailDataResponse.data
+                        })
 
-                    // TODO: when getting image data as a service account
+                        it("should return the image data", () => {
+                            expect(savedImageData).toBeDefined()
+                            expect(savedThumbnailData).toBeDefined()
+                            // thumbnail should be smaller
+                            expect(savedThumbnailData.length).toBeLessThan(savedImageData.length)
+                        })
+                    })
 
-                    // TODO: when getting thumbnail data
+                    describe("when getting image data as another user", () => {
+                        beforeEach(async () => {
+                            // authenticate as the second user
+                            await authenticateUser(mailcatcher, client2, httpClient2, "test2@test.test")
+                        })
 
-                    // TODO: when getting thumbnail data as another user
+                        it("should reject the call with not found", async () => {
+                            await expect(client2.getImageData(image.id)).rejects.toThrow(/Request failed with status code 404/)
+                        })
+                    })
 
-                    // TODO: when getting thumbnail data as a service account
+                    describe("when getting image data as a service account", () => {
+                        beforeEach(async () => {
+                            // authenticate as the service account
+                            await authenticateUser(mailcatcher, client, httpClient, "service-account@test.test")
+                        })
 
-                    it("should save the image data", () => {
-                        expect(savedImageData).toBeDefined()
-                        expect(savedThumbnailData).toBeDefined()
-                        // thumbnail should be smaller
-                        expect(savedThumbnailData.length).toBeLessThan(savedImageData.length)
+                        beforeEach(async () => {
+                            // get image data
+                            const imageDataResponse = await client.getImageData(image.id)
+                            savedImageData = imageDataResponse.data
+                            const thumbnailDataResponse = await client.getThumbnailData(image.id)
+                            savedThumbnailData = thumbnailDataResponse.data
+                        })
+
+
+                        it("should return the image data", () => {
+                            expect(savedImageData).toBeDefined()
+                            expect(savedThumbnailData).toBeDefined()
+                            // thumbnail should be smaller
+                            expect(savedThumbnailData.length).toBeLessThan(savedImageData.length)
+                        })
                     })
 
                     describe("when deleting an image", () => {
