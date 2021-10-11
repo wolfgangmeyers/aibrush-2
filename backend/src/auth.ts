@@ -47,8 +47,6 @@ export class AuthHelper {
                 // log the expired token
                 console.log(`Token expired: ${payload.exp} < ${Math.floor(this.now() / 1000)}`);
                 return null;
-            } else {
-                console.log(`Token verified: ${payload.exp} >= ${Math.floor(this.now() / 1000)}`);
             }
             return payload.userId;
         } catch (err) {

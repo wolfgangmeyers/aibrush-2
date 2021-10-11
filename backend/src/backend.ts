@@ -105,18 +105,16 @@ export class BackendService {
             if (!imageData) {
                 return null
             }
-            let image: Buffer
-            let thumbnail: Buffer
-            if (download === "image") {
-                image = fs.readFileSync(`./${this.config.dataFolderName}/${id}.image`)
-            }
-            if (download === "thumbnail") {
-                thumbnail = fs.readFileSync(`./${this.config.dataFolderName}/${id}.thumbnail`)
-            }
+            // let image: Buffer
+            // let thumbnail: Buffer
+            // if (download === "image") {
+            //     image = fs.readFileSync(`./${this.config.dataFolderName}/${id}.image`)
+            // }
+            // if (download === "thumbnail") {
+            //     thumbnail = fs.readFileSync(`./${this.config.dataFolderName}/${id}.thumbnail`)
+            // }
             return {
                 ...imageData,
-                encoded_image: image && image.toString(),
-                encoded_thumbnail: thumbnail && thumbnail.toString(),
             }
         } finally {
             client.release()
@@ -149,12 +147,51 @@ export class BackendService {
             )
             const image = result.rows[0]
             // save image
-            fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.image`, body.encoded_image)
-            fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.thumbnail`, body.encoded_thumbnail)
+            // fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.image`, body.encoded_image)
+            // fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.thumbnail`, body.encoded_thumbnail)
             return {
                 ...image,
-                encoded_image: body.encoded_image,
-                encoded_thumbnail: body.encoded_thumbnail,
+            }
+        } finally {
+            client.release()
+        }
+    }
+
+    async updateImage(id: string, body: UpdateImageInput) {
+        const existingImage = await this.getImage(id)
+        if (!existingImage) {
+            console.log("Existing image not found: " + id)
+            return null
+        }
+        // update existing image fields
+        Object.keys(body).forEach(key => {
+            existingImage[key] = body[key]
+        })
+
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `UPDATE images
+                SET
+                    label=$1,
+                    current_iterations=$2,
+                    phrases=$3,
+                    status=$4,
+                    updated_at=$5
+                WHERE id=$6 RETURNING *`,
+                [
+                    existingImage.label,
+                    existingImage.current_iterations,
+                    existingImage.phrases,
+                    existingImage.status,
+                    new Date().getTime(),
+                    id
+                ]
+            )
+
+            const image = result.rows[0]
+            return {
+                ...image,
             }
         } finally {
             client.release()

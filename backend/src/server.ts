@@ -94,6 +94,17 @@ export class Server {
             }
         })
 
+        // update image by id
+        this.app.patch("/images/:id", async (req, res) => {
+            try {
+                const image = await this.backendService.updateImage(req.params.id, req.body)
+                res.json(image)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
         // delete image
         this.app.delete("/images/:id", async (req, res) => {
             try {

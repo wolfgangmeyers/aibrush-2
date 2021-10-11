@@ -5,7 +5,7 @@ import fs from "fs"
 
 import { Server } from "./server"
 import { BackendService } from "./backend"
-import { AIBrushApi, ImageList, Image, CreateImageInput, UpdateImageInput, LoginResult } from "./client/api"
+import { AIBrushApi, ImageList, Image, CreateImageInput, UpdateImageInput, LoginResult, UpdateImageInputStatusEnum } from "./client/api"
 
 import nodemailer from "nodemailer";
 import { Mailcatcher, MailcatcherMessage } from './mailcatcher'
@@ -161,8 +161,6 @@ describe("server", () => {
                         label: "test",
                         iterations: 1,
                         parent: "",
-                        encoded_image: "encoded-image",
-                        encoded_thumbnail: "encoded-thumbnail"
                     })
                     image = response.data
                 })
@@ -173,11 +171,71 @@ describe("server", () => {
                     expect(image.label).toBe("test")
                     expect(image.iterations).toBe(1)
                     expect(image.parent).toBe("")
-                    expect(image.encoded_image).toBe("encoded-image")
-                    expect(image.encoded_thumbnail).toBe("encoded-thumbnail")
                 })
 
                 // TODO: when listing images (authorized and non-authorized)
+                describe("when listing images", () => {
+                    let images: ImageList;
+
+                    beforeEach(async () => {
+                        const response = await client.listImages()
+                        images = response.data
+                    })
+
+                    it("should return the image", () => {
+                        expect(images.images).toHaveLength(1)
+                        expect(images.images[0].id).toBe(image.id)
+                        expect(images.images[0].phrases).toEqual(["test"])
+                        expect(images.images[0].label).toBe("test")
+                        expect(images.images[0].iterations).toBe(1)
+                        expect(images.images[0].parent).toBe("")
+                        expect(images.images[0].current_iterations).toBe(0)
+                        expect(images.images[0].status).toBe(UpdateImageInputStatusEnum.Pending)
+                    })
+                })
+
+                describe("when updating an image", () => {
+                    let updatedImage: Image;
+
+                    beforeEach(async () => {
+                        const response = await client.updateImage(image.id, {
+                            phrases: ["test2"],
+                            label: "test2",
+                            current_iterations: 1,
+                            status: UpdateImageInputStatusEnum.Processing
+                        })
+                        updatedImage = response.data
+                    })
+
+                    it("should return the updated image", () => {
+                        expect(updatedImage.id).toBe(image.id)
+                        expect(updatedImage.phrases).toEqual(["test2"])
+                        expect(updatedImage.label).toBe("test2")
+                        expect(updatedImage.iterations).toBe(1)
+                        expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Processing)
+                        expect(updatedImage.current_iterations).toBe(1)
+                    })
+
+                    describe("when listing images", () => {
+                        let images: ImageList;
+
+                        beforeEach(async () => {
+                            const response = await client.listImages()
+                            images = response.data
+                        })
+
+                        it("should return the updated image", () => {
+                            expect(images.images).toHaveLength(1)
+                            expect(images.images[0].id).toBe(image.id)
+                            expect(images.images[0].phrases).toEqual(["test2"])
+                            expect(images.images[0].label).toBe("test2")
+                            expect(images.images[0].iterations).toBe(1)
+                            expect(images.images[0].parent).toBe("")
+                            expect(images.images[0].current_iterations).toBe(1)
+                            expect(images.images[0].status).toBe(UpdateImageInputStatusEnum.Processing)
+                        })
+                    })
+                })
 
                 // TODO: when updating an image (authorized and non-authorized)
 

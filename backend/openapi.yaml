@@ -113,6 +113,46 @@ paths:
       responses:
         "204":
           description: Success
+  /images/{id}/image.jpg:
+    get:
+      description: Get the binary image data
+      operationId: getImageData
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /images/{id}/thumbnail.jpg:
+    get:
+      description: Get the binary thumbnail data
+      operationId: getThumbnailData
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
   # login by email
   /auth/login:
     post:
@@ -165,18 +205,12 @@ components:
           type: integer
         parent:
           type: string
-        encoded_image:
-          type: string
-        encoded_thumbnail:
-          type: string
 
     UpdateImageInput:
       type: object
       properties:
         label:
           type: string
-        iterations:
-          type: integer
         current_iterations:
           type: integer
         phrases:
@@ -186,10 +220,6 @@ components:
         status:
           type: string
           enum: [pending, processing, completed]
-        encoded_image:
-          type: string
-        encoded_thumbnail:
-          type: string
 
     Image:
       properties:
@@ -218,10 +248,6 @@ components:
         status:
           type: string
           enum: [pending, processing, completed]
-        encoded_image:
-          type: string
-        encoded_thumbnail:
-          type: string
     ImageList:
       properties:
         images:
