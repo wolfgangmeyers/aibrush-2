@@ -68,7 +68,7 @@ export class Server {
                 // get user from authHelper.getUserFromRequest
                 const user = this.authHelper.getUserFromRequest(req)
 
-                const images = await this.backendService.listImages(user, req.query.status as ImageStatusEnum)
+                const images = await this.backendService.listImages({userId: user, status: req.query.status as ImageStatusEnum})
                 res.json(images)
             } catch (err) {
                 console.error(err)

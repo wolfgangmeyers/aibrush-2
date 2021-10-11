@@ -80,13 +80,22 @@ export class BackendService {
 
 
     // list images
-    async listImages(userId: string, status?: ImageStatusEnum): Promise<ImageList> {
+    async listImages(query: {userId?: string, status?: ImageStatusEnum}): Promise<ImageList> {
         const client = await this.pool.connect()
-        let whereClause = "WHERE created_by=$1";
-        let args = [userId];
-        if (status) {
-            whereClause += ` AND status=$2`
-            args.push(status);
+        let whereClauses = [];
+        let args = [];
+
+        if (query.userId) {
+            whereClauses.push("created_by=$" + (args.length + 1))
+            args.push(query.userId)
+        }
+        if (query.status) {
+            whereClauses.push("status=$" + (args.length + 1))
+            args.push(query.status)
+        }
+        let whereClause = "";
+        if (whereClauses.length > 0) {
+            whereClause = "WHERE " + whereClauses.join(" AND ")
         }
         try {
             const result = await client.query(
