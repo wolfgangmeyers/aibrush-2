@@ -247,6 +247,11 @@ describe("server", () => {
                     let img: Image;
 
                     beforeEach(async () => {
+                        // authenticate as service account
+                        await authenticateUser(mailcatcher, client2, httpClient2, "service-account@test.test")
+                    })
+
+                    beforeEach(async () => {
                         const response = await client2.getImage(image.id)
                         img = response.data
                     })
@@ -321,6 +326,29 @@ describe("server", () => {
                             expect(images.images[0].current_iterations).toBe(1)
                             expect(images.images[0].status).toBe(UpdateImageInputStatusEnum.Processing)
                         })
+                    })
+                })
+
+                describe("when getting image data that doesn't exist", () => {
+                    it("should reject the call with not found", async () => {
+                        await expect(client.getImageData("does-not-exist")).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
+
+                describe("when getting thumbnail data that doesn't exist", () => {
+                    it("should reject the call with not found", async () => {
+                        await expect(client.getThumbnailData("does-not-exist")).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
+
+                describe("when updating an image that doesn't exist", () => {
+                    it("should reject the call with not found", async () => {
+                        await expect(client.updateImage("does-not-exist", {
+                            phrases: ["test2"],
+                            label: "test2",
+                            current_iterations: 1,
+                            status: UpdateImageInputStatusEnum.Processing
+                        })).rejects.toThrow(/Request failed with status code 404/)
                     })
                 })
 
