@@ -356,7 +356,7 @@ describe("server", () => {
                     })
                 })
 
-                describe.only("when updating an image with encoded_image", () => {
+                describe("when updating an image with encoded_image", () => {
                     let savedImageData: Buffer;
                     let savedThumbnailData: Buffer;
 
