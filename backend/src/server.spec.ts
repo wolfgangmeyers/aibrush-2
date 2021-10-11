@@ -51,6 +51,8 @@ describe("server", () => {
             databaseName: "aibrush_test_2",
             dataFolderName: "test_data",
             loginCodeExpirationSeconds: 1,
+            userAccessTokenExpirationSeconds: 3600,
+            serviceAccountAccessTokenExpirationSeconds: 3600,
             serviceAccounts: ["service-account@test.test"]
         })
         const databases = await backendService.listDatabases()
@@ -82,6 +84,8 @@ describe("server", () => {
             databaseName: databaseName,
             dataFolderName: "test_data",
             loginCodeExpirationSeconds: 1,
+            userAccessTokenExpirationSeconds: 3600,
+            serviceAccountAccessTokenExpirationSeconds: 3600,
             serviceAccounts: ["service-account@test.test"]
         }
         const backendService = new BackendService(config)

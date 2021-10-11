@@ -17,7 +17,7 @@ export class Server {
 
     constructor(private config: Config, private backendService: BackendService, private port: string | number) {
         this.app = express()
-        this.authHelper = new AuthHelper(config.secret)
+        this.authHelper = new AuthHelper(config)
     }
 
     private isServiceAccount(userId: string): boolean {

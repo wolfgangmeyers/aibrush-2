@@ -8,15 +8,30 @@ export interface Authentication {
     refreshToken: string;
 }
 
-export class AuthHelper {
-    constructor(private secret: string, private now = Date.now) {
+export interface AuthHelperConfig {
+    secret: string;
+    userAccessTokenExpirationSeconds: number;
+    serviceAccountAccessTokenExpirationSeconds: number;
+    serviceAccounts: string[];
+}
 
+export class AuthHelper {
+    constructor(private config: AuthHelperConfig, private now = Date.now) {
+
+    }
+
+    public isServiceAccount(userId: string): boolean {
+        return this.config.serviceAccounts.indexOf(userId) >= 0;
     }
 
     // create access token with 1 hour expiration
     // and refresh token with 30 days expiration
     public createTokens(userId: string): Authentication {
-        const accessToken = this.createToken(userId, "access", 3600);
+        let accessTokenExpirationSeconds = this.config.userAccessTokenExpirationSeconds;
+        if (this.isServiceAccount(userId)) {
+            accessTokenExpirationSeconds = this.config.serviceAccountAccessTokenExpirationSeconds;
+        }
+        const accessToken = this.createToken(userId, "access", accessTokenExpirationSeconds);
         const refreshToken = this.createToken(userId, "refresh", 2592000);
         return {
             accessToken,
@@ -31,13 +46,13 @@ export class AuthHelper {
             type,
             exp: Math.floor(this.now() / 1000) + expiration
         };
-        return jwt.sign(payload, this.secret);
+        return jwt.sign(payload, this.config.secret);
     }
 
     // verify token
     public verifyToken(token: string, type: string): string {
         try {
-            const payload = jwt.verify(token, this.secret) as any;
+            const payload = jwt.verify(token, this.config.secret) as any;
             if (payload.type !== type) {
                 // log the mismatch
                 console.log(`Token type mismatch: ${payload.type} !== ${type}`);
@@ -72,7 +87,7 @@ export class AuthHelper {
 
 export function authMiddleware(config: Config) {
 
-    const helper = new AuthHelper(config.secret);
+    const helper = new AuthHelper(config);
 
     return (req: Request, res: Response, next: NextFunction) => {
 

@@ -21,7 +21,7 @@ export class BackendService {
     private authHelper: AuthHelper;
 
     constructor(private config: Config) {
-        this.authHelper = new AuthHelper(config.secret)
+        this.authHelper = new AuthHelper(config)
     }
 
     private async sendMail(message: EmailMessage): Promise<void> {
