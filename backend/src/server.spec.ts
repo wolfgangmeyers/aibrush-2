@@ -364,12 +364,37 @@ describe("server", () => {
                     })
                 })
 
-                // TODO: when deleting an image as a different user
+                describe("when deleting an image as a different user", () => {
+                    beforeEach(async () => {
+                        // authenticate second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test")
+                    })
+
+                    it("should reject the request with not found error", async () => {
+                        await expect(client2.deleteImage(image.id)).rejects.toThrow(/Request failed with status code 404/)
+                    })
+
+                    it("should not have deleted the image", async () => {
+                        // get image by id
+                        const response = await client.getImage(image.id)
+                        const img = response.data;
+                        expect(img.id).toBe(image.id)
+                    })
+                })
+
+                // TODO: when deleting an image as a service acct
 
                 // TODO: when deleting an image that doesn't exist
+                describe("when deleting an image that doesn't exist", () => {
+                    it("should reject the request with not found error", async () => {
+                        await expect(client.deleteImage("does-not-exist")).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
             })
 
             // TODO: when creating an image with encoded_image
+
+            // TODO: when creating an image with a service acct
         })
     })
 })

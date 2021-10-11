@@ -142,6 +142,12 @@ export class Server {
         // delete image
         this.app.delete("/images/:id", async (req, res) => {
             try {
+                // get image first and check created_by
+                let image = await this.backendService.getImage(req.params.id)
+                if (!image || image.created_by !== this.authHelper.getUserFromRequest(req)) {
+                    res.status(404).send("not found")
+                    return;
+                }
                 await this.backendService.deleteImage(req.params.id)
                 res.sendStatus(204)
             } catch (err) {
