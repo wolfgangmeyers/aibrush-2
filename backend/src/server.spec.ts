@@ -308,7 +308,22 @@ describe("server", () => {
 
                 })
 
-                // TODO: when updating an image (non-authorized)
+                describe("when updating an image belonging to a different user", () => {
+
+                    beforeEach(async () => {
+                        // authenticate second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test")
+                    })
+
+                    it("should reject the request with not found error", async () => {
+                        await expect(client2.updateImage(image.id, {
+                            phrases: ["test2"],
+                            label: "test2",
+                            current_iterations: 1,
+                            status: UpdateImageInputStatusEnum.Processing
+                        })).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
 
                 // TODO: when deleting an image (verify files are gone too) (authorized and non-authorized)
 

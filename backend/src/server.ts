@@ -101,7 +101,13 @@ export class Server {
         // update image by id
         this.app.patch("/images/:id", async (req, res) => {
             try {
-                const image = await this.backendService.updateImage(req.params.id, req.body)
+                // get image first and check created_by
+                let image = await this.backendService.getImage(req.params.id)
+                if (image.created_by !== this.authHelper.getUserFromRequest(req)) {
+                    res.status(404).send("not found")
+                    return;
+                }
+                image = await this.backendService.updateImage(req.params.id, req.body)
                 res.json(image)
             } catch (err) {
                 console.error(err)
