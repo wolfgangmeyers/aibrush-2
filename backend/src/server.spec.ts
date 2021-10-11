@@ -2,6 +2,7 @@ import * as uuid from 'uuid'
 import moment from 'moment'
 import axios, { Axios, AxiosInstance, AxiosResponse } from "axios"
 import fs from "fs"
+import path from "path"
 
 import { Server } from "./server"
 import { BackendService } from "./backend"
@@ -289,6 +290,19 @@ describe("server", () => {
                         expect(savedThumbnailData.length).toBeLessThan(savedImageData.length)
                     })
 
+                    describe("when deleting an image", () => {
+                        beforeEach(async () => {
+                            await client.deleteImage(image.id)
+                        })
+
+                        it("should remove the image and thumbnail files from the data folder", () => {
+                            // data folder is "data_test"
+                            const imagePath = path.join("data_test", image.id + ".image")
+                            expect(fs.existsSync(imagePath)).toBe(false)
+                            const thumbnailPath = path.join("data_test", image.id + ".thumbnail")
+                            expect(fs.existsSync(thumbnailPath)).toBe(false)
+                        })
+                    })
                 })
 
                 describe("when listing images as a different user", () => {
@@ -308,6 +322,8 @@ describe("server", () => {
 
                 })
 
+                // TODO: when listing images as a service acct
+
                 describe("when updating an image belonging to a different user", () => {
 
                     beforeEach(async () => {
@@ -325,8 +341,32 @@ describe("server", () => {
                     })
                 })
 
-                // TODO: when deleting an image (verify files are gone too) (authorized and non-authorized)
+                // TODO: when updating an image as a service acct
 
+                describe("when deleting an image", () => {
+                    let images: ImageList;
+
+                    beforeEach(async () => {
+                        await client.deleteImage(image.id)
+                    })
+
+                    describe("when listing images", () => {
+                        let images: ImageList;
+
+                        beforeEach(async () => {
+                            const response = await client.listImages()
+                            images = response.data
+                        })
+
+                        it("should return the image", () => {
+                            expect(images.images).toHaveLength(0)
+                        })
+                    })
+                })
+
+                // TODO: when deleting an image as a different user
+
+                // TODO: when deleting an image that doesn't exist
             })
 
             // TODO: when creating an image with encoded_image
