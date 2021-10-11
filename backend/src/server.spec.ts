@@ -224,6 +224,12 @@ describe("server", () => {
                     })
                 })
 
+                // TODO: when getting image by id
+
+                // TODO: when getting image by as another user
+
+                // TODO: when getting image by id as a service account
+
                 describe("when updating an image", () => {
                     let updatedImage: Image;
 
@@ -284,6 +290,18 @@ describe("server", () => {
                         const thumbnailDataResponse = await client.getThumbnailData(image.id)
                         savedThumbnailData = thumbnailDataResponse.data
                     })
+
+                    // TODO: when getting image data (refactor beforeEach)
+
+                    // TODO: when getting image data as another user
+
+                    // TODO: when getting image data as a service account
+
+                    // TODO: when getting thumbnail data
+
+                    // TODO: when getting thumbnail data as another user
+
+                    // TODO: when getting thumbnail data as a service account
 
                     it("should save the image data", () => {
                         expect(savedImageData).toBeDefined()
@@ -459,7 +477,21 @@ describe("server", () => {
                 })
             })
 
-            // TODO: when creating an image with a service acct
+            describe("when creating an image with a service account", () => {
+
+                beforeEach(async () => {
+                    // authenticate as service account
+                    await authenticateUser(mailcatcher, client, httpClient, "service-account@test.test")
+                })
+
+                it("should fail with 403", async () => {
+                    await expect(client.createImage({
+                        phrases: ["test"],
+                        label: "test",
+                        iterations: 1
+                    })).rejects.toThrow(/Request failed with status code 403/)
+                })
+            })
         })
     })
 })

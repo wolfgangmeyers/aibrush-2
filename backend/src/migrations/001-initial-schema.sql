@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS "images" (
 
 -- index by created_by and status
 CREATE INDEX IF NOT EXISTS "images_created_by_status" ON "images" ("created_by", "status", "created_at");
+-- index by status and created_at (for workers)
+CREATE INDEX IF NOT EXISTS "images_status_created_at" ON "images" ("status", "created_at");
 -- index by parent
 CREATE INDEX IF NOT EXISTS "images_parent" ON "images" ("parent");
 

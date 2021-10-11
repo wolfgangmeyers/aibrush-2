@@ -92,7 +92,12 @@ export class Server {
         // create image
         this.app.post("/images", async (req, res) => {
             try {
-                const image = await this.backendService.createImage(this.authHelper.getUserFromRequest(req), req.body)
+                const user = this.authHelper.getUserFromRequest(req)
+                if (this.isServiceAccount(user)) {
+                    res.sendStatus(403)
+                    return
+                }
+                const image = await this.backendService.createImage(user, req.body)
                 res.json(image)
             } catch (err) {
                 console.error(err)
