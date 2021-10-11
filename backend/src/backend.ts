@@ -6,7 +6,7 @@ import fs from "fs"
 import nodemailer from "nodemailer";
 import sharp from "sharp";
 
-import { ImageList, Image, CreateImageInput, UpdateImageInput, LoginInput, VerifyLoginInput, LoginResult } from "./client/api"
+import { ImageList, Image, CreateImageInput, UpdateImageInput, LoginInput, VerifyLoginInput, LoginResult, ImageStatusEnum } from "./client/api"
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
 import { Config } from "./config"
@@ -80,11 +80,18 @@ export class BackendService {
 
 
     // list images
-    async listImages(): Promise<ImageList> {
+    async listImages(userId: string, status?: ImageStatusEnum): Promise<ImageList> {
         const client = await this.pool.connect()
+        let whereClause = "WHERE created_by=$1";
+        let args = [userId];
+        if (status) {
+            whereClause += ` AND status=$2`
+            args.push(status);
+        }
         try {
             const result = await client.query(
-                `SELECT * FROM images ORDER BY created_at desc`
+                `SELECT * FROM images ${whereClause} ORDER BY created_at desc`,
+                args
             )
             return {
                 images: result.rows

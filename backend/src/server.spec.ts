@@ -12,10 +12,34 @@ import { Mailcatcher, MailcatcherMessage } from './mailcatcher'
 import { Config } from './config'
 import { Authentication } from './auth'
 
+async function authenticateUser(mailcatcher: Mailcatcher, client: AIBrushApi, httpClient: AxiosInstance, emailAddress: string) {
+    await mailcatcher.clearAll()
+
+    await client.login({
+        email: emailAddress
+    })
+    const emails = await mailcatcher.getMessages()
+    expect(emails.length).toBe(1)
+    const email = emails[0]
+    // extract the code from the email
+    const body = email.text.split(" ")
+    const code = body[body.length - 1]
+    // verify the code
+    const verifyResponse = await client.verify({
+        code: code
+    })
+    const verifyResult = verifyResponse.data
+    // add the access token to the http client
+    httpClient.defaults.headers['Authorization'] = `Bearer ${verifyResult.accessToken}`
+}
+
 describe("server", () => {
     let server: Server
     let client: AIBrushApi
     let httpClient: AxiosInstance;
+    // second user
+    let client2: AIBrushApi;
+    let httpClient2: AxiosInstance;
 
     beforeAll(async () => {
         const backendService = new BackendService({
@@ -66,6 +90,10 @@ describe("server", () => {
         httpClient = axios.create({
         })
         client = new AIBrushApi(undefined, "http://localhost:35456", httpClient)
+        // second user
+        httpClient2 = axios.create({
+        })
+        client2 = new AIBrushApi(undefined, "http://localhost:35456", httpClient2)
     })
 
     afterEach(async () => {
@@ -263,7 +291,22 @@ describe("server", () => {
 
                 })
 
-                // TODO: when listing images (non-authorized)
+                describe("when listing images as a different user", () => {
+                    let images: ImageList;
+
+                    beforeEach(async () => {
+                        // authenticate second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test")
+
+                        const response = await client2.listImages()
+                        images = response.data
+                    })
+
+                    it("should return an empty list", () => {
+                        expect(images.images).toHaveLength(0)
+                    })
+
+                })
 
                 // TODO: when updating an image (non-authorized)
 

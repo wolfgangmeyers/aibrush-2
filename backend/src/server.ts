@@ -7,6 +7,7 @@ import { createHttpTerminator, HttpTerminator } from "http-terminator"
 import { BackendService } from "./backend";
 import { Config } from "./config"
 import { AuthHelper, authMiddleware } from "./auth"
+import { ImageStatusEnum } from "./client"
 
 export class Server {
     private server: HTTPServer;
@@ -64,7 +65,10 @@ export class Server {
         // list images
         this.app.get("/images", async (req, res) => {
             try {
-                const images = await this.backendService.listImages()
+                // get user from authHelper.getUserFromRequest
+                const user = this.authHelper.getUserFromRequest(req)
+
+                const images = await this.backendService.listImages(user, req.query.status as ImageStatusEnum)
                 res.json(images)
             } catch (err) {
                 console.error(err)

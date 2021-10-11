@@ -42,4 +42,10 @@ export class Mailcatcher {
     public async deleteMessage(id: number): Promise<void> {
         await axios.default.delete(`${this.url}/messages/${id}`);
     }
+
+    public async clearAll(): Promise<void> {
+        // get messages and delete each one
+        const messages = await this.getMessages();
+        await Promise.all(messages.map(msg => this.deleteMessage(msg.id)));
+    }
 }
