@@ -4,6 +4,7 @@ import * as uuid from "uuid"
 import moment from "moment"
 import fs from "fs"
 import nodemailer from "nodemailer";
+import sharp from "sharp";
 
 import { ImageList, Image, CreateImageInput, UpdateImageInput, LoginInput, VerifyLoginInput, LoginResult } from "./client/api"
 import { sleep } from "./sleep"
@@ -94,7 +95,7 @@ export class BackendService {
     }
 
     // get image by id
-    async getImage(id: string, download?: ("thumbnail" | "image")): Promise<Image> {
+    async getImage(id: string): Promise<Image> {
         const client = await this.pool.connect()
         try {
             const result = await client.query(
@@ -121,6 +122,20 @@ export class BackendService {
         }
     }
 
+    // get image data
+    async getImageData(id: string) : Promise<Buffer> {
+        // load image data from file and convert from base64 to buffer
+        const image = fs.readFileSync(`./${this.config.dataFolderName}/${id}.image`).toString()
+        return Buffer.from(image, "base64")
+    }
+
+    // get thumbnail data
+    async getThumbnailData(id: string) : Promise<Buffer> {
+        // load image data from file and convert from base64 to buffer
+        const thumbnail = fs.readFileSync(`./${this.config.dataFolderName}/${id}.thumbnail`).toString()
+        return Buffer.from(thumbnail, "base64")
+    }
+
     // delete image
     async deleteImage(id: string): Promise<void> {
         const client = await this.pool.connect()
@@ -132,6 +147,14 @@ export class BackendService {
         } finally {
             client.release()
         }
+    }
+
+    private async createThumbnail(encoded_image: string) {
+        const thumbnail = await sharp(Buffer.from(encoded_image, "base64"))
+            .resize(200, 200)
+            .toBuffer()
+            .then(buffer => buffer.toString("base64"));
+        return thumbnail
     }
 
     async createImage(createdBy: string, body: CreateImageInput) {
@@ -146,9 +169,12 @@ export class BackendService {
                 [uuid.v4(), createdBy, new Date().getTime(), new Date().getTime(), body.label, body.parent, body.phrases, body.iterations,  0, 0, "pending"]
             )
             const image = result.rows[0]
-            // save image
-            // fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.image`, body.encoded_image)
-            // fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.thumbnail`, body.encoded_thumbnail)
+            // if encoded_image is set, save image
+            if (body.encoded_image) {
+                fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.image`, body.encoded_image)
+                const encoded_thumbnail = await this.createThumbnail(body.encoded_image)
+                fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.thumbnail`, encoded_thumbnail)
+            }
             return {
                 ...image,
             }
@@ -190,6 +216,12 @@ export class BackendService {
             )
 
             const image = result.rows[0]
+            // if encoded_image is set, save it
+            if (body.encoded_image) {
+                fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.image`, body.encoded_image)
+                const encoded_thumbnail = await this.createThumbnail(body.encoded_image)
+                fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.thumbnail`, encoded_thumbnail)
+            }
             return {
                 ...image,
             }

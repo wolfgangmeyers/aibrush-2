@@ -173,7 +173,6 @@ describe("server", () => {
                     expect(image.parent).toBe("")
                 })
 
-                // TODO: when listing images (authorized and non-authorized)
                 describe("when listing images", () => {
                     let images: ImageList;
 
@@ -237,11 +236,42 @@ describe("server", () => {
                     })
                 })
 
-                // TODO: when updating an image (authorized and non-authorized)
+                describe("when updating an image with encoded_image", () => {
+                    let savedImageData: Buffer;
+                    let savedThumbnailData: Buffer;
+
+                    beforeEach(async () => {
+                        // read 512.jpg from file and base64 encode it
+                        const imageData = fs.readFileSync("512.jpg")
+                        const base64Image = Buffer.from(imageData).toString('base64')
+                        await client.updateImage(image.id, {
+                            encoded_image: base64Image
+                        })
+                        // get image data
+                        const imageDataResponse = await client.getImageData(image.id)
+                        savedImageData = imageDataResponse.data
+                        const thumbnailDataResponse = await client.getThumbnailData(image.id)
+                        savedThumbnailData = thumbnailDataResponse.data
+                    })
+
+                    it("should save the image data", () => {
+                        expect(savedImageData).toBeDefined()
+                        expect(savedThumbnailData).toBeDefined()
+                        // thumbnail should be smaller
+                        expect(savedThumbnailData.length).toBeLessThan(savedImageData.length)
+                    })
+
+                })
+
+                // TODO: when listing images (non-authorized)
+
+                // TODO: when updating an image (non-authorized)
 
                 // TODO: when deleting an image (verify files are gone too) (authorized and non-authorized)
 
             })
+
+            // TODO: when creating an image with encoded_image
         })
     })
 })

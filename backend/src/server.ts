@@ -86,7 +86,7 @@ export class Server {
         // get image by id
         this.app.get("/images/:id", async (req, res) => {
             try {
-                const image = await this.backendService.getImage(req.params.id, req.query.download as ("thumbnail" | "image"))
+                const image = await this.backendService.getImage(req.params.id)
                 res.json(image)
             } catch (err) {
                 console.error(err)
@@ -99,6 +99,30 @@ export class Server {
             try {
                 const image = await this.backendService.updateImage(req.params.id, req.body)
                 res.json(image)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // get image data by id
+        this.app.get("/images/:id/image.jpg", async (req, res) => {
+            try {
+                const image = await this.backendService.getImageData(req.params.id)
+                res.setHeader("Content-Type", "image/jpeg")
+                res.send(image)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // get thumbnail data by id
+        this.app.get("/images/:id/thumbnail.jpg", async (req, res) => {
+            try {
+                const image = await this.backendService.getThumbnailData(req.params.id)
+                res.setHeader("Content-Type", "image/jpeg")
+                res.send(image)
             } catch (err) {
                 console.error(err)
                 res.sendStatus(500)
