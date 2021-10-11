@@ -224,11 +224,62 @@ describe("server", () => {
                     })
                 })
 
-                // TODO: when getting image by id
+                describe("when getting the image by id", () => {
+                    let img: Image;
 
-                // TODO: when getting image by as another user
+                    beforeEach(async () => {
+                        const response = await client.getImage(image.id)
+                        img = response.data
+                    })
 
-                // TODO: when getting image by id as a service account
+                    it("should return the image", () => {
+                        expect(img.id).toBeDefined()
+                        expect(img.phrases).toEqual(["test"])
+                        expect(img.label).toBe("test")
+                        expect(img.iterations).toBe(1)
+                        expect(img.parent).toBe("")
+                        expect(img.current_iterations).toBe(0)
+                        expect(img.status).toBe(UpdateImageInputStatusEnum.Pending)
+                    })
+                })
+
+                describe("when getting the image with a service account", () => {
+                    let img: Image;
+
+                    beforeEach(async () => {
+                        const response = await client2.getImage(image.id)
+                        img = response.data
+                    })
+
+                    it("should return the image", () => {
+                        expect(img.id).toBeDefined()
+                        expect(img.phrases).toEqual(["test"])
+                        expect(img.label).toBe("test")
+                        expect(img.iterations).toBe(1)
+                        expect(img.parent).toBe("")
+                        expect(img.current_iterations).toBe(0)
+                        expect(img.status).toBe(UpdateImageInputStatusEnum.Pending)
+                    })
+                })
+
+                describe("when getting the image by id with another user", () => {
+
+                    beforeEach(async () => {
+                        // authenticate as second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test.test")
+                    })
+
+                    it("should reject the call with not found", async () => {
+                        await expect(client2.getImage(image.id)).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
+
+                describe("when getting an image that doesn't exist", () => {
+
+                    it("should reject the call with not found", async () => {
+                        await expect(client.getImage("does-not-exist")).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
 
                 describe("when updating an image", () => {
                     let updatedImage: Image;
@@ -396,7 +447,36 @@ describe("server", () => {
                     })
                 })
 
-                // TODO: when updating an image as a service acct
+                describe("when updating an image with a service account", () => {
+
+                    let updatedImage: Image;
+
+                    beforeEach(async () => {
+                        // authenticate service account
+                        await authenticateUser(mailcatcher, client2, httpClient2, "service-account@test.test")
+                    })
+
+                    beforeEach(async () => {
+                        // update the image
+                        const response = await client2.updateImage(image.id, {
+                            phrases: ["test2"],
+                            label: "test2",
+                            current_iterations: 1,
+                            status: UpdateImageInputStatusEnum.Processing
+                        })
+                        updatedImage = response.data
+                    })
+
+                    it("should update the image", async () => {
+                        expect(updatedImage.id).toBe(image.id)
+                        expect(updatedImage.phrases).toEqual(["test2"])
+                        expect(updatedImage.label).toBe("test2")
+                        expect(updatedImage.iterations).toBe(1)
+                        expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Processing)
+                        expect(updatedImage.current_iterations).toBe(1)
+                    })
+
+                })
 
                 describe("when deleting an image", () => {
                     let images: ImageList;
@@ -437,9 +517,17 @@ describe("server", () => {
                     })
                 })
 
-                // TODO: when deleting an image as a service acct
+                describe("when deleting an image with a service account", () => {
+                    beforeEach(async () => {
+                        // authenticate as service account
+                        await authenticateUser(mailcatcher, client2, httpClient2, "service-account@test.test")
+                    })
 
-                // TODO: when deleting an image that doesn't exist
+                    it("should reject the request with not found error", async () => {
+                        await expect(client2.deleteImage(image.id)).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
+
                 describe("when deleting an image that doesn't exist", () => {
                     it("should reject the request with not found error", async () => {
                         await expect(client.deleteImage("does-not-exist")).rejects.toThrow(/Request failed with status code 404/)
@@ -447,7 +535,6 @@ describe("server", () => {
                 })
             })
 
-            // TODO: when creating an image with encoded_image
             describe("when creating an image with encoded_image", () => {
                 let image: Image;
 

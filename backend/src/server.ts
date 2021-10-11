@@ -109,6 +109,12 @@ export class Server {
         this.app.get("/images/:id", async (req, res) => {
             try {
                 const image = await this.backendService.getImage(req.params.id)
+                // check created_by
+                const user = this.authHelper.getUserFromRequest(req)
+                if (!image || image.created_by != user) {
+                    res.status(404).send("not found")
+                    return
+                }
                 res.json(image)
             } catch (err) {
                 console.error(err)
