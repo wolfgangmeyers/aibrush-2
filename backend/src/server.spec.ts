@@ -51,6 +51,7 @@ describe("server", () => {
             databaseName: "aibrush_test_2",
             dataFolderName: "test_data",
             loginCodeExpirationSeconds: 1,
+            serviceAccounts: ["service-account@test.test"]
         })
         const databases = await backendService.listDatabases()
         for (const db of databases) {
@@ -67,7 +68,7 @@ describe("server", () => {
             for (const file of files) {
                 fs.unlinkSync("./test_data/" + file)
             }
-        } catch {}
+        } catch { }
 
 
         // const sockfile = `/tmp/aibrush-backend-${uuid.v4()}.sock`
@@ -81,6 +82,7 @@ describe("server", () => {
             databaseName: databaseName,
             dataFolderName: "test_data",
             loginCodeExpirationSeconds: 1,
+            serviceAccounts: ["service-account@test.test"]
         }
         const backendService = new BackendService(config)
 
@@ -322,7 +324,42 @@ describe("server", () => {
 
                 })
 
-                // TODO: when listing images as a service acct
+                describe("when listing images as a service acct", () => {
+
+                    let images: ImageList;
+
+                    beforeEach(async () => {
+                        // authenticate the service account
+                        await authenticateUser(mailcatcher, client2, httpClient2, "service-account@test.test")
+
+                        const response = await client2.listImages()
+                        images = response.data
+                    })
+
+                    it("should return all pending images", async () => {
+                        expect(images.images).toHaveLength(1)
+                        expect(images.images[0].id).toBe(image.id)
+                    })
+
+                    describe("after updating the image to status=processing", () => {
+                        beforeEach(async () => {
+                            await client.updateImage(image.id, {
+                                status: UpdateImageInputStatusEnum.Processing
+                            })
+                        })
+
+                        beforeEach(async () => {
+                            // list images again
+                            const response = await client2.listImages()
+                            images = response.data
+                        })
+
+                        it("should only return pending images", () => {
+                            expect(images.images).toHaveLength(0)
+                        })
+                    })
+
+                })
 
                 describe("when updating an image belonging to a different user", () => {
 

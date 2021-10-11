@@ -20,6 +20,10 @@ export class Server {
         this.authHelper = new AuthHelper(config.secret)
     }
 
+    private isServiceAccount(userId: string): boolean {
+        return this.config.serviceAccounts.indexOf(userId) != -1
+    }
+
     async init() {
         await this.backendService.init();
         this.app.use(express.json({
@@ -65,10 +69,19 @@ export class Server {
         // list images
         this.app.get("/images", async (req, res) => {
             try {
-                // get user from authHelper.getUserFromRequest
                 const user = this.authHelper.getUserFromRequest(req)
+                let query = {
+                    userId: user,
+                    status: req.query.status as ImageStatusEnum
+                }
+                if (this.isServiceAccount(user)) {
+                    query = {
+                        status: ImageStatusEnum.Pending,
+                        userId: undefined,
+                    }
+                }
 
-                const images = await this.backendService.listImages({userId: user, status: req.query.status as ImageStatusEnum})
+                const images = await this.backendService.listImages(query)
                 res.json(images)
             } catch (err) {
                 console.error(err)

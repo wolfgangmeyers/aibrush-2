@@ -8,4 +8,5 @@ export interface Config {
     databaseName: string;
     dataFolderName: string;
     loginCodeExpirationSeconds: number;
+    serviceAccounts: string[];
 }
