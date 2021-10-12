@@ -34,6 +34,14 @@ async function authenticateUser(mailcatcher: Mailcatcher, client: AIBrushApi, ht
     httpClient.defaults.headers['Authorization'] = `Bearer ${verifyResult.accessToken}`
 }
 
+async function refreshUser(client: AIBrushApi, httpClient: AxiosInstance, refreshToken: string) {
+    const response = await client.refresh({
+        refreshToken: refreshToken
+    })
+    const refreshResult = response.data
+    httpClient.defaults.headers['Authorization'] = `Bearer ${refreshResult.accessToken}`
+}
+
 describe("server", () => {
     let server: Server
     let client: AIBrushApi
@@ -178,6 +186,20 @@ describe("server", () => {
                 let images: ImageList;
 
                 beforeEach(async () => {
+                    const response = await client.listImages()
+                    images = response.data
+                })
+
+                it("should return an empty list", () => {
+                    expect(images.images).toHaveLength(0)
+                })
+            })
+
+            describe("when listing images after refreshing access token", () => {
+                let images: ImageList;
+
+                beforeEach(async () => {
+                    await refreshUser(client, httpClient, verifyResult.refreshToken)
                     const response = await client.listImages()
                     images = response.data
                 })

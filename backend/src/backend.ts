@@ -303,6 +303,14 @@ export class BackendService {
         }
     }
 
+    async refresh(refreshToken: string): Promise<Authentication> {
+        const user = this.authHelper.verifyToken(refreshToken, "refresh")
+        if (!user) {
+            return null;
+        }
+        return this.authHelper.createTokens(user)
+    }
+
     // list databases for testing
     async listDatabases(): Promise<Array<string>> {
         const client = new Client()

@@ -189,6 +189,24 @@ paths:
         "400":
           description: Invalid code
   # TODO: refresh (returns LoginResult)
+  /auth/refresh:
+    post:
+      description: Refresh Login code
+      operationId: refresh
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshLoginInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResult"
 
 components:
   schemas:
@@ -270,6 +288,13 @@ components:
           type: string
         code:
           type: string
+    RefreshLoginInput:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+      required:
+        - refresh_token
     LoginResult:
       type: object
       properties:
