@@ -478,7 +478,7 @@ describe("server", () => {
 
                 })
 
-                describe("when listing images as a service acct", () => {
+                describe("when listing images as a service account", () => {
 
                     let images: ImageList;
 
@@ -490,29 +490,9 @@ describe("server", () => {
                         images = response.data
                     })
 
-                    it("should return all pending images", async () => {
-                        expect(images.images).toHaveLength(1)
-                        expect(images.images[0].id).toBe(image.id)
+                    it("should return an empty list", async () => {
+                        expect(images.images).toHaveLength(0)
                     })
-
-                    describe("after updating the image to status=processing", () => {
-                        beforeEach(async () => {
-                            await client.updateImage(image.id, {
-                                status: UpdateImageInputStatusEnum.Processing
-                            })
-                        })
-
-                        beforeEach(async () => {
-                            // list images again
-                            const response = await client2.listImages()
-                            images = response.data
-                        })
-
-                        it("should only return pending images", () => {
-                            expect(images.images).toHaveLength(0)
-                        })
-                    })
-
                 })
 
                 describe("when updating an image belonging to a different user", () => {
@@ -561,6 +541,28 @@ describe("server", () => {
                         expect(updatedImage.current_iterations).toBe(1)
                     })
 
+                })
+
+                describe.only("when processing an image as a service account", () => {
+                    let processingImage: Image;
+
+                    beforeEach(async () => {
+                        // authenticate as service account
+                        await authenticateUser(mailcatcher, client2, httpClient2, "service-account@test.test")
+                    })
+
+                    beforeEach(async () => {
+                        // process the image
+                        const response = await client2.processImage()
+                        processingImage = response.data
+                    })
+
+                    it("should return the image with status=processing", () => {
+                        expect(processingImage.id).toBe(image.id)
+                        expect(processingImage.status).toBe(UpdateImageInputStatusEnum.Processing)
+                    })
+
+                    // TODO: process again with no pending images
                 })
 
                 describe("when deleting an image", () => {

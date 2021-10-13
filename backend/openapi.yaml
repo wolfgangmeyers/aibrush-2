@@ -153,6 +153,19 @@ paths:
               schema:
                 type: string
                 format: binary
+  /process-image:
+    put:
+      description: Get the next pending image and set its status to processing.
+      operationId: processImage
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
   # login by email
   /auth/login:
     post:
@@ -188,7 +201,6 @@ paths:
                 $ref: "#/components/schemas/LoginResult"
         "400":
           description: Invalid code
-  # TODO: refresh (returns LoginResult)
   /auth/refresh:
     post:
       description: Refresh Login code

@@ -85,15 +85,16 @@ export class Server {
         this.app.get("/images", async (req, res) => {
             try {
                 const user = this.authHelper.getUserFromRequest(req)
+                // service accounts can't list images
+                if (this.isServiceAccount(user)) {
+                    res.json({
+                        images: []
+                    })
+                    return
+                }
                 let query = {
                     userId: user,
                     status: req.query.status as ImageStatusEnum
-                }
-                if (this.isServiceAccount(user)) {
-                    query = {
-                        status: ImageStatusEnum.Pending,
-                        userId: undefined,
-                    }
                 }
 
                 const images = await this.backendService.listImages(query)
@@ -210,6 +211,21 @@ export class Server {
             }
         })
 
+        this.app.put("/process-image", async (req, res) => {
+            try {
+                const user = this.authHelper.getUserFromRequest(req)
+                // only service accounts can process images
+                if (!this.isServiceAccount(user)) {
+                    res.sendStatus(403)
+                    return
+                }
+                const image = await this.backendService.processImage()
+                res.json(image)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
     }
 
     start() {

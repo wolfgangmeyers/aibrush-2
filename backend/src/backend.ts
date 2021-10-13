@@ -246,6 +246,55 @@ export class BackendService {
         }
     }
 
+    private async getUsersWithPendingImages(): Promise<Array<string>> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT DISTINCT created_by FROM images WHERE status='pending'`
+            )
+            return result.rows.map(row => row.created_by)
+        } finally {
+            client.release()
+        }
+    }
+
+    async processImage(): Promise<Image> {
+        // get all users with pending images
+        const users = await this.getUsersWithPendingImages()
+        // if there are no users, return null
+        if (users.length === 0) {
+            return null
+        }
+        // get random user
+        const user = users[Math.floor(Math.random() * users.length)]
+        // get random image from user
+        const client = await this.pool.connect()
+        try {
+            // begin transaction
+            await client.query("BEGIN")
+            const result = await client.query(
+                `SELECT * FROM images WHERE created_by=$1 AND status='pending' ORDER BY created_at ASC LIMIT 1`,
+                [user]
+            )
+            const image = result.rows[0]
+            // update image status to "processing"
+            await client.query(
+                `UPDATE images SET status='processing' WHERE id=$1`,
+                [image.id]
+            )
+            // commit transaction
+            await client.query("COMMIT")
+            return {
+                ...image,
+                status: "processing",
+            }
+        } catch (err) {
+            await client.query("ROLLBACK")
+        } finally {
+            client.release()
+        }
+    }
+
     async login(email: string): Promise<void> {
         // generate crypto random 6 digit code
         const code = uuid.v4().substr(0, 6).toUpperCase()
