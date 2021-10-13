@@ -562,7 +562,18 @@ describe("server", () => {
                         expect(processingImage.status).toBe(UpdateImageInputStatusEnum.Processing)
                     })
 
-                    // TODO: process again with no pending images
+                    describe("when processing again with no pending images", () => {
+                        beforeEach(async () => {
+                            // process the image
+                            const response = await client2.processImage()
+                            processingImage = response.data
+                        })
+
+                        it("should return null", () => {
+                            expect(processingImage).toBeNull()
+                        })
+
+                    })
                 })
 
                 describe("when deleting an image", () => {
