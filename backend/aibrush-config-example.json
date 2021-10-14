@@ -1,0 +1,14 @@
+{
+    "secret": "secret",
+    "smtpHost": "localhost",
+    "smtpPort": 1025,
+    "smtpUser": "",
+    "smtpPassword": "",
+    "smtpFrom": "noreply@aibrush.art",
+    "databaseName": "aibrush_backend_2",
+    "dataFolderName": "data",
+    "loginCodeExpirationSeconds": 500,
+    "userAccessTokenExpirationSeconds": 3600,
+    "serviceAccountAccessTokenExpirationSeconds": 31536000,
+    "serviceAccounts": ["service-account@example.domain"]
+}
