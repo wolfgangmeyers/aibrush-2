@@ -50,7 +50,11 @@ function App() {
         {/* if credentials are not set, show Login component */}
         {!credentials && <Login httpClient={httpClient} client={client} onLogin={onLogin} />}
         {/* if credentials are set, show a bootstrap logout button a the far top right corner div */}
-        {credentials && <button className="btn btn-primary logout-button" onClick={() => setCredentials(null)}>Logout</button>}
+        {credentials && <button className="btn btn-primary logout-button" onClick={() => setCredentials(null)}>
+          {/* font awesome logout icon */}
+          <i className="fas fa-sign-out-alt"></i>&nbsp;
+          Logout
+        </button>}
         {/* if credentials are set, show the rest of the app */}
         {credentials && <Switch>
           <Route path="/">

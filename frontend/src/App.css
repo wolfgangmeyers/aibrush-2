@@ -42,6 +42,7 @@
 
 .logout-button {
     float: right;
+    margin: 10px;
 }
 
 .btn-group-vertical .btn {
