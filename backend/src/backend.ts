@@ -80,7 +80,7 @@ export class BackendService {
 
 
     // list images
-    async listImages(query: {userId?: string, status?: ImageStatusEnum}): Promise<ImageList> {
+    async listImages(query: { userId?: string, status?: ImageStatusEnum }): Promise<ImageList> {
         const client = await this.pool.connect()
         let whereClauses = [];
         let args = [];
@@ -139,17 +139,29 @@ export class BackendService {
     }
 
     // get image data
-    async getImageData(id: string) : Promise<Buffer> {
-        // load image data from file and convert from base64 to buffer
-        const image = fs.readFileSync(`./${this.config.dataFolderName}/${id}.image`).toString()
-        return Buffer.from(image, "base64")
+    async getImageData(id: string): Promise<Buffer> {
+        try {
+            // load image data from file and convert from base64 to buffer
+            const image = fs.readFileSync(`./${this.config.dataFolderName}/${id}.image`).toString()
+            return Buffer.from(image, "base64")
+        } catch (err) {
+            console.error(err)
+            return null
+        }
+
     }
 
     // get thumbnail data
-    async getThumbnailData(id: string) : Promise<Buffer> {
-        // load image data from file and convert from base64 to buffer
-        const thumbnail = fs.readFileSync(`./${this.config.dataFolderName}/${id}.thumbnail`).toString()
-        return Buffer.from(thumbnail, "base64")
+    async getThumbnailData(id: string): Promise<Buffer> {
+        try {
+            // load image data from file and convert from base64 to buffer
+            const thumbnail = fs.readFileSync(`./${this.config.dataFolderName}/${id}.thumbnail`).toString()
+            return Buffer.from(thumbnail, "base64")
+        } catch (err) {
+            console.error(err)
+            return null
+        }
+
     }
 
     // delete image
@@ -182,7 +194,7 @@ export class BackendService {
                 VALUES
                     ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 RETURNING *`,
-                [uuid.v4(), createdBy, new Date().getTime(), new Date().getTime(), body.label, body.parent, body.phrases, body.iterations,  0, 0, "pending"]
+                [uuid.v4(), createdBy, new Date().getTime(), new Date().getTime(), body.label, body.parent, body.phrases, body.iterations, 0, 0, "pending"]
             )
             const image = result.rows[0]
             // if encoded_image is set, save image
