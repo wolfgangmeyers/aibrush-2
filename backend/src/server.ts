@@ -78,6 +78,45 @@ export class Server {
             }
         })
 
+        // allow anonymous access to image data. This is needed in order to
+        // use these urls in image elements.
+
+        // get image data by id
+        this.app.get("/images/:id/image.jpg", async (req, res) => {
+            try {
+                // get image first and check created_by
+                let image = await this.backendService.getImage(req.params.id)
+                if (!image) {
+                    res.status(404).send("not found")
+                    return;
+                }
+                const imageData = await this.backendService.getImageData(req.params.id)
+                res.setHeader("Content-Type", "image/jpeg")
+                res.send(imageData)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // get thumbnail data by id
+        this.app.get("/images/:id/thumbnail.jpg", async (req, res) => {
+            try {
+                // get image first and check created_by
+                let image = await this.backendService.getImage(req.params.id)
+                if (!image) {
+                    res.status(404).send("not found")
+                    return;
+                }
+                const imageData = await this.backendService.getThumbnailData(req.params.id)
+                res.setHeader("Content-Type", "image/jpeg")
+                res.send(imageData)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
         // authenticated routes only past this point
         this.app.use(authMiddleware(this.config))
 
@@ -150,44 +189,6 @@ export class Server {
                 }
                 image = await this.backendService.updateImage(req.params.id, req.body)
                 res.json(image)
-            } catch (err) {
-                console.error(err)
-                res.sendStatus(500)
-            }
-        })
-
-        // get image data by id
-        this.app.get("/images/:id/image.jpg", async (req, res) => {
-            try {
-                const user = this.authHelper.getUserFromRequest(req)
-                // get image first and check created_by
-                let image = await this.backendService.getImage(req.params.id)
-                if (!image || (!this.isServiceAccount(user) && image.created_by !== user)) {
-                    res.status(404).send("not found")
-                    return;
-                }
-                const imageData = await this.backendService.getImageData(req.params.id)
-                res.setHeader("Content-Type", "image/jpeg")
-                res.send(imageData)
-            } catch (err) {
-                console.error(err)
-                res.sendStatus(500)
-            }
-        })
-
-        // get thumbnail data by id
-        this.app.get("/images/:id/thumbnail.jpg", async (req, res) => {
-            try {
-                const user = this.authHelper.getUserFromRequest(req)
-                // get image first and check created_by
-                let image = await this.backendService.getImage(req.params.id)
-                if (!image || (!this.isServiceAccount(user) && image.created_by !== user)) {
-                    res.status(404).send("not found")
-                    return;
-                }
-                const imageData = await this.backendService.getThumbnailData(req.params.id)
-                res.setHeader("Content-Type", "image/jpeg")
-                res.send(imageData)
             } catch (err) {
                 console.error(err)
                 res.sendStatus(500)

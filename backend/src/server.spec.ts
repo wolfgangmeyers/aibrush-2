@@ -412,40 +412,6 @@ describe("server", () => {
                         })
                     })
 
-                    describe("when getting image data as another user", () => {
-                        beforeEach(async () => {
-                            // authenticate as the second user
-                            await authenticateUser(mailcatcher, client2, httpClient2, "test2@test.test")
-                        })
-
-                        it("should reject the call with not found", async () => {
-                            await expect(client2.getImageData(image.id)).rejects.toThrow(/Request failed with status code 404/)
-                        })
-                    })
-
-                    describe("when getting image data as a service account", () => {
-                        beforeEach(async () => {
-                            // authenticate as the service account
-                            await authenticateUser(mailcatcher, client, httpClient, "service-account@test.test")
-                        })
-
-                        beforeEach(async () => {
-                            // get image data
-                            const imageDataResponse = await client.getImageData(image.id)
-                            savedImageData = imageDataResponse.data
-                            const thumbnailDataResponse = await client.getThumbnailData(image.id)
-                            savedThumbnailData = thumbnailDataResponse.data
-                        })
-
-
-                        it("should return the image data", () => {
-                            expect(savedImageData).toBeDefined()
-                            expect(savedThumbnailData).toBeDefined()
-                            // thumbnail should be smaller
-                            expect(savedThumbnailData.length).toBeLessThan(savedImageData.length)
-                        })
-                    })
-
                     describe("when deleting an image", () => {
                         beforeEach(async () => {
                             await client.deleteImage(image.id)
@@ -543,7 +509,7 @@ describe("server", () => {
 
                 })
 
-                describe.only("when processing an image as a service account", () => {
+                describe("when processing an image as a service account", () => {
                     let processingImage: Image;
 
                     beforeEach(async () => {

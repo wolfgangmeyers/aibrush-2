@@ -139,7 +139,8 @@ export interface Image {
 export enum ImageStatusEnum {
     Pending = 'pending',
     Processing = 'processing',
-    Completed = 'completed'
+    Completed = 'completed',
+    Saved = 'saved'
 }
 
 /**

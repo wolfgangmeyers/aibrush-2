@@ -8,16 +8,25 @@ import { AIBrushApi, LoginResult } from "./client/api";
 import { getConfig } from './config';
 import { Login } from "./pages/Login"
 import { MainMenu } from './pages/MainMenu';
+import { CreateImage } from "./pages/CreateImage"
+import { WorkspacePage } from "./pages/WorkspacePage";
 
 const config = getConfig()
 const httpClient = axios.default;
 const client = new AIBrushApi(undefined, config.apiUrl, httpClient);
+
+function updateHttpClient(loginResult: LoginResult) {
+    if (loginResult.accessToken) {
+        httpClient.defaults.headers.common['Authorization'] = `Bearer ${loginResult.accessToken}`;
+    }
+}
 
 function App() {
 
   const [credentials, setCredentials] = useState<LoginResult | null>(null);
 
   const init = async () => {
+    console.log("App.init")
     const storedCredentials = localStorage.getItem("credentials");
     if (storedCredentials) {
       // attempt to refresh token
@@ -29,6 +38,7 @@ function App() {
         setCredentials(result.data);
         // save to storage
         localStorage.setItem("credentials", JSON.stringify(result.data));
+        updateHttpClient(result.data);
       } catch (e) {
         console.log(e);
       }
@@ -38,6 +48,7 @@ function App() {
   const onLogin = async (credentials: LoginResult) => {
     localStorage.setItem("credentials", JSON.stringify(credentials));
     setCredentials(credentials);
+    updateHttpClient(credentials);
   };
 
   useEffect(() => {
@@ -57,8 +68,14 @@ function App() {
         </button>}
         {/* if credentials are set, show the rest of the app */}
         {credentials && <Switch>
-          <Route path="/">
+          <Route path="/" exact={true}>
             <MainMenu />
+          </Route>
+          <Route path="/create-image">
+            <CreateImage api={client} />
+          </Route>
+          <Route path="/workspace">
+            <WorkspacePage apiUrl={config.apiUrl} api={client} />
           </Route>
         </Switch>}
       </BrowserRouter>

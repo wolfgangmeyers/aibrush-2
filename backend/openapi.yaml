@@ -281,7 +281,7 @@ components:
           type: integer
         status:
           type: string
-          enum: [pending, processing, completed]
+          enum: [pending, processing, completed, saved]
     ImageList:
       properties:
         images:

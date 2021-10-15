@@ -3,6 +3,7 @@
 // use bootstrap classes
 
 import React, { FC } from 'react';
+import { Link } from "react-router-dom"
 
 export const MainMenu: FC = () => {
     return (
@@ -22,9 +23,22 @@ export const MainMenu: FC = () => {
             <div className="row">
                 <div className="col-sm-12">
                     <div className="btn-group-vertical">
-                        <button type="button" className="btn btn-primary">Create a new image</button>
-                        <button type="button" className="btn btn-primary">Upload an image</button>
-                        <button type="button" className="btn btn-primary">My Stuff</button>
+                        <Link to="/create-image" className="btn btn-primary">
+                            {/* font awesome image icon */}
+                            <i className="fas fa-image" />&nbsp;
+                            Create a new image
+                        </Link>
+                        <button type="button" className="btn btn-primary">
+                            {/* my items */}
+                            <i className="fas fa-folder-open" />&nbsp;
+                            My Images
+                        </button>
+                        {/* Workspace */}
+                        <Link to="/workspace" className="btn btn-primary">
+                            {/* font awesome workspace icon */}
+                            <i className="fas fa-th" />&nbsp;
+                            Workspace
+                        </Link>
                     </div>
                 </div>
             </div>
