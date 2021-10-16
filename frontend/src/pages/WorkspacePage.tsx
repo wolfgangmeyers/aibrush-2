@@ -84,12 +84,17 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
                     </div>
                 </div>
             </div>}
+            <hr />
             {/* Link to navigate to CreateImage */}
             <div className="row">
                 <div className="col-12">
-                    <Link to="/create-image" className="btn btn-primary">Create Image</Link>
+                    <Link to="/create-image" className="btn btn-primary">
+                        <i className="fas fa-plus"></i>&nbsp;
+                        Create Image
+                    </Link>
                 </div>
             </div>
+            <hr />
             {/*  spacer */}
             <div className="row">
                 <div className="col-12">
