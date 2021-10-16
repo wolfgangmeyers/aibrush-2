@@ -6,10 +6,9 @@ interface ImagePopupProps {
     apiUrl: string;
     image: Image;
     onClose: () => void;
-    isOpen: boolean;
 }
 
-export const ImagePopup: FC<ImagePopupProps> = ({apiUrl, image, onClose, isOpen}) => {
+export const ImagePopup: FC<ImagePopupProps> = ({apiUrl, image, onClose}) => {
 
     const src = `${apiUrl}/images/${image.id}/image.jpg?updated_at=${image.updated_at}`;
 
@@ -22,12 +21,12 @@ export const ImagePopup: FC<ImagePopupProps> = ({apiUrl, image, onClose, isOpen}
 
     // if open, show modal with image
     return (
-        <Modal show={isOpen} onHide={onClose}>
+        <Modal show={true} onHide={onClose}>
             <Modal.Header closeButton>
                 <Modal.Title>{image.label}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <img id={`image-${image.id}`} src={src} alt={image.label} />
+                <img style={{width: "100%"}} id={`image-${image.id}`} src={src} alt={image.label} />
             </Modal.Body>
         </Modal>
     );

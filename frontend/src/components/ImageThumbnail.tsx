@@ -30,6 +30,7 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick
     return (
         <div className="card" style={{ padding: "10px", width: "200px", margin: "10px" }}>
             <img
+                style={{cursor: "pointer"}}
                 id={`image-${image.id}`}
                 className="card-img-top"
                 src={src}

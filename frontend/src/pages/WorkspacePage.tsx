@@ -8,6 +8,7 @@ import { ImageThumbnail } from "../components/ImageThumbnail"
 import { Workspace, loadWorkspace, saveWorkspace } from "../lib/workspace"
 import { AIBrushApi, Image, ImageStatusEnum } from "../client/api";
 import { Config } from "@testing-library/react";
+import { ImagePopup } from "../components/ImagePopup";
 
 interface WorkspacePageProps {
     apiUrl: string;
@@ -17,6 +18,7 @@ interface WorkspacePageProps {
 export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
     const [workspace, setWorkspace] = useState<Workspace>({ images: [] })
     const [err, setErr] = useState("")
+    const [selectedImage, setSelectedImage] = useState<Image>()
 
 
     const [showStatuses, setShowStatuses] = useState({
@@ -77,7 +79,7 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
     }
 
     const onClickImage = (image: Image) => {
-        console.log(image)
+        setSelectedImage(image)
     }
 
     // show the images in the workspace
@@ -153,6 +155,8 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
                     </div>
                 </div>
             </div>
+            {/* show ImagePopup if selectedImage is set */}
+            {selectedImage && <ImagePopup apiUrl={apiUrl} image={selectedImage as Image} onClose={() => setSelectedImage(undefined)} />}
         </div>
     )
 }
