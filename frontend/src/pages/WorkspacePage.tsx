@@ -6,7 +6,7 @@ import React, { FC, useState, useEffect } from "react";
 import { Link } from "react-router-dom"
 import { ImageThumbnail } from "../components/ImageThumbnail"
 import { Workspace, loadWorkspace, saveWorkspace } from "../lib/workspace"
-import { AIBrushApi, Image } from "../client/api";
+import { AIBrushApi, Image, ImageStatusEnum } from "../client/api";
 import { Config } from "@testing-library/react";
 
 interface WorkspacePageProps {
@@ -17,9 +17,21 @@ interface WorkspacePageProps {
 export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
     const [workspace, setWorkspace] = useState<Workspace>({ images: [] })
     const [err, setErr] = useState("")
-    const [showPending, setShowPending] = useState(true)
-    const [showCompleted, setShowCompleted] = useState(true)
-    const [showSaved, setShowSaved] = useState(true)
+
+
+    const [showStatuses, setShowStatuses] = useState({
+        [ImageStatusEnum.Pending]: true,
+        [ImageStatusEnum.Processing]: true,
+        [ImageStatusEnum.Completed]: true,
+        [ImageStatusEnum.Saved]: true,
+    })
+
+    const onChangeShowStatuses = (status: ImageStatusEnum, value: boolean) => {
+        setShowStatuses({
+            ...showStatuses,
+            [status]: value
+        })
+    }
 
     useEffect(() => {
         let workspace = loadWorkspace()
@@ -95,6 +107,37 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
                 </div>
             </div>
             <hr />
+            {/* checkboxes to toggle show pending, processing, completed and saved */}
+            <div className="row">
+                <div className="col-12">
+                    <div className="form-check">
+                        <input className="form-check-input" type="checkbox" checked={showStatuses[ImageStatusEnum.Pending]} onChange={(e) => onChangeShowStatuses(ImageStatusEnum.Pending, e.target.checked)} />
+                        <label className="form-check-label">
+                            Pending
+                        </label>
+                    </div>
+                    <div className="form-check">
+                        <input className="form-check-input" type="checkbox" checked={showStatuses[ImageStatusEnum.Processing]} onChange={(e) => onChangeShowStatuses(ImageStatusEnum.Processing, e.target.checked)} />
+                        <label className="form-check-label">
+                            Processing
+                        </label>
+                    </div>
+                    <div className="form-check">
+                        <input className="form-check-input" type="checkbox" checked={showStatuses[ImageStatusEnum.Completed]} onChange={(e) => onChangeShowStatuses(ImageStatusEnum.Completed, e.target.checked)} />
+                        <label className="form-check-label">
+                            Completed
+                        </label>
+                    </div>
+                    <div className="form-check">
+                        <input className="form-check-input" type="checkbox" checked={showStatuses[ImageStatusEnum.Saved]} onChange={(e) => onChangeShowStatuses(ImageStatusEnum.Saved, e.target.checked)} />
+                        <label className="form-check-label">
+                            Saved
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
             {/*  spacer */}
             <div className="row">
                 <div className="col-12">
@@ -104,7 +147,7 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
             <div className="row">
                 <div className="col-12">
                     <div className="row">
-                        {workspace.images.map(image => (
+                        {workspace.images.filter(image => showStatuses[image.status as ImageStatusEnum]).map(image => (
                             <ImageThumbnail key={`image-thumbnail-${image.id}`} apiUrl={apiUrl} image={image} onClick={onClickImage} onDelete={onDeleteImage} />
                         ))}
                     </div>

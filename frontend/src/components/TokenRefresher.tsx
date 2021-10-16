@@ -13,13 +13,16 @@ interface TokenRefresherProps {
 export const TokenRefresher : FC<TokenRefresherProps> = ({ onCredentialsRefreshed, api, credentials }) => {
     useEffect(() => {
         const interval = setInterval(() => {
-            api.refresh({refreshToken: credentials.refreshToken}).then(loginResult => {
-                onCredentialsRefreshed(loginResult.data);
-            });
+            if (credentials && credentials.refreshToken) {
+                api.refresh({refreshToken: credentials.refreshToken}).then(loginResult => {
+                    onCredentialsRefreshed(loginResult.data);
+                });
+            }
+
         }, 5 * 60 * 1000);
         return () => {
             clearInterval(interval);
         };
-    }, [credentials.refreshToken]);
+    }, [credentials && credentials.refreshToken]);
     return <div></div>;
 }

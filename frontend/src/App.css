@@ -58,3 +58,8 @@
 .spacer {
     height: 50px;
 }
+
+.form-check {
+    display: inline !important;
+    margin-right: 10px;
+}
