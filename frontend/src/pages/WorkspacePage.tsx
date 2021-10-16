@@ -2,7 +2,7 @@
 // Display the workspace images
 // use bootstrap
 
-import React, {FC, useState, useEffect} from "react";
+import React, { FC, useState, useEffect } from "react";
 import { Link } from "react-router-dom"
 import { ImageThumbnail } from "../components/ImageThumbnail"
 import { Workspace, loadWorkspace, saveWorkspace } from "../lib/workspace"
@@ -15,11 +15,35 @@ interface WorkspacePageProps {
 }
 
 export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
-    const [workspace, setWorkspace] = useState<Workspace>({images: []})
+    const [workspace, setWorkspace] = useState<Workspace>({ images: [] })
     const [err, setErr] = useState("")
+    const [showPending, setShowPending] = useState(true)
+    const [showCompleted, setShowCompleted] = useState(true)
+    const [showSaved, setShowSaved] = useState(true)
 
     useEffect(() => {
-        setWorkspace(loadWorkspace())
+        let workspace = loadWorkspace()
+        setWorkspace(workspace)
+        let lock = false;
+
+        const timerHandle = setInterval(async () => {
+            if (lock) {
+                return;
+            }
+            lock = true;
+            const responses = await Promise.all(workspace.images.map(async (image) => {
+                return api.getImage(image.id as string)
+            }))
+            workspace = {
+                images: responses.map(r => r.data)
+            }
+            setWorkspace(workspace)
+            saveWorkspace(workspace)
+            lock = false;
+        }, 5000)
+        return () => {
+            clearInterval(timerHandle)
+        }
     }, [])
 
     const onDeleteImage = async (image: Image) => {
@@ -76,9 +100,7 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
                 <div className="col-12">
                     <div className="row">
                         {workspace.images.map(image => (
-                            <div className="col-3" key={image.id}>
-                                <ImageThumbnail apiUrl={apiUrl} image={image} onClick={onClickImage} onDelete={onDeleteImage} />
-                            </div>
+                            <ImageThumbnail key={`image-thumbnail-${image.id}`} apiUrl={apiUrl} image={image} onClick={onClickImage} onDelete={onDeleteImage} />
                         ))}
                     </div>
                 </div>
