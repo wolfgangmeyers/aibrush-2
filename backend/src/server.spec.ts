@@ -412,6 +412,41 @@ describe("server", () => {
                         })
                     })
 
+                    // when creating a child image, the parent image data should be copied
+                    describe("when creating a child image", () => {
+                        let childImage: Image;
+
+                        beforeEach(async () => {
+                            const response = await client.createImage({
+                                parent: image.id,
+                                phrases: ["test2"],
+                                label: "test2",
+                                iterations: 1,
+                            })
+                            childImage = response.data
+                        })
+
+                        describe("when getting image data", () => {
+                            let savedImageData: Buffer;
+                            let savedThumbnailData: Buffer;
+
+                            beforeEach(async () => {
+                                // get image data
+                                const imageDataResponse = await client.getImageData(childImage.id)
+                                savedImageData = imageDataResponse.data
+                                const thumbnailDataResponse = await client.getThumbnailData(childImage.id)
+                                savedThumbnailData = thumbnailDataResponse.data
+                            })
+
+                            it("should return the image data", () => {
+                                expect(savedImageData).toBeDefined()
+                                expect(savedThumbnailData).toBeDefined()
+                                // thumbnail should be smaller
+                                expect(savedThumbnailData.length).toBeLessThan(savedImageData.length)
+                            })
+                        })
+                    })
+
                     describe("when deleting an image", () => {
                         beforeEach(async () => {
                             await client.deleteImage(image.id)

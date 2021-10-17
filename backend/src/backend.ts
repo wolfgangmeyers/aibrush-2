@@ -196,11 +196,20 @@ export class BackendService {
                 RETURNING *`,
                 [uuid.v4(), createdBy, new Date().getTime(), new Date().getTime(), body.label, body.parent, body.phrases, body.iterations, 0, 0, "pending"]
             )
-            const image = result.rows[0]
+            const image = result.rows[0] as Image
+            let encoded_image = body.encoded_image;
+            if (!encoded_image && body.parent) {
+                try {
+                    const parentImageData = fs.readFileSync(`./${this.config.dataFolderName}/${body.parent}.image`).toString()
+                    encoded_image = parentImageData
+                } catch (err) {
+                    console.error(`error loading parent image data for ${image.id} (parent=${body.parent})`, err)
+                }
+            }
             // if encoded_image is set, save image
-            if (body.encoded_image) {
-                fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.image`, body.encoded_image)
-                const encoded_thumbnail = await this.createThumbnail(body.encoded_image)
+            if (encoded_image) {
+                fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.image`, encoded_image)
+                const encoded_thumbnail = await this.createThumbnail(encoded_image)
                 fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.thumbnail`, encoded_thumbnail)
             }
             return {
