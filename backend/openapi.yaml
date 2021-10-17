@@ -282,6 +282,18 @@ components:
         status:
           type: string
           enum: [pending, processing, completed, saved]
+      required:
+        - id
+        - created_at
+        - created_by
+        - updated_at
+        - phrases
+        - label
+        - parent
+        - iterations
+        - current_iterations
+        - score
+        - status
     ImageList:
       properties:
         images:

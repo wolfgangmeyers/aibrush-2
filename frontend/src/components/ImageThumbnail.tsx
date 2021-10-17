@@ -42,6 +42,11 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick
                         <i className={imageStatusToIconClass(image.status as ImageStatusEnum)}></i>&nbsp;
                         {image.status}
                     </p>
+                    {/* if status is "processing" then show bootstrap progress bar for image.current_iterations / image.iterations */}
+                    {image.status === "processing" && <div className="progress">
+                        <div className="progress-bar" role="progressbar" style={{ width: `${(image.current_iterations * 1.0) / image.iterations * 100}%` }}>
+                        </div>
+                    </div>}
                 </div>
 
                 <hr />

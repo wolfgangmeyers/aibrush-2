@@ -69,67 +69,67 @@ export interface Image {
      * @type {string}
      * @memberof Image
      */
-    id?: string;
+    id: string;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    created_at?: number;
+    created_at: number;
     /**
      * 
      * @type {string}
      * @memberof Image
      */
-    created_by?: string;
+    created_by: string;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    updated_at?: number;
+    updated_at: number;
     /**
      * 
      * @type {Array<string>}
      * @memberof Image
      */
-    phrases?: Array<string>;
+    phrases: Array<string>;
     /**
      * 
      * @type {string}
      * @memberof Image
      */
-    label?: string;
+    label: string;
     /**
      * 
      * @type {string}
      * @memberof Image
      */
-    parent?: string;
+    parent: string;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    iterations?: number;
+    iterations: number;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    current_iterations?: number;
+    current_iterations: number;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    score?: number;
+    score: number;
     /**
      * 
      * @type {string}
      * @memberof Image
      */
-    status?: ImageStatusEnum;
+    status: ImageStatusEnum;
 }
 
 /**
