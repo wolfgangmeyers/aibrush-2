@@ -6,7 +6,7 @@ import React, { FC, useState, useEffect } from "react";
 import { Link } from "react-router-dom"
 import { ImageThumbnail } from "../components/ImageThumbnail"
 import { Workspace, loadWorkspace, saveWorkspace } from "../lib/workspace"
-import { AIBrushApi, Image, ImageStatusEnum } from "../client/api";
+import { AIBrushApi, Image, ImageStatusEnum, UpdateImageInputStatusEnum } from "../client/api";
 import { Config } from "@testing-library/react";
 import { ImagePopup } from "../components/ImagePopup";
 
@@ -33,6 +33,22 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
             ...showStatuses,
             [status]: value
         })
+    }
+
+    const onSaveImage = async (image: Image) => {
+        // patch image with status=saved
+        try {
+            const resp = await api.updateImage(image.id as string, { status: UpdateImageInputStatusEnum.Saved })
+            const updatedImage = resp.data;
+            const updatedWorkspace = {
+                images: workspace.images.map(i => i.id === updatedImage.id ? updatedImage : i)
+            }
+            setWorkspace(updatedWorkspace)
+            saveWorkspace(updatedWorkspace)
+        } catch (err) {
+            console.error(err)
+            setErr("Could not save image")
+        }
     }
 
     useEffect(() => {
@@ -153,7 +169,7 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
                 <div className="col-12">
                     <div className="row">
                         {workspace.images.filter(image => showStatuses[image.status as ImageStatusEnum]).map(image => (
-                            <ImageThumbnail key={`image-thumbnail-${image.id}`} apiUrl={apiUrl} image={image} onClick={onClickImage} onDelete={onDeleteImage} />
+                            <ImageThumbnail onSave={onSaveImage} key={`image-thumbnail-${image.id}`} apiUrl={apiUrl} image={image} onClick={onClickImage} onDelete={onDeleteImage} />
                         ))}
                     </div>
                 </div>

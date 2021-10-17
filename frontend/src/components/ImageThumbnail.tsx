@@ -1,6 +1,7 @@
 // Image Thumnail Component
 import React, { FC, useState, useEffect } from "react";
-import { Image } from "../client/api";
+import { Image, ImageStatusEnum } from "../client/api";
+import { imageStatusToIconClass } from "../lib/iconhelper";
 import { Config } from "../config";
 
 interface ImageThumbnailProps {
@@ -8,15 +9,10 @@ interface ImageThumbnailProps {
     image: Image;
     onClick: (image: Image) => void;
     onDelete: (image: Image) => void;
+    onSave?: (image: Image) => void;
 }
 
-// Image Thumbnail Component
-// displays an image thumbnail with src based on image id
-// and a delete button
-// url pattern is /images/:id/thumbnail.jpg
-// use bootstrap card component
-
-export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick, onDelete }) => {
+export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick, onDelete, onSave }) => {
 
     const src = `${apiUrl}/images/${image.id}/thumbnail.jpg?updated_at=${image.updated_at}`;
 
@@ -30,7 +26,7 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick
     return (
         <div className="card" style={{ padding: "10px", width: "200px", margin: "10px" }}>
             <img
-                style={{cursor: "pointer"}}
+                style={{ cursor: "pointer" }}
                 id={`image-${image.id}`}
                 className="card-img-top"
                 src={src}
@@ -40,10 +36,18 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick
                     <h5 className="card-title">
                         {image.label}
                     </h5>
-                    <p className="card-text">{image.status}</p>
+                    <p className="card-text">
+                        {/* icon for image status */}
+                        <i className={imageStatusToIconClass(image.status as ImageStatusEnum)}></i>&nbsp;
+                        {image.status}
+                    </p>
                 </div>
 
-                <hr/>
+                <hr />
+                {onSave && image.status == "completed" && <button className="btn btn-primary btn-sm" onClick={() => onSave(image)} style={{marginRight: "5px"}}>
+                    {/* save icon */}
+                    <i className="fas fa-save"></i>
+                </button>}
                 <button className="btn btn-danger btn-sm" onClick={() => onDelete(image)}>
                     <i className="fas fa-trash-alt"></i>
                 </button>

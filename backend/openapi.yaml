@@ -251,7 +251,7 @@ components:
             type: string
         status:
           type: string
-          enum: [pending, processing, completed]
+          enum: [pending, processing, completed, saved]
         encoded_image:
           type: string
 

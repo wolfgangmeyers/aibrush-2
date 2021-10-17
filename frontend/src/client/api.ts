@@ -246,7 +246,8 @@ export interface UpdateImageInput {
 export enum UpdateImageInputStatusEnum {
     Pending = 'pending',
     Processing = 'processing',
-    Completed = 'completed'
+    Completed = 'completed',
+    Saved = 'saved'
 }
 
 /**

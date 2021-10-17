@@ -221,6 +221,7 @@ export class BackendService {
     }
 
     async updateImage(id: string, body: UpdateImageInput) {
+        console.log("updateImage", body)
         const existingImage = await this.getImage(id)
         if (!existingImage) {
             console.log("Existing image not found: " + id)
@@ -228,6 +229,7 @@ export class BackendService {
         }
         // update existing image fields
         Object.keys(body).forEach(key => {
+            console.log(id, key)
             existingImage[key] = body[key]
         })
 

@@ -63,3 +63,11 @@
     display: inline !important;
     margin-right: 10px;
 }
+
+hr {
+    border: 1px solid #303030 !important;
+}
+
+.card hr {
+    border: 1px solid #4f4f4f !important;
+}
