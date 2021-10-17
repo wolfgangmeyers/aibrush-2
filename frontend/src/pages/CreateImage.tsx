@@ -1,40 +1,3 @@
-/**
- * API:
- *
-paths:
-  /images:
-    # create image
-    post:
-      description: Create a new image
-      operationId: createImage
-      tags:
-        - AIBrush
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateImageInput"
-      responses:
-        "201":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Image"
-
-     CreateImageInput:
-      type: object
-      properties:
-        phrases:
-          type: array
-          items:
-            type: string
-        label:
-          type: string
-        iterations:
-          type: integer
- */
-// create component to create a new image
 import React, { FC, useState, useEffect } from 'react';
 import { useHistory } from "react-router-dom"
 import { AIBrushApi, CreateImageInput, Image } from "../client/api"
@@ -53,13 +16,17 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         iterations: 100,
         encoded_image: "",
     });
+    const [count, setCount] = useState(1)
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const image = await props.api.createImage(input);
-        // add image to workspace
         const workspace = loadWorkspace()
-        workspace.images.push(image.data as Image)
+        for (let i = 0; i < count; i++) {
+            const image = await props.api.createImage(input);
+            // add image to workspace
+            workspace.images.push(image.data as Image)
+        }
+
         saveWorkspace(workspace);
         // redirect to workspace page
         history.push("/workspace")
@@ -139,6 +106,11 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         <div className="form-group">
                             <label>Iterations</label>
                             <input className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
+                        </div>
+                        {/* count */}
+                        <div className="form-group">
+                            <label>Count</label>
+                            <input className="form-control" type="number" max={10} min={1} value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
                         </div>
                         {!input.encoded_image && <label
                             id="loadimage-wrapper"

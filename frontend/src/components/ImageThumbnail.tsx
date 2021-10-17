@@ -36,15 +36,15 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick
                 src={src}
                 alt={image.label} onClick={() => onClick(image)} />
             <div className="card-body">
-                <div className="float-left">
+                <div>
                     <h5 className="card-title">
                         {image.label}
                     </h5>
                     <p className="card-text">{image.status}</p>
                 </div>
 
-                {/* float-right delete button */}
-                <button className="btn btn-danger btn-sm float-right" onClick={() => onDelete(image)}>
+                <hr/>
+                <button className="btn btn-danger btn-sm" onClick={() => onDelete(image)}>
                     <i className="fas fa-trash-alt"></i>
                 </button>
             </div>

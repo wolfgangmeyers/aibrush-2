@@ -44,21 +44,24 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
             if (lock) {
                 return;
             }
-            lock = true;
-            const responses = await Promise.all(workspace.images.map(async (image) => {
-                return api.getImage(image.id as string)
-            }))
-            workspace = {
-                images: responses.map(r => r.data)
+            try {
+                lock = true;
+                const responses = await Promise.all(workspace.images.map(async (image) => {
+                    return api.getImage(image.id as string)
+                }))
+                workspace = {
+                    images: responses.map(r => r.data)
+                }
+                setWorkspace(workspace)
+                saveWorkspace(workspace)
+            } finally {
+                lock = false;
             }
-            setWorkspace(workspace)
-            saveWorkspace(workspace)
-            lock = false;
         }, 5000)
         return () => {
             clearInterval(timerHandle)
         }
-    }, [])
+    }, [workspace && workspace.images.length])
 
     const onDeleteImage = async (image: Image) => {
         // clear error
