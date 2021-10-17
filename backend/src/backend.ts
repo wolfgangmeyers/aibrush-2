@@ -179,7 +179,7 @@ export class BackendService {
 
     private async createThumbnail(encoded_image: string) {
         const thumbnail = await sharp(Buffer.from(encoded_image, "base64"))
-            .resize(200, 200)
+            .resize(128, 128)
             .toBuffer()
             .then(buffer => buffer.toString("base64"));
         return thumbnail

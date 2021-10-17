@@ -3,12 +3,18 @@ import { useHistory } from "react-router-dom"
 import { AIBrushApi, CreateImageInput, Image } from "../client/api"
 import { loadWorkspace, saveWorkspace } from '../lib/workspace';
 import loadImage from "blueimp-load-image"
+import qs from "qs";
+import { ImageThumbnail } from "../components/ImageThumbnail"
+import { ImagePopup } from "../components/ImagePopup";
 
 interface CreateImageProps {
     api: AIBrushApi
+    apiUrl: string;
 }
 
 export const CreateImage: FC<CreateImageProps> = (props) => {
+    const searchParams = qs.parse(window.location.search.substring(1)) as any
+
     const history = useHistory()
     const [input, setInput] = useState<CreateImageInput>({
         phrases: [],
@@ -16,6 +22,8 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         iterations: 100,
         encoded_image: "",
     });
+    const [parent, setParent] = useState<Image | null>();
+    const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const [count, setCount] = useState(1)
 
     const onSubmit = async (e: React.FormEvent) => {
@@ -66,6 +74,24 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         })
     }
 
+    const loadParent = async (parentId: string) => {
+        const image = await props.api.getImage(parentId)
+        setParent(image.data as Image)
+        setInput({
+            ...input,
+            label: image.data.label,
+            phrases: image.data.phrases,
+            iterations: image.data.iterations,
+            parent: parentId
+        })
+    }
+
+    useEffect(() => {
+        if (searchParams.parent) {
+            loadParent(searchParams.parent)
+        }
+    }, [searchParams.parent])
+
     return (
         <>
             <div className="container">
@@ -112,7 +138,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             <label>Count</label>
                             <input className="form-control" type="number" max={10} min={1} value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
                         </div>
-                        {!input.encoded_image && <label
+                        {!input.encoded_image && !parent && <label
                             id="loadimage-wrapper"
                             className={`btn btn-sm btn-primary btn-file${input.encoded_image ? " disabled" : ""}`}
                             style={{ marginTop: "8px" }}
@@ -130,6 +156,11 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             <h5>Initial Image</h5>
                             <img src={`data:image/jpeg;base64,${input.encoded_image}`} style={{ maxWidth: "100%" }} />
                         </div>}
+                        {/* if parent is set, show the thumbnail */}
+                        {parent && <div className="form-group">
+                            <h5>Parent Image</h5>
+                            <ImageThumbnail image={parent} apiUrl={props.apiUrl} onClick={image => setSelectedImage(image)} />
+                        </div>}
                         <div className="form-group">
                             {/* Cancel button "/" */}
                             <button onClick={onCancel} type="button" className="btn btn-secondary">Cancel</button>
@@ -140,6 +171,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                     </form>
                 </div>
             </div>
+            {selectedImage && <ImagePopup image={selectedImage} apiUrl={props.apiUrl} onClose={() => setSelectedImage(null)} />}
         </>
     )
 

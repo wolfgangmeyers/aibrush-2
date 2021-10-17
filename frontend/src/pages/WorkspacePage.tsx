@@ -3,7 +3,7 @@
 // use bootstrap
 
 import React, { FC, useState, useEffect } from "react";
-import { Link } from "react-router-dom"
+import { Link, useHistory } from "react-router-dom"
 import { ImageThumbnail } from "../components/ImageThumbnail"
 import { Workspace, loadWorkspace, saveWorkspace } from "../lib/workspace"
 import { AIBrushApi, Image, ImageStatusEnum, UpdateImageInputStatusEnum } from "../client/api";
@@ -19,6 +19,8 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
     const [workspace, setWorkspace] = useState<Workspace>({ images: [] })
     const [err, setErr] = useState("")
     const [selectedImage, setSelectedImage] = useState<Image>()
+
+    const history = useHistory();
 
 
     const [showStatuses, setShowStatuses] = useState({
@@ -97,6 +99,11 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
         }
     }
 
+    const onForkImage = async (image: Image) => {
+        // navigate to /create-image with ?parent=image.id
+        history.push(`/create-image?parent=${image.id}`)
+    }
+
     const onClickImage = (image: Image) => {
         setSelectedImage(image)
     }
@@ -169,7 +176,7 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
                 <div className="col-12">
                     <div className="row">
                         {workspace.images.filter(image => showStatuses[image.status as ImageStatusEnum]).map(image => (
-                            <ImageThumbnail onSave={onSaveImage} key={`image-thumbnail-${image.id}`} apiUrl={apiUrl} image={image} onClick={onClickImage} onDelete={onDeleteImage} />
+                            <ImageThumbnail onFork={onForkImage} onSave={onSaveImage} key={`image-thumbnail-${image.id}`} apiUrl={apiUrl} image={image} onClick={onClickImage} onDelete={onDeleteImage} />
                         ))}
                     </div>
                 </div>

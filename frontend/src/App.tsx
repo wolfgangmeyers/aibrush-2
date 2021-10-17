@@ -82,7 +82,7 @@ function App() {
             <MainMenu />
           </Route>
           <Route path="/create-image">
-            <CreateImage api={client} />
+            <CreateImage api={client} apiUrl={config.apiUrl} />
           </Route>
           <Route path="/workspace">
             <WorkspacePage apiUrl={config.apiUrl} api={client} />
