@@ -13,7 +13,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({apiUrl, image, onClose}) => {
     const src = `${apiUrl}/images/${image.id}/image.jpg?updated_at=${image.updated_at}`;
 
     useEffect(() => {
-        const img = document.getElementById(`image-${image.id}`) as HTMLImageElement;
+        const img = document.getElementById(`image-popup-${image.id}`) as HTMLImageElement;
         img.onerror = () => {
             img.src = "/images/default.jpg"
         }
@@ -26,7 +26,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({apiUrl, image, onClose}) => {
                 <Modal.Title>{image.label}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <img style={{width: "100%"}} id={`image-${image.id}`} src={src} alt={image.label} />
+                <img style={{width: "100%"}} id={`image-popup-${image.id}`} src={src} alt={image.label} />
             </Modal.Body>
         </Modal>
     );
