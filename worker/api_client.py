@@ -37,7 +37,6 @@ class AIBrushAPI(object):
     def update_image(self, image_id: str, encoded_image: str, current_iterations: int, status: str) -> SimpleNamespace:
         body = {
             "current_iterations": current_iterations,
-            "phrases": [],
             "status": status,
             "encoded_image": encoded_image,
         }

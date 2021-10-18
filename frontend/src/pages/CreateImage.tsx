@@ -77,6 +77,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
     const loadParent = async (parentId: string) => {
         const image = await props.api.getImage(parentId)
         setParent(image.data as Image)
+        console.log(image.data)
         setInput({
             ...input,
             label: image.data.label,
@@ -116,7 +117,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             <input
                                 className="form-control"
                                 type="text"
-                                value={input.phrases}
+                                value={input.phrases?.join("|")}
                                 onChange={(e) => setInput({ ...input, phrases: e.target.value.split("|") })}
                                 placeholder="Separate | phrases | like this" />
                         </div>
