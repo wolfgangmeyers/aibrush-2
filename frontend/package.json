@@ -21,6 +21,7 @@
         "web-vitals": "^1.0.1"
     },
     "scripts": {
+        "start": "react-scripts start",
         "start:local": "REACT_APP_ENV=local react-scripts start",
         "start:prod": "REACT_APP_ENV=prod react-scripts start",
         "build": "react-scripts build",

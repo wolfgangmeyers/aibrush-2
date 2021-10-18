@@ -64,11 +64,19 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
             }
             try {
                 lock = true;
-                const responses = await Promise.all(workspace.images.map(async (image) => {
-                    return api.getImage(image.id as string)
-                }))
+                const images: Array<Image> = []
+                for (let image of workspace.images) {
+                    try {
+                        const resp = await api.getImage(image.id)
+                        const updatedImage = resp.data;
+                        images.push(updatedImage)
+                    } catch (err) {
+                        console.error(err)
+                    }
+                }
+                
                 workspace = {
-                    images: responses.map(r => r.data)
+                    images: images
                 }
                 setWorkspace(workspace)
                 saveWorkspace(workspace)
@@ -86,13 +94,13 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
         setErr("")
         // attempt to delete image
         try {
-            await api.deleteImage(image.id as string)
             const updatedWorkspace = {
                 ...workspace,
                 images: workspace.images.filter(i => i.id !== image.id)
             }
             setWorkspace(updatedWorkspace)
             saveWorkspace(updatedWorkspace)
+            await api.deleteImage(image.id as string)
         } catch (err) {
             console.error(err)
             setErr("Could not delete image")

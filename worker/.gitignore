@@ -3,3 +3,6 @@ taming-transformers/
 taming
 vqgan_clip
 checkpoints
+credentials.json
+*.jpg
+__pycache__/

@@ -65,7 +65,7 @@ export const Login: FC<LoginProps> = props => {
                                         <input type="text" className="form-control" id="verifyCode" placeholder="Verification Code" value={code} onChange={(e) => setCode(e.target.value)} />
                                     </div>
                                     {/* Cancel verification and go back to email */}
-                                    <button className="btn btn-secondary" onClick={() => setEmailSubmitted(false)}>Cancel</button>
+                                    <button className="btn btn-secondary" onClick={() => setEmailSubmitted(false)}>Cancel</button>&nbsp;
                                     {/* Verify code */}
                                     <button type="button" className="btn btn-primary" onClick={(e) => {
                                         e.preventDefault();

@@ -15,25 +15,27 @@ class AIBrushAPI(object):
             try:
                 return requests.request(method, url, json=body, headers={
                     "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self.token}",
                 })
             except Exception as err:
                 print(f"Error making http request: {err}")
                 time.sleep(5)
 
-    def parse_json(json_str):
+    def parse_json(self, json_str):
         try:
             return json.loads(json_str, object_hook=lambda d: SimpleNamespace(**d))
         except Exception as err:
             print(f"Error parsing json: {err}")
+            raise err
             return None
 
     def process_image(self) -> SimpleNamespace:
         resp = self.http_request("/process-image", "PUT")
+        print(resp.text)
         return self.parse_json(resp.text)
 
     def update_image(self, image_id: str, encoded_image: str, current_iterations: int, status: str) -> SimpleNamespace:
         body = {
-            "label": "",
             "current_iterations": current_iterations,
             "phrases": [],
             "status": status,
