@@ -6,6 +6,7 @@ import loadImage from "blueimp-load-image"
 import qs from "qs";
 import { ImageThumbnail } from "../components/ImageThumbnail"
 import { ImagePopup } from "../components/ImagePopup";
+import { ImageEditor } from "../components/ImageEditor";
 
 interface CreateImageProps {
     api: AIBrushApi
@@ -22,8 +23,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         iterations: 100,
         encoded_image: "",
     });
-    const [parent, setParent] = useState<Image | null>();
-    const [selectedImage, setSelectedImage] = useState<Image | null>(null);
+    const [editingImage, setEditingImage] = useState<string | null>(null);
     const [count, setCount] = useState(1)
 
     const onSubmit = async (e: React.FormEvent) => {
@@ -55,7 +55,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         if (!file) {
             return
         }
-        loadImage(file, (img : Event | HTMLImageElement | HTMLCanvasElement) => {
+        loadImage(file, (img: Event | HTMLImageElement | HTMLCanvasElement) => {
             if (!(img instanceof HTMLCanvasElement)) {
                 return
             }
@@ -76,15 +76,38 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
 
     const loadParent = async (parentId: string) => {
         const image = await props.api.getImage(parentId)
-        setParent(image.data as Image)
-        console.log(image.data)
+        // get encoded image data for parent
+        const resp = await props.api.getImageData(image.data.id)
+        const binaryImageData = resp.data as Buffer;
+        // convert to base64
+        const base64 = binaryImageData.toString("base64")
         setInput({
             ...input,
             label: image.data.label,
             phrases: image.data.phrases,
             iterations: image.data.iterations,
-            parent: parentId
+            parent: parentId,
+            encoded_image: base64,
         })
+    }
+
+    const onEditImage = () => {
+        if (!input.encoded_image) {
+            return
+        }
+        setEditingImage(`data:image/jpeg;base64,${input.encoded_image}`)
+    }
+
+
+
+    const onImageEdited = (imageUri: string) => {
+        // extract base64 portion of the image uri
+        const base64 = imageUri.split(",")[1]
+        setInput({
+            ...input,
+            encoded_image: base64
+        })
+        setEditingImage(null)
     }
 
     useEffect(() => {
@@ -139,7 +162,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             <label>Count</label>
                             <input className="form-control" type="number" max={10} min={1} value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
                         </div>
-                        {!input.encoded_image && !parent && <label
+                        {!input.encoded_image && <label
                             id="loadimage-wrapper"
                             className={`btn btn-sm btn-primary btn-file${input.encoded_image ? " disabled" : ""}`}
                             style={{ marginTop: "8px" }}
@@ -157,10 +180,9 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             <h5>Initial Image</h5>
                             <img src={`data:image/jpeg;base64,${input.encoded_image}`} style={{ maxWidth: "100%" }} />
                         </div>}
-                        {/* if parent is set, show the thumbnail */}
-                        {parent && <div className="form-group">
-                            <h5>Parent Image</h5>
-                            <ImageThumbnail image={parent} apiUrl={props.apiUrl} onClick={image => setSelectedImage(image)} />
+                        {/* If encoded_image is set, display edit button */}
+                        {input.encoded_image && <div className="form-group">
+                            <button type="button" className="btn btn-sm btn-primary" onClick={onEditImage}>Edit Image</button>
                         </div>}
                         <div className="form-group">
                             {/* Cancel button "/" */}
@@ -172,7 +194,13 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                     </form>
                 </div>
             </div>
-            {selectedImage && <ImagePopup image={selectedImage} apiUrl={props.apiUrl} onClose={() => setSelectedImage(null)} />}
+            {editingImage && (
+                <ImageEditor
+                    encodedImage={`${editingImage}`}
+                    onCancel={() => setEditingImage(null)}
+                    onSave={onImageEdited}
+                />
+            )}
         </>
     )
 

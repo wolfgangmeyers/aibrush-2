@@ -11,7 +11,6 @@ import { MainMenu } from './pages/MainMenu';
 import { CreateImage } from "./pages/CreateImage"
 import { WorkspacePage } from "./pages/WorkspacePage";
 import { TokenRefresher } from "./components/TokenRefresher";
-import { ImageEditor } from "./pages/image-editor/ImageEditor";
 
 const config = getConfig()
 const httpClient = axios.default;
@@ -88,9 +87,9 @@ function App() {
           <Route path="/workspace">
             <WorkspacePage apiUrl={config.apiUrl} api={client} />
           </Route>
-          <Route path="/image-editor">
+          {/* <Route path="/image-editor">
             <ImageEditor onCancel={() => {}} onSave={img => console.log(img)} />
-          </Route>
+          </Route> */}
         </Switch>}
       </BrowserRouter>
     </div>
