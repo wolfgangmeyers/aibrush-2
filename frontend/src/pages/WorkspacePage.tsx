@@ -7,7 +7,6 @@ import { Link, useHistory } from "react-router-dom"
 import { ImageThumbnail } from "../components/ImageThumbnail"
 import { Workspace, loadWorkspace, saveWorkspace } from "../lib/workspace"
 import { AIBrushApi, Image, ImageStatusEnum, UpdateImageInputStatusEnum } from "../client/api";
-import { Config } from "@testing-library/react";
 import { ImagePopup } from "../components/ImagePopup";
 
 interface WorkspacePageProps {
@@ -21,7 +20,6 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
     const [selectedImage, setSelectedImage] = useState<Image>()
 
     const history = useHistory();
-
 
     const [showStatuses, setShowStatuses] = useState({
         [ImageStatusEnum.Pending]: true,

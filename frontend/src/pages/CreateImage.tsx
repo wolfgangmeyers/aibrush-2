@@ -83,7 +83,6 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         const binaryImageData = Buffer.from(resp.data, "binary");
         // convert binary to base64
         const base64ImageData = binaryImageData.toString("base64");
-        console.log(base64ImageData)
         setInput({
             ...input,
             label: image.data.label,

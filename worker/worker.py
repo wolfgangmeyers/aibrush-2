@@ -36,6 +36,16 @@ def process_image():
         args = SimpleNamespace(**default_args().__dict__)
         # get image data
         image_data = client.get_image_data(image.id)
+
+        def update_image(iterations: int, status: str):
+            # get output image
+            with open(image.id + ".jpg", "rb") as f:
+                image_data = f.read()
+            # base64 encode image
+            image_data = base64.encodebytes(image_data).decode("utf-8")
+            # update image
+            client.update_image(image.id, image_data, iterations, status)
+
         if image_data:
             # save image
             with open(image.id + "-init.jpg", "wb") as f:
@@ -44,15 +54,12 @@ def process_image():
         args.max_iterations = image.iterations
         args.prompts = " | ".join(image.phrases)
         args.output = image.id + ".jpg"
+        args.display_freq = 20
+        args.on_save_callback = lambda i: update_image(i, "processing")
+
         # run vqgan
         run(args)
-        # get output image
-        with open(image.id + ".jpg", "rb") as f:
-            image_data = f.read()
-        # base64 encode image
-        image_data = base64.encodebytes(image_data).decode("utf-8")
-        # update image
-        client.update_image(image.id, image_data, args.max_iterations, "completed")
+        update_image("completed")
     except Exception as e:
         print(f"Error: {e}")
         traceback.print_exc()

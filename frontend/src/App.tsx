@@ -10,6 +10,7 @@ import { Login } from "./pages/Login"
 import { MainMenu } from './pages/MainMenu';
 import { CreateImage } from "./pages/CreateImage"
 import { WorkspacePage } from "./pages/WorkspacePage";
+import { ImagesPage } from "./pages/Images";
 import { TokenRefresher } from "./components/TokenRefresher";
 
 const config = getConfig()
@@ -86,6 +87,9 @@ function App() {
           </Route>
           <Route path="/workspace">
             <WorkspacePage apiUrl={config.apiUrl} api={client} />
+          </Route>
+          <Route path="/images">
+            <ImagesPage apiUrl={config.apiUrl} api={client} />
           </Route>
           {/* <Route path="/image-editor">
             <ImageEditor onCancel={() => {}} onSave={img => console.log(img)} />

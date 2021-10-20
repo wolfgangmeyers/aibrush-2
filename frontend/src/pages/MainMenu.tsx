@@ -28,11 +28,11 @@ export const MainMenu: FC = () => {
                             <i className="fas fa-image" />&nbsp;
                             Create a new image
                         </Link>
-                        <button type="button" className="btn btn-primary">
+                        <Link to="/images" className="btn btn-primary">
                             {/* my items */}
                             <i className="fas fa-folder-open" />&nbsp;
                             My Images
-                        </button>
+                        </Link>
                         {/* Workspace */}
                         <Link to="/workspace" className="btn btn-primary">
                             {/* font awesome workspace icon */}
