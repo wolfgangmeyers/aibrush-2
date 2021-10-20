@@ -115,7 +115,7 @@ export const ImageEditor : FC<ImageEditorProps> = ({ encodedImage, onSave, onCan
     };
 
     return (
-        <Modal show={true} onHide={handleCancel}>
+        <Modal show={true} onHide={handleCancel} size="lg">
             <Modal.Header closeButton>
                 <Modal.Title>Image Editor</Modal.Title>
             </Modal.Header>

@@ -21,7 +21,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({apiUrl, image, onClose}) => {
 
     // if open, show modal with image
     return (
-        <Modal show={true} onHide={onClose}>
+        <Modal show={true} onHide={onClose} size="lg">
             <Modal.Header closeButton>
                 <Modal.Title>{image.label}</Modal.Title>
             </Modal.Header>

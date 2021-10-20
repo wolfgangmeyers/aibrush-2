@@ -77,17 +77,20 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
     const loadParent = async (parentId: string) => {
         const image = await props.api.getImage(parentId)
         // get encoded image data for parent
-        const resp = await props.api.getImageData(image.data.id)
-        const binaryImageData = resp.data as Buffer;
-        // convert to base64
-        const base64 = binaryImageData.toString("base64")
+        const resp = await props.api.getImageData(image.data.id, {
+            responseType: "arraybuffer"
+        })
+        const binaryImageData = Buffer.from(resp.data, "binary");
+        // convert binary to base64
+        const base64ImageData = binaryImageData.toString("base64");
+        console.log(base64ImageData)
         setInput({
             ...input,
             label: image.data.label,
             phrases: image.data.phrases,
             iterations: image.data.iterations,
             parent: parentId,
-            encoded_image: base64,
+            encoded_image: base64ImageData,
         })
     }
 
@@ -162,28 +165,30 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             <label>Count</label>
                             <input className="form-control" type="number" max={10} min={1} value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
                         </div>
-                        {!input.encoded_image && <label
-                            id="loadimage-wrapper"
-                            className={`btn btn-sm btn-primary btn-file${input.encoded_image ? " disabled" : ""}`}
-                            style={{ marginTop: "8px" }}
-                        >
-                            Upload Initial Image
-                            <input
-                                id="loadimage"
-                                type="file"
-                                style={{ display: "none" }}
-                                onChange={e => onImageSelected(e)}
-                            />
-                        </label>}
+
                         {/* If encoded_image (base64 only) is set, show the image using a base64 image url*/}
                         {input.encoded_image && <div className="form-group">
                             <h5>Initial Image</h5>
                             <img src={`data:image/jpeg;base64,${input.encoded_image}`} style={{ maxWidth: "100%" }} />
                         </div>}
                         {/* If encoded_image is set, display edit button */}
-                        {input.encoded_image && <div className="form-group">
-                            <button type="button" className="btn btn-sm btn-primary" onClick={onEditImage}>Edit Image</button>
-                        </div>}
+                        <div className="form-group">
+                            <label
+                                id="loadimage-wrapper"
+                                className={`btn btn-sm btn-primary btn-file`}
+                                style={{ marginTop: "8px", marginRight: "8px" }}
+                            >
+                                {input.encoded_image ? "Replace Image" : "Upload Image"}
+                                <input
+                                    id="loadimage"
+                                    type="file"
+                                    style={{ display: "none" }}
+                                    onChange={e => onImageSelected(e)}
+                                />
+                            </label>
+                            {input.encoded_image && <button type="button" className="btn btn-sm btn-primary" onClick={onEditImage}>Edit Image</button>}
+                        </div>
+
                         <div className="form-group">
                             {/* Cancel button "/" */}
                             <button onClick={onCancel} type="button" className="btn btn-secondary">Cancel</button>
