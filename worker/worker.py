@@ -59,7 +59,7 @@ def process_image():
 
         # run vqgan
         run(args)
-        update_image("completed")
+        update_image(image.iterations, "completed")
     except Exception as e:
         print(f"Error: {e}")
         traceback.print_exc()
