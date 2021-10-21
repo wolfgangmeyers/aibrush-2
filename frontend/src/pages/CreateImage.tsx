@@ -70,6 +70,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         }, {
             maxWidth: 512,
             maxHeight: 512,
+            crop: true,
             canvas: true,
         })
     }
