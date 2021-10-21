@@ -15,7 +15,7 @@ import { TokenRefresher } from "./components/TokenRefresher";
 
 const config = getConfig()
 const httpClient = axios.default;
-const client = new AIBrushApi(undefined, config.apiUrl, httpClient);
+const client = new AIBrushApi(undefined, localStorage.getItem("apiUrl") || config.apiUrl, httpClient);
 
 function updateHttpClient(loginResult: LoginResult) {
   if (loginResult.accessToken) {
@@ -53,6 +53,17 @@ function App() {
     updateHttpClient(credentials);
   };
 
+  const onUpdateAPIUrl = () => {
+    let apiUrl = localStorage.getItem("apiUrl") || config.apiUrl;
+    const resp = prompt("Configure backend url", apiUrl)
+    if (resp) {
+      apiUrl = resp;
+      localStorage.setItem("apiUrl", apiUrl);
+      // reload page
+      window.location.reload();
+    }
+  }
+
   useEffect(() => {
     init();
   }, []);
@@ -76,6 +87,12 @@ function App() {
             <i className="fas fa-home"></i>&nbsp;
             Home
           </Link>
+          {/* settings button */}
+          <button className="btn btn-primary top-button" onClick={onUpdateAPIUrl}>
+            {/* font awesome settings icon */}
+            <i className="fas fa-cog"></i>&nbsp;
+            Settings
+          </button>
         </>}
         {/* if credentials are set, show the rest of the app */}
         {credentials && <Switch>
