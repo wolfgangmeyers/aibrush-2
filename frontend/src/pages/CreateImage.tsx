@@ -172,7 +172,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         </div>
                         <div className="form-group">
                             <label>Iterations</label>
-                            <input className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
+                            <input min={1} max={1000} className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
                         </div>
                         {/* count */}
                         <div className="form-group">
