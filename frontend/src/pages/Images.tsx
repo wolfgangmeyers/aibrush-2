@@ -4,6 +4,8 @@ import React, { FC, useState, useEffect } from 'react';
 import { useHistory } from "react-router-dom";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { AIBrushApi, Image, UpdateImageInputStatusEnum } from "../client/api";
+import { ImagePopup } from "../components/ImagePopup";
+
 
 interface Props {
     api: AIBrushApi;
@@ -93,6 +95,8 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
                     </div>
                 </div>
             </div>
+            {/* show ImagePopup if selectedImage is set */}
+            {selectedImage && <ImagePopup apiUrl={apiUrl} image={selectedImage as Image} onClose={() => setSelectedImage(null)} />}
         </div>
     );
 };
