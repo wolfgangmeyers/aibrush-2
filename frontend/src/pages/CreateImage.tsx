@@ -95,10 +95,24 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
     }
 
     const onEditImage = () => {
-        if (!input.encoded_image) {
-            return
+        let img = input.encoded_image;
+        if (!img) {
+            // blank 512 x 512 image with white background
+            // create a new canvas
+            const canvas = document.createElement("canvas")
+            canvas.width = 512
+            canvas.height = 512
+            const ctx = canvas.getContext("2d")
+            if (ctx) {
+                ctx.fillStyle = "white"
+                ctx.fillRect(0, 0, 512, 512)
+                img = canvas.toDataURL("image/jpeg").split(",")[1]
+            }
         }
-        setEditingImage(`data:image/jpeg;base64,${input.encoded_image}`)
+        if (img) {
+            setEditingImage(`data:image/jpeg;base64,${img}`)
+        }
+        
     }
 
 
@@ -186,7 +200,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                     onChange={e => onImageSelected(e)}
                                 />
                             </label>
-                            {input.encoded_image && <button type="button" className="btn btn-sm btn-primary" onClick={onEditImage}>Edit Image</button>}
+                            <button type="button" className="btn btn-sm btn-primary" onClick={onEditImage}>Edit Image</button>
                         </div>
 
                         <div className="form-group">

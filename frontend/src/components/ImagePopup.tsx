@@ -27,6 +27,14 @@ export const ImagePopup: FC<ImagePopupProps> = ({apiUrl, image, onClose}) => {
             </Modal.Header>
             <Modal.Body>
                 <img style={{width: "100%"}} id={`image-popup-${image.id}`} src={src} alt={image.label} />
+                {/* List these fields: status, iterations, phrases */}
+                <div>
+                    <p>Status: {image.status}</p>
+                    <p>Iterations: {image.iterations}</p>
+                    <p>Current iterations: {image.current_iterations}</p>
+                    <p>Score: {image.score}</p>
+                    <p>Phrases: {image.phrases.join(", ")}</p>
+                </div>
             </Modal.Body>
         </Modal>
     );

@@ -68,6 +68,9 @@ export const WorkspacePage: FC<WorkspacePageProps> = ({ apiUrl, api }) => {
                         const resp = await api.getImage(image.id)
                         const updatedImage = resp.data;
                         images.push(updatedImage)
+                        if (selectedImage && updatedImage.id == selectedImage.id) {
+                            setSelectedImage(updatedImage)
+                        }
                     } catch (err) {
                         console.error(err)
                     }
