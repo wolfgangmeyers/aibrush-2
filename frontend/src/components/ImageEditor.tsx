@@ -11,7 +11,7 @@ interface ImageEditorProps {
     onCancel: () => void;
 }
 
-export const ImageEditor : FC<ImageEditorProps> = ({ encodedImage, onSave, onCancel }) => {
+export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCancel }) => {
     const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
     const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
     const [brushSize, setBrushSize] = useState(10);
@@ -121,14 +121,17 @@ export const ImageEditor : FC<ImageEditorProps> = ({ encodedImage, onSave, onCan
             </Modal.Header>
             <Modal.Body>
                 <canvas
-                    style={{width: "100%"}}
-                     id="canvas" width="512" height="512" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}></canvas>
+                    style={{ width: "100%" }}
+                    id="canvas" width="512" height="512" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}></canvas>
                 <div className="row">
                     <div className="col-md-6">
                         <div className="form-group">
                             <label htmlFor="brushSize">Brush Size</label>
                             <input type="range" className="form-control" id="brushSize" min="1" max="100" value={brushSize} onChange={handleBrushSizeChange} />
                         </div>
+
+                    </div>
+                    <div className="col-md-6">
                         <div className="form-group">
                             <label htmlFor="brushColor">Brush Color</label>
                             <input type="color" className="form-control" id="brushColor" value={brushColor} onChange={handleBrushColorChange} />
