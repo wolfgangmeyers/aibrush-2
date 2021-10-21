@@ -3,7 +3,7 @@ export interface Config {
 }
 
 export function getConfig(): Config {
-    if (process.env.ENV == "prod") {
+    if (process.env.REACT_APP_ENV == "prod") {
         return {
             apiUrl: "https://aibrush.ngrok.io"
         };

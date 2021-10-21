@@ -73,6 +73,12 @@ function App() {
     <div className="App">
       <TokenRefresher api={client} credentials={credentials as LoginResult} onCredentialsRefreshed={onLogin} />
       <Healthchecker api={client} />
+      {/* settings button */}
+      <button className="btn btn-primary top-button" onClick={onUpdateAPIUrl}>
+        {/* font awesome settings icon */}
+        <i className="fas fa-cog"></i>&nbsp;
+        Settings
+      </button>
       <BrowserRouter>
         {/* if credentials are not set, show Login component */}
         {!credentials && <Login httpClient={httpClient} client={client} onLogin={onLogin} />}
@@ -89,12 +95,7 @@ function App() {
             <i className="fas fa-home"></i>&nbsp;
             Home
           </Link>
-          {/* settings button */}
-          <button className="btn btn-primary top-button" onClick={onUpdateAPIUrl}>
-            {/* font awesome settings icon */}
-            <i className="fas fa-cog"></i>&nbsp;
-            Settings
-          </button>
+
         </>}
         {/* if credentials are set, show the rest of the app */}
         {credentials && <Switch>
