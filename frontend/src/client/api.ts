@@ -61,6 +61,28 @@ export interface CreateImageInput {
 /**
  * 
  * @export
+ * @interface Healthcheck
+ */
+export interface Healthcheck {
+    /**
+     * 
+     * @type {string}
+     * @memberof Healthcheck
+     */
+    status?: HealthcheckStatusEnum;
+}
+
+/**
+    * @export
+    * @enum {string}
+    */
+export enum HealthcheckStatusEnum {
+    Ok = 'ok'
+}
+
+/**
+ * 
+ * @export
  * @interface Image
  */
 export interface Image {
@@ -447,6 +469,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Healthcheck
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        healthcheck: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/healthcheck`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {*} [options] Override http request option.
@@ -707,6 +758,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Healthcheck
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async healthcheck(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Healthcheck>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.healthcheck(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {*} [options] Override http request option.
@@ -821,6 +881,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         getThumbnailData(id: string, options?: any): AxiosPromise<any> {
             return localVarFp.getThumbnailData(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Healthcheck
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        healthcheck(options?: any): AxiosPromise<Healthcheck> {
+            return localVarFp.healthcheck(options).then((request) => request(axios, basePath));
         },
         /**
          * Get a list of saved images
@@ -940,6 +1008,16 @@ export class AIBrushApi extends BaseAPI {
      */
     public getThumbnailData(id: string, options?: any) {
         return AIBrushApiFp(this.configuration).getThumbnailData(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Healthcheck
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public healthcheck(options?: any) {
+        return AIBrushApiFp(this.configuration).healthcheck(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

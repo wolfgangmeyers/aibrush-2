@@ -227,6 +227,12 @@ export class Server {
                 res.sendStatus(500)
             }
         })
+
+        this.app.get("/healthcheck", async (req, res) => {
+            res.status(200).json({
+                status: "ok"
+            })
+        })
     }
 
     start() {

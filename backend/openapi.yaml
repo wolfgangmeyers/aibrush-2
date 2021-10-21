@@ -219,6 +219,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginResult"
+  # healthcheck
+  /healthcheck:
+    get:
+      description: Healthcheck
+      operationId: healthcheck
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Healthcheck"
 
 components:
   schemas:
@@ -326,3 +340,10 @@ components:
           type: string
         refreshToken:
           type: string
+
+    Healthcheck:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok]

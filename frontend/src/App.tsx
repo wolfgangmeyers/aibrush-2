@@ -12,6 +12,7 @@ import { CreateImage } from "./pages/CreateImage"
 import { WorkspacePage } from "./pages/WorkspacePage";
 import { ImagesPage } from "./pages/Images";
 import { TokenRefresher } from "./components/TokenRefresher";
+import { Healthchecker } from './components/Healthchecker';
 
 const config = getConfig()
 const httpClient = axios.default;
@@ -71,6 +72,7 @@ function App() {
   return (
     <div className="App">
       <TokenRefresher api={client} credentials={credentials as LoginResult} onCredentialsRefreshed={onLogin} />
+      <Healthchecker api={client} />
       <BrowserRouter>
         {/* if credentials are not set, show Login component */}
         {!credentials && <Login httpClient={httpClient} client={client} onLogin={onLogin} />}
