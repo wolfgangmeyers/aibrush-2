@@ -3,7 +3,7 @@
 import React, { FC, useState, useEffect } from 'react';
 import { useHistory } from "react-router-dom";
 import { ImageThumbnail } from "../components/ImageThumbnail";
-import { AIBrushApi, Image } from "../client/api";
+import { AIBrushApi, Image, UpdateImageInputStatusEnum } from "../client/api";
 
 interface Props {
     api: AIBrushApi;
@@ -14,7 +14,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
     const history = useHistory();
     const [images, setImages] = useState<Array<Image>>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+    const [err, setErr] = useState<string | null>(null);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
 
     const onForkImage = async (image: Image) => {
@@ -29,17 +29,39 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
             }
             setLoading(false);
         }).catch(err => {
-            setError(err.message);
+            setErr("Could not load images");
             setLoading(false);
         });
     }, [api]);
 
-    if (loading) {
-        return <div>Loading...</div>;
+    const onDeleteImage = async (image: Image) => {
+        // clear error
+        setErr("")
+        // attempt to delete image
+        try {
+            await api.deleteImage(image.id as string)
+            // remove image from list
+            setImages(images.filter(i => i.id !== image.id));
+        } catch (err) {
+            console.error(err)
+            setErr("Could not delete image")
+        }
     }
 
-    if (error) {
-        return <div>Error: {error}</div>;
+    const onSaveImage = async (image: Image) => {
+        // patch image with status=saved
+        try {
+            const resp = await api.updateImage(image.id as string, { status: UpdateImageInputStatusEnum.Saved })
+            // update image in list
+            setImages(images.map(i => i.id === image.id ? resp.data : i))
+        } catch (err) {
+            console.error(err)
+            setErr("Could not save image")
+        }
+    }
+
+    if (loading) {
+        return <div>Loading...</div>;
     }
 
     return (
@@ -49,11 +71,22 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
                     <h1>Images</h1>
                 </div>
             </div>
+            {/* display error message if one is set */}
+            {err && <div className="row">
+                <div className="col-12">
+                    <div className="alert alert-danger" role="alert">
+                        {err}
+                    </div>
+                </div>
+            </div>}
+            <hr />
             <div className="row">
                 <div className="col-md-12">
                     <div className="row">
                         {images.map(image => (
                             <ImageThumbnail
+                                onSave={() => onSaveImage(image)}
+                                onDelete={() => onDeleteImage(image)}
                                 onFork={onForkImage}
                                 onClick={setSelectedImage} apiUrl={apiUrl} key={image.id} image={image} />
                         ))}
