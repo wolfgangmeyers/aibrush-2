@@ -156,8 +156,8 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
                     <div className="row">
                         {images.map(image => (
                             <ImageThumbnail
-                                onSave={() => onSaveImage(image)}
-                                onDelete={() => onDeleteImage(image)}
+                                onSave={onSaveImage}
+                                onDelete={onDeleteImage}
                                 onFork={onForkImage}
                                 onClick={setSelectedImage} apiUrl={apiUrl} key={image.id} image={image} />
                         ))}
