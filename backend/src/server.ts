@@ -128,7 +128,6 @@ export class Server {
 
         // list images
         this.app.get("/images", async (req, res) => {
-            console.log(req.query)
             try {
                 const user = this.authHelper.getUserFromRequest(req)
                 // service accounts can't list images

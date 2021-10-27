@@ -105,9 +105,10 @@ export class BackendService {
             whereClause = "WHERE " + whereClauses.join(" AND ")
         }
         const limit = query.limit || 100;
+        const orderBy = query.direction === "asc" ? "ASC" : "DESC";
         try {
             const result = await client.query(
-                `SELECT * FROM images ${whereClause} LIMIT ${limit}`,
+                `SELECT * FROM images ${whereClause} ORDER BY updated_at ${orderBy} LIMIT ${limit}`,
                 args
             )
             return {

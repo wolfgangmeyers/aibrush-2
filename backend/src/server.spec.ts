@@ -710,10 +710,55 @@ describe("server", () => {
                         expect(listResponse.data.images[0].id).toBe(images[0].id)
                         expect(listResponse.data.images[1].id).toBe(images[1].id)
                     })
-
-
                 })
 
+                describe("when listing images with limit=2, direction=asc", () => {
+                    beforeEach(async () => {
+                        listResponse= await client.listImages(images[9].updated_at, 2, "desc")
+                    })
+
+                    it("should return the 2 newest images", () => {
+                        expect(listResponse.data.images).toHaveLength(2)
+                        expect(listResponse.data.images[0].id).toBe(images[9].id)
+                        expect(listResponse.data.images[1].id).toBe(images[8].id)
+                    })
+                })
+
+                describe("when listing images starting with the third image, limit=2, direction=asc", () => {
+                    beforeEach(async () => {
+                        listResponse= await client.listImages(images[2].updated_at, 2, "asc")
+                    })
+
+                    it("should return the third and fourth images", () => {
+                        expect(listResponse.data.images).toHaveLength(2)
+                        expect(listResponse.data.images[0].id).toBe(images[2].id)
+                        expect(listResponse.data.images[1].id).toBe(images[3].id)
+                    })
+                })
+
+                describe("when listing images starting with the third image, no limit, direction=asc", () => {
+                    beforeEach(async () => {
+                        listResponse= await client.listImages(images[2].updated_at, undefined, "asc")
+                    })
+
+                    it("should return the last 8 images", () => {
+                        expect(listResponse.data.images).toHaveLength(8)
+                        expect(listResponse.data.images[0].id).toBe(images[2].id)
+                        expect(listResponse.data.images[7].id).toBe(images[9].id)
+                    })
+                })
+
+                describe("when listing images starting with the third image, no limit, direction=desc", () => {
+                    beforeEach(async () => {
+                        listResponse= await client.listImages(images[2].updated_at, undefined, "desc")
+                    })
+
+                    it("should return the first 3 images", () => {
+                        expect(listResponse.data.images).toHaveLength(3)
+                        expect(listResponse.data.images[0].id).toBe(images[2].id)
+                        expect(listResponse.data.images[2].id).toBe(images[0].id)
+                    })
+                })
             })
         })
     })
