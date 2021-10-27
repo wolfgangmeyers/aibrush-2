@@ -500,10 +500,12 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * Get a list of saved images
          * @param {number} [cursor] 
+         * @param {number} [limit] 
+         * @param {'asc' | 'desc'} [direction] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listImages: async (cursor?: number, options: any = {}): Promise<RequestArgs> => {
+        listImages: async (cursor?: number, limit?: number, direction?: 'asc' | 'desc', options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/images`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -518,6 +520,14 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
             if (cursor !== undefined) {
                 localVarQueryParameter['cursor'] = cursor;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (direction !== undefined) {
+                localVarQueryParameter['direction'] = direction;
             }
 
 
@@ -769,11 +779,13 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
         /**
          * Get a list of saved images
          * @param {number} [cursor] 
+         * @param {number} [limit] 
+         * @param {'asc' | 'desc'} [direction] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async listImages(cursor?: number, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listImages(cursor, options);
+        async listImages(cursor?: number, limit?: number, direction?: 'asc' | 'desc', options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listImages(cursor, limit, direction, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -893,11 +905,13 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
         /**
          * Get a list of saved images
          * @param {number} [cursor] 
+         * @param {number} [limit] 
+         * @param {'asc' | 'desc'} [direction] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listImages(cursor?: number, options?: any): AxiosPromise<ImageList> {
-            return localVarFp.listImages(cursor, options).then((request) => request(axios, basePath));
+        listImages(cursor?: number, limit?: number, direction?: 'asc' | 'desc', options?: any): AxiosPromise<ImageList> {
+            return localVarFp.listImages(cursor, limit, direction, options).then((request) => request(axios, basePath));
         },
         /**
          * Login by email
@@ -1023,12 +1037,14 @@ export class AIBrushApi extends BaseAPI {
     /**
      * Get a list of saved images
      * @param {number} [cursor] 
+     * @param {number} [limit] 
+     * @param {'asc' | 'desc'} [direction] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public listImages(cursor?: number, options?: any) {
-        return AIBrushApiFp(this.configuration).listImages(cursor, options).then((request) => request(this.axios, this.basePath));
+    public listImages(cursor?: number, limit?: number, direction?: 'asc' | 'desc', options?: any) {
+        return AIBrushApiFp(this.configuration).listImages(cursor, limit, direction, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

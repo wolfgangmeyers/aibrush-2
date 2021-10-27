@@ -1,7 +1,6 @@
 import React, { FC, useState, useEffect } from 'react';
 import { useHistory } from "react-router-dom"
 import { AIBrushApi, CreateImageInput, Image } from "../client/api"
-import { loadWorkspace, saveWorkspace } from '../lib/workspace';
 import loadImage from "blueimp-load-image"
 import qs from "qs";
 import { ImageThumbnail } from "../components/ImageThumbnail"
@@ -28,16 +27,12 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const workspace = loadWorkspace()
         for (let i = 0; i < count; i++) {
-            const image = await props.api.createImage(input);
-            // add image to workspace
-            workspace.images.push(image.data as Image)
+            await props.api.createImage(input);
         }
 
-        saveWorkspace(workspace);
-        // redirect to workspace page
-        history.push("/workspace")
+        // redirect to images page
+        history.push("/images")
     }
 
     const onCancel = () => {

@@ -1,7 +1,8 @@
 // React page to show all images
 // use bootstrap
 import React, { FC, useState, useEffect } from 'react';
-import { useHistory } from "react-router-dom";
+import moment from "moment";
+import { Link, useHistory } from "react-router-dom";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { AIBrushApi, Image, UpdateImageInputStatusEnum } from "../client/api";
 import { ImagePopup } from "../components/ImagePopup";
@@ -15,7 +16,6 @@ interface Props {
 export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
     const history = useHistory();
     const [images, setImages] = useState<Array<Image>>([]);
-    const [loading, setLoading] = useState<boolean>(true);
     const [err, setErr] = useState<string | null>(null);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
 
@@ -24,17 +24,77 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
         history.push(`/create-image?parent=${image.id}`)
     }
 
-    useEffect(() => {
-        api.listImages().then(images => {
-            if (images.data.images) {
-                setImages(images.data.images);
+    const loadImages = async () => {
+        try {
+            const cursor = moment().add(1, "minutes").valueOf()
+            const resp = await api.listImages(cursor, 100, "desc")
+            if (resp.data.images) {
+                setImages(resp.data.images)
             }
-            setLoading(false);
-        }).catch(err => {
-            setErr("Could not load images");
-            setLoading(false);
-        });
-    }, [api]);
+            return 0
+        } catch (err) {
+            setErr("Could not load images")
+            console.error(err)
+        }
+    };
+
+    const pollImages = async (images: Array<Image>) => {
+        // set cursor to max updated_at from images
+        const cursor = images.reduce((max, image) => {
+            return Math.max(max, image.updated_at)
+        }, 0)
+
+        try {
+            const resp = await api.listImages(cursor + 1, 100, "asc")
+            if (resp.data.images) {
+                // split resp.data.images into "new" and "updated" lists
+                // image is "new" if it's not in images
+                const newImages = resp.data.images.filter(image => {
+                    return images.findIndex(i => i.id === image.id) < 0
+                })
+                const updatedImages = resp.data.images.filter(image => {
+                    return images.findIndex(i => i.id === image.id) >= 0
+                })
+                setImages([
+                    ...images.map(image => {
+                        const updatedImage = updatedImages.find(i => i.id === image.id)
+                        if (updatedImage) {
+                            return updatedImage
+                        }
+                        return image
+                    }),
+                    ...newImages
+                ].sort((a, b) => {
+                    return b.updated_at - a.updated_at
+                }))
+            }
+            return images;
+        } catch (err) {
+            setErr("Could not load images")
+            console.error(err)
+        }
+    }
+
+    useEffect(() => {
+        if (!api) {
+            return
+        }
+        loadImages()
+    }, [api])
+
+    useEffect(() => {
+        if (!api) {
+            return
+        }
+
+        const timerHandle = setInterval(() => {
+            pollImages(images)
+        }, 5000)
+        return () => {
+            clearInterval(timerHandle)
+        }
+
+    }, [api, images])
 
     const onDeleteImage = async (image: Image) => {
         // clear error
@@ -62,10 +122,6 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
         }
     }
 
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
     return (
         <div className="container">
             <div className="row">
@@ -81,6 +137,15 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
                     </div>
                 </div>
             </div>}
+            {/* Link to navigate to CreateImage */}
+            <div className="row">
+                <div className="col-12">
+                    <Link to="/create-image" className="btn btn-primary">
+                        <i className="fas fa-plus"></i>&nbsp;
+                        Create Image
+                    </Link>
+                </div>
+            </div>
             <hr />
             <div className="row">
                 <div className="col-md-12">
