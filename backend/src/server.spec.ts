@@ -12,6 +12,7 @@ import nodemailer from "nodemailer";
 import { Mailcatcher, MailcatcherMessage } from './mailcatcher'
 import { Config } from './config'
 import { Authentication } from './auth'
+import { sleep } from './sleep'
 
 async function authenticateUser(mailcatcher: Mailcatcher, client: AIBrushApi, httpClient: AxiosInstance, emailAddress: string) {
     await mailcatcher.clearAll()
@@ -677,6 +678,42 @@ describe("server", () => {
                         iterations: 1
                     })).rejects.toThrow(/Request failed with status code 403/)
                 })
+            })
+
+            describe.only("image pagination", () => {
+
+
+                let images: Array<Image>;
+                let listResponse: AxiosResponse<ImageList>;
+
+                beforeEach(async () => {
+                    images = [];
+                    // create images
+                    for (let i = 0; i < 10; i++) {
+                        const resp = await client.createImage({
+                            phrases: ["test"],
+                            label: "test",
+                            iterations: 1
+                        })
+                        images.push(resp.data)
+                        await sleep(100)
+                    }
+                })
+
+                describe("when listing images with limit=2, direction=desc", () => {
+                    beforeEach(async () => {
+                        listResponse= await client.listImages(images[0].updated_at, 2, "asc")
+                    })
+
+                    it("should return the 2 oldest images", () => {
+                        expect(listResponse.data.images).toHaveLength(2)
+                        expect(listResponse.data.images[0].id).toBe(images[0].id)
+                        expect(listResponse.data.images[1].id).toBe(images[1].id)
+                    })
+
+
+                })
+
             })
         })
     })

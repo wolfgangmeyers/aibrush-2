@@ -24,6 +24,19 @@ paths:
           required: false
           schema:
             type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: direction
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
       responses:
         "200":
           description: Success

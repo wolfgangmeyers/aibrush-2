@@ -80,7 +80,7 @@ export class BackendService {
 
 
     // list images
-    async listImages(query: { userId?: string, status?: ImageStatusEnum }): Promise<ImageList> {
+    async listImages(query: { userId?: string, status?: ImageStatusEnum, cursor?: number, direction?: "asc" | "desc", limit?: number }): Promise<ImageList> {
         const client = await this.pool.connect()
         let whereClauses = [];
         let args = [];
@@ -93,13 +93,21 @@ export class BackendService {
             whereClauses.push("status=$" + (args.length + 1))
             args.push(query.status)
         }
+        if (query.cursor) {
+            // cursor references updated_at
+            // if direction is asc, find all images with updated_at >= cursor
+            // if direction is desc, find all images with updated_at <= cursor
+            whereClauses.push(`updated_at ${query.direction === "asc" ? ">=" : "<="} $` + (args.length + 1))
+            args.push(query.cursor)
+        }
         let whereClause = "";
         if (whereClauses.length > 0) {
             whereClause = "WHERE " + whereClauses.join(" AND ")
         }
+        const limit = query.limit || 100;
         try {
             const result = await client.query(
-                `SELECT * FROM images ${whereClause} ORDER BY created_at desc`,
+                `SELECT * FROM images ${whereClause} LIMIT ${limit}`,
                 args
             )
             return {
@@ -122,14 +130,6 @@ export class BackendService {
             if (!imageData) {
                 return null
             }
-            // let image: Buffer
-            // let thumbnail: Buffer
-            // if (download === "image") {
-            //     image = fs.readFileSync(`./${this.config.dataFolderName}/${id}.image`)
-            // }
-            // if (download === "thumbnail") {
-            //     thumbnail = fs.readFileSync(`./${this.config.dataFolderName}/${id}.thumbnail`)
-            // }
             return {
                 ...imageData,
             }

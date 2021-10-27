@@ -128,6 +128,7 @@ export class Server {
 
         // list images
         this.app.get("/images", async (req, res) => {
+            console.log(req.query)
             try {
                 const user = this.authHelper.getUserFromRequest(req)
                 // service accounts can't list images
@@ -137,9 +138,23 @@ export class Server {
                     })
                     return
                 }
+                let cursor: number | undefined;
+                try {
+                    cursor = parseInt(req.query.cursor as string)
+                } catch (err) { }
+                // direction
+                let direction: "asc" | "desc" | undefined = req.query.direction as any;
+                let limit: number | undefined;
+                try {
+                    limit = parseInt(req.query.limit as string)
+                } catch (err) { }
+
                 let query = {
                     userId: user,
-                    status: req.query.status as ImageStatusEnum
+                    status: req.query.status as ImageStatusEnum,
+                    cursor,
+                    direction,
+                    limit
                 }
 
                 const images = await this.backendService.listImages(query)
