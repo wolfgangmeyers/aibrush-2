@@ -4,6 +4,7 @@ import loadImage from "blueimp-load-image"
 import { AIBrushApi, Image, CreateImageInput, ImageStatusEnum } from "../client/api";
 import { getDesignerCurrentImageId, setDesignerCurrentImageId } from "../lib/designer";
 import { imageStatusToIconClass } from '../lib/iconhelper';
+import { ImageEditor } from '../components/ImageEditor';
 
 interface InteractiveDesignerProps {
     api: AIBrushApi;
@@ -20,6 +21,7 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
         encoded_image: "",
     });
     const [currentImageId, setCurrentImageId] = useState<string | null>(getDesignerCurrentImageId());
+    const [editingImage, setEditingImage] = useState<string | null>(null);
 
     const loadImageData = async (id: string) => {
         try {
@@ -121,11 +123,43 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
         )
     }
 
+    const onEditImage = () => {
+        let img = input.encoded_image;
+        if (!img) {
+            // blank 512 x 512 image with white background
+            // create a new canvas
+            const canvas = document.createElement("canvas")
+            canvas.width = 512
+            canvas.height = 512
+            const ctx = canvas.getContext("2d")
+            if (ctx) {
+                ctx.fillStyle = "white"
+                ctx.fillRect(0, 0, 512, 512)
+                img = canvas.toDataURL("image/jpeg").split(",")[1]
+            }
+        }
+        if (img) {
+            setEditingImage(`data:image/jpeg;base64,${img}`)
+        }
+    }
+
+    const onImageEdited = (imageUri: string) => {
+        // extract base64 portion of the image uri
+        const base64 = imageUri.split(",")[1]
+        setInput({
+            ...input,
+            encoded_image: base64
+        })
+        setEditingImage(null)
+    }
+
     useEffect(() => {
         fetchImage();
         const timer = setInterval(fetchImage, 2000);
         return () => clearInterval(timer);
     }, [currentImageId])
+
+    const inprogress = (image && (image.status === "pending" || image.status == "processing")) || false;
 
     return (
         <div className="container">
@@ -145,6 +179,7 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
                         <div className="form-group">
                             <label>Phrases</label>
                             <input
+                                disabled={inprogress}
                                 className="form-control"
                                 type="text"
                                 value={input.phrases?.join("|")}
@@ -154,6 +189,7 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
                         <div className="form-group">
                             <label>Label</label>
                             <input
+                                disabled={inprogress}
                                 className="form-control"
                                 type="text"
                                 value={input.label}
@@ -162,7 +198,7 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
                         </div>
                         <div className="form-group">
                             <label>Iterations</label>
-                            <input min={1} max={1000} className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
+                            <input disabled={inprogress} min={1} max={1000} className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
                         </div>
 
                         {/* If encoded_image (base64 only) is set, show the image using a base64 image url*/}
@@ -181,26 +217,37 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
                             <label
                                 id="loadimage-wrapper"
                                 className={`btn btn-primary btn-file`}
-                                style={{ marginTop: "8px", marginRight: "8px" }}
+                                style={{ marginTop: "8px" }}
                             >
                                 {/* Browse font-awesome icon */}
                                 <i className="fas fa-upload" />
 
                                 <input
+                                    disabled={inprogress}
                                     id="loadimage"
                                     type="file"
                                     style={{ display: "none" }}
                                     onChange={e => onImageSelected(e)}
                                 />
                             </label>&nbsp;
-                            {renderPlayButton()}
-                            {/* <button type="button" className="btn btn-sm btn-primary" onClick={onEditImage}>Edit Image</button> */}
+                            {renderPlayButton()}&nbsp;
+                            <button disabled={inprogress} type="button" className="btn btn-primary" onClick={onEditImage}>
+                                {/* Edit icon */}
+                                <i className="fas fa-edit" />
+                            </button>
                         </div>
 
 
                     </form>
                 </div>
             </div>
+            {editingImage && (
+                <ImageEditor
+                    encodedImage={`${editingImage}`}
+                    onCancel={() => setEditingImage(null)}
+                    onSave={onImageEdited}
+                />
+            )}
         </div>
     )
 }
