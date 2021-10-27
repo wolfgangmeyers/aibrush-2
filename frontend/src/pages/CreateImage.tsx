@@ -3,8 +3,6 @@ import { useHistory } from "react-router-dom"
 import { AIBrushApi, CreateImageInput, Image } from "../client/api"
 import loadImage from "blueimp-load-image"
 import qs from "qs";
-import { ImageThumbnail } from "../components/ImageThumbnail"
-import { ImagePopup } from "../components/ImagePopup";
 import { ImageEditor } from "../components/ImageEditor";
 
 interface CreateImageProps {
@@ -109,8 +107,6 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         }
         
     }
-
-
 
     const onImageEdited = (imageUri: string) => {
         // extract base64 portion of the image uri

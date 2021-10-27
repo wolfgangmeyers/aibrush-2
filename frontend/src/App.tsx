@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as axios from "axios";
 import { BrowserRouter, Switch, Route, Link } from "react-router-dom"
-import logo from './logo.svg';
 import './App.css';
 import "./bootstrap.min.css";
 import { AIBrushApi, LoginResult } from "./client/api";
@@ -12,6 +11,7 @@ import { CreateImage } from "./pages/CreateImage"
 import { ImagesPage } from "./pages/Images";
 import { TokenRefresher } from "./components/TokenRefresher";
 import { Healthchecker } from './components/Healthchecker';
+import { InteractiveDesigner } from "./pages/InteractiveDesigner";
 
 const config = getConfig()
 const httpClient = axios.default;
@@ -107,9 +107,10 @@ function App() {
           <Route path="/images">
             <ImagesPage apiUrl={config.apiUrl} api={client} />
           </Route>
-          {/* <Route path="/image-editor">
-            <ImageEditor onCancel={() => {}} onSave={img => console.log(img)} />
-          </Route> */}
+          {/* /designer route */}
+          <Route path="/designer">
+            <InteractiveDesigner api={client} apiUrl={config.apiUrl} />
+          </Route>
         </Switch>}
       </BrowserRouter>
     </div>

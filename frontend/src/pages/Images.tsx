@@ -6,6 +6,7 @@ import { Link, useHistory } from "react-router-dom";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { AIBrushApi, Image, UpdateImageInputStatusEnum } from "../client/api";
 import { ImagePopup } from "../components/ImagePopup";
+import { getDesignerCurrentImageId, setDesignerCurrentImageId } from "../lib/designer";
 
 
 interface Props {
@@ -126,6 +127,11 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
         }
     }
 
+    const onDesignImage = async (image: Image) => {
+        setDesignerCurrentImageId(image.id)
+        history.push("/designer")
+    }
+
     return (
         <div className="container">
             <div className="row">
@@ -159,7 +165,11 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
                                 onSave={onSaveImage}
                                 onDelete={onDeleteImage}
                                 onFork={onForkImage}
-                                onClick={setSelectedImage} apiUrl={apiUrl} key={image.id} image={image} />
+                                onClick={setSelectedImage}
+                                onDesign={onDesignImage}
+                                apiUrl={apiUrl}
+                                key={image.id}
+                                image={image} />
                         ))}
                     </div>
                 </div>
