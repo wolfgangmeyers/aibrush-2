@@ -25,6 +25,8 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
     }
 
     const loadImages = async () => {
+        // clear error
+        setErr(null);
         try {
             const cursor = moment().add(1, "minutes").valueOf()
             const resp = await api.listImages(cursor, 100, "desc")
@@ -39,6 +41,8 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
     };
 
     const pollImages = async (images: Array<Image>) => {
+        // clear error
+        setErr(null);
         // set cursor to max updated_at from images
         const cursor = images.reduce((max, image) => {
             return Math.max(max, image.updated_at)
