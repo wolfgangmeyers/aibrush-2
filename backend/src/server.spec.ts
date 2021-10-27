@@ -680,7 +680,7 @@ describe("server", () => {
                 })
             })
 
-            describe.only("image pagination", () => {
+            describe("image pagination", () => {
 
 
                 let images: Array<Image>;
