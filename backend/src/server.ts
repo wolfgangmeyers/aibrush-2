@@ -250,6 +250,8 @@ export class Server {
                     return;
                 }
                 res.setHeader("Content-Type", "video/mp4")
+                // content disposition attachment
+                res.setHeader("Content-Disposition", `attachment; filename="${req.params.id}.mp4"`)
                 res.send(videoData)
             } catch (err) {
                 console.error(err)
