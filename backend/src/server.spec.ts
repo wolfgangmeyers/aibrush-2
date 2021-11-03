@@ -636,7 +636,7 @@ describe("server", () => {
                 })
             })
 
-            describe.only("when creating an image with enable_video=true", () => {
+            describe("when creating an image with enable_video=true", () => {
                 let image: Image;
 
                 beforeEach(async () => {
@@ -663,6 +663,66 @@ describe("server", () => {
 
                     it("should return the image with enable_video=true", () => {
                         expect(image2.enable_video).toBe(true)
+                    })
+                })
+
+                describe("when getting video data", () => {
+                    // should fail with 404
+                    it("should fail with 404", async () => {
+                        await expect(client.getVideoData(image.id)).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
+
+                describe("when updating video data", () => {
+
+                    const fakeVideoData = new Uint8Array([1, 2, 3, 4])
+                    let resp: AxiosResponse<void>;
+
+                    beforeEach(async () => {
+                        resp = await client.updateVideoData(image.id, Buffer.from(fakeVideoData).toString("binary"), {
+                            Headers: {
+                                "Content-Type": "video/mp4"
+                            },
+                        })
+                    })
+
+                    // should succeed
+                    it("should succeed", async () => {
+                        expect(resp.status).toBe(204)
+                    })
+
+                    describe("when getting video data", () => {
+                        // should match
+                        it("should match", async () => {
+                            const response = await client.getVideoData(image.id, {
+                                responseType: "arraybuffer"
+                            })
+                            const responseData = response.data as Buffer;
+                            expect(new Uint8Array(responseData)).toEqual(fakeVideoData)
+                        })
+                    })
+
+                    describe("when getting video data as another user", () => {
+                        // should fail with 404
+                        beforeEach(async () => {
+                            // authenticate second user
+                            await authenticateUser(mailcatcher, client2, httpClient2, "test2@test")
+                        })
+
+                        it("should fail with 404", async () => {
+                            await expect(client2.getVideoData(image.id)).rejects.toThrow(/Request failed with status code 404/)
+                        })
+                    })
+                })
+
+                describe("when updating video data as another user", () => {
+                    beforeEach(async () => {
+                        // authenticate second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test")
+                    })
+
+                    it("should fail with 404", async () => {
+                        await expect(client2.updateVideoData(image.id, "", {})).rejects.toThrow(/Request failed with status code 404/)
                     })
                 })
             })

@@ -325,6 +325,23 @@ export class BackendService {
         }
     }
 
+    async updateVideoData(id: string, videoData: Buffer) {
+        // write video data to mp4 file
+        fs.writeFileSync(`./${this.config.dataFolderName}/${id}.mp4`, videoData)
+    }
+
+    async getVideoData(id: string): Promise<Buffer> {
+        // read video data from mp4 file
+        // return null if file does not exist
+        try {
+            return fs.readFileSync(`./${this.config.dataFolderName}/${id}.mp4`)
+        } catch (err) {
+            return null
+        }
+    }
+
+
+
     async login(email: string): Promise<void> {
         // generate crypto random 6 digit code
         const code = uuid.v4().substr(0, 6).toUpperCase()
