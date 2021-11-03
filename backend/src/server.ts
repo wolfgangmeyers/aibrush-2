@@ -120,6 +120,30 @@ export class Server {
             }
         })
 
+        this.app.get("/images/:id/video.mp4", async (req, res) => {
+            try {
+                // get image first and check created_by
+                let image = await this.backendService.getImage(req.params.id)
+                if (!image || image.created_by !== this.authHelper.getUserFromRequest(req)) {
+                    res.status(404).send("not found")
+                    return;
+                }
+                const videoData = await this.backendService.getVideoData(req.params.id)
+                // if videoData is null, return 404
+                if (!videoData) {
+                    res.status(404).send("not found")
+                    return;
+                }
+                res.setHeader("Content-Type", "video/mp4")
+                // content disposition attachment
+                res.setHeader("Content-Disposition", `attachment; filename="${req.params.id}.mp4"`)
+                res.send(videoData)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
         this.app.get("/healthcheck", async (req, res) => {
             res.status(200).json({
                 status: "ok"
@@ -229,30 +253,6 @@ export class Server {
                 }
                 await this.backendService.deleteImage(req.params.id)
                 res.sendStatus(204)
-            } catch (err) {
-                console.error(err)
-                res.sendStatus(500)
-            }
-        })
-
-        this.app.get("/images/:id/video.mp4", async (req, res) => {
-            try {
-                // get image first and check created_by
-                let image = await this.backendService.getImage(req.params.id)
-                if (!image || image.created_by !== this.authHelper.getUserFromRequest(req)) {
-                    res.status(404).send("not found")
-                    return;
-                }
-                const videoData = await this.backendService.getVideoData(req.params.id)
-                // if videoData is null, return 404
-                if (!videoData) {
-                    res.status(404).send("not found")
-                    return;
-                }
-                res.setHeader("Content-Type", "video/mp4")
-                // content disposition attachment
-                res.setHeader("Content-Disposition", `attachment; filename="${req.params.id}.mp4"`)
-                res.send(videoData)
             } catch (err) {
                 console.error(err)
                 res.sendStatus(500)

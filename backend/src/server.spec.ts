@@ -701,18 +701,6 @@ describe("server", () => {
                             expect(new Uint8Array(responseData)).toEqual(fakeVideoData)
                         })
                     })
-
-                    describe("when getting video data as another user", () => {
-                        // should fail with 404
-                        beforeEach(async () => {
-                            // authenticate second user
-                            await authenticateUser(mailcatcher, client2, httpClient2, "test2@test")
-                        })
-
-                        it("should fail with 404", async () => {
-                            await expect(client2.getVideoData(image.id)).rejects.toThrow(/Request failed with status code 404/)
-                        })
-                    })
                 })
 
                 describe("when updating video data as another user", () => {
