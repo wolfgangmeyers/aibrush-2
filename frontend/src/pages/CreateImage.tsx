@@ -19,6 +19,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         label: "",
         iterations: 100,
         encoded_image: "",
+        enable_video: false,
     });
     const [editingImage, setEditingImage] = useState<string | null>(null);
     const [count, setCount] = useState(1)
@@ -84,6 +85,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
             iterations: image.data.iterations,
             parent: parentId,
             encoded_image: base64ImageData,
+            enable_video: !!image.data.enable_video,
         })
     }
 
@@ -105,7 +107,6 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         if (img) {
             setEditingImage(`data:image/jpeg;base64,${img}`)
         }
-        
     }
 
     const onImageEdited = (imageUri: string) => {
@@ -169,6 +170,13 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         <div className="form-group">
                             <label>Count</label>
                             <input className="form-control" type="number" max={10} min={1} value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
+                        </div>
+                        {/* boolean enable_video (bootstrap styled checkbox) */}
+                        <div className="form-group">
+                            <label style={{marginRight: "10px"}}>Enable video</label>
+                            <div className="form-check">
+                                <input className="form-check-input" type="checkbox" checked={input.enable_video} onChange={(e) => setInput({ ...input, enable_video: e.target.checked })} />
+                            </div>
                         </div>
 
                         {/* If encoded_image (base64 only) is set, show the image using a base64 image url*/}
