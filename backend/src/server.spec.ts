@@ -229,6 +229,7 @@ describe("server", () => {
                     expect(image.label).toBe("test")
                     expect(image.iterations).toBe(1)
                     expect(image.parent).toBe("")
+                    expect(image.enable_video).toBe(false)
                 })
 
                 describe("when listing images", () => {
@@ -631,6 +632,37 @@ describe("server", () => {
                 describe("when deleting an image that doesn't exist", () => {
                     it("should reject the request with not found error", async () => {
                         await expect(client.deleteImage("does-not-exist")).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
+            })
+
+            describe.only("when creating an image with enable_video=true", () => {
+                let image: Image;
+
+                beforeEach(async () => {
+                    const response = await client.createImage({
+                        enable_video: true,
+                        phrases: ["test"],
+                        label: "test",
+                        iterations: 1,
+                    })
+                    image = response.data
+                })
+
+                it("should return the image with enable_video=true", () => {
+                    expect(image.enable_video).toBe(true)
+                })
+
+                describe("when getting the image by id", () => {
+                    let image2: Image;
+
+                    beforeEach(async () => {
+                        const response = await client.getImage(image.id)
+                        image2 = response.data
+                    })
+
+                    it("should return the image with enable_video=true", () => {
+                        expect(image2.enable_video).toBe(true)
                     })
                 })
             })
