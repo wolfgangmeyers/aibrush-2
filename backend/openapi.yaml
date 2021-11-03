@@ -166,6 +166,46 @@ paths:
               schema:
                 type: string
                 format: binary
+  /images/{id}/video.mp4:
+    get:
+      description: Get the binary video data
+      operationId: getVideoData
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+    put:
+      description: Update the video data
+      operationId: updateVideoData
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          video/mp4:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Success
   /process-image:
     put:
       description: Get the next pending image and set its status to processing.
@@ -264,6 +304,8 @@ components:
           type: string
         encoded_image:
           type: string
+        enable_video:
+          type: boolean
 
     UpdateImageInput:
       type: object
@@ -309,6 +351,8 @@ components:
         status:
           type: string
           enum: [pending, processing, completed, saved]
+        enable_video:
+          type: boolean
       required:
         - id
         - created_at
@@ -321,6 +365,7 @@ components:
         - current_iterations
         - score
         - status
+        - enable_video
     ImageList:
       properties:
         images:
