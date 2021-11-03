@@ -34,6 +34,8 @@ export const ImagePopup: FC<ImagePopupProps> = ({apiUrl, image, onClose}) => {
                     <p>Current iterations: {image.current_iterations}</p>
                     <p>Score: {image.score}</p>
                     <p>Phrases: {image.phrases.join(", ")}</p>
+                    {/* enable_video */}
+                    <p>Enable Video: {image.enable_video ? "Yes" : "No"}</p>
                 </div>
             </Modal.Body>
         </Modal>

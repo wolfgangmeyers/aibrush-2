@@ -19,6 +19,7 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
         label: "",
         iterations: 100,
         encoded_image: "",
+        enable_video: false,
     });
     const [currentImageId, setCurrentImageId] = useState<string | null>(getDesignerCurrentImageId());
     const [editingImage, setEditingImage] = useState<string | null>(null);
@@ -56,6 +57,7 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
                             phrases: resp.data.phrases,
                             label: resp.data.label,
                             iterations: resp.data.iterations,
+                            enable_video: resp.data.enable_video,
                         }))
                         return resp.data;
                     }
@@ -199,6 +201,12 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
                         <div className="form-group">
                             <label>Iterations</label>
                             <input disabled={inprogress} min={1} max={1000} className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
+                        </div>
+                        <div className="form-group">
+                            <label style={{ marginRight: "10px" }}>Enable video</label>
+                            <div className="form-check">
+                                <input className="form-check-input" type="checkbox" checked={input.enable_video} onChange={(e) => setInput({ ...input, enable_video: e.target.checked })} />
+                            </div>
                         </div>
 
                         {/* If encoded_image (base64 only) is set, show the image using a base64 image url*/}
