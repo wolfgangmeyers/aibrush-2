@@ -181,6 +181,10 @@ export class BackendService {
             if (fs.existsSync(`./${this.config.dataFolderName}/${id}.thumbnail`)) {
                 fs.unlinkSync(`./${this.config.dataFolderName}/${id}.thumbnail`)
             }
+            // delete mp4 file, if one exists
+            if (fs.existsSync(`./${this.config.dataFolderName}/${id}.mp4`)) {
+                fs.unlinkSync(`./${this.config.dataFolderName}/${id}.mp4`)
+            }
         } finally {
             client.release()
         }
@@ -327,6 +331,7 @@ export class BackendService {
 
     async updateVideoData(id: string, videoData: Buffer) {
         // write video data to mp4 file
+        console.log(`writing video data to ${this.config.dataFolderName}/${id}.mp4`)
         fs.writeFileSync(`./${this.config.dataFolderName}/${id}.mp4`, videoData)
     }
 

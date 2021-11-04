@@ -23,8 +23,11 @@ client = AIBrushAPI(api_url, access_token)
 def cleanup():
     # delete all files in the current folder ending in .png or .backup
     for fname in os.listdir("."):
-        if fname.endswith(".jpg"):
+        if fname.endswith(".jpg") or fname.endswith(".mp4"):
             os.remove(fname)
+    if os.path.exists("steps"):
+        for fname in os.listdir("steps"):
+            os.remove(os.path.join("steps", fname))
 
 def process_image():
     cleanup()
@@ -45,6 +48,13 @@ def process_image():
             image_data = base64.encodebytes(image_data).decode("utf-8")
             # update image
             client.update_image(image.id, image_data, iterations, status)
+        
+        def update_video_data():
+            print("Updating video data")
+            # get video data
+            with open(image.id + ".mp4", "rb") as f:
+                video_data = f.read()
+            client.update_video_data(image.id, video_data)
 
         if image_data:
             # save image
@@ -53,12 +63,15 @@ def process_image():
             args.init_image = image.id + "-init.jpg"
         args.max_iterations = image.iterations
         args.prompts = " | ".join(image.phrases)
+        args.make_video = image.enable_video
         args.output = image.id + ".jpg"
         args.display_freq = 20
         args.on_save_callback = lambda i: update_image(i, "processing")
 
         # run vqgan
         run(args)
+        if image.enable_video:
+            update_video_data()
         update_image(image.iterations, "completed")
     except Exception as e:
         print(f"Error: {e}")

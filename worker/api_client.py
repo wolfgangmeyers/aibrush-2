@@ -13,6 +13,11 @@ class AIBrushAPI(object):
         url = f"{self.api_url}{path}"
         for i in range(2):
             try:
+                if isinstance(body, bytes):
+                    return requests.request(method, url, data=body, headers={
+                        "Content-Type": "video/mp4",
+                        "Authorization": f"Bearer {self.token}",
+                    })
                 return requests.request(method, url, json=body, headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {self.token}",
@@ -47,3 +52,9 @@ class AIBrushAPI(object):
         resp = self.http_request(f"/images/{image_id}/image.jpg", "GET")
         # read binary data
         return resp.content
+
+    def update_video_data(self, image_id: str, video_data: bytes):
+        resp = self.http_request(f"/images/{image_id}/video.mp4", "PUT", video_data)
+        if resp.status_code != 204:
+            print(f"Error updating video data ({resp.status_code}): {resp.text}")
+            return False

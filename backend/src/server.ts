@@ -30,7 +30,8 @@ export class Server {
             limit: "2mb",
         }))
         this.app.use(express.raw({
-            type: "video/mp4"
+            type: "video/mp4",
+            limit: "1024mb",
         }))
         this.app.use(cors())
 
@@ -263,8 +264,14 @@ export class Server {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
-                if (!image || image.created_by !== this.authHelper.getUserFromRequest(req)) {
+                if (!image) {
                     res.status(404).send("not found")
+                    return;
+                }
+                const user = this.authHelper.getUserFromRequest(req)
+                // only service account can update video data
+                if (!this.isServiceAccount(user)) {
+                    res.sendStatus(403)
                     return;
                 }
                 await this.backendService.updateVideoData(req.params.id, req.body)
