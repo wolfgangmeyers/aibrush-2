@@ -96,6 +96,7 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
         }
 
         e.preventDefault()
+        e.stopPropagation()
         // get x and y relative to the canvas
         const mousePos = getMousePos(e);
         const x = mousePos.x;
