@@ -125,7 +125,7 @@ export class Server {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
-                if (!image || image.created_by !== this.authHelper.getUserFromRequest(req)) {
+                if (!image) {
                     res.status(404).send("not found")
                     return;
                 }
@@ -137,7 +137,7 @@ export class Server {
                 }
                 res.setHeader("Content-Type", "video/mp4")
                 // content disposition attachment
-                res.setHeader("Content-Disposition", `attachment; filename="${image.label.replaceAll(" ", "_")}.mp4"`)
+                res.setHeader("Content-Disposition", `attachment; filename="${image.label.replace(" ", "_")}.mp4"`)
                 res.send(videoData)
             } catch (err) {
                 console.error(err)
