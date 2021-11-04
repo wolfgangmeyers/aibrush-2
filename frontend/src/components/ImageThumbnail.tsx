@@ -8,12 +8,11 @@ interface ImageThumbnailProps {
     image: Image;
     onClick: (image: Image) => void;
     onDelete?: (image: Image) => void;
-    onSave?: (image: Image) => void;
     onFork?: (image: Image) => void;
     onDesign?: (image: Image) => void;
 }
 
-export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick, onDelete, onSave, onFork, onDesign }) => {
+export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick, onDelete, onFork, onDesign }) => {
 
     const src = `${apiUrl}/images/${image.id}/thumbnail.jpg?updated_at=${image.updated_at}`;
 

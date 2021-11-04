@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from "react";
+import React, { FC, useEffect, useRef } from "react";
 import { Modal } from "react-bootstrap";
 import { Image } from "../client/api";
 
@@ -13,14 +13,20 @@ interface ImagePopupProps {
 
 export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, image, onClose, onDelete, onDesign, onFork }) => {
 
+    const img = useRef<HTMLImageElement>(null);
     const src = `${apiUrl}/images/${image.id}/image.jpg?updated_at=${image.updated_at}`;
 
     useEffect(() => {
-        const img = document.getElementById(`image-popup-${image.id}`) as HTMLImageElement;
-        img.onerror = () => {
-            img.src = "/images/default.jpg"
+        if (!img.current) {
+            return;
         }
-    })
+        img.current.onerror = () => {
+            if (!img.current) {
+                return;
+            }
+            img.current.src = "/images/default.jpg"
+        }
+    }, [img])
 
     // if open, show modal with image
     return (
@@ -29,7 +35,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, image, onClose, onDele
                 <Modal.Title>{image.label}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <img style={{ width: "100%" }} id={`image-popup-${image.id}`} src={src} alt={image.label} />
+                <img ref={img} style={{ width: "100%" }} id={`image-popup-${image.id}`} src={src} alt={image.label} />
                 {/* List these fields: status, iterations, phrases */}
                 <div className="row">
                     <div className="col-lg-12">

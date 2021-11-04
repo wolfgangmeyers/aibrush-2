@@ -109,22 +109,10 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
         try {
             await api.deleteImage(image.id as string)
             // remove image from list
-            setImages(images.filter(i => i.id !== image.id));
+            setImages(images => images.filter(i => i.id !== image.id));
         } catch (err) {
             console.error(err)
             setErr("Could not delete image")
-        }
-    }
-
-    const onSaveImage = async (image: Image) => {
-        // patch image with status=saved
-        try {
-            const resp = await api.updateImage(image.id as string, { status: UpdateImageInputStatusEnum.Saved })
-            // update image in list
-            setImages(images.map(i => i.id === image.id ? resp.data : i))
-        } catch (err) {
-            console.error(err)
-            setErr("Could not save image")
         }
     }
 
@@ -187,7 +175,6 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
                     <div className="row">
                         {images.map(image => (
                             <ImageThumbnail
-                                onSave={onSaveImage}
                                 onDelete={onDeleteImage}
                                 onFork={onForkImage}
                                 onClick={setSelectedImage}
