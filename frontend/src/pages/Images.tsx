@@ -7,7 +7,7 @@ import { ImageThumbnail } from "../components/ImageThumbnail";
 import { AIBrushApi, Image, UpdateImageInputStatusEnum } from "../client/api";
 import { ImagePopup } from "../components/ImagePopup";
 import { getDesignerCurrentImageId, setDesignerCurrentImageId } from "../lib/designer";
-
+import { LoadMoreImages } from "../components/LoadMoreImages";
 
 interface Props {
     api: AIBrushApi;
@@ -19,6 +19,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
     const [images, setImages] = useState<Array<Image>>([]);
     const [err, setErr] = useState<string | null>(null);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
+    const [loadingMore, setLoadingMore] = useState<boolean>(false);
 
     const onForkImage = async (image: Image) => {
         // navigate to /create-image with ?parent=image.id
@@ -132,6 +133,30 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
         history.push("/designer")
     }
 
+    const onLoadMore = async () => {
+        setLoadingMore(true)
+        try {
+            // get the minimum updated_at from images
+            let minUpdatedAt = moment().valueOf();
+            images.forEach(image => {
+                minUpdatedAt = Math.min(minUpdatedAt, image.updated_at)
+            })
+            // load images in descending order from updated_at
+            const resp = await api.listImages(minUpdatedAt - 1, 100, "desc")
+            if (resp.data.images) {
+                // combine images with new images and sort by updated_at descending
+                setImages([
+                    ...images,
+                    ...resp.data.images
+                ].sort((a, b) => {
+                    return b.updated_at - a.updated_at
+                }))
+            }
+        } finally {
+            setLoadingMore(false)
+        }
+    }
+
     return (
         <div className="container">
             <div className="row">
@@ -171,11 +196,21 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
                                 key={image.id}
                                 image={image} />
                         ))}
+                        <LoadMoreImages isLoading={loadingMore} onLoadMore={onLoadMore} />
                     </div>
                 </div>
             </div>
             {/* show ImagePopup if selectedImage is set */}
-            {selectedImage && <ImagePopup apiUrl={apiUrl} image={selectedImage as Image} onClose={() => setSelectedImage(null)} />}
+            {selectedImage && (
+                <ImagePopup
+                    apiUrl={apiUrl}
+                    image={selectedImage as Image}
+                    onClose={() => setSelectedImage(null)}
+                    onDelete={onDeleteImage}
+                    onFork={onForkImage}
+                    onDesign={onDesignImage}
+                />
+            )}
         </div>
     );
 };
