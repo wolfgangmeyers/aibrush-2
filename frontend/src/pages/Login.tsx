@@ -1,5 +1,5 @@
 // Login react component with hooks
-import React, { useState, useEffect, FC } from 'react';
+import React, { useState, FC } from 'react';
 import * as axios from "axios";
 import { AIBrushApi, LoginResult } from "../client/api";
 

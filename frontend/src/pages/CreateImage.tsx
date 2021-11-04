@@ -1,6 +1,6 @@
 import React, { FC, useState, useEffect } from 'react';
 import { useHistory } from "react-router-dom"
-import { AIBrushApi, CreateImageInput, Image } from "../client/api"
+import { AIBrushApi, CreateImageInput } from "../client/api"
 import loadImage from "blueimp-load-image"
 import qs from "qs";
 import { ImageEditor } from "../components/ImageEditor";
@@ -69,25 +69,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         })
     }
 
-    const loadParent = async (parentId: string) => {
-        const image = await props.api.getImage(parentId)
-        // get encoded image data for parent
-        const resp = await props.api.getImageData(image.data.id, {
-            responseType: "arraybuffer"
-        })
-        const binaryImageData = Buffer.from(resp.data, "binary");
-        // convert binary to base64
-        const base64ImageData = binaryImageData.toString("base64");
-        setInput({
-            ...input,
-            label: image.data.label,
-            phrases: image.data.phrases,
-            iterations: image.data.iterations,
-            parent: parentId,
-            encoded_image: base64ImageData,
-            enable_video: !!image.data.enable_video,
-        })
-    }
+    
 
     const onEditImage = () => {
         let img = input.encoded_image;
@@ -120,10 +102,31 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
     }
 
     useEffect(() => {
+
+        const loadParent = async (parentId: string) => {
+            const image = await props.api.getImage(parentId)
+            // get encoded image data for parent
+            const resp = await props.api.getImageData(image.data.id, {
+                responseType: "arraybuffer"
+            })
+            const binaryImageData = Buffer.from(resp.data, "binary");
+            // convert binary to base64
+            const base64ImageData = binaryImageData.toString("base64");
+            setInput(input => ({
+                ...input,
+                label: image.data.label,
+                phrases: image.data.phrases,
+                iterations: image.data.iterations,
+                parent: parentId,
+                encoded_image: base64ImageData,
+                enable_video: !!image.data.enable_video,
+            }))
+        }
+
         if (searchParams.parent) {
             loadParent(searchParams.parent)
         }
-    }, [searchParams.parent])
+    }, [searchParams.parent, setInput, props.api])
 
     return (
         <>
@@ -182,7 +185,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         {/* If encoded_image (base64 only) is set, show the image using a base64 image url*/}
                         {input.encoded_image && <div className="form-group">
                             <h5>Initial Image</h5>
-                            <img src={`data:image/jpeg;base64,${input.encoded_image}`} style={{ maxWidth: "100%" }} />
+                            <img alt="" src={`data:image/jpeg;base64,${input.encoded_image}`} style={{ maxWidth: "100%" }} />
                         </div>}
                         {/* If encoded_image is set, display edit button */}
                         <div className="form-group">

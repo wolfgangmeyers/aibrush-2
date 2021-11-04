@@ -4,9 +4,9 @@ import React, { FC, useState, useEffect } from 'react';
 import moment from "moment";
 import { Link, useHistory } from "react-router-dom";
 import { ImageThumbnail } from "../components/ImageThumbnail";
-import { AIBrushApi, Image, UpdateImageInputStatusEnum } from "../client/api";
+import { AIBrushApi, Image } from "../client/api";
 import { ImagePopup } from "../components/ImagePopup";
-import { getDesignerCurrentImageId, setDesignerCurrentImageId } from "../lib/designer";
+import { setDesignerCurrentImageId } from "../lib/designer";
 import { LoadMoreImages } from "../components/LoadMoreImages";
 
 interface Props {
@@ -26,71 +26,72 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
         history.push(`/create-image?parent=${image.id}`)
     }
 
-    const loadImages = async () => {
-        // clear error
-        setErr(null);
-        try {
-            const cursor = moment().add(1, "minutes").valueOf()
-            const resp = await api.listImages(cursor, 100, "desc")
-            if (resp.data.images) {
-                setImages(resp.data.images)
-            }
-            return 0
-        } catch (err) {
-            setErr("Could not load images")
-            console.error(err)
-        }
-    };
 
-    const pollImages = async (images: Array<Image>) => {
-        // clear error
-        setErr(null);
-        // set cursor to max updated_at from images
-        const cursor = images.reduce((max, image) => {
-            return Math.max(max, image.updated_at)
-        }, 0)
-
-        try {
-            const resp = await api.listImages(cursor + 1, 100, "asc")
-            if (resp.data.images) {
-                // split resp.data.images into "new" and "updated" lists
-                // image is "new" if it's not in images
-                const newImages = resp.data.images.filter(image => {
-                    return images.findIndex(i => i.id === image.id) < 0
-                })
-                const updatedImages = resp.data.images.filter(image => {
-                    return images.findIndex(i => i.id === image.id) >= 0
-                })
-                setImages([
-                    ...images.map(image => {
-                        const updatedImage = updatedImages.find(i => i.id === image.id)
-                        if (updatedImage) {
-                            return updatedImage
-                        }
-                        return image
-                    }),
-                    ...newImages
-                ].sort((a, b) => {
-                    return b.updated_at - a.updated_at
-                }))
-            }
-            return images;
-        } catch (err) {
-            setErr("Could not load images")
-            console.error(err)
-        }
-    }
 
     useEffect(() => {
         if (!api) {
             return
         }
+        const loadImages = async () => {
+            // clear error
+            setErr(null);
+            try {
+                const cursor = moment().add(1, "minutes").valueOf()
+                const resp = await api.listImages(cursor, 100, "desc")
+                if (resp.data.images) {
+                    setImages(resp.data.images)
+                }
+                return 0
+            } catch (err) {
+                setErr("Could not load images")
+                console.error(err)
+            }
+        };
         loadImages()
     }, [api])
 
     useEffect(() => {
         if (!api) {
             return
+        }
+
+        const pollImages = async (images: Array<Image>) => {
+            // clear error
+            setErr(null);
+            // set cursor to max updated_at from images
+            const cursor = images.reduce((max, image) => {
+                return Math.max(max, image.updated_at)
+            }, 0)
+
+            try {
+                const resp = await api.listImages(cursor + 1, 100, "asc")
+                if (resp.data.images) {
+                    // split resp.data.images into "new" and "updated" lists
+                    // image is "new" if it's not in images
+                    const newImages = resp.data.images.filter(image => {
+                        return images.findIndex(i => i.id === image.id) < 0
+                    })
+                    const updatedImages = resp.data.images.filter(image => {
+                        return images.findIndex(i => i.id === image.id) >= 0
+                    })
+                    setImages([
+                        ...images.map(image => {
+                            const updatedImage = updatedImages.find(i => i.id === image.id)
+                            if (updatedImage) {
+                                return updatedImage
+                            }
+                            return image
+                        }),
+                        ...newImages
+                    ].sort((a, b) => {
+                        return b.updated_at - a.updated_at
+                    }))
+                }
+                return images;
+            } catch (err) {
+                setErr("Could not load images")
+                console.error(err)
+            }
         }
 
         const timerHandle = setInterval(() => {

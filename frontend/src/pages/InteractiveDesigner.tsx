@@ -24,54 +24,9 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
     const [currentImageId, setCurrentImageId] = useState<string | null>(getDesignerCurrentImageId());
     const [editingImage, setEditingImage] = useState<string | null>(null);
 
-    const loadImageData = async (id: string) => {
-        try {
-            const resp = await api.getImageData(id, {
-                responseType: "arraybuffer"
-            })
-            const binaryImageData = Buffer.from(resp.data, "binary");
-            // convert binary to base64
-            const base64ImageData = binaryImageData.toString("base64");
-            setInput(input => ({
-                ...input,
-                encoded_image: base64ImageData,
-            }))
-        } catch (err) {
-            console.error(err);
-        }
-    }
 
-    const fetchImage = async () => {
-        if (!currentImageId) {
-            return;
-        }
-        try {
-            const resp = await api.getImage(currentImageId);
-            setImage(image => {
-                if (resp.data) {
-                    // TODO: if updated_at has changed, load image data
-                    if (!image || image.updated_at !== resp.data.updated_at) {
-                        loadImageData(currentImageId);
-                        setInput(input => ({
-                            ...input,
-                            phrases: resp.data.phrases,
-                            label: resp.data.label,
-                            iterations: resp.data.iterations,
-                            enable_video: resp.data.enable_video,
-                        }))
-                        return resp.data;
-                    }
-                }
-                return image;
-            });
-        } catch (err) {
-            console.error(err)
-            // clear current image id
-            setCurrentImageId(null);
-            // clear image id in local storage
-            setDesignerCurrentImageId(null);
-        }
-    }
+
+
 
     const onImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files && e.target.files[0]
@@ -156,12 +111,62 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
     }
 
     useEffect(() => {
+
+        const loadImageData = async (id: string) => {
+            try {
+                const resp = await api.getImageData(id, {
+                    responseType: "arraybuffer"
+                })
+                const binaryImageData = Buffer.from(resp.data, "binary");
+                // convert binary to base64
+                const base64ImageData = binaryImageData.toString("base64");
+                setInput(input => ({
+                    ...input,
+                    encoded_image: base64ImageData,
+                }))
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        const fetchImage = async () => {
+            if (!currentImageId) {
+                return;
+            }
+            try {
+                const resp = await api.getImage(currentImageId);
+                setImage(image => {
+                    if (resp.data) {
+                        // TODO: if updated_at has changed, load image data
+                        if (!image || image.updated_at !== resp.data.updated_at) {
+                            loadImageData(currentImageId);
+                            setInput(input => ({
+                                ...input,
+                                phrases: resp.data.phrases,
+                                label: resp.data.label,
+                                iterations: resp.data.iterations,
+                                enable_video: resp.data.enable_video,
+                            }))
+                            return resp.data;
+                        }
+                    }
+                    return image;
+                });
+            } catch (err) {
+                console.error(err)
+                // clear current image id
+                setCurrentImageId(null);
+                // clear image id in local storage
+                setDesignerCurrentImageId(null);
+            }
+        }
+
         fetchImage();
         const timer = setInterval(fetchImage, 2000);
         return () => clearInterval(timer);
-    }, [currentImageId])
+    }, [currentImageId, api])
 
-    const inprogress = (image && (image.status === "pending" || image.status == "processing")) || false;
+    const inprogress = (image && (image.status === "pending" || image.status === "processing")) || false;
 
     return (
         <div className="container">
@@ -212,7 +217,7 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
                         {/* If encoded_image (base64 only) is set, show the image using a base64 image url*/}
                         {input.encoded_image && <div className="form-group">
                             <h5>Image</h5>
-                            <img src={`data:image/jpeg;base64,${input.encoded_image}`} style={{ maxWidth: "100%" }} />
+                            <img alt="" src={`data:image/jpeg;base64,${input.encoded_image}`} style={{ maxWidth: "100%" }} />
                         </div>}
                         <div className="form-group">
                             {image && image.status === "processing" && <div className="progress">

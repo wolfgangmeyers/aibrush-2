@@ -23,6 +23,6 @@ export const TokenRefresher : FC<TokenRefresherProps> = ({ onCredentialsRefreshe
         return () => {
             clearInterval(interval);
         };
-    }, [credentials && credentials.refreshToken]);
+    }, [credentials, api, onCredentialsRefreshed]);
     return <div></div>;
 }
