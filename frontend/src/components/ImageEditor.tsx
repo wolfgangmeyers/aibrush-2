@@ -44,20 +44,28 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
         }
     }, [ctx, canvas, encodedImage])
 
-    const getMousePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const getMousePos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         if (!canvas) {
             throw Error("No canvas")
         }
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
-        return {
-            x: (e.clientX - rect.left) * scaleX,
-            y: (e.clientY - rect.top) * scaleY
+        if (e instanceof MouseEvent) {
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            }
+        } else if (e instanceof TouchEvent) {
+            return {
+                x: (e.touches[0].clientX - rect.left) * scaleX,
+                y: (e.touches[0].clientY - rect.top) * scaleY
+            }
         }
+        throw new Error("event is not MouseEvent or TouchEvent")
     }
 
-    const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         if (!canvas) {
             return;
         }
@@ -67,7 +75,7 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
         setLastY(mousePos.y);
     };
 
-    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         if (!isDrawing || !ctx || !canvas) {
             return;
         }
@@ -91,7 +99,7 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
         setLastY(y);
     };
 
-    const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         setIsDrawing(false);
     };
 
@@ -122,7 +130,16 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
             <Modal.Body>
                 <canvas
                     style={{ width: "100%" }}
-                    id="canvas" width="512" height="512" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}></canvas>
+                    id="canvas"
+                    width="512"
+                    height="512"
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onTouchStart={handleMouseDown}
+                    onTouchMove={handleMouseMove}
+                    onTouchEnd={handleMouseUp}
+                ></canvas>
                 <div className="row">
                     <div className="col-md-6">
                         <div className="form-group">
