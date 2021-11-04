@@ -51,17 +51,20 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
-        if (e instanceof MouseEvent) {
+        if (e.nativeEvent instanceof MouseEvent) {
+            const evt = e as React.MouseEvent<HTMLCanvasElement>;
             return {
-                x: (e.clientX - rect.left) * scaleX,
-                y: (e.clientY - rect.top) * scaleY
+                x: (evt.clientX - rect.left) * scaleX,
+                y: (evt.clientY - rect.top) * scaleY
             }
-        } else if (e instanceof TouchEvent) {
+        } else if (e.nativeEvent instanceof TouchEvent) {
+            const evt = e as React.TouchEvent<HTMLCanvasElement>;
             return {
-                x: (e.touches[0].clientX - rect.left) * scaleX,
-                y: (e.touches[0].clientY - rect.top) * scaleY
+                x: (evt.touches[0].clientX - rect.left) * scaleX,
+                y: (evt.touches[0].clientY - rect.top) * scaleY
             }
         }
+        console.log(e)
         throw new Error("event is not MouseEvent or TouchEvent")
     }
 
@@ -73,14 +76,26 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
         const mousePos = getMousePos(e);
         setLastX(mousePos.x);
         setLastY(mousePos.y);
+        // draw a single dot in case the user clicks without moving the mouse
+        drawDot(mousePos.x, mousePos.y);
     };
+
+    const drawDot = (x: number, y: number) => {
+        if (!ctx) {
+            return;
+        }
+        ctx.fillStyle = brushColor;
+        ctx.beginPath();
+        ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
 
     const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         if (!isDrawing || !ctx || !canvas) {
             return;
         }
 
-
+        e.preventDefault()
         // get x and y relative to the canvas
         const mousePos = getMousePos(e);
         const x = mousePos.x;
