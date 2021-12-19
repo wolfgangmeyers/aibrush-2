@@ -82,8 +82,8 @@ def process_image():
         # args.vqgan_checkpoint = "checkpoints/sber.gumbelf8.ckpt"
         # args.vqgan_config = "checkpoints/vqgan_imagenet_f16_1024.yaml"
         # args.vqgan_checkpoint = "checkpoints/vqgan_imagenet_f16_1024.ckpt"
-        args.vqgan_config = "checkpoints/vqgan_imagenet_f16_16384_2.yaml"
-        args.vqgan_checkpoint = "checkpoints/vqgan_imagenet_f16_16384_2.ckpt"
+        # args.vqgan_config = "checkpoints/vqgan_imagenet_f16_16384_2.yaml"
+        # args.vqgan_checkpoint = "checkpoints/vqgan_imagenet_f16_16384_2.ckpt"
 
         # run vqgan
         run(args)
