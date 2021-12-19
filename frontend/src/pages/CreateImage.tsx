@@ -192,12 +192,12 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             </div>
                         </div>
                         {/* boolean enable_zoom (bootstrap styled checkbox) */}
-                        {input.enable_video && <div className="form-group">
+                        {/* {input.enable_video && <div className="form-group">
                             <label style={{marginRight: "10px"}}>Enable zoom</label>
                             <div className="form-check">
                                 <input className="form-check-input" type="checkbox" checked={input.enable_zoom} onChange={(e) => setInput({ ...input, enable_zoom: e.target.checked })} />
                             </div>
-                        </div>}
+                        </div>} */}
 
                         {/* if enable_zoom, show zoom_interval input */}
                         {input.enable_zoom && <div className="form-group">
