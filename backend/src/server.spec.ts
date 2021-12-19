@@ -673,10 +673,16 @@ describe("server", () => {
                     })
                 })
 
-                describe("when updating video data", () => {
+
+                describe("when updating video data as a service account", () => {
 
                     const fakeVideoData = new Uint8Array([1, 2, 3, 4])
                     let resp: AxiosResponse<void>;
+
+                    beforeEach(async () => {
+                        // authenticate as service account
+                        await authenticateUser(mailcatcher, client, httpClient, "service-account@test.test")
+                    })
 
                     beforeEach(async () => {
                         resp = await client.updateVideoData(image.id, Buffer.from(fakeVideoData).toString("binary"), {

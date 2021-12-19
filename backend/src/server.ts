@@ -271,7 +271,7 @@ export class Server {
                 const user = this.authHelper.getUserFromRequest(req)
                 // only service account can update video data
                 if (!this.isServiceAccount(user)) {
-                    res.sendStatus(403)
+                    res.sendStatus(404)
                     return;
                 }
                 await this.backendService.updateVideoData(req.params.id, req.body)
