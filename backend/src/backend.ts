@@ -289,11 +289,15 @@ export class BackendService {
         }
     }
 
-    private async getUsersWithPendingImages(): Promise<Array<string>> {
+    private async getUsersWithPendingImages(zoomSupported: boolean): Promise<Array<string>> {
         const client = await this.pool.connect()
+        let filter = "";
+        if (!zoomSupported) {
+            filter = " AND enable_zoom=false"
+        }
         try {
             const result = await client.query(
-                `SELECT DISTINCT created_by FROM images WHERE status='pending'`
+                `SELECT DISTINCT created_by FROM images WHERE status='pending'${filter}`
             )
             return result.rows.map(row => row.created_by)
         } finally {
@@ -301,9 +305,13 @@ export class BackendService {
         }
     }
 
-    async processImage(): Promise<Image> {
+    async processImage(zoomSupported: boolean): Promise<Image> {
+        let filter = "";
+        if (!zoomSupported) {
+            filter = " AND enable_zoom=false"
+        }
         // get all users with pending images
-        const users = await this.getUsersWithPendingImages()
+        const users = await this.getUsersWithPendingImages(zoomSupported)
         // if there are no users, return null
         if (users.length === 0) {
             return null
@@ -316,7 +324,7 @@ export class BackendService {
             // begin transaction
             await client.query("BEGIN")
             const result = await client.query(
-                `SELECT * FROM images WHERE created_by=$1 AND status='pending' ORDER BY created_at ASC LIMIT 1`,
+                `SELECT * FROM images WHERE created_by=$1 AND status='pending'${filter} ORDER BY created_at ASC LIMIT 1`,
                 [user]
             )
             const image = result.rows[0]
