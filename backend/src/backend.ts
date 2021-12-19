@@ -79,6 +79,15 @@ export class BackendService {
     }
 
 
+    private hydrateImage(image: Image): Image {
+        return {
+            ...image,
+            zoom_scale: parseFloat(image.zoom_scale || "0.0" as any),
+            zoom_shift_x: parseFloat(image.zoom_shift_x || "0.0" as any),
+            zoom_shift_y: parseFloat(image.zoom_shift_y || "0.0" as any),
+        }
+    }
+
     // list images
     async listImages(query: { userId?: string, status?: ImageStatusEnum, cursor?: number, direction?: "asc" | "desc", limit?: number }): Promise<ImageList> {
         const client = await this.pool.connect()
@@ -112,7 +121,7 @@ export class BackendService {
                 args
             )
             return {
-                images: result.rows
+                images: result.rows.map(i => this.hydrateImage(i))
             }
         } finally {
             client.release()
@@ -131,9 +140,9 @@ export class BackendService {
             if (!imageData) {
                 return null
             }
-            return {
+            return this.hydrateImage({
                 ...imageData,
-            }
+            })
         } finally {
             client.release()
         }
@@ -198,7 +207,7 @@ export class BackendService {
         return thumbnail
     }
 
-    async createImage(createdBy: string, body: CreateImageInput) {
+    async createImage(createdBy: string, body: CreateImageInput): Promise<Image> {
         const client = await this.pool.connect()
         try {
             const result = await client.query(
@@ -225,15 +234,15 @@ export class BackendService {
                 const encoded_thumbnail = await this.createThumbnail(encoded_image)
                 fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.thumbnail`, encoded_thumbnail)
             }
-            return {
+            return this.hydrateImage({
                 ...image,
-            }
+            })
         } finally {
             client.release()
         }
     }
 
-    async updateImage(id: string, body: UpdateImageInput) {
+    async updateImage(id: string, body: UpdateImageInput) : Promise<Image> {
         const existingImage = await this.getImage(id)
         if (!existingImage) {
             console.log("Existing image not found: " + id)
@@ -272,9 +281,9 @@ export class BackendService {
                 const encoded_thumbnail = await this.createThumbnail(body.encoded_image)
                 fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.thumbnail`, encoded_thumbnail)
             }
-            return {
+            return this.hydrateImage({
                 ...image,
-            }
+            })
         } finally {
             client.release()
         }

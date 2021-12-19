@@ -230,6 +230,7 @@ describe("server", () => {
                     expect(image.iterations).toBe(1)
                     expect(image.parent).toBe("")
                     expect(image.enable_video).toBe(false)
+                    expect(image.enable_zoom).toBe(false)
                 })
 
                 describe("when listing images", () => {
@@ -717,6 +718,128 @@ describe("server", () => {
 
                     it("should fail with 404", async () => {
                         await expect(client2.updateVideoData(image.id, "", {})).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
+            })
+
+            describe("when creating an image with enable_video=true and enable_zoom=true and default zoom options", () => {
+                let image: Image;
+
+                beforeEach(async () => {
+                    const response = await client.createImage({
+                        enable_video: true,
+                        phrases: ["test"],
+                        label: "test",
+                        iterations: 1,
+                        enable_zoom: true,
+                    })
+                    image = response.data
+                })
+
+                it("should return the image with enable_video=true and enable_zoom=true and default zoom options", () => {
+                    expect(image.enable_video).toBe(true)
+                    expect(image.enable_zoom).toBe(true)
+                    expect(image.zoom_frequency).toBe(10)
+                    expect(image.zoom_scale).toBe(0.99)
+                    expect(image.zoom_shift_x).toBe(0)
+                    expect(image.zoom_shift_y).toBe(0)
+                })
+
+                describe("when getting the image by id", () => {
+                    let image2: Image;
+
+                    beforeEach(async () => {
+                        const response = await client.getImage(image.id)
+                        image2 = response.data
+                    })
+
+                    it("should return the image with enable_video=true and enable_zoom=true and default zoom options", () => {
+                        expect(image2.enable_video).toBe(true)
+                        expect(image2.enable_zoom).toBe(true)
+                        expect(image2.zoom_frequency).toBe(10)
+                        expect(image2.zoom_scale).toBe(0.99)
+                        expect(image2.zoom_shift_x).toBe(0)
+                        expect(image2.zoom_shift_y).toBe(0)
+                    })
+                })
+
+                describe("when listing images", () => {
+                    let listResponse: AxiosResponse<ImageList>;
+
+                    beforeEach(async () => {
+                        listResponse = await client.listImages()
+                    })
+
+                    it("should return the image with enable_video=true and enable_zoom=true and default zoom options", () => {
+                        expect(listResponse.data.images[0].enable_video).toBe(true)
+                        expect(listResponse.data.images[0].enable_zoom).toBe(true)
+                        expect(listResponse.data.images[0].zoom_frequency).toBe(10)
+                        expect(listResponse.data.images[0].zoom_scale).toBe(0.99)
+                        expect(listResponse.data.images[0].zoom_shift_x).toBe(0)
+                        expect(listResponse.data.images[0].zoom_shift_y).toBe(0)
+                    })
+                })
+            })
+
+            describe.only("when creating an image with enable_video=true and enable_zoom=true and non-default zoom options", () => {
+                let image: Image;
+
+                beforeEach(async () => {
+                    const response = await client.createImage({
+                        enable_video: true,
+                        phrases: ["test"],
+                        label: "test",
+                        iterations: 1,
+                        enable_zoom: true,
+                        zoom_frequency: 20,
+                        zoom_scale: 0.98,
+                        zoom_shift_x: 1,
+                        zoom_shift_y: 2,
+                    })
+                    image = response.data
+                })
+
+                it("should return the image with enable_video=true and enable_zoom=true and non-default zoom options", () => {
+                    expect(image.enable_video).toBe(true)
+                    expect(image.enable_zoom).toBe(true)
+                    expect(image.zoom_frequency).toBe(20)
+                    expect(image.zoom_scale).toBe(0.98)
+                    expect(image.zoom_shift_x).toBe(1)
+                    expect(image.zoom_shift_y).toBe(2)
+                })
+
+                describe("when getting the image by id", () => {
+                    let image2: Image;
+
+                    beforeEach(async () => {
+                        const response = await client.getImage(image.id)
+                        image2 = response.data
+                    })
+
+                    it("should return the image with enable_video=true and enable_zoom=true and non-default zoom options", () => {
+                        expect(image2.enable_video).toBe(true)
+                        expect(image2.enable_zoom).toBe(true)
+                        expect(image2.zoom_frequency).toBe(20)
+                        expect(image2.zoom_scale).toBe(0.98)
+                        expect(image2.zoom_shift_x).toBe(1)
+                        expect(image2.zoom_shift_y).toBe(2)
+                    })
+                })
+
+                describe("when listing images", () => {
+                    let listResponse: AxiosResponse<ImageList>;
+
+                    beforeEach(async () => {
+                        listResponse = await client.listImages()
+                    })
+
+                    it("should return the image with enable_video=true and enable_zoom=true and non-default zoom options", () => {
+                        expect(listResponse.data.images[0].enable_video).toBe(true)
+                        expect(listResponse.data.images[0].enable_zoom).toBe(true)
+                        expect(listResponse.data.images[0].zoom_frequency).toBe(20)
+                        expect(listResponse.data.images[0].zoom_scale).toBe(0.98)
+                        expect(listResponse.data.images[0].zoom_shift_x).toBe(1)
+                        expect(listResponse.data.images[0].zoom_shift_y).toBe(2)
                     })
                 })
             })
