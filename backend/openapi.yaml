@@ -306,6 +306,16 @@ components:
           type: string
         enable_video:
           type: boolean
+        enable_zoom:
+          type: boolean
+        zoom_frequency:
+          type: integer
+        zoom_scale:
+          type: number
+        zoom_shift_x:
+          type: number
+        zoom_shift_y:
+          type: number
 
     UpdateImageInput:
       type: object
@@ -353,6 +363,16 @@ components:
           enum: [pending, processing, completed, saved]
         enable_video:
           type: boolean
+        enable_zoom:
+          type: boolean
+        zoom_frequency:
+          type: integer
+        zoom_scale:
+          type: number
+        zoom_shift_x:
+          type: number
+        zoom_shift_y:
+          type: number
       required:
         - id
         - created_at

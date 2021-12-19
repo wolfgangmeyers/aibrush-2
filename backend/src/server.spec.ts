@@ -680,7 +680,7 @@ describe("server", () => {
 
                     beforeEach(async () => {
                         resp = await client.updateVideoData(image.id, Buffer.from(fakeVideoData).toString("binary"), {
-                            Headers: {
+                            headers: {
                                 "Content-Type": "video/mp4"
                             },
                         })

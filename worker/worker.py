@@ -65,8 +65,17 @@ def process_image():
         args.prompts = " | ".join(image.phrases)
         args.make_video = image.enable_video
         args.output = image.id + ".jpg"
-        args.display_freq = 20
+        args.display_freq = 50
+        if args.max_iterations < args.display_freq:
+            args.display_freq = args.max_iterations
         args.on_save_callback = lambda i: update_image(i, "processing")
+
+        # args.vqgan_config = "checkpoints/vqgan.gumbelf8.config.yml"
+        # args.vqgan_checkpoint = "checkpoints/sber.gumbelf8.ckpt"
+        # args.vqgan_config = "checkpoints/vqgan_imagenet_f16_1024.yaml"
+        # args.vqgan_checkpoint = "checkpoints/vqgan_imagenet_f16_1024.ckpt"
+        args.vqgan_config = "checkpoints/vqgan_imagenet_f16_16384_2.yaml"
+        args.vqgan_checkpoint = "checkpoints/vqgan_imagenet_f16_16384_2.ckpt"
 
         # run vqgan
         run(args)
