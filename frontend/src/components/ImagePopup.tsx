@@ -44,6 +44,16 @@ export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, image, onClose, onDele
                         <p>Phrases: {image.phrases.join(", ")}</p>
                         {/* enable_video */}
                         <p>Enable Video: {image.enable_video ? "Yes" : "No"}</p>
+                        {/* enable_zoom */}
+                        {image.enable_video && <p>Enable Zoom: {image.enable_zoom ? "Yes" : "No"}</p>}
+                        {/* zoom_frequency */}
+                        {image.enable_zoom && image.enable_zoom && <p>Zoom Frequency: {image.zoom_frequency}</p>}
+                        {/* zoom_scale */}
+                        {image.enable_zoom && image.enable_zoom && <p>Zoom Scale: {image.zoom_scale}</p>}
+                        {/* zoom_shift_x */}
+                        {image.enable_zoom && image.enable_zoom && <p>Zoom Shift X: {image.zoom_shift_x}</p>}
+                        {/* zoom_shift_y */}
+                        {image.enable_zoom && image.enable_zoom && <p>Zoom Shift Y: {image.zoom_shift_y}</p>}
                     </div>
                 </div>
                 {/* controls */}

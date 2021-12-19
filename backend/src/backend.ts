@@ -327,10 +327,10 @@ export class BackendService {
             )
             // commit transaction
             await client.query("COMMIT")
-            return {
+            return this.hydrateImage({
                 ...image,
                 status: "processing",
-            }
+            })
         } catch (err) {
             await client.query("ROLLBACK")
         } finally {

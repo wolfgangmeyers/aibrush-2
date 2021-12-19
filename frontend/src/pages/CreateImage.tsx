@@ -20,6 +20,11 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         iterations: 100,
         encoded_image: "",
         enable_video: false,
+        enable_zoom: false,
+        zoom_frequency: 10,
+        zoom_scale: 0.99,
+        zoom_shift_x: 0,
+        zoom_shift_y: 0,
     });
     const [editingImage, setEditingImage] = useState<string | null>(null);
     const [count, setCount] = useState(1)
@@ -120,6 +125,11 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                 parent: parentId,
                 encoded_image: base64ImageData,
                 enable_video: !!image.data.enable_video,
+                enable_zoom: !!image.data.enable_zoom,
+                zoom_frequency: image.data.zoom_frequency || 10,
+                zoom_scale: image.data.zoom_scale || 0.99,
+                zoom_shift_x: image.data.zoom_shift_x || 0,
+                zoom_shift_y: image.data.zoom_shift_y || 0,
             }))
         }
 
@@ -167,7 +177,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         </div>
                         <div className="form-group">
                             <label>Iterations</label>
-                            <input min={1} max={5000} className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
+                            <input min={1} max={10000} className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
                         </div>
                         {/* count */}
                         <div className="form-group">
@@ -181,6 +191,34 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                 <input className="form-check-input" type="checkbox" checked={input.enable_video} onChange={(e) => setInput({ ...input, enable_video: e.target.checked })} />
                             </div>
                         </div>
+                        {/* boolean enable_zoom (bootstrap styled checkbox) */}
+                        {input.enable_video && <div className="form-group">
+                            <label style={{marginRight: "10px"}}>Enable zoom</label>
+                            <div className="form-check">
+                                <input className="form-check-input" type="checkbox" checked={input.enable_zoom} onChange={(e) => setInput({ ...input, enable_zoom: e.target.checked })} />
+                            </div>
+                        </div>}
+
+                        {/* if enable_zoom, show zoom_interval input */}
+                        {input.enable_zoom && <div className="form-group">
+                            <label>Zoom interval</label>
+                            <input min={1} max={100} className="form-control" type="number" value={input.zoom_frequency} onChange={(e) => setInput({ ...input, zoom_frequency: parseInt(e.target.value) })} />
+                        </div>}
+                        {/* if enable_zoom, show zoom_scale input */}
+                        {input.enable_zoom && <div className="form-group">
+                            <label>Zoom scale</label>
+                            <input min={0.1} max={10} step={0.01} className="form-control" type="number" value={input.zoom_scale} onChange={(e) => setInput({ ...input, zoom_scale: parseFloat(e.target.value) })} />
+                        </div>}
+                        {/* if enable_zoom, show zoom_shift_x input */}
+                        {input.enable_zoom && <div className="form-group">
+                            <label>Zoom shift x</label>
+                            <input min={-10} max={10} className="form-control" type="number" value={input.zoom_shift_x} onChange={(e) => setInput({ ...input, zoom_shift_x: parseInt(e.target.value) })} />
+                        </div>}
+                        {/* if enable_zoom, show zoom_shift_y input */}
+                        {input.enable_zoom && <div className="form-group">
+                            <label>Zoom shift y</label>
+                            <input min={-10} max={10} className="form-control" type="number" value={input.zoom_shift_y} onChange={(e) => setInput({ ...input, zoom_shift_y: parseInt(e.target.value) })} />
+                        </div>}
 
                         {/* If encoded_image (base64 only) is set, show the image using a base64 image url*/}
                         {input.encoded_image && <div className="form-group">

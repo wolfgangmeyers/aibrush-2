@@ -63,7 +63,15 @@ def process_image():
             args.init_image = image.id + "-init.jpg"
         args.max_iterations = image.iterations
         args.prompts = " | ".join(image.phrases)
-        args.make_video = image.enable_video
+        if image.enable_video:
+            if image.enable_zoom:
+                args.make_zoom_video = True
+                args.zoom_frequency = image.zoom_frequency
+                args.zoom_scale = image.zoom_scale
+                args.zoom_shift_x = image.zoom_shift_x
+                args.zoom_shift_y = image.zoom_shift_y
+            else:
+                args.make_video = True
         args.output = image.id + ".jpg"
         args.display_freq = 50
         if args.max_iterations < args.display_freq:

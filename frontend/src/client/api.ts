@@ -63,6 +63,36 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     enable_video?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof CreateImageInput
+     */
+    enable_zoom?: boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    zoom_frequency?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    zoom_scale?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    zoom_shift_x?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    zoom_shift_y?: number;
 }
 /**
  * 
@@ -164,6 +194,36 @@ export interface Image {
      * @memberof Image
      */
     enable_video: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Image
+     */
+    enable_zoom?: boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    zoom_frequency?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    zoom_scale?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    zoom_shift_x?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    zoom_shift_y?: number;
 }
 
 /**
