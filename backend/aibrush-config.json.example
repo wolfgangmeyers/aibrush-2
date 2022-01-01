@@ -1,9 +1,9 @@
 {
     "secret": "secret",
-    "smtpHost": "localhost",
-    "smtpPort": 1025,
-    "smtpUser": "",
-    "smtpPassword": "",
+    "smtpHost": "smtp.gmail.com",
+    "smtpPort": 465,
+    "smtpUser": "<your email>",
+    "smtpPassword": "<your password>",
     "smtpFrom": "noreply@aibrush.art",
     "databaseName": "aibrush_backend_2",
     "dataFolderName": "data",
