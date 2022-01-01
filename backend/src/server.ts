@@ -2,6 +2,7 @@ import { Server as HTTPServer } from "http"
 import express, { Express } from "express"
 import cors from "cors"
 import fs from "fs"
+import path from "path"
 import { createHttpTerminator, HttpTerminator } from "http-terminator"
 
 import { BackendService } from "./backend";
@@ -153,6 +154,14 @@ export class Server {
 
         // anonymous access of static files
         this.app.use(express.static("./public"))
+
+        // render index.html for frontend routes
+        // /create-image, /images, /designer
+        for (let route of ["/create-image", "/images", "/designer"]) {
+            this.app.get(route, (req, res) => {
+                res.sendFile(path.join(__dirname, "../public/index.html"))
+            })
+        }
 
         // authenticated routes only past this point
         this.app.use(authMiddleware(this.config))
