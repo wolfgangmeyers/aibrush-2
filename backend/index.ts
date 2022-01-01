@@ -1,10 +1,10 @@
 import fs from "fs";
 
 import { BackendService } from "./src/backend"
-import { Config } from "./src/config";
+import { loadConfig } from "./src/config";
 import { Server } from "./src/server"
 
-const config: Config = JSON.parse(fs.readFileSync("aibrush-config.json").toString());
+const config = loadConfig();
 
 const backendService = new BackendService(config)
 const server = new Server(config, backendService, 3000)

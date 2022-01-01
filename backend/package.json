@@ -23,7 +23,8 @@
     "scripts": {
         "start": "ts-node-dev ./index.ts",
         "genclient": "openapi-generator-cli generate --generator-name typescript-axios --input-spec ./openapi.yaml --output ./src/client",
-        "test": "jest --force-exit --detectOpenHandles"
+        "test": "jest --force-exit --detectOpenHandles",
+        "build_frontend": "rm -rf ./public && cd ../frontend && yarn build && cp -r build ../backend/public"
     },
     "dependencies": {
         "axios": "^0.22.0",

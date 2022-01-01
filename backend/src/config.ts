@@ -1,3 +1,5 @@
+import fs from "fs";
+
 export interface Config {
     secret: string;
     smtpHost: string;
@@ -11,4 +13,9 @@ export interface Config {
     userAccessTokenExpirationSeconds: number;
     serviceAccountAccessTokenExpirationSeconds: number;
     serviceAccounts: string[];
+    userWhitelist: string[];
+}
+
+export const loadConfig = (): Config => {
+    return JSON.parse(fs.readFileSync(__dirname + "/../aibrush-config.json").toString());
 }

@@ -10,5 +10,6 @@
     "loginCodeExpirationSeconds": 500,
     "userAccessTokenExpirationSeconds": 3600,
     "serviceAccountAccessTokenExpirationSeconds": 31536000,
-    "serviceAccounts": ["service-account@example.domain"]
+    "serviceAccounts": ["service-account@example.domain"],
+    "userWhitelist": ["user@example.domain"]
 }

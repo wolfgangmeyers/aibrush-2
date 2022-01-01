@@ -151,6 +151,9 @@ export class Server {
             })
         })
 
+        // anonymous access of static files
+        this.app.use(express.static("./public"))
+
         // authenticated routes only past this point
         this.app.use(authMiddleware(this.config))
 
