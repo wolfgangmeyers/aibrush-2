@@ -24,3 +24,6 @@ Some examples of what can be created with VQGAN+CLIP:
 * Create one or more child images from a parent
 * Manually edit an image and continue processing
 
+## Deployment
+
+* [Deploying on EC2](./DEPLOYING-EC2.md)
