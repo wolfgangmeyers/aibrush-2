@@ -39,6 +39,20 @@ class AIBrushAPI(object):
         print(resp.text)
         return self.parse_json(resp.text)
 
+    def login(self, email: str) -> SimpleNamespace:
+        body = {
+            "email": email,
+        }
+        self.http_request("/auth/login", "POST", body)
+
+    def verify_login(self, email: str, code: str) -> SimpleNamespace:
+        body = {
+            "email": email,
+            "code": code,
+        }
+        resp = self.http_request("/auth/verify", "POST", body)
+        return self.parse_json(resp.text)
+
     def update_image(self, image_id: str, encoded_image: str, current_iterations: int, status: str) -> SimpleNamespace:
         body = {
             "current_iterations": current_iterations,
