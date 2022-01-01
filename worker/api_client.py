@@ -10,7 +10,7 @@ class AIBrushAPI(object):
         self.token = token
 
     def http_request(self, path, method, body=None) -> requests.Response:
-        url = f"{self.api_url}{path}"
+        url = f"{self.api_url}/api{path}"
         for i in range(2):
             try:
                 if isinstance(body, bytes):

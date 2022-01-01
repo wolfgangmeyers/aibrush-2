@@ -43,7 +43,7 @@ export class Server {
         })
 
 
-        this.app.post("/auth/login", async (req, res) => {
+        this.app.post("/api/auth/login", async (req, res) => {
             try {
                 const token = await this.backendService.login(req.body.email)
                 res.sendStatus(204)
@@ -53,7 +53,7 @@ export class Server {
             }
         })
 
-        this.app.post("/auth/verify", async (req, res) => {
+        this.app.post("/api/auth/verify", async (req, res) => {
             try {
                 const result = await this.backendService.verify(req.body.code)
                 // if result is null, send 400
@@ -68,7 +68,7 @@ export class Server {
             }
         })
 
-        this.app.post("/auth/refresh", async (req, res) => {
+        this.app.post("/api/auth/refresh", async (req, res) => {
             try {
                 const result = await this.backendService.refresh(req.body.refreshToken)
                 // if result is null, send 400
@@ -87,7 +87,7 @@ export class Server {
         // use these urls in image elements.
 
         // get image data by id
-        this.app.get("/images/:id/image.jpg", async (req, res) => {
+        this.app.get("/api/images/:id/image.jpg", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -105,7 +105,7 @@ export class Server {
         })
 
         // get thumbnail data by id
-        this.app.get("/images/:id/thumbnail.jpg", async (req, res) => {
+        this.app.get("/api/images/:id/thumbnail.jpg", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -122,7 +122,7 @@ export class Server {
             }
         })
 
-        this.app.get("/images/:id/video.mp4", async (req, res) => {
+        this.app.get("/api/images/:id/video.mp4", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -146,7 +146,7 @@ export class Server {
             }
         })
 
-        this.app.get("/healthcheck", async (req, res) => {
+        this.app.get("/api/healthcheck", async (req, res) => {
             res.status(200).json({
                 status: "ok"
             })
@@ -167,7 +167,7 @@ export class Server {
         this.app.use(authMiddleware(this.config))
 
         // list images
-        this.app.get("/images", async (req, res) => {
+        this.app.get("/api/images", async (req, res) => {
             try {
                 const user = this.authHelper.getUserFromRequest(req)
                 // service accounts can't list images
@@ -205,7 +205,7 @@ export class Server {
         })
 
         // create image
-        this.app.post("/images", async (req, res) => {
+        this.app.post("/api/images", async (req, res) => {
             try {
                 const user = this.authHelper.getUserFromRequest(req)
                 if (this.isServiceAccount(user)) {
@@ -221,7 +221,7 @@ export class Server {
         })
 
         // get image by id
-        this.app.get("/images/:id", async (req, res) => {
+        this.app.get("/api/images/:id", async (req, res) => {
             try {
                 const image = await this.backendService.getImage(req.params.id)
                 // check created_by
@@ -238,7 +238,7 @@ export class Server {
         })
 
         // update image by id
-        this.app.patch("/images/:id", async (req, res) => {
+        this.app.patch("/api/images/:id", async (req, res) => {
             try {
                 const user = this.authHelper.getUserFromRequest(req);
                 // get image first and check created_by
@@ -256,7 +256,7 @@ export class Server {
         })
 
         // delete image
-        this.app.delete("/images/:id", async (req, res) => {
+        this.app.delete("/api/images/:id", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -272,7 +272,7 @@ export class Server {
             }
         })
 
-        this.app.put("/images/:id/video.mp4", async (req, res) => {
+        this.app.put("/api/images/:id/video.mp4", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -294,7 +294,7 @@ export class Server {
             }
         })
 
-        this.app.put("/process-image", async (req, res) => {
+        this.app.put("/api/process-image", async (req, res) => {
             try {
                 const user = this.authHelper.getUserFromRequest(req)
 

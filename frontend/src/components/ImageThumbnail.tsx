@@ -14,7 +14,7 @@ interface ImageThumbnailProps {
 
 export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick, onDelete, onFork, onDesign }) => {
 
-    const src = `${apiUrl}/images/${image.id}/thumbnail.jpg?updated_at=${image.updated_at}`;
+    const src = `${apiUrl}/api/images/${image.id}/thumbnail.jpg?updated_at=${image.updated_at}`;
 
     useEffect(() => {
         const img = document.getElementById(`image-${image.id}`) as HTMLImageElement;

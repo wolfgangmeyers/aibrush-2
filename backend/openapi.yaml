@@ -12,7 +12,7 @@ servers:
   - url: https://aibrush.ngrok.io
   - url: /
 paths:
-  /images:
+  /api/images:
     get:
       description: Get a list of saved images
       operationId: listImages
@@ -62,7 +62,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Image"
-  /images/{id}:
+  /api/images/{id}:
     get:
       description: Get a saved image by id
       operationId: getImage
@@ -126,7 +126,7 @@ paths:
       responses:
         "204":
           description: Success
-  /images/{id}/image.jpg:
+  /api/images/{id}/image.jpg:
     get:
       description: Get the binary image data
       operationId: getImageData
@@ -146,7 +146,7 @@ paths:
               schema:
                 type: string
                 format: binary
-  /images/{id}/thumbnail.jpg:
+  /api/images/{id}/thumbnail.jpg:
     get:
       description: Get the binary thumbnail data
       operationId: getThumbnailData
@@ -166,7 +166,7 @@ paths:
               schema:
                 type: string
                 format: binary
-  /images/{id}/video.mp4:
+  /api/images/{id}/video.mp4:
     get:
       description: Get the binary video data
       operationId: getVideoData
@@ -206,7 +206,7 @@ paths:
       responses:
         "200":
           description: Success
-  /process-image:
+  /api/process-image:
     put:
       description: Get the next pending image and set its status to processing.
       operationId: processImage
@@ -225,7 +225,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Image"
   # login by email
-  /auth/login:
+  /api/auth/login:
     post:
       description: Login by email
       operationId: login
@@ -239,7 +239,7 @@ paths:
       responses:
         "204":
           description: Success
-  /auth/verify:
+  /api/auth/verify:
     post:
       description: Verify Login code
       operationId: verify
@@ -259,7 +259,7 @@ paths:
                 $ref: "#/components/schemas/LoginResult"
         "400":
           description: Invalid code
-  /auth/refresh:
+  /api/auth/refresh:
     post:
       description: Refresh Login code
       operationId: refresh
@@ -278,7 +278,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/LoginResult"
   # healthcheck
-  /healthcheck:
+  /api/healthcheck:
     get:
       description: Healthcheck
       operationId: healthcheck

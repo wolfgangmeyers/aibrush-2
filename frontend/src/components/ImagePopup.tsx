@@ -14,7 +14,7 @@ interface ImagePopupProps {
 export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, image, onClose, onDelete, onDesign, onFork }) => {
 
     const img = useRef<HTMLImageElement>(null);
-    const src = `${apiUrl}/images/${image.id}/image.jpg?updated_at=${image.updated_at}`;
+    const src = `${apiUrl}/api/images/${image.id}/image.jpg?updated_at=${image.updated_at}`;
 
     useEffect(() => {
         if (!img.current) {

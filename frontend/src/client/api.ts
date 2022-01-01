@@ -285,6 +285,19 @@ export interface LoginResult {
 /**
  * 
  * @export
+ * @interface ProcessImageInput
+ */
+export interface ProcessImageInput {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ProcessImageInput
+     */
+    zoom_supported: boolean;
+}
+/**
+ * 
+ * @export
  * @interface RefreshLoginInput
  */
 export interface RefreshLoginInput {
@@ -377,7 +390,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @throws {RequiredError}
          */
         createImage: async (createImageInput?: CreateImageInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/images`;
+            const localVarPath = `/api/images`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -412,7 +425,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         deleteImage: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('deleteImage', 'id', id)
-            const localVarPath = `/images/{id}`
+            const localVarPath = `/api/images/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -446,7 +459,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getImage: async (id: string, download?: 'thumbnail' | 'image', options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getImage', 'id', id)
-            const localVarPath = `/images/{id}`
+            const localVarPath = `/api/images/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -483,7 +496,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getImageData: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getImageData', 'id', id)
-            const localVarPath = `/images/{id}/image.jpg`
+            const localVarPath = `/api/images/{id}/image.jpg`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -516,7 +529,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getThumbnailData: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getThumbnailData', 'id', id)
-            const localVarPath = `/images/{id}/thumbnail.jpg`
+            const localVarPath = `/api/images/{id}/thumbnail.jpg`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -549,7 +562,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getVideoData: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getVideoData', 'id', id)
-            const localVarPath = `/images/{id}/video.mp4`
+            const localVarPath = `/api/images/{id}/video.mp4`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -579,7 +592,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @throws {RequiredError}
          */
         healthcheck: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/healthcheck`;
+            const localVarPath = `/api/healthcheck`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -611,7 +624,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @throws {RequiredError}
          */
         listImages: async (cursor?: number, limit?: number, direction?: 'asc' | 'desc', options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/images`;
+            const localVarPath = `/api/images`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -653,7 +666,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @throws {RequiredError}
          */
         login: async (loginInput?: LoginInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/auth/login`;
+            const localVarPath = `/api/auth/login`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -681,11 +694,12 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * Get the next pending image and set its status to processing.
+         * @param {ProcessImageInput} [processImageInput] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        processImage: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/process-image`;
+        processImage: async (processImageInput?: ProcessImageInput, options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/process-image`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -699,9 +713,12 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(processImageInput, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -715,7 +732,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @throws {RequiredError}
          */
         refresh: async (refreshLoginInput?: RefreshLoginInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/auth/refresh`;
+            const localVarPath = `/api/auth/refresh`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -751,7 +768,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         updateImage: async (id: string, updateImageInput?: UpdateImageInput, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateImage', 'id', id)
-            const localVarPath = `/images/{id}`
+            const localVarPath = `/api/images/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -788,7 +805,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         updateVideoData: async (id: string, body?: any, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateVideoData', 'id', id)
-            const localVarPath = `/images/{id}/video.mp4`
+            const localVarPath = `/api/images/{id}/video.mp4`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -822,7 +839,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @throws {RequiredError}
          */
         verify: async (verifyLoginInput?: VerifyLoginInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/auth/verify`;
+            const localVarPath = `/api/auth/verify`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -952,11 +969,12 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
         },
         /**
          * Get the next pending image and set its status to processing.
+         * @param {ProcessImageInput} [processImageInput] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async processImage(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.processImage(options);
+        async processImage(processImageInput?: ProcessImageInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.processImage(processImageInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -1096,11 +1114,12 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * Get the next pending image and set its status to processing.
+         * @param {ProcessImageInput} [processImageInput] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        processImage(options?: any): AxiosPromise<Image> {
-            return localVarFp.processImage(options).then((request) => request(axios, basePath));
+        processImage(processImageInput?: ProcessImageInput, options?: any): AxiosPromise<Image> {
+            return localVarFp.processImage(processImageInput, options).then((request) => request(axios, basePath));
         },
         /**
          * Refresh Login code
@@ -1253,12 +1272,13 @@ export class AIBrushApi extends BaseAPI {
 
     /**
      * Get the next pending image and set its status to processing.
+     * @param {ProcessImageInput} [processImageInput] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public processImage(options?: any) {
-        return AIBrushApiFp(this.configuration).processImage(options).then((request) => request(this.axios, this.basePath));
+    public processImage(processImageInput?: ProcessImageInput, options?: any) {
+        return AIBrushApiFp(this.configuration).processImage(processImageInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
