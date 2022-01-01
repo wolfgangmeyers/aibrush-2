@@ -7,6 +7,10 @@ export function getConfig(): Config {
         return {
             apiUrl: "https://aibrush.ngrok.io"
         };
+    } else if (process.env.REACT_APP_ENV === "alt") {
+        return {
+            apiUrl: ""
+        };
     } else {
         return {
             apiUrl: "http://localhost:3000"
