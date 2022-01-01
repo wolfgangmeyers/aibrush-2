@@ -720,6 +720,7 @@ describe("server", () => {
                         await expect(client2.updateVideoData(image.id, "", {})).rejects.toThrow(/Request failed with status code 404/)
                     })
                 })
+
             })
 
             describe("when creating an image with enable_video=true and enable_zoom=true and default zoom options", () => {
@@ -779,9 +780,59 @@ describe("server", () => {
                         expect(listResponse.data.images[0].zoom_shift_y).toBe(0)
                     })
                 })
+
+                describe("when processing an image as a service acct with zoom_supported=false", () => {
+
+                    let processResponse: AxiosResponse<Image>;
+
+                    // authenticate as service account
+                    beforeEach(async () => {
+                        await authenticateUser(
+                            mailcatcher,
+                            client,
+                            httpClient,
+                            "service-account@test.test"
+                        )
+                    })
+
+                    beforeEach(async () => {
+                        processResponse = await client.processImage({
+                            zoom_supported: false,
+                        })
+                    })
+
+                    it("should return null", () => {
+                        expect(processResponse.data).toBe(null)
+                    })
+                })
+
+                describe("when processing an image as a service acct with zoom_supported=true", () => {
+
+                    let processResponse: AxiosResponse<Image>;
+
+                    // authenticate as service account
+                    beforeEach(async () => {
+                        await authenticateUser(
+                            mailcatcher,
+                            client,
+                            httpClient,
+                            "service-account@test.test"
+                        )
+                    })
+
+                    beforeEach(async () => {
+                        processResponse = await client.processImage({
+                            zoom_supported: true,
+                        })
+                    })
+
+                    it("should return the image", () => {
+                        expect(processResponse.data.id).toBe(image.id)
+                    })
+                })
             })
 
-            describe.only("when creating an image with enable_video=true and enable_zoom=true and non-default zoom options", () => {
+            describe("when creating an image with enable_video=true and enable_zoom=true and non-default zoom options", () => {
                 let image: Image;
 
                 beforeEach(async () => {

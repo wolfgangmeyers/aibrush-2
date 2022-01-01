@@ -288,12 +288,13 @@ export class Server {
         this.app.put("/process-image", async (req, res) => {
             try {
                 const user = this.authHelper.getUserFromRequest(req)
+
                 // only service accounts can process images
                 if (!this.isServiceAccount(user)) {
                     res.sendStatus(403)
                     return
                 }
-                const image = await this.backendService.processImage()
+                const image = await this.backendService.processImage(req.body.zoom_supported)
                 res.json(image)
             } catch (err) {
                 console.error(err)
