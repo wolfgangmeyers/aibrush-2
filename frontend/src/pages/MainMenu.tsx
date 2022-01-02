@@ -7,7 +7,7 @@ import { Link } from "react-router-dom"
 
 export const MainMenu: FC = () => {
     return (
-        <div className="container">
+        <>
             {/* Header: Welcome to AIBrush! */}
             <div className="row">
                 <div className="col-12">
@@ -41,6 +41,6 @@ export const MainMenu: FC = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     )
 }

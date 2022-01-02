@@ -48,7 +48,7 @@ export const Login: FC<LoginProps> = props => {
 
     // bootstrap login form
     return (
-        <div className="container">
+        <>
             <div className="row">
                 <div className="col-md-6 offset-md-3">
                     <div className="card">
@@ -89,6 +89,6 @@ export const Login: FC<LoginProps> = props => {
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

@@ -169,7 +169,7 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
     const inprogress = (image && (image.status === "pending" || image.status === "processing")) || false;
 
     return (
-        <div className="container">
+        <>
             <div className="row">
                 <div className="col-12">
                     <h1>Interactive Designer</h1>
@@ -261,6 +261,6 @@ export const InteractiveDesigner: FC<InteractiveDesignerProps> = ({ api }) => {
                     onSave={onImageEdited}
                 />
             )}
-        </div>
+        </>
     )
 }

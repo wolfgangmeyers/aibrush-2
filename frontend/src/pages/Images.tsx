@@ -147,7 +147,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
     }
 
     return (
-        <div className="container">
+        <>
             <div className="row">
                 <div className="col-md-12">
                     <h1>Images</h1>
@@ -199,7 +199,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
                     onDesign={onDesignImage}
                 />
             )}
-        </div>
+        </>
     );
 };
 

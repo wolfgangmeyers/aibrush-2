@@ -72,46 +72,53 @@ function App() {
     <div className="App">
       <TokenRefresher api={client} credentials={credentials as LoginResult} onCredentialsRefreshed={onLogin} />
       <Healthchecker api={client} />
-      {/* settings button */}
-      <button className="btn btn-primary top-button" onClick={onUpdateAPIUrl}>
-        {/* font awesome settings icon */}
-        <i className="fas fa-cog"></i>&nbsp;
-        Settings
-      </button>
-      <BrowserRouter>
-        {/* if credentials are not set, show Login component */}
-        {!credentials && <Login httpClient={httpClient} client={client} onLogin={onLogin} />}
-        {/* if credentials are set, show a bootstrap logout button a the far top right corner div */}
-        {credentials && <>
-          <button className="btn btn-primary top-button" onClick={() => setCredentials(null)}>
-            {/* font awesome logout icon */}
-            <i className="fas fa-sign-out-alt"></i>&nbsp;
-            Logout
-          </button>
-          {/* home button */}
-          <Link className="btn btn-primary top-button" to="/">
-            {/* font awesome home icon */}
-            <i className="fas fa-home"></i>&nbsp;
-            Home
-          </Link>
 
-        </>}
-        {/* if credentials are set, show the rest of the app */}
-        {credentials && <Switch>
-          <Route path="/" exact={true}>
-            <MainMenu />
-          </Route>
-          <Route path="/create-image">
-            <CreateImage api={client} apiUrl={config.apiUrl} />
-          </Route>
-          <Route path="/images">
-            <ImagesPage apiUrl={config.apiUrl} api={client} />
-          </Route>
-          {/* /designer route */}
-          <Route path="/designer">
-            <InteractiveDesigner api={client} apiUrl={config.apiUrl} />
-          </Route>
-        </Switch>}
+      <BrowserRouter>
+        <div className="container">
+          <div className="row">
+            <div className="col-lg-12">
+              {/* settings button */}
+              <button className="btn btn-primary top-button" onClick={onUpdateAPIUrl}>
+                {/* font awesome settings icon */}
+                <i className="fas fa-cog"></i>&nbsp;
+                Settings
+              </button>
+              {/* if credentials are not set, show Login component */}
+              {!credentials && <Login httpClient={httpClient} client={client} onLogin={onLogin} />}
+              {/* if credentials are set, show a bootstrap logout button a the far top right corner div */}
+              {credentials && <>
+                <button className="btn btn-primary top-button" onClick={() => setCredentials(null)}>
+                  {/* font awesome logout icon */}
+                  <i className="fas fa-sign-out-alt"></i>&nbsp;
+                  Logout
+                </button>
+                {/* home button */}
+                <Link className="btn btn-primary top-button" to="/">
+                  {/* font awesome home icon */}
+                  <i className="fas fa-home"></i>&nbsp;
+                  Home
+                </Link>
+              </>}
+            </div>
+          </div>
+
+          {/* if credentials are set, show the rest of the app */}
+          {credentials && <Switch>
+            <Route path="/" exact={true}>
+              <MainMenu />
+            </Route>
+            <Route path="/create-image">
+              <CreateImage api={client} apiUrl={config.apiUrl} />
+            </Route>
+            <Route path="/images">
+              <ImagesPage apiUrl={config.apiUrl} api={client} />
+            </Route>
+            {/* /designer route */}
+            <Route path="/designer">
+              <InteractiveDesigner api={client} apiUrl={config.apiUrl} />
+            </Route>
+          </Switch>}
+        </div>
       </BrowserRouter>
     </div>
   );
