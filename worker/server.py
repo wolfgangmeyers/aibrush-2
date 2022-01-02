@@ -2,6 +2,9 @@
 # but is meant to work in a standalone fashion without the
 # need for a central server. Results are written to s3.
 
+# testing with curl
+# curl -H "Content-Type: application/json" -d '{"id": "asdf", "text_prompt": "A cute cartoon frog", "iterations": 100}' http://localhost:5000/image
+
 import requests
 import sys
 import os
