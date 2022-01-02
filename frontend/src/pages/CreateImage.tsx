@@ -106,6 +106,48 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         setEditingImage(null)
     }
 
+    const onRandomizeImage = () => {
+        // create a new canvas
+        const canvas = document.createElement("canvas")
+        canvas.width = 512
+        canvas.height = 512
+        const ctx = canvas.getContext("2d")
+        if (ctx) {
+            ctx.fillStyle = "white"
+            ctx.fillRect(0, 0, 512, 512)
+            // draw random circles and rectangles
+            for (let i = 0; i < 2048; i++) {
+                const x = Math.random() * 512
+                const y = Math.random() * 512
+                const w = Math.random() * 20
+                const h = Math.random() * 20
+                // random fillStyle and strokeStyle
+                ctx.fillStyle = `rgb(${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)})`
+                ctx.strokeStyle = `rgb(${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)})`
+                // random shape
+                const shape = Math.floor(Math.random() * 3)
+                if (shape === 0) {
+                    ctx.fillRect(x, y, w, h)
+                } else if (shape === 1) {
+                    ctx.beginPath()
+                    ctx.arc(x, y, w, 0, 2 * Math.PI)
+                    ctx.fill()
+                } else {
+                    ctx.beginPath()
+                    ctx.arc(x, y, w, 0, 2 * Math.PI)
+                    ctx.stroke()
+                }
+            }
+            // convert image to base64
+            const dataUrl = canvas.toDataURL("image/jpeg")
+            const base64 = dataUrl.split(",")[1]
+            setInput({
+                ...input,
+                encoded_image: base64
+            })
+        }
+    }
+
     useEffect(() => {
 
         const loadParent = async (parentId: string) => {
@@ -239,7 +281,11 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                     />
                                 </label>
                                 <button type="button" className="btn btn-sm btn-primary" onClick={onEditImage}>Edit Image</button>
+                                
                             </div>
+                            {/* <div className="form-group">
+                                <button type="button" className="btn btn-sm btn-primary" onClick={onRandomizeImage}>Randomize Image</button>
+                            </div> */}
 
                             <div className="form-group">
                                 {/* Cancel button "/" */}

@@ -15,6 +15,7 @@ export class Server {
     private app: Express;
     private terminator: HttpTerminator;
     private authHelper: AuthHelper;
+    cleanupHandle: NodeJS.Timer
 
     constructor(private config: Config, private backendService: BackendService, private port: string | number) {
         this.app = express()
@@ -312,13 +313,20 @@ export class Server {
         })
     }
 
+    
+
     start() {
+
         return new Promise<void>(resolve => {
             this.server = this.app.listen(this.port as number, "0.0.0.0", () => {
-
                 resolve()
             })
             this.terminator = createHttpTerminator({ server: this.server, gracefulTerminationTimeout: 100 })
+            
+            this.cleanupHandle = setInterval(() => {
+                console.log("timer callback")
+                this.backendService.cleanupStuckImages()
+            }, 1000 * 60)
         })
     }
 
@@ -326,6 +334,10 @@ export class Server {
         await this.backendService.destroy()
         if (this.terminator) {
             await this.terminator.terminate()
+        }
+        if (this.cleanupHandle) {
+            clearInterval(this.cleanupHandle)
+            this.cleanupHandle = undefined
         }
     }
 }

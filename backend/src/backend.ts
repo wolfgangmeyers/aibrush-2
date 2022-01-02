@@ -346,6 +346,25 @@ export class BackendService {
         }
     }
 
+    // for all images with status "processing" that have not been updated in more than 5 minutes,
+    // update status to "pending"
+    async cleanupStuckImages(): Promise<void> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `UPDATE images SET status='pending', updated_at=$2 WHERE status='processing' AND updated_at < $1`,
+                [new Date().getTime() - (5 * 60 * 1000), new Date().getTime()]
+            )
+            // if any images were updated, log the number
+            if (result.rowCount > 0) {
+                console.log(`Cleaning up stuck images: ${result.rowCount} images updated to "pending"`)
+            }
+        } finally {
+            client.release()
+        }
+    }
+
+
     async updateVideoData(id: string, videoData: Buffer) {
         // write video data to mp4 file
         console.log(`writing video data to ${this.config.dataFolderName}/${id}.mp4`)

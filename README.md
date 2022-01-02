@@ -27,3 +27,7 @@ Some examples of what can be created with VQGAN+CLIP:
 ## Deployment
 
 * [Deploying on EC2](./DEPLOYING-EC2.md)
+
+## Architecture
+
+![](./docs/AIBrush_Components.jpg)
