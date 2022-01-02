@@ -10,7 +10,7 @@ import traceback
 
 from vqgan_clip.generate import run, default_args
 
-api_url = "https://aibrush.ngrok.io"
+api_url = "https://www.aibrush.art"
 if len(sys.argv) > 1:
     api_url = sys.argv[1]
 
