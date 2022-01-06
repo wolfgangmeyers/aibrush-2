@@ -34,8 +34,10 @@ class AIBrushAPI(object):
             raise err
             return None
 
-    def process_image(self) -> SimpleNamespace:
-        resp = self.http_request("/process-image", "PUT")
+    def process_image(self, zoom_supported: bool) -> SimpleNamespace:
+        resp = self.http_request("/process-image", "PUT", body={
+            "zoom_supported": zoom_supported,
+        })
         print(resp.text)
         return self.parse_json(resp.text)
 

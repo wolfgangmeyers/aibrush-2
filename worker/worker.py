@@ -18,6 +18,15 @@ if len(sys.argv) > 1:
 with open('credentials.json') as f:
     access_token = json.load(f)["accessToken"]
 
+zoom_supported = True
+try:
+    with open("config.json") as f:
+        config = json.load(f)
+        if "zoom_supported" in config:
+            zoom_supported = config["zoom_supported"]
+except:
+    pass
+
 client = AIBrushAPI(api_url, access_token)
 
 def cleanup():
@@ -32,7 +41,7 @@ def cleanup():
 def process_image():
     cleanup()
     try:
-        image = client.process_image()
+        image = client.process_image(zoom_supported)
         if not image:
             print("No image found")
             return
