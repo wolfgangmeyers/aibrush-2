@@ -224,6 +224,191 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Image"
+  /api/suggestion-seeds:
+    get:
+      description: Get a list of suggestion seeds
+      operationId: getSuggestionSeeds
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionSeedList"
+    post:
+      description: Create a new suggestion seed
+      operationId: createSuggestionSeed
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuggestionSeedInput"
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionSeed"
+  /api/suggestion-seeds/{id}:
+    get:
+      description: Get a suggestion seed by id
+      operationId: getSuggestionSeed
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionSeed"
+    patch:
+      description: Update a suggestion seed
+      operationId: updateSuggestionSeed
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuggestionSeedInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionSeed"
+    delete:
+      description: Delete a suggestion seed
+      operationId: deleteSuggestionSeed
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+  /api/suggestions-jobs:
+    get:
+      description: Get a list of suggestions jobs
+      operationId: getSuggestionsJobs
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionsJobList"
+    post:
+      description: Create a new suggestions job
+      operationId: createSuggestionsJob
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSuggestionsJobInput"
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionsJob"
+  /api/suggestions-jobs/{id}:
+    get:
+      description: Get a suggestions job by id
+      operationId: getSuggestionsJob
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionsJob"
+    patch:
+      description: Update a suggestions job
+      operationId: updateSuggestionsJob
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSuggestionsJobInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionsJob"
+    delete:
+      description: Delete a suggestions job
+      operationId: deleteSuggestionsJob
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+  /api/process-suggestion-job:
+    post:
+      description: Process a suggestions job
+      operationId: processSuggestionJob
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionsJob"
   # login by email
   /api/auth/login:
     post:
@@ -429,6 +614,81 @@ components:
           type: string
         refreshToken:
           type: string
+    SuggestionSeed:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        items:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: integer
+        created_by:
+          type: string
+        updated_at:
+          type: integer
+    SuggestionSeedList:
+      properties:
+        suggestionSeeds:
+          type: array
+          items:
+            $ref: "#/components/schemas/SuggestionSeed"
+    SuggestionSeedInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    SuggestionsJob:
+      type: object
+      properties:
+        id:
+          type: string
+        created_by:
+          type: string
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+        seed_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, saved]
+        result:
+          type: array
+          items:
+            type: string
+    SuggestionsJobList:
+      properties:
+        suggestionsJobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/SuggestionsJob"
+    CreateSuggestionsJobInput:
+      type: object
+      properties:
+        seed_set_id:
+          type: string
+    UpdateSuggestionsJobInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, processing, completed, saved]
+        result:
+          type: array
+          items:
+            type: string
+
+
 
     Healthcheck:
       type: object
@@ -436,3 +696,4 @@ components:
         status:
           type: string
           enum: [ok]
+
