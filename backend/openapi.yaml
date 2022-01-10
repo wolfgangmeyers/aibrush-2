@@ -227,7 +227,7 @@ paths:
   /api/suggestion-seeds:
     get:
       description: Get a list of suggestion seeds
-      operationId: getSuggestionSeeds
+      operationId: listSuggestionSeeds
       tags:
         - AIBrush
       responses:
@@ -313,7 +313,7 @@ paths:
   /api/suggestions-jobs:
     get:
       description: Get a list of suggestions jobs
-      operationId: getSuggestionsJobs
+      operationId: listSuggestionsJobs
       tags:
         - AIBrush
       responses:
@@ -399,7 +399,7 @@ paths:
   /api/process-suggestion-job:
     post:
       description: Process a suggestions job
-      operationId: processSuggestionJob
+      operationId: processSuggestionsJob
       tags:
         - AIBrush
       responses:
@@ -627,12 +627,8 @@ components:
           type: array
           items:
             type: string
-        created_at:
-          type: integer
         created_by:
           type: string
-        updated_at:
-          type: integer
     SuggestionSeedList:
       properties:
         suggestionSeeds:
@@ -675,7 +671,7 @@ components:
     CreateSuggestionsJobInput:
       type: object
       properties:
-        seed_set_id:
+        seed_id:
           type: string
     UpdateSuggestionsJobInput:
       type: object

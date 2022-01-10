@@ -6,7 +6,22 @@ import fs from "fs"
 import nodemailer from "nodemailer";
 import sharp from "sharp";
 
-import { ImageList, Image, CreateImageInput, UpdateImageInput, LoginInput, VerifyLoginInput, LoginResult, ImageStatusEnum } from "./client/api"
+import {
+    ImageList,
+    Image,
+    CreateImageInput,
+    UpdateImageInput,
+    ImageStatusEnum,
+    SuggestionSeed,
+    SuggestionSeedInput,
+    SuggestionSeedList,
+    SuggestionsJob,
+    SuggestionsJobList,
+    SuggestionsJobStatusEnum,
+    CreateSuggestionsJobInput,
+    UpdateSuggestionsJobInput,
+    UpdateSuggestionsJobInputStatusEnum,
+} from "./client/api"
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
 import { Config } from "./config"
@@ -381,6 +396,184 @@ export class BackendService {
         }
     }
 
+
+
+    async listSuggestionSeeds(user: string): Promise<SuggestionSeedList> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM suggestion_seeds WHERE created_by=$1`,
+                [user]
+            )
+            return {
+                suggestionSeeds: result.rows
+            }
+        } finally {
+            client.release()
+        }
+    }
+
+    async createSuggestionSeed(user: string, body: SuggestionSeedInput): Promise<SuggestionSeed> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `INSERT INTO suggestion_seeds (id, created_by, name, description) VALUES ($1, $2, $3, $4) RETURNING *`,
+                [uuid.v4(), user, body.name, body.description]
+            )
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    // get suggestion seed by id
+    async getSuggestionSeed(id: string, userId: string): Promise<SuggestionSeed> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM suggestion_seeds WHERE id=$1 AND created_by=$2`,
+                [id, userId]
+            )
+            // if no suggestion seed found, return null
+            if (result.rowCount === 0) {
+                return null
+            }
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    // update suggestion seed (name, description)
+    async updateSuggestionSeed(id: string, userId: string, body: SuggestionSeedInput): Promise<SuggestionSeed> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `UPDATE suggestion_seeds SET name=$1, description=$2 WHERE id=$3 AND created_by=$4 RETURNING *`,
+                [body.name, body.description, id, userId]
+            )
+            // if no suggestion seed found, return null
+            if (result.rowCount === 0) {
+                return null
+            }
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    async deleteSuggestionSeed(id: string, user: string): Promise<boolean> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `DELETE FROM suggestion_seeds WHERE id=$1 AND created_by=$2`,
+                [id, user]
+            )
+            return result.rowCount > 0
+        } finally {
+            client.release()
+        }
+    }
+
+    // list suggestions jobs
+    async listSuggestionsJobs(user: string): Promise<SuggestionsJobList> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM suggestions_jobs WHERE created_by=$1`,
+                [user]
+            )
+            return {
+                suggestionsJobs: result.rows
+            }
+        } finally {
+            client.release()
+        }
+    }
+
+    // create suggestions job
+    async createSuggestionsJob(user: string, body: CreateSuggestionsJobInput): Promise<SuggestionsJob> {
+        const client = await this.pool.connect()
+        const now = moment().valueOf()
+        try {
+            const result = await client.query(
+                `INSERT INTO suggestions_jobs (id, created_by, created_at, updated_at, seed_id, status, result) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+                [uuid.v4(), user, now, now, body.seed_id, "pending", []]
+            )
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    // get suggestions job by id
+    async getSuggestionsJob(id: string, userId?: string): Promise<SuggestionsJob> {
+        const client = await this.pool.connect()
+        try {
+            let query = `SELECT * FROM suggestions_jobs WHERE id=$1`
+            let args = [id]
+            if (userId) {
+                query += ` AND created_by=$2`
+                args.push(userId)
+            }
+            const result = await client.query(
+                query,
+                args,
+            )
+            // if no suggestions job found, return null
+            if (result.rowCount === 0) {
+                return null
+            }
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    // update suggestions job
+    async updateSuggestionsJob(id: string, userId: string, body: UpdateSuggestionsJobInput): Promise<SuggestionsJob> {
+        // get suggestions job first
+        const job = await this.getSuggestionsJob(id, userId)
+        const client = await this.pool.connect()
+        try {
+            let query = `UPDATE suggestions_jobs SET status=$1, updated_at=$2, result=$3 WHERE id=$4 RETURNING *`
+            let args = [body.status || job.status, moment().valueOf(), body.result || job.result, id]
+            if (userId) {
+                query = `UPDATE suggestions_jobs SET status=$1, updated_at=$2, result=$3 WHERE id=$4 AND created_by=$5 RETURNING *`
+                args.push(userId)
+            }
+            const result = await client.query(
+                query,
+                args,
+            )
+            // if no suggestions job found, return null
+            if (result.rowCount === 0) {
+                return null
+            }
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    // delete suggestions job
+    async deleteSuggestionsJob(id: string, user: string): Promise<boolean> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `DELETE FROM suggestions_jobs WHERE id=$1 AND created_by=$2`,
+                [id, user]
+            )
+            return result.rowCount > 0
+        } finally {
+            client.release()
+        }
+    }
+
+    // process suggestions job
+    async processSuggestionsJob(): Promise<SuggestionsJob> {
+
+    }
 
 
     async login(email: string): Promise<void> {

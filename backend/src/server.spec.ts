@@ -6,7 +6,22 @@ import path from "path"
 
 import { Server } from "./server"
 import { BackendService } from "./backend"
-import { AIBrushApi, ImageList, Image, CreateImageInput, UpdateImageInput, LoginResult, UpdateImageInputStatusEnum } from "./client/api"
+import {
+    AIBrushApi,
+    ImageList,
+    Image,
+    CreateImageInput,
+    UpdateImageInput,
+    LoginResult,
+    UpdateImageInputStatusEnum,
+    SuggestionSeedList,
+    SuggestionSeed,
+    SuggestionsJobList,
+    SuggestionsJob,
+    CreateSuggestionsJobInput,
+    UpdateSuggestionsJobInput,
+    UpdateSuggestionsJobInputStatusEnum,
+} from "./client/api"
 
 import nodemailer from "nodemailer";
 import { Mailcatcher, MailcatcherMessage } from './mailcatcher'
@@ -62,7 +77,8 @@ describe("server", () => {
             loginCodeExpirationSeconds: 1,
             userAccessTokenExpirationSeconds: 3600,
             serviceAccountAccessTokenExpirationSeconds: 3600,
-            serviceAccounts: ["service-account@test.test"]
+            serviceAccounts: ["service-account@test.test"],
+            userWhitelist: [],
         })
         const databases = await backendService.listDatabases()
         for (const db of databases) {
@@ -95,7 +111,8 @@ describe("server", () => {
             loginCodeExpirationSeconds: 1,
             userAccessTokenExpirationSeconds: 3600,
             serviceAccountAccessTokenExpirationSeconds: 3600,
-            serviceAccounts: ["service-account@test.test"]
+            serviceAccounts: ["service-account@test.test"],
+            userWhitelist: [],
         }
         const backendService = new BackendService(config)
 
@@ -1020,6 +1037,436 @@ describe("server", () => {
                     })
                 })
             })
-        })
+
+            describe("when listing suggestion seeds from an empty database", () => {
+                let listResponse: AxiosResponse<SuggestionSeedList>;
+
+                beforeEach(async () => {
+                    listResponse = await client.listSuggestionSeeds()
+                })
+
+                it("should return an empty list", () => {
+                    expect(listResponse.data.suggestionSeeds).toHaveLength(0)
+                })
+            })
+
+            describe("when getting a suggestion seed that doesn't exist", () => {
+                it("should return 404", async () => {
+                    await expect(client.getSuggestionSeed("123")).rejects.toThrow(/Request failed with status code 404/)
+                })
+            })
+
+            describe("when updating a suggestion seed that doesn't exist", () => {
+                it("should return 404", async () => {
+                    await expect(client.updateSuggestionSeed("123", {
+                        name: "test"
+                    })).rejects.toThrow(/Request failed with status code 404/)
+                })
+            })
+
+            describe("when creating a suggestion seed", () => {
+                let createResponse: AxiosResponse<SuggestionSeed>;
+
+                beforeEach(async () => {
+                    createResponse = await client.createSuggestionSeed({
+                        name: "test",
+                        description: "test"
+                    })
+                })
+
+                it("should return the created suggestion seed", () => {
+                    expect(createResponse.data.id).toBeDefined()
+                    expect(createResponse.data.name).toBe("test")
+                    expect(createResponse.data.description).toBe("test")
+                })
+
+                describe("when listing suggestion seeds", () => {
+                    let listResponse: AxiosResponse<SuggestionSeedList>;
+
+                    beforeEach(async () => {
+                        listResponse = await client.listSuggestionSeeds()
+                    })
+
+                    it("should return the created suggestion seed", () => {
+                        expect(listResponse.data.suggestionSeeds).toHaveLength(1)
+                        expect(listResponse.data.suggestionSeeds[0].id).toBe(createResponse.data.id)
+                        expect(listResponse.data.suggestionSeeds[0].name).toBe("test")
+                        expect(listResponse.data.suggestionSeeds[0].description).toBe("test")
+                    })
+                })
+
+                describe("when listing suggestion seeds as another user", () => {
+                    let listResponse: AxiosResponse<SuggestionSeedList>;
+
+                    beforeEach(async () => {
+                        // authenticate as second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test")
+                    })
+
+                    beforeEach(async () => {
+                        listResponse = await client2.listSuggestionSeeds()
+                    })
+
+                    it("should return an empty list", () => {
+                        expect(listResponse.data.suggestionSeeds).toHaveLength(0)
+                    })
+                })
+
+                describe("when getting a suggestion seed by id", () => {
+                    let getResponse: AxiosResponse<SuggestionSeed>;
+
+                    beforeEach(async () => {
+                        getResponse = await client.getSuggestionSeed(createResponse.data.id)
+                    })
+
+                    it("should return the created suggestion seed", () => {
+                        expect(getResponse.data.id).toBe(createResponse.data.id)
+                        expect(getResponse.data.name).toBe("test")
+                        expect(getResponse.data.description).toBe("test")
+                    })
+                })
+
+                describe("when getting a suggestion seed as another user", () => {
+                    beforeEach(async () => {
+                        // authenticate second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test")
+                    })
+
+                    it("should return 404", async () => {
+                        await expect(client2.getSuggestionSeed(createResponse.data.id)).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
+
+                // test update suggestion seed
+                describe("when updating a suggestion seed", () => {
+                    let updateResponse: AxiosResponse<SuggestionSeed>;
+
+                    beforeEach(async () => {
+                        updateResponse = await client.updateSuggestionSeed(createResponse.data.id, {
+                            name: "test2",
+                            description: "test2"
+                        })
+                    })
+
+                    it("should return the updated suggestion seed", () => {
+                        expect(updateResponse.data.id).toBe(createResponse.data.id)
+                        expect(updateResponse.data.name).toBe("test2")
+                        expect(updateResponse.data.description).toBe("test2")
+                    })
+
+                    describe("when getting a suggestion seed by id", () => {
+                        let getResponse: AxiosResponse<SuggestionSeed>;
+
+                        beforeEach(async () => {
+                            getResponse = await client.getSuggestionSeed(createResponse.data.id)
+                        })
+
+                        it("should return the updated suggestion seed", () => {
+                            expect(getResponse.data.id).toBe(createResponse.data.id)
+                            expect(getResponse.data.name).toBe("test2")
+                            expect(getResponse.data.description).toBe("test2")
+                        })
+                    })
+                })
+
+                // test delete suggestion seed
+                describe("when deleting a suggestion seed", () => {
+                    let deleteResponse: AxiosResponse<void>;
+
+                    beforeEach(async () => {
+                        deleteResponse = await client.deleteSuggestionSeed(createResponse.data.id)
+                    })
+
+                    it("should return a no-content response", () => {
+                        expect(deleteResponse.status).toBe(204)
+                    })
+
+                    describe("when getting a suggestion seed by id", () => {
+                        it("should return 404", async () => {
+                            await expect(client.getSuggestionSeed(createResponse.data.id)).rejects.toThrow(/Request failed with status code 404/)
+                        })
+                    })
+                })
+
+                // test delete suggestion seed as another user
+                describe("when deleting a suggestion seed as another user", () => {
+                    beforeEach(async () => {
+                        // authenticate second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test")
+                    })
+
+                    it("should return 404", async () => {
+                        await expect(client2.deleteSuggestionSeed(createResponse.data.id)).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
+
+            }) // end suggestion seed crud tests
+
+            // suggestions job tests
+            describe("when listing suggestion jobs from an empty database", () => {
+                let listResponse: AxiosResponse<SuggestionsJobList>;
+
+                beforeEach(async () => {
+                    listResponse = await client.listSuggestionsJobs()
+                })
+
+                it("should return an empty list", () => {
+                    expect(listResponse.data.suggestionsJobs).toHaveLength(0)
+                })
+            })
+
+            describe("when getting a suggestions job by id that doesn't exist", () => {
+                it("should return 404", async () => {
+                    await expect(client.getSuggestionsJob("123")).rejects.toThrow(/Request failed with status code 404/)
+                })
+            })
+
+            describe("when creating a suggestions job", () => {
+
+                let createResponse: AxiosResponse<SuggestionsJob>;
+                let createSeedResponse: AxiosResponse<SuggestionSeed>;
+
+                beforeEach(async () => {
+                    createSeedResponse = await client.createSuggestionSeed({
+                        name: "test",
+                        description: "test"
+                    })
+                })
+
+                beforeEach(async () => {
+                    createResponse = await client.createSuggestionsJob({
+                        seed_id: createSeedResponse.data.id,
+                    })
+                })
+
+                it("should return the created suggestions job", () => {
+                    expect(createResponse.data.id).toBeDefined()
+                    expect(createResponse.data.seed_id).toBe(createSeedResponse.data.id)
+                    // created_at, created_by, updated_at
+                    expect(createResponse.data.created_at).toBeDefined()
+                    expect(createResponse.data.created_by).toEqual("test@test.test")
+                    expect(createResponse.data.updated_at).toBeDefined()
+                    expect(createResponse.data.result).toEqual([])
+                })
+
+                describe("when listing suggestions jobs", () => {
+                    let listResponse: AxiosResponse<SuggestionsJobList>;
+
+                    beforeEach(async () => {
+                        listResponse = await client.listSuggestionsJobs()
+                    })
+
+                    it("should return the created suggestions job", () => {
+                        expect(listResponse.data.suggestionsJobs).toHaveLength(1)
+                        expect(listResponse.data.suggestionsJobs[0].id).toBe(createResponse.data.id)
+                        expect(listResponse.data.suggestionsJobs[0].seed_id).toBe(createSeedResponse.data.id)
+                        expect(listResponse.data.suggestionsJobs[0].created_at).toBeDefined()
+                        expect(listResponse.data.suggestionsJobs[0].created_by).toEqual("test@test.test")
+                        expect(listResponse.data.suggestionsJobs[0].updated_at).toBeDefined()
+                        expect(listResponse.data.suggestionsJobs[0].result).toEqual([])
+                    })
+                })
+
+                describe("when getting a suggestions job by id", () => {
+                    let getResponse: AxiosResponse<SuggestionsJob>;
+
+                    beforeEach(async () => {
+                        getResponse = await client.getSuggestionsJob(createResponse.data.id)
+                    })
+
+                    it("should return the created suggestions job", () => {
+                        expect(getResponse.data.id).toBe(createResponse.data.id)
+                        expect(getResponse.data.seed_id).toBe(createSeedResponse.data.id)
+                        expect(getResponse.data.created_at).toBeDefined()
+                        expect(getResponse.data.created_by).toEqual("test@test.test")
+                        expect(getResponse.data.updated_at).toBeDefined()
+                        expect(getResponse.data.result).toEqual([])
+                    })
+                })
+
+                describe("when getting a suggestions job as another user", () => {
+                    beforeEach(async () => {
+                        // authenticate second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test")
+                    })
+
+                    it("should return 404", async () => {
+                        await expect(client2.getSuggestionsJob(createResponse.data.id)).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
+
+                // get by id with service account
+                describe("when getting a suggestions job by id with service account", () => {
+                    let getResponse: AxiosResponse<SuggestionsJob>;
+
+                    beforeEach(async () => {
+                        await authenticateUser(mailcatcher, client2, httpClient2, "service-account@test.test")
+                    })
+
+                    beforeEach(async () => {
+                        getResponse = await client2.getSuggestionsJob(createResponse.data.id)
+                    })
+
+                    it("should return the created suggestions job", () => {
+                        expect(getResponse.data.id).toBe(createResponse.data.id)
+                        expect(getResponse.data.seed_id).toBe(createSeedResponse.data.id)
+                        expect(getResponse.data.created_at).toBeDefined()
+                        expect(getResponse.data.created_by).toEqual("test@test.test")
+                        expect(getResponse.data.updated_at).toBeDefined()
+                        expect(getResponse.data.result).toEqual([])
+                    })
+                })
+
+                describe("when updating a suggestions job", () => {
+                    let updateResponse: AxiosResponse<SuggestionsJob>;
+
+                    beforeEach(async () => {
+                        updateResponse = await client.updateSuggestionsJob(createResponse.data.id, {
+                            status: UpdateSuggestionsJobInputStatusEnum.Processing,
+                            result: ["test"]
+                        })
+                    })
+
+                    it("should return the updated suggestions job", () => {
+                        expect(updateResponse.data.id).toBe(createResponse.data.id)
+                        expect(updateResponse.data.status).toBe(UpdateSuggestionsJobInputStatusEnum.Processing)
+                        expect(updateResponse.data.result).toEqual(["test"])
+                        // other fields should be unchanged
+                        expect(updateResponse.data.seed_id).toBe(createSeedResponse.data.id)
+                        expect(updateResponse.data.created_at).toBeDefined()
+                        expect(updateResponse.data.created_by).toEqual("test@test.test")
+                        expect(updateResponse.data.updated_at).toBeDefined()
+                    })
+                })
+
+                describe("when updating a suggestions job as a service account", () => {
+                    let updateResponse: AxiosResponse<SuggestionsJob>;
+
+                    beforeEach(async () => {
+                        // authenticate as a service account
+                        await authenticateUser(mailcatcher, client, httpClient, "service-account@test.test")
+                    })
+
+                    beforeEach(async () => {
+                        updateResponse = await client.updateSuggestionsJob(createResponse.data.id, {
+                            status: UpdateSuggestionsJobInputStatusEnum.Processing,
+                            result: ["test"]
+                        })
+                    })
+
+                    it("should return the updated suggestions job", () => {
+                        expect(updateResponse.data.id).toBe(createResponse.data.id)
+                        expect(updateResponse.data.status).toBe(UpdateSuggestionsJobInputStatusEnum.Processing)
+                        expect(updateResponse.data.result).toEqual(["test"])
+                        // other fields should be unchanged
+                        expect(updateResponse.data.seed_id).toBe(createSeedResponse.data.id)
+                        expect(updateResponse.data.created_at).toBeDefined()
+                        expect(updateResponse.data.created_by).toEqual("test@test.test")
+                        expect(updateResponse.data.updated_at).toBeDefined()
+                    })
+
+                    describe("when getting the suggestions job by id", () => {
+                        let getResponse: AxiosResponse<SuggestionsJob>;
+
+                        beforeEach(async () => {
+                            getResponse = await client.getSuggestionsJob(createResponse.data.id)
+                        })
+
+                        it("should return the updated suggestions job", () => {
+                            expect(getResponse.data.id).toBe(createResponse.data.id)
+                            expect(getResponse.data.status).toBe(UpdateSuggestionsJobInputStatusEnum.Processing)
+                            expect(getResponse.data.result).toEqual(["test"])
+                            // other fields should be unchanged
+                            expect(getResponse.data.seed_id).toBe(createSeedResponse.data.id)
+                            expect(getResponse.data.created_at).toBeDefined()
+                            expect(getResponse.data.created_by).toEqual("test@test.test")
+                            expect(getResponse.data.updated_at).toBeDefined()
+                        })
+                    })
+                })
+
+                describe("when updating a suggestions job as another user", () => {
+                    beforeEach(async () => {
+                        // authenticate second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test")
+                    })
+
+                    it("should return 404", async () => {
+                        await expect(client2.updateSuggestionsJob(createResponse.data.id, {
+                            status: UpdateSuggestionsJobInputStatusEnum.Processing,
+                            result: ["test"]
+                        })).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
+
+                describe("when deleting a suggestions job", () => {
+                    let deleteResponse: AxiosResponse<void>;
+
+                    beforeEach(async () => {
+                        deleteResponse = await client.deleteSuggestionsJob(createResponse.data.id)
+                    })
+
+                    it("should return with no content status code", () => {
+                        expect(deleteResponse.status).toBe(204)
+                    })
+
+                    describe("when getting the suggestions job by id", () => {
+                        it("should return 404", async () => {
+                            await expect(client.getSuggestionsJob(createResponse.data.id)).rejects.toThrow(/Request failed with status code 404/)
+                        })
+                    })
+                })
+
+                describe.only("when processing a suggestions job as a service account", () => {
+                    let processResponse: AxiosResponse<SuggestionsJob>;
+
+                    beforeEach(async () => {
+                        // authenticate service account
+                        await authenticateUser(mailcatcher, client2, httpClient2, "service-account@test.test")
+                    })
+
+                    beforeEach(async () => {
+                        processResponse = await client2.processSuggestionsJob()
+                    })
+
+                    it("should update the suggestions job", () => {
+                        expect(processResponse.data.id).toBe(createResponse.data.id)
+                        expect(processResponse.data.status).toBe(UpdateSuggestionsJobInputStatusEnum.Processing)
+                        expect(processResponse.data.result).toEqual([])
+                        // other fields should be unchanged
+                        expect(processResponse.data.seed_id).toBe(createSeedResponse.data.id)
+                        expect(processResponse.data.created_at).toBeDefined()
+                        expect(processResponse.data.created_by).toEqual("test@test.test")
+                        expect(processResponse.data.updated_at).toBeDefined()
+                    })
+
+                    describe("when processing a suggestions job again", () => {
+                        beforeEach(async () => {
+                            processResponse = await client2.processSuggestionsJob()
+                        })
+
+                        it("should return null", () => {
+                            expect(processResponse.data).toBeNull()
+                        })
+                    })
+                })
+            })
+
+            describe("when creating a suggestions job with a seed that doesn't exist", () => {
+                it("should return 404", async () => {
+                    await expect(client.createSuggestionsJob({
+                        seed_id: "123",
+                    })).rejects.toThrow(/Request failed with status code 404/)
+                })
+            })
+
+            describe("when deleting a suggestions job that doesn't exist", () => {
+                it("should return 404", async () => {
+                    await expect(client.deleteSuggestionsJob("123")).rejects.toThrow(/Request failed with status code 404/)
+                })
+            })
+
+            // end suggestions job tests
+        }) // end authenticated tests
     })
 })

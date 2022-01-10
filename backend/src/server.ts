@@ -311,9 +311,166 @@ export class Server {
                 res.sendStatus(500)
             }
         })
+
+        this.app.get("/api/suggestion-seeds", async (req, res) => {
+            try {
+                const user = this.authHelper.getUserFromRequest(req)
+                const seeds = await this.backendService.listSuggestionSeeds(user)
+                res.json(seeds)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        this.app.post("/api/suggestion-seeds", async (req, res) => {
+            try {
+                const user = this.authHelper.getUserFromRequest(req)
+                const seed = await this.backendService.createSuggestionSeed(user, req.body)
+                res.json(seed)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // get suggestion seed by id
+        this.app.get("/api/suggestion-seeds/:id", async (req, res) => {
+            try {
+                const user = this.authHelper.getUserFromRequest(req)
+                const seed = await this.backendService.getSuggestionSeed(req.params.id, user)
+                if (!seed) {
+                    res.status(404).send("not found")
+                    return
+                }
+                res.json(seed)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // update suggestion seed by id (patch)
+        this.app.patch("/api/suggestion-seeds/:id", async (req, res) => {
+            try {
+                const user = this.authHelper.getUserFromRequest(req)
+                const updatedSeed = await this.backendService.updateSuggestionSeed(req.params.id, user, req.body)
+                if (!updatedSeed) {
+                    res.status(404).send("not found")
+                    return
+                }
+                res.json(updatedSeed)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // delete suggestion seed
+        this.app.delete("/api/suggestion-seeds/:id", async (req, res) => {
+            try {
+                const user = this.authHelper.getUserFromRequest(req)
+                const success = await this.backendService.deleteSuggestionSeed(req.params.id, user)
+                if (!success) {
+                    res.status(404).send("not found")
+                    return
+                }
+                res.sendStatus(204)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // list suggestions jobs
+        this.app.get("/api/suggestions-jobs", async (req, res) => {
+            try {
+                const user = this.authHelper.getUserFromRequest(req)
+                const jobs = await this.backendService.listSuggestionsJobs(user)
+                res.json(jobs)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // create suggestions job
+        this.app.post("/api/suggestions-jobs", async (req, res) => {
+            try {
+                const user = this.authHelper.getUserFromRequest(req)
+                // get suggestion seed
+                const seed = await this.backendService.getSuggestionSeed(req.body.seed_id, user)
+                if (!seed) {
+                    res.status(404).send("not found")
+                    return
+                }
+                const job = await this.backendService.createSuggestionsJob(user, req.body)
+                res.json(job)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // get suggestions job by id
+        this.app.get("/api/suggestions-jobs/:id", async (req, res) => {
+            try {
+                let user = this.authHelper.getUserFromRequest(req)
+                if (this.isServiceAccount(user)) {
+                    user = undefined
+                }
+                const job = await this.backendService.getSuggestionsJob(req.params.id, user)
+                if (!job) {
+                    res.status(404).send("not found")
+                    return
+                }
+                res.json(job)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // update suggestions job by id (patch)
+        this.app.patch("/api/suggestions-jobs/:id", async (req, res) => {
+            try {
+                let user = this.authHelper.getUserFromRequest(req)
+                if (this.isServiceAccount(user)) {
+                    user = undefined
+                }
+                const updatedJob = await this.backendService.updateSuggestionsJob(req.params.id, user, req.body)
+                if (!updatedJob) {
+                    res.status(404).send("not found")
+                    return
+                }
+                res.json(updatedJob)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // delete suggestions job
+        this.app.delete("/api/suggestions-jobs/:id", async (req, res) => {
+            try {
+                let user = this.authHelper.getUserFromRequest(req)
+                const success = await this.backendService.deleteSuggestionsJob(req.params.id, user)
+                if (!success) {
+                    res.status(404).send("not found")
+                    return
+                }
+                res.sendStatus(204)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
     }
 
-    
+
+
+
 
     start() {
 
@@ -322,7 +479,7 @@ export class Server {
                 resolve()
             })
             this.terminator = createHttpTerminator({ server: this.server, gracefulTerminationTimeout: 100 })
-            
+
             this.cleanupHandle = setInterval(() => {
                 console.log("timer callback")
                 this.backendService.cleanupStuckImages()
