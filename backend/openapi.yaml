@@ -655,6 +655,10 @@ components:
           type: integer
         seed_id:
           type: string
+        min_length:
+          type: integer
+        max_length:
+          type: integer
         status:
           type: string
           enum: [pending, processing, completed, saved]
@@ -673,6 +677,10 @@ components:
       properties:
         seed_id:
           type: string
+        min_length:
+          type: integer
+        max_length:
+          type: integer
     UpdateSuggestionsJobInput:
       type: object
       properties:

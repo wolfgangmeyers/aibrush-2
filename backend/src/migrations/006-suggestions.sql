@@ -16,6 +16,8 @@ CREATE TABLE suggestions_jobs (
   created_at BIGINT NOT NULL,
   updated_at BIGINT NOT NULL,
   seed_id CHAR(36) NOT NULL,
+  min_length INTEGER NOT NULL,
+  max_length INTEGER NOT NULL,
   status VARCHAR(255) NOT NULL,
   result TEXT[],
   PRIMARY KEY (id)

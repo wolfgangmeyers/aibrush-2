@@ -1229,13 +1229,15 @@ describe("server", () => {
                 beforeEach(async () => {
                     createSeedResponse = await client.createSuggestionSeed({
                         name: "test",
-                        description: "test"
+                        description: "test",
                     })
                 })
 
                 beforeEach(async () => {
                     createResponse = await client.createSuggestionsJob({
                         seed_id: createSeedResponse.data.id,
+                        min_length: 100,
+                        max_length: 200,
                     })
                 })
 
@@ -1247,6 +1249,8 @@ describe("server", () => {
                     expect(createResponse.data.created_by).toEqual("test@test.test")
                     expect(createResponse.data.updated_at).toBeDefined()
                     expect(createResponse.data.result).toEqual([])
+                    expect(createResponse.data.min_length).toBe(100)
+                    expect(createResponse.data.max_length).toBe(200)
                 })
 
                 describe("when listing suggestions jobs", () => {
@@ -1264,6 +1268,8 @@ describe("server", () => {
                         expect(listResponse.data.suggestionsJobs[0].created_by).toEqual("test@test.test")
                         expect(listResponse.data.suggestionsJobs[0].updated_at).toBeDefined()
                         expect(listResponse.data.suggestionsJobs[0].result).toEqual([])
+                        expect(listResponse.data.suggestionsJobs[0].min_length).toBe(100)
+                        expect(listResponse.data.suggestionsJobs[0].max_length).toBe(200)
                     })
                 })
 
@@ -1281,6 +1287,8 @@ describe("server", () => {
                         expect(getResponse.data.created_by).toEqual("test@test.test")
                         expect(getResponse.data.updated_at).toBeDefined()
                         expect(getResponse.data.result).toEqual([])
+                        expect(getResponse.data.min_length).toBe(100)
+                        expect(getResponse.data.max_length).toBe(200)
                     })
                 })
 
@@ -1314,6 +1322,8 @@ describe("server", () => {
                         expect(getResponse.data.created_by).toEqual("test@test.test")
                         expect(getResponse.data.updated_at).toBeDefined()
                         expect(getResponse.data.result).toEqual([])
+                        expect(getResponse.data.min_length).toBe(100)
+                        expect(getResponse.data.max_length).toBe(200)
                     })
                 })
 
@@ -1336,6 +1346,8 @@ describe("server", () => {
                         expect(updateResponse.data.created_at).toBeDefined()
                         expect(updateResponse.data.created_by).toEqual("test@test.test")
                         expect(updateResponse.data.updated_at).toBeDefined()
+                        expect(updateResponse.data.min_length).toBe(100)
+                        expect(updateResponse.data.max_length).toBe(200)
                     })
                 })
 
@@ -1363,6 +1375,8 @@ describe("server", () => {
                         expect(updateResponse.data.created_at).toBeDefined()
                         expect(updateResponse.data.created_by).toEqual("test@test.test")
                         expect(updateResponse.data.updated_at).toBeDefined()
+                        expect(updateResponse.data.min_length).toBe(100)
+                        expect(updateResponse.data.max_length).toBe(200)
                     })
 
                     describe("when getting the suggestions job by id", () => {
@@ -1417,7 +1431,7 @@ describe("server", () => {
                     })
                 })
 
-                describe.only("when processing a suggestions job as a service account", () => {
+                describe("when processing a suggestions job as a service account", () => {
                     let processResponse: AxiosResponse<SuggestionsJob>;
 
                     beforeEach(async () => {
@@ -1438,6 +1452,8 @@ describe("server", () => {
                         expect(processResponse.data.created_at).toBeDefined()
                         expect(processResponse.data.created_by).toEqual("test@test.test")
                         expect(processResponse.data.updated_at).toBeDefined()
+                        expect(processResponse.data.min_length).toBe(100)
+                        expect(processResponse.data.max_length).toBe(200)
                     })
 
                     describe("when processing a suggestions job again", () => {

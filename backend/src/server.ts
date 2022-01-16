@@ -466,6 +466,22 @@ export class Server {
             }
         })
 
+        this.app.post("/api/process-suggestion-job", async (req, res) => {
+            try {
+                const user = this.authHelper.getUserFromRequest(req)
+                // make sure user is a service acct
+                if (!this.isServiceAccount(user)) {
+                    res.sendStatus(403)
+                    return
+                }
+                const job = await this.backendService.processSuggestionsJob()
+                res.json(job)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
     }
 
 

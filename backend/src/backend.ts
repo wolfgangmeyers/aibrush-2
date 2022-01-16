@@ -359,6 +359,7 @@ export class BackendService {
         } finally {
             client.release()
         }
+        return null
     }
 
     // for all images with status "processing" that have not been updated in more than 5 minutes,
@@ -497,8 +498,8 @@ export class BackendService {
         const now = moment().valueOf()
         try {
             const result = await client.query(
-                `INSERT INTO suggestions_jobs (id, created_by, created_at, updated_at, seed_id, status, result) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-                [uuid.v4(), user, now, now, body.seed_id, "pending", []]
+                `INSERT INTO suggestions_jobs (id, created_by, created_at, updated_at, seed_id, status, result, min_length, max_length) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+                [uuid.v4(), user, now, now, body.seed_id, "pending", [], body.min_length, body.max_length]
             )
             return result.rows[0]
         } finally {
@@ -570,9 +571,53 @@ export class BackendService {
         }
     }
 
+    private async getUesrsWithPendingSuggestions(): Promise<string[]> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT DISTINCT created_by FROM suggestions_jobs WHERE status='pending'`
+            )
+            return result.rows.map(row => row.created_by)
+        } finally {
+            client.release()
+        }
+    }
+
     // process suggestions job
     async processSuggestionsJob(): Promise<SuggestionsJob> {
-
+        const users = await this.getUesrsWithPendingSuggestions()
+        console.log("users", users)
+        // get random user
+        const user = users[Math.floor(Math.random() * users.length)]
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM suggestions_jobs WHERE status='pending' AND created_by=$1 ORDER BY created_at ASC LIMIT 1`,
+                [user]
+            )
+            if (result.rowCount === 0) {
+                return null
+            }
+            const job = result.rows[0]
+            // update job status to processing
+            await client.query(
+                `UPDATE suggestions_jobs SET status='processing' WHERE id=$1`,
+                [job.id],
+            )
+            // commit transaction
+            await client.query("COMMIT")
+            return {
+                ...job,
+                status: SuggestionsJobStatusEnum.Processing,
+            }
+        } catch(err) {
+            // rollback transaction
+            await client.query("ROLLBACK")
+            console.error("Rolling back transaction", err)
+        } finally {
+            client.release()
+        }
+        return null
     }
 
 
