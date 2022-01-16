@@ -1,4 +1,4 @@
-## setup
+## Images worker setup
 
 Note: Much of this setup is for (https://github.com/nerdyrodent/VQGAN-CLIP)[VQGAN-CLIP]
 
@@ -40,10 +40,25 @@ curl -L -o checkpoints/vqgan_imagenet_f16_16384.yaml -C - 'https://heibox.uni-he
 curl -L -o checkpoints/vqgan_imagenet_f16_16384.ckpt -C - 'https://heibox.uni-heidelberg.de/d/a7530b09fed84f80a887/files/?p=%2Fckpts%2Flast.ckpt&dl=1' #ImageNet 16384
 ```
 
-## Running
+## Running images worker
 
-Run `python worker.py http://<backend ip address or hostname>` or `python worker.py https://<backend ip address or hostname>` if using https. Example: if running on the same machine as the backend, you can run the following to connect and start processing images:
+Run `python images_worker.py http://<backend ip address or hostname>` or `python images_worker.py https://<backend ip address or hostname>` if using https. Example: if running on the same machine as the backend, you can run the following to connect and start processing images:
 
 ```shell
-python worker.py http://localhost:3000
+python images_worker.py http://localhost:3000
+```
+
+## Suggestions worker setup
+
+Create a new virtual Python environment for the suggestions worker:
+
+```sh
+conda create --name suggestions python=3.9
+conda activate suggestions
+```
+
+Install transformers library:
+
+```sh
+pip install transformers
 ```
