@@ -1,6 +1,7 @@
 import requests
 import sys
 from types import SimpleNamespace
+from typing import List
 import time
 import json
 
@@ -74,3 +75,19 @@ class AIBrushAPI(object):
         if resp.status_code != 204:
             print(f"Error updating video data ({resp.status_code}): {resp.text}")
             return False
+
+    def process_suggestion_job(self) -> SimpleNamespace:
+        resp = self.http_request("/process-suggestion-job", "POST")
+        return self.parse_json(resp.text)
+
+    def update_suggestions_job(self, job_id: str, status: str, result: List[str]) -> SimpleNamespace:
+        body = {
+            "status": status,
+            "result": result,
+        }
+        resp = self.http_request(f"/suggestions-jobs/{job_id}", "PATCH", body)
+        return self.parse_json(resp.text)
+
+    def get_suggestion_seed(self, seed_id: str) -> SimpleNamespace:
+        resp = self.http_request(f"/suggestion-seeds/{seed_id}", "GET")
+        return self.parse_json(resp.text)
