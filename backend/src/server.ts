@@ -337,9 +337,14 @@ export class Server {
         // get suggestion seed by id
         this.app.get("/api/suggestion-seeds/:id", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req)
+                let user = this.authHelper.getUserFromRequest(req)
+                console.log(`user: ${user}`)
+                if (this.isServiceAccount(user)) {
+                    user = undefined
+                }
                 const seed = await this.backendService.getSuggestionSeed(req.params.id, user)
                 if (!seed) {
+                    console.log(`suggestion seed ${req.params.id} not found`)
                     res.status(404).send("not found")
                     return
                 }
@@ -481,15 +486,9 @@ export class Server {
                 res.sendStatus(500)
             }
         })
-
     }
 
-
-
-
-
     start() {
-
         return new Promise<void>(resolve => {
             this.server = this.app.listen(this.port as number, "0.0.0.0", () => {
                 resolve()
@@ -499,6 +498,7 @@ export class Server {
             this.cleanupHandle = setInterval(() => {
                 console.log("timer callback")
                 this.backendService.cleanupStuckImages()
+                this.backendService.cleanupSuggestionsJobs()
             }, 1000 * 60)
         })
     }

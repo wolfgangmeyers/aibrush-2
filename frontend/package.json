@@ -54,5 +54,6 @@
         "@types/qs": "^6.9.7",
         "@types/react-bootstrap": "^0.32.26",
         "@types/react-router-dom": "^5.3.1"
-    }
+    },
+    "proxy": "http://localhost:3000"
 }

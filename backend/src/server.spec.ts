@@ -979,7 +979,7 @@ describe("server", () => {
 
                 describe("when listing images with limit=2, direction=desc", () => {
                     beforeEach(async () => {
-                        listResponse= await client.listImages(images[0].updated_at, 2, "asc")
+                        listResponse = await client.listImages(images[0].updated_at, 2, "asc")
                     })
 
                     it("should return the 2 oldest images", () => {
@@ -991,7 +991,7 @@ describe("server", () => {
 
                 describe("when listing images with limit=2, direction=asc", () => {
                     beforeEach(async () => {
-                        listResponse= await client.listImages(images[9].updated_at, 2, "desc")
+                        listResponse = await client.listImages(images[9].updated_at, 2, "desc")
                     })
 
                     it("should return the 2 newest images", () => {
@@ -1003,7 +1003,7 @@ describe("server", () => {
 
                 describe("when listing images starting with the third image, limit=2, direction=asc", () => {
                     beforeEach(async () => {
-                        listResponse= await client.listImages(images[2].updated_at, 2, "asc")
+                        listResponse = await client.listImages(images[2].updated_at, 2, "asc")
                     })
 
                     it("should return the third and fourth images", () => {
@@ -1015,7 +1015,7 @@ describe("server", () => {
 
                 describe("when listing images starting with the third image, no limit, direction=asc", () => {
                     beforeEach(async () => {
-                        listResponse= await client.listImages(images[2].updated_at, undefined, "asc")
+                        listResponse = await client.listImages(images[2].updated_at, undefined, "asc")
                     })
 
                     it("should return the last 8 images", () => {
@@ -1027,7 +1027,7 @@ describe("server", () => {
 
                 describe("when listing images starting with the third image, no limit, direction=desc", () => {
                     beforeEach(async () => {
-                        listResponse= await client.listImages(images[2].updated_at, undefined, "desc")
+                        listResponse = await client.listImages(images[2].updated_at, undefined, "desc")
                     })
 
                     it("should return the first 3 images", () => {
@@ -1059,7 +1059,9 @@ describe("server", () => {
             describe("when updating a suggestion seed that doesn't exist", () => {
                 it("should return 404", async () => {
                     await expect(client.updateSuggestionSeed("123", {
-                        name: "test"
+                        name: "test",
+                        description: "test",
+                        items: ["test"],
                     })).rejects.toThrow(/Request failed with status code 404/)
                 })
             })
@@ -1070,7 +1072,8 @@ describe("server", () => {
                 beforeEach(async () => {
                     createResponse = await client.createSuggestionSeed({
                         name: "test",
-                        description: "test"
+                        description: "test",
+                        items: ["test"]
                     })
                 })
 
@@ -1078,6 +1081,8 @@ describe("server", () => {
                     expect(createResponse.data.id).toBeDefined()
                     expect(createResponse.data.name).toBe("test")
                     expect(createResponse.data.description).toBe("test")
+                    expect(createResponse.data.items).toHaveLength(1)
+                    expect(createResponse.data.items[0]).toBe("test")
                 })
 
                 describe("when listing suggestion seeds", () => {
@@ -1144,7 +1149,8 @@ describe("server", () => {
                     beforeEach(async () => {
                         updateResponse = await client.updateSuggestionSeed(createResponse.data.id, {
                             name: "test2",
-                            description: "test2"
+                            description: "test2",
+                            items: ["test2"]
                         })
                     })
 
@@ -1152,6 +1158,8 @@ describe("server", () => {
                         expect(updateResponse.data.id).toBe(createResponse.data.id)
                         expect(updateResponse.data.name).toBe("test2")
                         expect(updateResponse.data.description).toBe("test2")
+                        expect(updateResponse.data.items).toHaveLength(1)
+                        expect(updateResponse.data.items[0]).toBe("test2")
                     })
 
                     describe("when getting a suggestion seed by id", () => {
@@ -1230,14 +1238,13 @@ describe("server", () => {
                     createSeedResponse = await client.createSuggestionSeed({
                         name: "test",
                         description: "test",
+                        items: ["test"],
                     })
                 })
 
                 beforeEach(async () => {
                     createResponse = await client.createSuggestionsJob({
                         seed_id: createSeedResponse.data.id,
-                        min_length: 100,
-                        max_length: 200,
                     })
                 })
 
@@ -1249,8 +1256,6 @@ describe("server", () => {
                     expect(createResponse.data.created_by).toEqual("test@test.test")
                     expect(createResponse.data.updated_at).toBeDefined()
                     expect(createResponse.data.result).toEqual([])
-                    expect(createResponse.data.min_length).toBe(100)
-                    expect(createResponse.data.max_length).toBe(200)
                 })
 
                 describe("when listing suggestions jobs", () => {
@@ -1268,8 +1273,6 @@ describe("server", () => {
                         expect(listResponse.data.suggestionsJobs[0].created_by).toEqual("test@test.test")
                         expect(listResponse.data.suggestionsJobs[0].updated_at).toBeDefined()
                         expect(listResponse.data.suggestionsJobs[0].result).toEqual([])
-                        expect(listResponse.data.suggestionsJobs[0].min_length).toBe(100)
-                        expect(listResponse.data.suggestionsJobs[0].max_length).toBe(200)
                     })
                 })
 
@@ -1287,8 +1290,6 @@ describe("server", () => {
                         expect(getResponse.data.created_by).toEqual("test@test.test")
                         expect(getResponse.data.updated_at).toBeDefined()
                         expect(getResponse.data.result).toEqual([])
-                        expect(getResponse.data.min_length).toBe(100)
-                        expect(getResponse.data.max_length).toBe(200)
                     })
                 })
 
@@ -1322,8 +1323,6 @@ describe("server", () => {
                         expect(getResponse.data.created_by).toEqual("test@test.test")
                         expect(getResponse.data.updated_at).toBeDefined()
                         expect(getResponse.data.result).toEqual([])
-                        expect(getResponse.data.min_length).toBe(100)
-                        expect(getResponse.data.max_length).toBe(200)
                     })
                 })
 
@@ -1346,8 +1345,6 @@ describe("server", () => {
                         expect(updateResponse.data.created_at).toBeDefined()
                         expect(updateResponse.data.created_by).toEqual("test@test.test")
                         expect(updateResponse.data.updated_at).toBeDefined()
-                        expect(updateResponse.data.min_length).toBe(100)
-                        expect(updateResponse.data.max_length).toBe(200)
                     })
                 })
 
@@ -1375,8 +1372,6 @@ describe("server", () => {
                         expect(updateResponse.data.created_at).toBeDefined()
                         expect(updateResponse.data.created_by).toEqual("test@test.test")
                         expect(updateResponse.data.updated_at).toBeDefined()
-                        expect(updateResponse.data.min_length).toBe(100)
-                        expect(updateResponse.data.max_length).toBe(200)
                     })
 
                     describe("when getting the suggestions job by id", () => {
@@ -1452,8 +1447,6 @@ describe("server", () => {
                         expect(processResponse.data.created_at).toBeDefined()
                         expect(processResponse.data.created_by).toEqual("test@test.test")
                         expect(processResponse.data.updated_at).toBeDefined()
-                        expect(processResponse.data.min_length).toBe(100)
-                        expect(processResponse.data.max_length).toBe(200)
                     })
 
                     describe("when processing a suggestions job again", () => {

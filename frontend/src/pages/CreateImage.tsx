@@ -17,7 +17,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
     const [input, setInput] = useState<CreateImageInput>({
         phrases: [],
         label: "",
-        iterations: 100,
+        iterations: 300,
         encoded_image: "",
         enable_video: false,
         enable_zoom: false,
@@ -179,6 +179,23 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
             loadParent(searchParams.parent)
         }
     }, [searchParams.parent, setInput, props.api])
+
+    useEffect(() => {
+        if (searchParams.parent) {
+            return
+        }
+        const suggestion = localStorage.getItem("suggestion")
+        if (suggestion) {
+            // clear suggestion
+            localStorage.setItem("suggestion", "")
+            const phrases = suggestion.split("|")
+            setInput({
+                ...input,
+                phrases: phrases,
+                label: phrases[0],
+            })
+        }
+    })
 
     return (
         <>

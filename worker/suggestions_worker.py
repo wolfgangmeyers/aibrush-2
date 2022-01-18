@@ -4,6 +4,11 @@ import random
 import sys
 import json
 import traceback
+import time
+from transformers import GPT2TokenizerFast
+
+tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+
 from api_client import AIBrushAPI
 
 SEED_ITEMS_LENGTH = 15
@@ -17,7 +22,6 @@ with open('credentials.json') as f:
 
 client = AIBrushAPI(api_url, access_token)
 
-
 generator = pipeline('text-generation', model='EleutherAI/gpt-neo-2.7B', device=0)
 
 def process_suggestions_job():
@@ -26,7 +30,7 @@ def process_suggestions_job():
         if not suggestions_job:
             print("No suggestions job found")
             return
-        seed = client.get_suggestion_seed(suggestions_job.id)
+        seed = client.get_suggestion_seed(suggestions_job.seed_id)
         if not seed:
             print(f"No seed found for job {suggestions_job.id}, setting to done")
             client.update_suggestions_job(suggestions_job.id, "completed", [])
@@ -36,27 +40,41 @@ def process_suggestions_job():
         random.shuffle(seed_items)
         if len(seed_items) > SEED_ITEMS_LENGTH:
             seed_items = seed_items[:SEED_ITEMS_LENGTH]
-        prompt = "\n>>>" + "\n>>>".join(seed_items)
+        prompt = "\n---\n".join(seed_items)
+        print(f"Generating suggestions for seed {seed.id}")
+        print(f"Prompt: {prompt}")
+        prompt_token_count = len(tokenizer(prompt)['input_ids'])
         result = generator(
             prompt,
             do_sample=True,
-            min_length=suggestions_job.min_length,
-            max_length=suggestions_job.max_length,
+            min_length=round(prompt_token_count * 4),
+            max_length=round(prompt_token_count * 4),
         )
-        # TODO: figure out the shape of the result, extract, parse and truncate
-        # the suggestions list.
-        # TODO: filter out duplicate suggestions,
-        # filter out items that are also in the seed
+        generated_text = result[0]["generated_text"]
+        # skip the seed and discard the last suggestion, it might be garbage
+        suggestions = generated_text.split("\n---\n")[len(seed_items):-1]
+        
+        print(f"Suggestions: {len(suggestions)}")
+        dedup = {}
 
-        # discard the last item in case the AI gets confused
-        # and stops making a list of suggestions.
-        # put reasonable min/max length filter on the results based on
-        # min/max length from the seed. >= 50% of the smallest seed item,
-        # <= 200% of the largest seed item.
+        def filter_suggestion(suggestion) -> bool:
+            if suggestion in dedup:
+                return False
+            dedup[suggestion] = True
+            return (
+                len(suggestion) > 4
+                and len(suggestion) < 100
+                and suggestion not in seed_items
+            )
+        
+        suggestions = list(filter(filter_suggestion, suggestions))
+        client.update_suggestions_job(suggestions_job.id, "completed", suggestions)
     except Exception as err:
         print(f"Error processing suggestions job: {err}")
         traceback.print_exc()
         return
 
-# result = generator(seed, do_sample=True, min_length=2048, max_length=2048)
-
+if __name__ == "__main__":
+    while True:
+        process_suggestions_job()
+        time.sleep(1)

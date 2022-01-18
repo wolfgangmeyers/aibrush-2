@@ -629,12 +629,20 @@ components:
             type: string
         created_by:
           type: string
+      required:
+        - id
+        - name
+        - description
+        - items
+        - created_by
     SuggestionSeedList:
       properties:
         suggestionSeeds:
           type: array
           items:
             $ref: "#/components/schemas/SuggestionSeed"
+      required:
+        - suggestionSeeds
     SuggestionSeedInput:
       type: object
       properties:
@@ -642,6 +650,13 @@ components:
           type: string
         description:
           type: string
+        items:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+        - items
     SuggestionsJob:
       type: object
       properties:
@@ -655,10 +670,6 @@ components:
           type: integer
         seed_id:
           type: string
-        min_length:
-          type: integer
-        max_length:
-          type: integer
         status:
           type: string
           enum: [pending, processing, completed, saved]
@@ -666,6 +677,14 @@ components:
           type: array
           items:
             type: string
+      required:
+        - id
+        - created_by
+        - created_at
+        - updated_at
+        - seed_id
+        - status
+        - result
     SuggestionsJobList:
       properties:
         suggestionsJobs:
@@ -677,10 +696,6 @@ components:
       properties:
         seed_id:
           type: string
-        min_length:
-          type: integer
-        max_length:
-          type: integer
     UpdateSuggestionsJobInput:
       type: object
       properties:

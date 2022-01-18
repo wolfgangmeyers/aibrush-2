@@ -418,8 +418,8 @@ export class BackendService {
         const client = await this.pool.connect()
         try {
             const result = await client.query(
-                `INSERT INTO suggestion_seeds (id, created_by, name, description) VALUES ($1, $2, $3, $4) RETURNING *`,
-                [uuid.v4(), user, body.name, body.description]
+                `INSERT INTO suggestion_seeds (id, created_by, name, description, items) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+                [uuid.v4(), user, body.name, body.description, body.items]
             )
             return result.rows[0]
         } finally {
@@ -430,10 +430,16 @@ export class BackendService {
     // get suggestion seed by id
     async getSuggestionSeed(id: string, userId: string): Promise<SuggestionSeed> {
         const client = await this.pool.connect()
+        let filter = "";
+        let args = [id]
+        if (userId) {
+            filter = ` AND created_by=$2`
+            args.push(userId)
+        }
         try {
             const result = await client.query(
-                `SELECT * FROM suggestion_seeds WHERE id=$1 AND created_by=$2`,
-                [id, userId]
+                `SELECT * FROM suggestion_seeds WHERE id=$1${filter}`,
+                args
             )
             // if no suggestion seed found, return null
             if (result.rowCount === 0) {
@@ -450,8 +456,8 @@ export class BackendService {
         const client = await this.pool.connect()
         try {
             const result = await client.query(
-                `UPDATE suggestion_seeds SET name=$1, description=$2 WHERE id=$3 AND created_by=$4 RETURNING *`,
-                [body.name, body.description, id, userId]
+                `UPDATE suggestion_seeds SET name=$1, description=$2, items=$3 WHERE id=$4 AND created_by=$5 RETURNING *`,
+                [body.name, body.description, body.items, id, userId]
             )
             // if no suggestion seed found, return null
             if (result.rowCount === 0) {
@@ -498,8 +504,8 @@ export class BackendService {
         const now = moment().valueOf()
         try {
             const result = await client.query(
-                `INSERT INTO suggestions_jobs (id, created_by, created_at, updated_at, seed_id, status, result, min_length, max_length) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-                [uuid.v4(), user, now, now, body.seed_id, "pending", [], body.min_length, body.max_length]
+                `INSERT INTO suggestions_jobs (id, created_by, created_at, updated_at, seed_id, status, result) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+                [uuid.v4(), user, now, now, body.seed_id, "pending", []]
             )
             return result.rows[0]
         } finally {
@@ -538,6 +544,7 @@ export class BackendService {
         const client = await this.pool.connect()
         try {
             let query = `UPDATE suggestions_jobs SET status=$1, updated_at=$2, result=$3 WHERE id=$4 RETURNING *`
+            console.log(`body result: ${body.result}`)
             let args = [body.status || job.status, moment().valueOf(), body.result || job.result, id]
             if (userId) {
                 query = `UPDATE suggestions_jobs SET status=$1, updated_at=$2, result=$3 WHERE id=$4 AND created_by=$5 RETURNING *`
@@ -566,6 +573,19 @@ export class BackendService {
                 [id, user]
             )
             return result.rowCount > 0
+        } finally {
+            client.release()
+        }
+    }
+
+    // clean up old suggestion jobs
+    async cleanupSuggestionsJobs(): Promise<void> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `DELETE FROM suggestions_jobs WHERE updated_at < $1`,
+                [moment().subtract(1, "hours").valueOf()]
+            )
         } finally {
             client.release()
         }

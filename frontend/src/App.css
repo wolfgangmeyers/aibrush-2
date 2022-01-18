@@ -71,3 +71,7 @@ hr {
 .card hr {
     border: 1px solid #4f4f4f !important;
 }
+
+.pull-right {
+    float: right;
+}

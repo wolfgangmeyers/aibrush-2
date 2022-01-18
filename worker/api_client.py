@@ -12,6 +12,7 @@ class AIBrushAPI(object):
 
     def http_request(self, path, method, body=None) -> requests.Response:
         url = f"{self.api_url}/api{path}"
+        print(f"{method} {url}")
         for i in range(2):
             try:
                 if isinstance(body, bytes):
@@ -90,4 +91,6 @@ class AIBrushAPI(object):
 
     def get_suggestion_seed(self, seed_id: str) -> SimpleNamespace:
         resp = self.http_request(f"/suggestion-seeds/{seed_id}", "GET")
+        # print response code and text
+        print(f"{resp.status_code}: {resp.text}")
         return self.parse_json(resp.text)

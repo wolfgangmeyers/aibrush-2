@@ -1,16 +1,16 @@
-import { ImageStatusEnum } from "../client/api";
+import { ImageStatusEnum, SuggestionsJobStatusEnum } from "../client/api";
 
 // map from image status to font awesome class
 // possible values: Pending, Processing, Completed, Saved
-export const imageStatusToIconClass = (status: ImageStatusEnum) => {
+export const imageStatusToIconClass = (status: ImageStatusEnum | SuggestionsJobStatusEnum) => {
     switch (status) {
-        case ImageStatusEnum.Pending:
+        case "pending":
             return "fas fa-hourglass-start";
-        case ImageStatusEnum.Processing:
+        case "processing":
             return "fas fa-cog fa-spin";
-        case ImageStatusEnum.Completed:
+        case "completed":
             return "fas fa-check";
-        case ImageStatusEnum.Saved:
+        case "saved":
             return "fas fa-save";
         default:
             return "";
