@@ -114,10 +114,10 @@ export const SuggestionsPage: FC<Props> = ({ api, apiUrl }) => {
     }
 
     const onGenerateImage = async (suggestion: string) => {
-        setRunningSuggestionJobId(null);
-        setViewingSuggestionSeed(null);
         localStorage.setItem("suggestion", suggestion);
-        history.push(`/create-image`);
+        // open /create-image in a new tab
+        window.open(`/create-image`, "_blank");
+        // history.push(`/create-image`);
     }
 
     const onViewSuggestionSeed = (seed: SuggestionSeed) => {
@@ -182,9 +182,9 @@ export const SuggestionsPage: FC<Props> = ({ api, apiUrl }) => {
                 </div>
             </div>
             {/* create suggestions seed popup */}
-            {creatingSuggestionSeed && <SuggestionSeedModal onHide={onCancelCreateSuggestionSeed} onCreate={onCreateSuggestionSeed} />}
+            {creatingSuggestionSeed && <SuggestionSeedModal api={api} onHide={onCancelCreateSuggestionSeed} onCreate={onCreateSuggestionSeed} />}
             {/* edit suggestions seed popup */}
-            {editingSuggestionSeed && <SuggestionSeedModal onHide={onCancelEditSuggestionSeed} onUpdate={onUpdateSuggestionSeed} editingSuggestionSeed={editingSuggestionSeed} />}
+            {editingSuggestionSeed && <SuggestionSeedModal api={api} onHide={onCancelEditSuggestionSeed} onUpdate={onUpdateSuggestionSeed} editingSuggestionSeed={editingSuggestionSeed} />}
             {runningSuggestionJobId && selectedSuggestionSeedId && (
                 <SuggestionJobPopup
                     onClose={onGenerateClose}
