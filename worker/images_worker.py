@@ -87,6 +87,7 @@ def process_image():
             args.display_freq = args.max_iterations
         args.on_save_callback = lambda i: update_image(i, "processing")
         if hasattr(image, "model") and image.model == "faces":
+            print("Running faces model")
             args.vqgan_config = "checkpoints/faceshq.yaml"
             args.vqgan_checkpoint = "checkpoints/faceshq.ckpt"
         # args.vqgan_config = "checkpoints/vqgan.gumbelf8.config.yml"
