@@ -506,6 +506,8 @@ components:
           type: number
         zoom_shift_y:
           type: number
+        model:
+          type: string
 
     UpdateImageInput:
       type: object
@@ -563,6 +565,8 @@ components:
           type: number
         zoom_shift_y:
           type: number
+        model:
+          type: string
       required:
         - id
         - created_at
@@ -576,6 +580,7 @@ components:
         - score
         - status
         - enable_video
+        - model
     ImageList:
       properties:
         images:

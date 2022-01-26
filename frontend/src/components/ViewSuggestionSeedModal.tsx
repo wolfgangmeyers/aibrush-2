@@ -18,16 +18,20 @@ export const ViewSuggestionSeedModal: FC<Props> = ({ suggestionSeed, onClose, on
                 <div className="row">
                     <div className="col-md-12">
                         {suggestionSeed.items.map((item, index) => (
-                            <div style={{ backgroundColor: "gray", margin: "5px", padding: "10px", borderRadius: "5px" }}>
-                            {item}
+                            <div className="row" style={{ backgroundColor: "gray", margin: "5px", padding: "10px", borderRadius: "5px" }}>
+                                <div className="col-md-8">
+                                    {item}
+                                </div>
 
-                            {/* actions to the right: save, generate */}
-                            <div className="pull-right">
-                                <button className="btn btn-primary btn-sm" style={{marginLeft: "5px"}} onClick={() => onGenerateImage(item)}>
-                                    <i className="fas fa-play" />&nbsp;
-                                </button>
+                                <div className="col-md-4">
+                                    {/* actions to the right: save, generate */}
+                                    <div className="pull-right">
+                                        <button className="btn btn-primary btn-sm" style={{ marginLeft: "5px" }} onClick={() => onGenerateImage(item)}>
+                                            <i className="fas fa-play" />&nbsp;
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
                         ))}
                     </div>
                 </div>

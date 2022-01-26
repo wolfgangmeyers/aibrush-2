@@ -16,7 +16,7 @@ interface Props {
 export const SuggestionJobPopup: FC<Props> = ({ api, suggestionJobId, suggestionSeedId, onClose, onSaveSuggestion, onRetry, onGenerateImage }) => {
     const [suggestionSeed, setSuggestionSeed] = useState<SuggestionSeed | null>(null);
     const [suggestionJob, setSuggestionJob] = useState<SuggestionsJob | null>(null);
-    const [savedSuggestions, setSavedSuggestions] = useState<{[key: string]: boolean}>({});
+    const [savedSuggestions, setSavedSuggestions] = useState<{ [key: string]: boolean }>({});
 
     useEffect(() => {
         if (!api) {
@@ -77,7 +77,7 @@ export const SuggestionJobPopup: FC<Props> = ({ api, suggestionJobId, suggestion
 
     // modal
     return (
-        <Modal show={true} onHide={onClose} onBackdropClick={e => {}}>
+        <Modal show={true} onHide={onClose} onBackdropClick={e => { }}>
             <Modal.Header>
                 <Modal.Title>{suggestionSeed && `Generating suggestions for ${suggestionSeed.name}`}</Modal.Title>
             </Modal.Header>
@@ -96,18 +96,23 @@ export const SuggestionJobPopup: FC<Props> = ({ api, suggestionJobId, suggestion
                         {suggestionJob.result && suggestionJob.result.map((result, index) => (
                             <div className="row" key={index}>
                                 <div className="col-md-12">
-                                    <div style={{ backgroundColor: "gray", margin: "5px", padding: "10px", borderRadius: "5px" }}>
-                                        {result}
+                                    <div className="row" style={{ backgroundColor: "gray", margin: "5px", padding: "10px", borderRadius: "5px" }}>
+                                        <div className="col-md-8">
+                                            {result}
+                                        </div>
 
-                                        {/* actions to the right: save, generate */}
-                                        <div className="pull-right">
-                                            <button className="btn btn-primary btn-sm" disabled={savedSuggestions[result]} onClick={() => saveSuggestion(result)}>
-                                                {!savedSuggestions[result] && <i className="fas fa-save" />}
-                                                {savedSuggestions[result] && <i className="fas fa-check" />}
-                                            </button>
-                                            <button className="btn btn-primary btn-sm" style={{marginLeft: "5px"}} onClick={() => onGenerateImage(result)}>
-                                                <i className="fas fa-play" />&nbsp;
-                                            </button>
+
+                                        <div className="col-md-4">
+                                            {/* actions to the right: save, generate */}
+                                            <div className="pull-right">
+                                                <button className="btn btn-primary btn-sm" disabled={savedSuggestions[result]} onClick={() => saveSuggestion(result)}>
+                                                    {!savedSuggestions[result] && <i className="fas fa-save" />}
+                                                    {savedSuggestions[result] && <i className="fas fa-check" />}
+                                                </button>
+                                                <button className="btn btn-primary btn-sm" style={{ marginLeft: "5px" }} onClick={() => onGenerateImage(result)}>
+                                                    <i className="fas fa-play" />&nbsp;
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

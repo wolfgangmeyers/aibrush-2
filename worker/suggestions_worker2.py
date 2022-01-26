@@ -1,19 +1,20 @@
-from transformers import pipeline
+from transformers import GPTJForCausalLM, AutoTokenizer
+import torch
 from typing import List
 import random
 import sys
 import json
 import traceback
 import time
-from transformers import GPT2TokenizerFast
 
-tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+model = GPTJForCausalLM.from_pretrained("EleutherAI/gpt-j-6B", torch_dtype=torch.float16, low_cpu_mem_usage=True).to("cuda", dtype=torch.float16)
+tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
 
 from api_client import AIBrushAPI
 
 SEED_ITEMS_LENGTH = 30
 
-api_url = "http://www.aibrush.art"
+api_url = "https://www.aibrush.art"
 if len(sys.argv) > 1:
     api_url = sys.argv[1]
 # load credentials.json
@@ -22,7 +23,7 @@ with open('credentials.json') as f:
 
 client = AIBrushAPI(api_url, access_token)
 
-generator = pipeline('text-generation', model='EleutherAI/gpt-neo-2.7B', device=0)
+# generator = pipeline('text-generation', model='EleutherAI/gpt-neo-2.7B', device=0)
 
 def process_suggestions_job():
     try:
@@ -44,13 +45,21 @@ def process_suggestions_job():
         print(f"Generating suggestions for seed {seed.id}")
         print(f"Prompt: {prompt}")
         prompt_token_count = len(tokenizer(prompt)['input_ids'])
-        result = generator(
-            prompt,
+        # result = generator(
+        #     prompt,
+        #     do_sample=True,
+        #     min_length=round(prompt_token_count * 4),
+        #     max_length=round(prompt_token_count * 4),
+        # )
+        input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to("cuda")
+        gen_tokens = model.generate(
+            input_ids,
             do_sample=True,
+            temperature=1.2,
             min_length=round(prompt_token_count * 4),
             max_length=round(prompt_token_count * 4),
         )
-        generated_text = result[0]["generated_text"]
+        generated_text = tokenizer.batch_decode(gen_tokens)[0]
         # skip the seed and discard the last suggestion, it might be garbage
         suggestions = generated_text.split("\n---\n")[len(seed_items):-1]
         

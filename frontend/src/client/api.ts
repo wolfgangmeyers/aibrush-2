@@ -93,6 +93,12 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     zoom_shift_y?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateImageInput
+     */
+    model?: string;
 }
 /**
  * 
@@ -237,6 +243,12 @@ export interface Image {
      * @memberof Image
      */
     zoom_shift_y?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof Image
+     */
+    model: string;
 }
 
 /**

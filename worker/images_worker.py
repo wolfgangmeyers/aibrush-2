@@ -86,13 +86,17 @@ def process_image():
         if args.max_iterations < args.display_freq:
             args.display_freq = args.max_iterations
         args.on_save_callback = lambda i: update_image(i, "processing")
-
+        if "model" in args and args.model == "faces":
+            args.vqgan_config = "checkpoints/faceshq.yaml"
+            args.vqgan_checkpoint = "checkpoints/faceshq.ckpt"
         # args.vqgan_config = "checkpoints/vqgan.gumbelf8.config.yml"
         # args.vqgan_checkpoint = "checkpoints/sber.gumbelf8.ckpt"
         # args.vqgan_config = "checkpoints/vqgan_imagenet_f16_1024.yaml"
         # args.vqgan_checkpoint = "checkpoints/vqgan_imagenet_f16_1024.ckpt"
         # args.vqgan_config = "checkpoints/vqgan_imagenet_f16_16384_2.yaml"
         # args.vqgan_checkpoint = "checkpoints/vqgan_imagenet_f16_16384_2.ckpt"
+        # args.vqgan_config = "checkpoints/faceshq.yaml"
+        # args.vqgan_checkpoint = "checkpoints/faceshq.ckpt"
 
         # run vqgan
         run(args)

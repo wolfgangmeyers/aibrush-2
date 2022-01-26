@@ -25,6 +25,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         zoom_scale: 0.99,
         zoom_shift_x: 0,
         zoom_shift_y: 0,
+        model: undefined,
     });
     const [editingImage, setEditingImage] = useState<string | null>(null);
     const [count, setCount] = useState(1)
@@ -240,6 +241,14 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         <div className="form-group">
                             <label>Count</label>
                             <input className="form-control" type="number" max={10} min={1} value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
+                        </div>
+                        {/* model dropdown (faces or unset) */}
+                        <div className="form-group">
+                            <label>Model</label>
+                            <select className="form-control" value={input.model} onChange={(e) => setInput({ ...input, model: e.target.value })}>
+                                <option value={undefined}>ImageNet</option>
+                                <option value="faces">FacesHQ</option>
+                            </select>
                         </div>
                         {/* boolean enable_video (bootstrap styled checkbox) */}
                         <div className="form-group">

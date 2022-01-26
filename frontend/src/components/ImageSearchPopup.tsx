@@ -20,7 +20,7 @@ export const ImageSearchPopup : FC<Props> = ({ api, onHide, filterOut, onSubmit 
             const images = await api.listImages(undefined, 1000)
             setImages((
                 images.data.images || []
-            ).filter(image => !filterOut.includes(image.id)));
+            ).filter(image => !filterOut.includes(image.phrases.join("|"))));
         }
         loadImages();
     }, [api]);
