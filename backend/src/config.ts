@@ -8,7 +8,8 @@ export interface Config {
     smtpPassword?: string;
     smtpFrom: string;
     databaseName: string;
-    dataFolderName: string;
+    dataFolderName?: string;
+    s3Bucket?: string;
     loginCodeExpirationSeconds: number;
     userAccessTokenExpirationSeconds: number;
     serviceAccountAccessTokenExpirationSeconds: number;

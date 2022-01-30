@@ -2,7 +2,6 @@ import { Client, Pool } from "pg"
 import { createDb, migrate } from "postgres-migrations"
 import * as uuid from "uuid"
 import moment from "moment"
-import fs from "fs"
 import nodemailer from "nodemailer";
 import sharp from "sharp";
 
@@ -27,6 +26,7 @@ import { EmailMessage } from "./email_message"
 import { Config } from "./config"
 import { Authentication, AuthHelper } from "./auth";
 import { LoginCode } from "./model"
+import { Filestore, S3Filestore, LocalFilestore } from "./filestore";
 
 process.env.PGUSER = process.env.PGUSER || "postgres"
 
@@ -34,9 +34,15 @@ export class BackendService {
 
     private pool: Pool
     private authHelper: AuthHelper;
+    private filestore: Filestore;
 
     constructor(private config: Config) {
         this.authHelper = new AuthHelper(config)
+        if (config.s3Bucket) {
+            this.filestore = new S3Filestore(config.s3Bucket)
+        } else {
+            this.filestore = new LocalFilestore(config.dataFolderName)
+        }
     }
 
     private async sendMail(message: EmailMessage): Promise<void> {
@@ -83,10 +89,6 @@ export class BackendService {
         }
 
         this.pool = new Pool({ database: this.config.databaseName })
-        // ensure data folder exists
-        if (!fs.existsSync(`./${this.config.dataFolderName}`)) {
-            fs.mkdirSync(`./${this.config.dataFolderName}`)
-        }
     }
 
     async destroy() {
@@ -167,7 +169,7 @@ export class BackendService {
     async getImageData(id: string): Promise<Buffer> {
         try {
             // load image data from file and convert from base64 to buffer
-            const image = fs.readFileSync(`./${this.config.dataFolderName}/${id}.image`).toString()
+            const image = await this.filestore.readFile(`${id}.image`)
             return Buffer.from(image, "base64")
         } catch (err) {
             console.error(err)
@@ -180,7 +182,7 @@ export class BackendService {
     async getThumbnailData(id: string): Promise<Buffer> {
         try {
             // load image data from file and convert from base64 to buffer
-            const thumbnail = fs.readFileSync(`./${this.config.dataFolderName}/${id}.thumbnail`).toString()
+            const thumbnail = await this.filestore.readFile(`${id}.thumbnail`)
             return Buffer.from(thumbnail, "base64")
         } catch (err) {
             console.error(err)
@@ -198,16 +200,16 @@ export class BackendService {
                 [id]
             )
             // delete image file, if one exists
-            if (fs.existsSync(`./${this.config.dataFolderName}/${id}.image`)) {
-                fs.unlinkSync(`./${this.config.dataFolderName}/${id}.image`)
+            if (this.filestore.exists(`${id}.image}`)) {
+                await this.filestore.deleteFile(`${id}.image`)
             }
             // delete thumbnail file, if one exists
-            if (fs.existsSync(`./${this.config.dataFolderName}/${id}.thumbnail`)) {
-                fs.unlinkSync(`./${this.config.dataFolderName}/${id}.thumbnail`)
+            if (this.filestore.exists(`${id}.thumbnail`)) {
+                await this.filestore.deleteFile(`${id}.thumbnail`)
             }
             // delete mp4 file, if one exists
-            if (fs.existsSync(`./${this.config.dataFolderName}/${id}.mp4`)) {
-                fs.unlinkSync(`./${this.config.dataFolderName}/${id}.mp4`)
+            if (this.filestore.exists(`${id}.mp4`)) {
+                await this.filestore.deleteFile(`${id}.mp4`)
             }
         } finally {
             client.release()
@@ -237,7 +239,7 @@ export class BackendService {
             let encoded_image = body.encoded_image;
             if (!encoded_image && body.parent) {
                 try {
-                    const parentImageData = fs.readFileSync(`./${this.config.dataFolderName}/${body.parent}.image`).toString()
+                    const parentImageData = await this.filestore.readFile(`${body.parent}.image`)
                     encoded_image = parentImageData
                 } catch (err) {
                     console.error(`error loading parent image data for ${image.id} (parent=${body.parent})`, err)
@@ -245,9 +247,9 @@ export class BackendService {
             }
             // if encoded_image is set, save image
             if (encoded_image) {
-                fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.image`, encoded_image)
+                await this.filestore.writeFile(`${image.id}.image`, encoded_image)
                 const encoded_thumbnail = await this.createThumbnail(encoded_image)
-                fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.thumbnail`, encoded_thumbnail)
+                await this.filestore.writeFile(`${image.id}.thumbnail`, encoded_thumbnail)
             }
             return this.hydrateImage({
                 ...image,
@@ -292,9 +294,9 @@ export class BackendService {
             const image = result.rows[0]
             // if encoded_image is set, save it
             if (body.encoded_image) {
-                fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.image`, body.encoded_image)
+                await this.filestore.writeFile(`${image.id}.image`, body.encoded_image)
                 const encoded_thumbnail = await this.createThumbnail(body.encoded_image)
-                fs.writeFileSync(`./${this.config.dataFolderName}/${image.id}.thumbnail`, encoded_thumbnail)
+                await this.filestore.writeFile(`${image.id}.thumbnail`, encoded_thumbnail)
             }
             return this.hydrateImage({
                 ...image,
@@ -383,15 +385,15 @@ export class BackendService {
 
     async updateVideoData(id: string, videoData: Buffer) {
         // write video data to mp4 file
-        console.log(`writing video data to ${this.config.dataFolderName}/${id}.mp4`)
-        fs.writeFileSync(`./${this.config.dataFolderName}/${id}.mp4`, videoData)
+        console.log(`writing video data to ${id}.mp4`)
+        await this.filestore.writeFile(`${id}.mp4`, videoData)
     }
 
     async getVideoData(id: string): Promise<Buffer> {
         // read video data from mp4 file
         // return null if file does not exist
         try {
-            return fs.readFileSync(`./${this.config.dataFolderName}/${id}.mp4`)
+            return await this.filestore.readBinaryFile(`${id}.mp4`)
         } catch (err) {
             return null
         }
