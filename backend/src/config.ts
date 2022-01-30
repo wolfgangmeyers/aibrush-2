@@ -7,7 +7,8 @@ export interface Config {
     smtpUser?: string;
     smtpPassword?: string;
     smtpFrom: string;
-    databaseName: string;
+    databaseUrl: string;
+    databaseSsl: boolean;
     dataFolderName?: string;
     s3Bucket?: string;
     s3Region?: string;

@@ -3,7 +3,6 @@ data
 data_test
 yarn-error.log
 openapitools.json
-src/client
 aibrush-config.json
 test_data
 public

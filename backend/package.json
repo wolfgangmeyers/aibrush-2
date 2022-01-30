@@ -22,7 +22,8 @@
         "typescript": "^4.3.5"
     },
     "scripts": {
-        "start": "ts-node-dev ./index.ts",
+        "start-dev": "ts-node-dev ./index.ts",
+        "start": "ts-node ./index.ts",
         "genclient": "openapi-generator-cli generate --generator-name typescript-axios --input-spec ./openapi.yaml --output ./src/client",
         "test": "jest --force-exit --detectOpenHandles",
         "build_frontend": "rm -rf ./public && cd ../frontend && yarn build && cp -r build ../backend/public"

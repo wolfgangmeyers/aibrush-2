@@ -1,4 +1,5 @@
 import { Client, Pool } from "pg"
+import os from "os";
 import { createDb, migrate } from "postgres-migrations"
 import * as uuid from "uuid"
 import moment from "moment"
@@ -65,21 +66,16 @@ export class BackendService {
     }
 
     public async init(): Promise<void> {
-
-        try {
-            // create database
-            const client = new Client()
-            await client.connect()
-            await createDb(this.config.databaseName, { client })
-            await client.end()
-        } catch (error) {
-            console.error(error)
-            throw error
+        // check for DATABASE_URL env var, set it on config if it's populated
+        if (process.env.DATABASE_URL) {
+            this.config.databaseUrl = process.env.DATABASE_URL
         }
-
         try {
             // migrate
-            const client = new Client({ database: this.config.databaseName })
+            const client = new Client({
+                connectionString: this.config.databaseUrl,
+                ssl: this.config.databaseSsl && {rejectUnauthorized: false},
+            })
             await client.connect()
             await migrate({ client }, "./src/migrations")
             await sleep(100)
@@ -88,7 +84,10 @@ export class BackendService {
             throw error
         }
 
-        this.pool = new Pool({ database: this.config.databaseName })
+        this.pool = new Pool({
+           connectionString: this.config.databaseUrl,
+           ssl: this.config.databaseSsl && {rejectUnauthorized: false},
+        })
     }
 
     async destroy() {
