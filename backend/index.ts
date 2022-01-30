@@ -8,8 +8,8 @@ import { Server } from "./src/server"
 const config = loadConfig();
 
 const backendService = new BackendService(config)
-const port =  parseInt(process.env.port || "3000")
-const server = new Server(config, backendService, parseInt(process.env.port || "3000"))
+const port =  parseInt(process.env.PORT || "3000")
+const server = new Server(config, backendService, port)
 
 server.init().then(() => {
     console.log("Server initialized")
