@@ -1,2 +1,4 @@
 worker/steps
 sandbox
+.env
+dist

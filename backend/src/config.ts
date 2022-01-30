@@ -1,4 +1,6 @@
 import fs from "fs";
+import dotenv from "dotenv";
+dotenv.config();
 
 export interface Config {
     secret: string;
@@ -20,5 +22,24 @@ export interface Config {
 }
 
 export const loadConfig = (): Config => {
-    return JSON.parse(fs.readFileSync(__dirname + "/../aibrush-config.json").toString());
+    // Load config from environment variables
+    const config: Config = {
+        secret: process.env.SECRET,
+        smtpHost: process.env.SMTP_HOST,
+        smtpPort: parseInt(process.env.SMTP_PORT, 10),
+        smtpUser: process.env.SMTP_USER,
+        smtpPassword: process.env.SMTP_PASSWORD,
+        smtpFrom: process.env.SMTP_FROM,
+        databaseUrl: process.env.DATABASE_URL,
+        databaseSsl: process.env.DATABASE_SSL === "true",
+        dataFolderName: process.env.DATA_FOLDER_NAME,
+        s3Bucket: process.env.S3_BUCKET,
+        s3Region: process.env.S3_REGION,
+        loginCodeExpirationSeconds: parseInt(process.env.LOGIN_CODE_EXPIRATION_SECONDS, 10),
+        userAccessTokenExpirationSeconds: parseInt(process.env.USER_ACCESS_TOKEN_EXPIRATION_SECONDS, 10),
+        serviceAccountAccessTokenExpirationSeconds: parseInt(process.env.SERVICE_ACCOUNT_ACCESS_TOKEN_EXPIRATION_SECONDS, 10),
+        serviceAccounts: process.env.SERVICE_ACCOUNTS ? process.env.SERVICE_ACCOUNTS.split(",") : [],
+        userWhitelist: process.env.USER_WHITELIST ? process.env.USER_WHITELIST.split(",") : [],
+    };
+    return config;
 }
