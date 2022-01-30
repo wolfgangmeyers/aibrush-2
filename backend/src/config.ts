@@ -10,6 +10,7 @@ export interface Config {
     databaseName: string;
     dataFolderName?: string;
     s3Bucket?: string;
+    s3Region?: string;
     loginCodeExpirationSeconds: number;
     userAccessTokenExpirationSeconds: number;
     serviceAccountAccessTokenExpirationSeconds: number;

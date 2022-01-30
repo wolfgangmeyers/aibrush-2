@@ -13,11 +13,9 @@ export class S3Filestore implements Filestore {
     private readonly s3: AWS.S3;
     private readonly bucket: string;
 
-    constructor(bucket: string) {
+    constructor(bucket: string, region: string) {
         this.s3 = new AWS.S3({
-            region: "us-west-2",
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+            region: region,
         });
         this.bucket = bucket;
     }

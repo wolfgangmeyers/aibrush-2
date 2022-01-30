@@ -39,7 +39,7 @@ export class BackendService {
     constructor(private config: Config) {
         this.authHelper = new AuthHelper(config)
         if (config.s3Bucket) {
-            this.filestore = new S3Filestore(config.s3Bucket)
+            this.filestore = new S3Filestore(config.s3Bucket, config.s3Region)
         } else {
             this.filestore = new LocalFilestore(config.dataFolderName)
         }

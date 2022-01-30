@@ -5,6 +5,7 @@
     "license": "MIT",
     "devDependencies": {
         "@openapitools/openapi-generator-cli": "^2.3.6",
+        "@types/aws-sdk": "^2.7.0",
         "@types/cors": "^2.8.11",
         "@types/express": "^4.17.12",
         "@types/jest": "^26.0.23",
@@ -27,6 +28,7 @@
         "build_frontend": "rm -rf ./public && cd ../frontend && yarn build && cp -r build ../backend/public"
     },
     "dependencies": {
+        "aws-sdk": "^2.1066.0",
         "axios": "^0.22.0",
         "cors": "^2.8.5",
         "express": "^4.17.1",

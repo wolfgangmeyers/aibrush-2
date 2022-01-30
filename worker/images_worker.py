@@ -91,13 +91,17 @@ def process_image():
             args.vqgan_config = "checkpoints/faceshq.yaml"
             args.vqgan_checkpoint = "checkpoints/faceshq.ckpt"
         # args.vqgan_config = "checkpoints/vqgan.gumbelf8.config.yml"
-        # args.vqgan_checkpoint = "checkpoints/sber.gumbelf8.ckpt"
+        # args.vqgan_checkpoint = "checkpoints/sber.gumbelf8-2.ckpt"
+        # args.vqgan_config = "checkpoints/sber.gumbelf8-2.config.yml"
         # args.vqgan_config = "checkpoints/vqgan_imagenet_f16_1024.yaml"
         # args.vqgan_checkpoint = "checkpoints/vqgan_imagenet_f16_1024.ckpt"
         # args.vqgan_config = "checkpoints/vqgan_imagenet_f16_16384_2.yaml"
         # args.vqgan_checkpoint = "checkpoints/vqgan_imagenet_f16_16384_2.ckpt"
         # args.vqgan_config = "checkpoints/faceshq.yaml"
         # args.vqgan_checkpoint = "checkpoints/faceshq.ckpt"
+        # args.vqgan_checkpoint = "checkpoints/WikiArt_augmented_Steps_7mil_finetuned_1mil.ckpt"
+        # args.vqgan_config = "checkpoints/WikiArt_augmented_Steps_7mil_finetuned_1mil.yaml"
+        # args.vqgan_checkpoint = "checkpoints/imagenet_16384_slim.ckpt"
 
         # run vqgan
         run(args)

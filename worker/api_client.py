@@ -13,7 +13,8 @@ class AIBrushAPI(object):
     def http_request(self, path, method, body=None) -> requests.Response:
         url = f"{self.api_url}/api{path}"
         print(f"{method} {url}")
-        for i in range(2):
+        backoff = 2
+        for _ in range(5):
             try:
                 if isinstance(body, bytes):
                     return requests.request(method, url, data=body, headers={
@@ -25,8 +26,13 @@ class AIBrushAPI(object):
                     "Authorization": f"Bearer {self.token}",
                 })
             except Exception as err:
-                print(f"Error making http request: {err}")
-                time.sleep(5)
+                # is this a connection error?
+                if isinstance(err, requests.exceptions.ConnectionError):
+                    print(f"Connection error: {err}")
+                    time.sleep(backoff)
+                    backoff *= 2
+                else:
+                    raise err
 
     def parse_json(self, json_str):
         try:
