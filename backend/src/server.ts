@@ -290,7 +290,7 @@ export class Server {
             }
         })
 
-        this.app.put("/api/images/:id/video.mp4", async (req, res) => {
+        this.app.put("/api/images/:id.video.mp4", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
