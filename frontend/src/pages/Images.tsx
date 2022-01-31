@@ -182,6 +182,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
                                 onClick={setSelectedImage}
                                 onDesign={onDesignImage}
                                 assetsUrl={assetsUrl}
+                                apiUrl={apiUrl}
                                 key={image.id}
                                 image={image} />
                         ))}
