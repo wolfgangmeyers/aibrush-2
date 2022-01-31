@@ -158,8 +158,11 @@ export class Server {
 
         // render index.html for frontend routes
         // /create-image, /images, /designer
-        for (let route of ["/create-image", "/images", "/designer"]) {
+        for (let route of ["/create-image", "/images", "/designer", "/suggestions"]) {
             this.app.get(route, (req, res) => {
+                res.sendFile(path.join(__dirname, "../public/index.html"))
+            })
+            this.app.get(route + "/", (req, res) => {
                 res.sendFile(path.join(__dirname, "../public/index.html"))
             })
         }
