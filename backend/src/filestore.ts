@@ -45,8 +45,6 @@ export class S3Filestore implements Filestore {
             Bucket: this.bucket,
             Key: filename,
             Body: data,
-            // public read access
-            ACL: 'public-read',
         }).promise();
     }
 
