@@ -60,7 +60,7 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, ima
                 {onDesign && <button className="btn btn-secondary btn-sm" onClick={() => onDesign && onDesign(image)} style={{marginRight: "5px"}}>
                     <i className="fas fa-pencil-alt"></i>
                 </button>}
-                {(image.status === "completed" || image.status === "saved") && image.enable_video && <button className="btn btn-secondary btn-sm" onClick={() => window.open(`${apiUrl}/images/${image.id}.mp4`)} style={{marginRight: "5px", marginTop: "5px"}}>
+                {(image.status === "completed" || image.status === "saved") && image.enable_video && <button className="btn btn-secondary btn-sm" onClick={() => window.open(`${apiUrl}/api/images/${image.id}.mp4`)} style={{marginRight: "5px", marginTop: "5px"}}>
                     <i className="fas fa-video"></i>
                 </button>}
             </div>
