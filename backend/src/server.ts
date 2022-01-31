@@ -156,14 +156,21 @@ export class Server {
         // anonymous access of static files
         this.app.use(express.static("./public"))
 
+        function getIndexHtmlPath(): string {
+            if (__dirname.indexOf("dist") == -1) {
+                return path.join(__dirname, "../public/index.html")
+            }
+            return path.join(__dirname, "../../public/index.html")
+        }
+
         // render index.html for frontend routes
         // /create-image, /images, /designer
         for (let route of ["/create-image", "/images", "/designer", "/suggestions"]) {
             this.app.get(route, (req, res) => {
-                res.sendFile(path.join(__dirname, "../public/index.html"))
+                res.sendFile(getIndexHtmlPath())
             })
             this.app.get(route + "/", (req, res) => {
-                res.sendFile(path.join(__dirname, "../public/index.html"))
+                res.sendFile(getIndexHtmlPath())
             })
         }
 
