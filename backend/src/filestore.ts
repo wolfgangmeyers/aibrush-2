@@ -44,7 +44,9 @@ export class S3Filestore implements Filestore {
         await this.s3.putObject({
             Bucket: this.bucket,
             Key: filename,
-            Body: data
+            Body: data,
+            // public read access
+            ACL: 'public-read',
         }).promise();
     }
 
