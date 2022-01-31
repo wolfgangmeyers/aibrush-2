@@ -168,8 +168,8 @@ export class BackendService {
     async getImageData(id: string): Promise<Buffer> {
         try {
             // load image data from file and convert from base64 to buffer
-            const image = await this.filestore.readFile(`${id}.image`)
-            return Buffer.from(image, "base64")
+            const image = await this.filestore.readBinaryFile(`${id}.image.jpg`)
+            return image
         } catch (err) {
             console.error(err)
             return null
@@ -181,8 +181,8 @@ export class BackendService {
     async getThumbnailData(id: string): Promise<Buffer> {
         try {
             // load image data from file and convert from base64 to buffer
-            const thumbnail = await this.filestore.readFile(`${id}.thumbnail`)
-            return Buffer.from(thumbnail, "base64")
+            const thumbnail = await this.filestore.readBinaryFile(`${id}.thumbnail.jpg`)
+            return thumbnail
         } catch (err) {
             console.error(err)
             return null
@@ -199,12 +199,12 @@ export class BackendService {
                 [id]
             )
             // delete image file, if one exists
-            if (this.filestore.exists(`${id}.image}`)) {
-                await this.filestore.deleteFile(`${id}.image`)
+            if (this.filestore.exists(`${id}.image.jpg`)) {
+                await this.filestore.deleteFile(`${id}.image.jpg`)
             }
             // delete thumbnail file, if one exists
-            if (this.filestore.exists(`${id}.thumbnail`)) {
-                await this.filestore.deleteFile(`${id}.thumbnail`)
+            if (this.filestore.exists(`${id}.thumbnail.jpg`)) {
+                await this.filestore.deleteFile(`${id}.thumbnail.jpg`)
             }
             // delete mp4 file, if one exists
             if (this.filestore.exists(`${id}.mp4`)) {
@@ -238,17 +238,19 @@ export class BackendService {
             let encoded_image = body.encoded_image;
             if (!encoded_image && body.parent) {
                 try {
-                    const parentImageData = await this.filestore.readFile(`${body.parent}.image`)
-                    encoded_image = parentImageData
+                    const parentImageData = await this.filestore.readBinaryFile(`${body.parent}.image.jpg`)
+                    encoded_image = parentImageData.toString("base64")
                 } catch (err) {
                     console.error(`error loading parent image data for ${image.id} (parent=${body.parent})`, err)
                 }
             }
             // if encoded_image is set, save image
             if (encoded_image) {
-                await this.filestore.writeFile(`${image.id}.image`, encoded_image)
+                const binary_image = Buffer.from(encoded_image, "base64")
+                await this.filestore.writeFile(`${image.id}.image`, binary_image)
                 const encoded_thumbnail = await this.createThumbnail(encoded_image)
-                await this.filestore.writeFile(`${image.id}.thumbnail`, encoded_thumbnail)
+                const binary_thumbnail = Buffer.from(encoded_thumbnail, "base64")
+                await this.filestore.writeFile(`${image.id}.thumbnail`, binary_thumbnail)
             }
             return this.hydrateImage({
                 ...image,
@@ -293,9 +295,11 @@ export class BackendService {
             const image = result.rows[0]
             // if encoded_image is set, save it
             if (body.encoded_image) {
-                await this.filestore.writeFile(`${image.id}.image`, body.encoded_image)
+                const binaryImage = Buffer.from(body.encoded_image, "base64")
+                await this.filestore.writeFile(`${image.id}.image`, binaryImage)
                 const encoded_thumbnail = await this.createThumbnail(body.encoded_image)
-                await this.filestore.writeFile(`${image.id}.thumbnail`, encoded_thumbnail)
+                const binaryThumbnail = Buffer.from(encoded_thumbnail, "base64")
+                await this.filestore.writeFile(`${image.id}.thumbnail`, binaryThumbnail)
             }
             return this.hydrateImage({
                 ...image,
