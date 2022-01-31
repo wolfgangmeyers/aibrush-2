@@ -44,7 +44,7 @@ export class S3Filestore implements Filestore {
         const input: AWS.S3.PutObjectRequest = {
             Bucket: this.bucket,
             Key: filename,
-            // Body: data,
+            Body: data,
         }
         if (filename.endsWith(".mp4")) {
             input.ContentType = "video/mp4";
