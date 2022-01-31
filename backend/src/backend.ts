@@ -247,10 +247,10 @@ export class BackendService {
             // if encoded_image is set, save image
             if (encoded_image) {
                 const binary_image = Buffer.from(encoded_image, "base64")
-                await this.filestore.writeFile(`${image.id}.image`, binary_image)
+                await this.filestore.writeFile(`${image.id}.image.jpg`, binary_image)
                 const encoded_thumbnail = await this.createThumbnail(encoded_image)
                 const binary_thumbnail = Buffer.from(encoded_thumbnail, "base64")
-                await this.filestore.writeFile(`${image.id}.thumbnail`, binary_thumbnail)
+                await this.filestore.writeFile(`${image.id}.thumbnail.jpg`, binary_thumbnail)
             }
             return this.hydrateImage({
                 ...image,
@@ -296,10 +296,10 @@ export class BackendService {
             // if encoded_image is set, save it
             if (body.encoded_image) {
                 const binaryImage = Buffer.from(body.encoded_image, "base64")
-                await this.filestore.writeFile(`${image.id}.image`, binaryImage)
+                await this.filestore.writeFile(`${image.id}.image.jpg`, binaryImage)
                 const encoded_thumbnail = await this.createThumbnail(body.encoded_image)
                 const binaryThumbnail = Buffer.from(encoded_thumbnail, "base64")
-                await this.filestore.writeFile(`${image.id}.thumbnail`, binaryThumbnail)
+                await this.filestore.writeFile(`${image.id}.thumbnail.jpg`, binaryThumbnail)
             }
             return this.hydrateImage({
                 ...image,
