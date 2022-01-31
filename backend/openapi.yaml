@@ -126,7 +126,7 @@ paths:
       responses:
         "204":
           description: Success
-  /api/images/{id}/image.jpg:
+  /api/images/{id}.image.jpg:
     get:
       description: Get the binary image data
       operationId: getImageData
@@ -146,7 +146,7 @@ paths:
               schema:
                 type: string
                 format: binary
-  /api/images/{id}/thumbnail.jpg:
+  /api/images/{id}.thumbnail.jpg:
     get:
       description: Get the binary thumbnail data
       operationId: getThumbnailData
@@ -166,7 +166,7 @@ paths:
               schema:
                 type: string
                 format: binary
-  /api/images/{id}/video.mp4:
+  /api/images/{id}.mp4:
     get:
       description: Get the binary video data
       operationId: getVideoData
@@ -409,6 +409,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuggestionsJob"
+  /api/assets-url:
+    get:
+      description: Get the assets url
+      operationId: getAssetsUrl
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetsUrl"
   # login by email
   /api/auth/login:
     post:
@@ -711,9 +724,13 @@ components:
           type: array
           items:
             type: string
-
-
-
+    AssetsUrl:
+      type: object
+      properties:
+        assets_url:
+          type: string
+      required:
+        - assets_url
     Healthcheck:
       type: object
       properties:

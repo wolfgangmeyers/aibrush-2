@@ -88,7 +88,7 @@ export class Server {
         // use these urls in image elements.
 
         // get image data by id
-        this.app.get("/api/images/:id/image.jpg", async (req, res) => {
+        this.app.get("/api/images/:id.image.jpg", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -106,7 +106,7 @@ export class Server {
         })
 
         // get thumbnail data by id
-        this.app.get("/api/images/:id/thumbnail.jpg", async (req, res) => {
+        this.app.get("/api/images/:id.thumbnail.jpg", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -123,7 +123,7 @@ export class Server {
             }
         })
 
-        this.app.get("/api/images/:id/video.mp4", async (req, res) => {
+        this.app.get("/api/images/:id.video.mp4", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -145,6 +145,13 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
+        })
+
+        this.app.get("/api/assets-url", async (req, res) => {
+            const assetsUrl = this.config.assetsBaseUrl;
+            res.send({
+                assets_url: assetsUrl
+            });
         })
 
         this.app.get("/api/healthcheck", async (req, res) => {

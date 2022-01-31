@@ -12,9 +12,10 @@ import { LoadMoreImages } from "../components/LoadMoreImages";
 interface Props {
     api: AIBrushApi;
     apiUrl: string;
+    assetsUrl: string;
 }
 
-export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
+export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
     const history = useHistory();
     const [images, setImages] = useState<Array<Image>>([]);
     const [err, setErr] = useState<string | null>(null);
@@ -180,7 +181,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
                                 onFork={onForkImage}
                                 onClick={setSelectedImage}
                                 onDesign={onDesignImage}
-                                apiUrl={apiUrl}
+                                assetsUrl={assetsUrl}
                                 key={image.id}
                                 image={image} />
                         ))}
@@ -192,6 +193,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl }) => {
             {selectedImage && (
                 <ImagePopup
                     apiUrl={apiUrl}
+                    assetsUrl={assetsUrl}
                     image={selectedImage as Image}
                     onClose={() => setSelectedImage(null)}
                     onDelete={onDeleteImage}

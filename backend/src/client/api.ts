@@ -24,6 +24,19 @@ import { BASE_PATH, COLLECTION_FORMATS, RequestArgs, BaseAPI, RequiredError } fr
 /**
  * 
  * @export
+ * @interface AssetsUrl
+ */
+export interface AssetsUrl {
+    /**
+     * 
+     * @type {string}
+     * @memberof AssetsUrl
+     */
+    assets_url?: string;
+}
+/**
+ * 
+ * @export
  * @interface CreateImageInput
  */
 export interface CreateImageInput {
@@ -787,6 +800,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Get the assets url
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAssetsUrl: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/assets-url`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Get a saved image by id
          * @param {string} id 
          * @param {'thumbnail' | 'image'} [download] 
@@ -833,7 +875,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getImageData: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getImageData', 'id', id)
-            const localVarPath = `/api/images/{id}/image.jpg`
+            const localVarPath = `/api/images/{id}.image.jpg`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -932,7 +974,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getThumbnailData: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getThumbnailData', 'id', id)
-            const localVarPath = `/api/images/{id}/thumbnail.jpg`
+            const localVarPath = `/api/images/{id}.thumbnail.jpg`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -965,7 +1007,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getVideoData: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getVideoData', 'id', id)
-            const localVarPath = `/api/images/{id}/video.mp4`
+            const localVarPath = `/api/images/{id}.mp4`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1369,7 +1411,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         updateVideoData: async (id: string, body?: any, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateVideoData', 'id', id)
-            const localVarPath = `/api/images/{id}/video.mp4`
+            const localVarPath = `/api/images/{id}.mp4`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1497,6 +1539,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async deleteSuggestionsJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.deleteSuggestionsJob(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get the assets url
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getAssetsUrl(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AssetsUrl>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getAssetsUrl(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -1757,6 +1808,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.deleteSuggestionsJob(id, options).then((request) => request(axios, basePath));
         },
         /**
+         * Get the assets url
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAssetsUrl(options?: any): AxiosPromise<AssetsUrl> {
+            return localVarFp.getAssetsUrl(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get a saved image by id
          * @param {string} id 
          * @param {'thumbnail' | 'image'} [download] 
@@ -2004,6 +2063,16 @@ export class AIBrushApi extends BaseAPI {
      */
     public deleteSuggestionsJob(id: string, options?: any) {
         return AIBrushApiFp(this.configuration).deleteSuggestionsJob(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get the assets url
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getAssetsUrl(options?: any) {
+        return AIBrushApiFp(this.configuration).getAssetsUrl(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

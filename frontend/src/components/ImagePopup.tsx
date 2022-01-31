@@ -4,6 +4,7 @@ import { Image } from "../client/api";
 
 interface ImagePopupProps {
     apiUrl: string;
+    assetsUrl: string;
     image: Image;
     onClose: () => void;
     onDelete?: (image: Image) => void;
@@ -11,10 +12,10 @@ interface ImagePopupProps {
     onDesign?: (image: Image) => void;
 }
 
-export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, image, onClose, onDelete, onDesign, onFork }) => {
+export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, assetsUrl, image, onClose, onDelete, onDesign, onFork }) => {
 
     const img = useRef<HTMLImageElement>(null);
-    const src = `${apiUrl}/api/images/${image.id}/image.jpg?updated_at=${image.updated_at}`;
+    const src = `${assetsUrl}/${image.id}.image.jpg?updated_at=${image.updated_at}`;
 
     useEffect(() => {
         if (!img.current) {

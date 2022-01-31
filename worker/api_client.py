@@ -73,12 +73,12 @@ class AIBrushAPI(object):
         return self.parse_json(resp.text)
 
     def get_image_data(self, image_id: str) -> bytes:
-        resp = self.http_request(f"/images/{image_id}/image.jpg", "GET")
+        resp = self.http_request(f"/images/{image_id}.image.jpg", "GET")
         # read binary data
         return resp.content
 
     def update_video_data(self, image_id: str, video_data: bytes):
-        resp = self.http_request(f"/images/{image_id}/video.mp4", "PUT", video_data)
+        resp = self.http_request(f"/images/{image_id}.video.mp4", "PUT", video_data)
         if resp.status_code != 204:
             print(f"Error updating video data ({resp.status_code}): {resp.text}")
             return False

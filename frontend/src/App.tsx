@@ -27,9 +27,11 @@ function updateHttpClient(loginResult: LoginResult) {
 function App() {
 
   const [credentials, setCredentials] = useState<LoginResult | null>(null);
+  const [assetsUrl, setAssetsUrl] = useState<string>("/api/images");
 
   const init = async () => {
     console.log("App.init")
+    client.getAssetsUrl().then(result => setAssetsUrl(result.data.assets_url));
     const storedCredentials = localStorage.getItem("credentials");
     if (storedCredentials) {
       // attempt to refresh token
@@ -112,7 +114,7 @@ function App() {
               <CreateImage api={client} apiUrl={config.apiUrl} />
             </Route>
             <Route path="/images">
-              <ImagesPage apiUrl={config.apiUrl} api={client} />
+              <ImagesPage apiUrl={config.apiUrl} api={client} assetsUrl={assetsUrl} />
             </Route>
             {/* /designer route */}
             <Route path="/designer">

@@ -81,6 +81,7 @@ describe("server", () => {
             serviceAccountAccessTokenExpirationSeconds: 3600,
             serviceAccounts: ["service-account@test.test"],
             userWhitelist: [],
+            assetsBaseUrl: "/api/images",
         })
         const databases = await backendService.listDatabases()
         for (const db of databases) {
@@ -116,6 +117,7 @@ describe("server", () => {
             serviceAccountAccessTokenExpirationSeconds: 3600,
             serviceAccounts: ["service-account@test.test"],
             userWhitelist: [],
+            assetsBaseUrl: "/api/images",
         }
         const backendService = new BackendService(config)
 

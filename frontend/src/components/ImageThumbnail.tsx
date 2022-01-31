@@ -4,7 +4,7 @@ import { Image, ImageStatusEnum } from "../client/api";
 import { imageStatusToIconClass } from "../lib/iconhelper";
 
 interface ImageThumbnailProps {
-    apiUrl: string;
+    assetsUrl: string;
     image: Image;
     onClick: (image: Image) => void;
     onDelete?: (image: Image) => void;
@@ -12,9 +12,9 @@ interface ImageThumbnailProps {
     onDesign?: (image: Image) => void;
 }
 
-export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick, onDelete, onFork, onDesign }) => {
+export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, image, onClick, onDelete, onFork, onDesign }) => {
 
-    const src = `${apiUrl}/api/images/${image.id}/thumbnail.jpg?updated_at=${image.updated_at}`;
+    const src = `${assetsUrl}/${image.id}.thumbnail.jpg?updated_at=${image.updated_at}`;
 
     useEffect(() => {
         const img = document.getElementById(`image-${image.id}`) as HTMLImageElement;
@@ -59,7 +59,7 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ apiUrl, image, onClick
                 {onDesign && <button className="btn btn-secondary btn-sm" onClick={() => onDesign && onDesign(image)} style={{marginRight: "5px"}}>
                     <i className="fas fa-pencil-alt"></i>
                 </button>}
-                {(image.status === "completed" || image.status === "saved") && image.enable_video && <button className="btn btn-secondary btn-sm" onClick={() => window.open(`${apiUrl}/api/images/${image.id}/video.mp4`)} style={{marginRight: "5px", marginTop: "5px"}}>
+                {(image.status === "completed" || image.status === "saved") && image.enable_video && <button className="btn btn-secondary btn-sm" onClick={() => window.open(`${assetsUrl}/${image.id}.video.mp4`)} style={{marginRight: "5px", marginTop: "5px"}}>
                     <i className="fas fa-video"></i>
                 </button>}
             </div>
