@@ -4,7 +4,7 @@ import fs from 'fs';
 export interface Filestore {
     exists(filename: string): Promise<boolean>;
     readFile(filename: string): Promise<string>;
-    writeFile(filename: string, data: string |  Buffer): Promise<void>;
+    writeFile(filename: string, data: string |  Buffer, downloadAs?: string): Promise<void>;
     readBinaryFile(filename: string): Promise<Buffer>;
     deleteFile(filename: string): Promise<void>;
 }
@@ -40,12 +40,19 @@ export class S3Filestore implements Filestore {
         return data.Body.toString('utf-8');
     }
 
-    async writeFile(filename: string, data: string | Buffer): Promise<void> {
-        await this.s3.putObject({
+    async writeFile(filename: string, data: string | Buffer, downloadAs?: string): Promise<void> {
+        const input: AWS.S3.PutObjectRequest = {
             Bucket: this.bucket,
             Key: filename,
-            Body: data,
-        }).promise();
+            // Body: data,
+        }
+        if (filename.endsWith(".mp4")) {
+            input.ContentType = "video/mp4";
+        }
+        if (downloadAs) {
+            input.ContentDisposition = `attachment; filename="${downloadAs}"`;
+        }
+        await this.s3.putObject(input).promise();
     }
 
     async readBinaryFile(filename: string): Promise<Buffer> {

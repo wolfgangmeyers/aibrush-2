@@ -389,7 +389,8 @@ export class BackendService {
     async updateVideoData(id: string, videoData: Buffer) {
         // write video data to mp4 file
         console.log(`writing video data to ${id}.mp4`)
-        await this.filestore.writeFile(`${id}.mp4`, videoData)
+        const image = await this.getImage(id)
+        await this.filestore.writeFile(`${id}.mp4`, videoData, image.label.replace(" ", "_") + ".mp4")
     }
 
     async getVideoData(id: string): Promise<Buffer> {
