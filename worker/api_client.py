@@ -20,11 +20,11 @@ class AIBrushAPI(object):
                     return requests.request(method, url, data=body, headers={
                         "Content-Type": "video/mp4",
                         "Authorization": f"Bearer {self.token}",
-                    })
+                    }, timeout=10)
                 return requests.request(method, url, json=body, headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {self.token}",
-                })
+                }, timeout=10)
             except Exception as err:
                 # is this a connection error?
                 if isinstance(err, requests.exceptions.ConnectionError):
