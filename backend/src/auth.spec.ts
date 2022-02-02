@@ -22,15 +22,15 @@ describe("AuthHelper", () => {
     it("should verify an access token", () => {
         const authHelper = new AuthHelper(config);
         const tokens = authHelper.createTokens("userId");
-        const userId = authHelper.verifyToken(tokens.accessToken, "access");
-        expect(userId).toBe("userId");
+        const jwt = authHelper.verifyToken(tokens.accessToken, "access");
+        expect(jwt.userId).toBe("userId");
     })
 
     it("should verify a refresh token", () => {
         const authHelper = new AuthHelper(config);
         const tokens = authHelper.createTokens("userId");
-        const userId = authHelper.verifyToken(tokens.refreshToken, "refresh");
-        expect(userId).toBe("userId");
+        const jwt = authHelper.verifyToken(tokens.refreshToken, "refresh");
+        expect(jwt.userId).toBe("userId");
     })
 
     it("should fail to verify an access token with the wrong type", () => {

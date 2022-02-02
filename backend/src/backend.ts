@@ -199,15 +199,15 @@ export class BackendService {
                 [id]
             )
             // delete image file, if one exists
-            if (this.filestore.exists(`${id}.image.jpg`)) {
+            if (await this.filestore.exists(`${id}.image.jpg`)) {
                 await this.filestore.deleteFile(`${id}.image.jpg`)
             }
             // delete thumbnail file, if one exists
-            if (this.filestore.exists(`${id}.thumbnail.jpg`)) {
+            if (await this.filestore.exists(`${id}.thumbnail.jpg`)) {
                 await this.filestore.deleteFile(`${id}.thumbnail.jpg`)
             }
             // delete mp4 file, if one exists
-            if (this.filestore.exists(`${id}.mp4`)) {
+            if (await this.filestore.exists(`${id}.mp4`)) {
                 await this.filestore.deleteFile(`${id}.mp4`)
             }
         } finally {
@@ -734,6 +734,19 @@ export class BackendService {
         try {
             await client.query(
                 `DROP DATABASE IF EXISTS "${database}"`
+            )
+        } finally {
+            await client.end()
+        }
+    }
+
+    async createDatabase(name: string): Promise<void> {
+        const client = new Client()
+        await client.connect()
+
+        try {
+            await client.query(
+                `CREATE DATABASE "${name}"`
             )
         } finally {
             await client.end()

@@ -65,6 +65,7 @@ describe("server", () => {
     // second user
     let client2: AIBrushApi;
     let httpClient2: AxiosInstance;
+    let databaseName: string;
 
     beforeAll(async () => {
         const backendService = new BackendService({
@@ -72,7 +73,7 @@ describe("server", () => {
             smtpHost: "localhost",
             smtpPort: 1025,
             smtpFrom: "noreply@test.aibrush.art",
-            databaseUrl: "postgres://localhost/aibrush_test_2",
+            databaseUrl: "postgres://localhost/postgres",
             databaseSsl: false,
             // databaseName: "aibrush_test_2",
             dataFolderName: "test_data",
@@ -89,6 +90,29 @@ describe("server", () => {
                 await backendService.dropDatabase(db)
             }
         }
+        databaseName = `aibrush_test_${moment().valueOf()}`
+        await backendService.createDatabase(databaseName)
+    })
+
+    beforeEach(async () => {
+        const backendService = new BackendService({
+            secret: "test",
+            smtpHost: "localhost",
+            smtpPort: 1025,
+            smtpFrom: "noreply@test.aibrush.art",
+            databaseUrl: "postgres://localhost/postgres",
+            databaseSsl: false,
+            // databaseName: "aibrush_test_2",
+            dataFolderName: "test_data",
+            loginCodeExpirationSeconds: 1,
+            userAccessTokenExpirationSeconds: 3600,
+            serviceAccountAccessTokenExpirationSeconds: 3600,
+            serviceAccounts: ["service-account@test.test"],
+            userWhitelist: [],
+            assetsBaseUrl: "/api/images",
+        })
+        databaseName = `aibrush_test_${moment().valueOf()}`
+        await backendService.createDatabase(databaseName)
     })
 
     beforeEach(async () => {
@@ -100,16 +124,12 @@ describe("server", () => {
             }
         } catch { }
 
-
-        // const sockfile = `/tmp/aibrush-backend-${uuid.v4()}.sock`
-
-        const databaseName = `aibrush_test_${moment().valueOf()}`
         const config: Config = {
             secret: "test",
             smtpHost: "localhost",
             smtpFrom: "noreply@test.aibrush.art",
             smtpPort: 1025,
-            databaseUrl: "postgres://localhost/aibrush_test_2",
+            databaseUrl: "postgres://localhost/" + databaseName,
             databaseSsl: false,
             dataFolderName: "test_data",
             loginCodeExpirationSeconds: 1,
@@ -263,7 +283,7 @@ describe("server", () => {
                         images = response.data
                     })
 
-                    it("should return the image", () => {
+                    it("should return the image", () => { // FIXME
                         expect(images.images).toHaveLength(1)
                         expect(images.images[0].id).toBe(image.id)
                         expect(images.images[0].phrases).toEqual(["test"])
@@ -367,7 +387,7 @@ describe("server", () => {
                             images = response.data
                         })
 
-                        it("should return the updated image", () => {
+                        it("should return the updated image", () => { // FIXME
                             expect(images.images).toHaveLength(1)
                             expect(images.images[0].id).toBe(image.id)
                             expect(images.images[0].phrases).toEqual(["test2"])
@@ -477,7 +497,7 @@ describe("server", () => {
                             await client.deleteImage(image.id)
                         })
 
-                        it("should remove the image and thumbnail files from the data folder", () => {
+                        it("should remove the image and thumbnail files from the data folder", () => { // FIXME
                             // data folder is "data_test"
                             const imagePath = path.join("data_test", image.id + ".image")
                             expect(fs.existsSync(imagePath)).toBe(false)
@@ -538,7 +558,7 @@ describe("server", () => {
                     })
                 })
 
-                describe("when updating an image with a service account", () => {
+                describe("when updating a pending image with a service account", () => { // FIXME
 
                     let updatedImage: Image;
 
@@ -547,24 +567,13 @@ describe("server", () => {
                         await authenticateUser(mailcatcher, client2, httpClient2, "service-account@test.test")
                     })
 
-                    beforeEach(async () => {
-                        // update the image
-                        const response = await client2.updateImage(image.id, {
+                    it("should fail with 404", async () => {
+                        await expect(client2.updateImage(image.id, {
                             phrases: ["test2"],
                             label: "test2",
                             current_iterations: 1,
                             status: UpdateImageInputStatusEnum.Processing
-                        })
-                        updatedImage = response.data
-                    })
-
-                    it("should update the image", async () => {
-                        expect(updatedImage.id).toBe(image.id)
-                        expect(updatedImage.phrases).toEqual(["test2"])
-                        expect(updatedImage.label).toBe("test2")
-                        expect(updatedImage.iterations).toBe(1)
-                        expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Processing)
-                        expect(updatedImage.current_iterations).toBe(1)
+                        })).rejects.toThrow(/Request failed with status code 404/)
                     })
 
                 })
@@ -597,6 +606,37 @@ describe("server", () => {
 
                         it("should return null", () => {
                             expect(processingImage).toBeNull()
+                        })
+
+                    })
+
+                    describe("when updating a processing image with a service account", () => { // FIXME
+
+                        let updatedImage: Image;
+
+                        beforeEach(async () => {
+                            // authenticate service account
+                            await authenticateUser(mailcatcher, client2, httpClient2, "service-account@test.test")
+                        })
+
+                        beforeEach(async () => {
+                            // update the image
+                            const response = await client2.updateImage(image.id, {
+                                phrases: ["test2"],
+                                label: "test2",
+                                current_iterations: 1,
+                                status: UpdateImageInputStatusEnum.Processing
+                            })
+                            updatedImage = response.data
+                        })
+
+                        it("should update the image", async () => {
+                            expect(updatedImage.id).toBe(image.id)
+                            expect(updatedImage.phrases).toEqual(["test2"])
+                            expect(updatedImage.label).toBe("test2")
+                            expect(updatedImage.iterations).toBe(1)
+                            expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Processing)
+                            expect(updatedImage.current_iterations).toBe(1)
                         })
 
                     })
@@ -697,7 +737,7 @@ describe("server", () => {
                 })
 
 
-                describe("when updating video data as a service account", () => {
+                describe("when updating video data as a service account", () => { // FIXME
 
                     const fakeVideoData = new Uint8Array([1, 2, 3, 4])
                     let resp: AxiosResponse<void>;
@@ -745,7 +785,7 @@ describe("server", () => {
 
             })
 
-            describe("when creating an image with enable_video=true and enable_zoom=true and default zoom options", () => {
+            describe("when creating an image with enable_video=true and enable_zoom=true and default zoom options", () => { // FIXME
                 let image: Image;
 
                 beforeEach(async () => {
@@ -824,7 +864,7 @@ describe("server", () => {
                     })
 
                     it("should return null", () => {
-                        expect(processResponse.data).toBe(null)
+                        expect(processResponse.data).toBe(null) // FIXME
                     })
                 })
 
@@ -849,7 +889,7 @@ describe("server", () => {
                     })
 
                     it("should return the image", () => {
-                        expect(processResponse.data.id).toBe(image.id)
+                        expect(processResponse.data.id).toBe(image.id) // FIXME
                     })
                 })
             })
@@ -1036,7 +1076,7 @@ describe("server", () => {
                     })
 
                     it("should return the first 3 images", () => {
-                        expect(listResponse.data.images).toHaveLength(3)
+                        expect(listResponse.data.images).toHaveLength(3) // FIXME
                         expect(listResponse.data.images[0].id).toBe(images[2].id)
                         expect(listResponse.data.images[2].id).toBe(images[0].id)
                     })
@@ -1098,7 +1138,7 @@ describe("server", () => {
                     })
 
                     it("should return the created suggestion seed", () => {
-                        expect(listResponse.data.suggestionSeeds).toHaveLength(1)
+                        expect(listResponse.data.suggestionSeeds).toHaveLength(1) // FIXME
                         expect(listResponse.data.suggestionSeeds[0].id).toBe(createResponse.data.id)
                         expect(listResponse.data.suggestionSeeds[0].name).toBe("test")
                         expect(listResponse.data.suggestionSeeds[0].description).toBe("test")
@@ -1271,7 +1311,7 @@ describe("server", () => {
                     })
 
                     it("should return the created suggestions job", () => {
-                        expect(listResponse.data.suggestionsJobs).toHaveLength(1)
+                        expect(listResponse.data.suggestionsJobs).toHaveLength(1) // FIXME
                         expect(listResponse.data.suggestionsJobs[0].id).toBe(createResponse.data.id)
                         expect(listResponse.data.suggestionsJobs[0].seed_id).toBe(createSeedResponse.data.id)
                         expect(listResponse.data.suggestionsJobs[0].created_at).toBeDefined()
@@ -1444,7 +1484,7 @@ describe("server", () => {
                     })
 
                     it("should update the suggestions job", () => {
-                        expect(processResponse.data.id).toBe(createResponse.data.id)
+                        expect(processResponse.data.id).toBe(createResponse.data.id) // FIXME
                         expect(processResponse.data.status).toBe(UpdateSuggestionsJobInputStatusEnum.Processing)
                         expect(processResponse.data.result).toEqual([])
                         // other fields should be unchanged
@@ -1460,7 +1500,7 @@ describe("server", () => {
                         })
 
                         it("should return null", () => {
-                            expect(processResponse.data).toBeNull()
+                            expect(processResponse.data).toBeNull() // FIXME
                         })
                     })
                 })
