@@ -190,6 +190,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // service accounts can't list images
                 if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to list images`)
                     res.json({
                         images: []
                     })
@@ -227,6 +228,7 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to create image`)
                     res.sendStatus(403)
                     return
                 }
@@ -241,10 +243,17 @@ export class Server {
         // get image by id
         this.app.get("/api/images/:id", async (req, res) => {
             try {
-                const image = await this.backendService.getImage(req.params.id)
                 // check created_by
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                if (!image || (!this.isServiceAccount(jwt) && image.created_by != jwt.userId)) {
+                const image = await this.backendService.getImage(req.params.id)
+                if (!image) {
+                    console.log(`user ${jwt.userId} tried to get image ${req.params.id} which does not exist`)
+                    res.status(404).send("not found")
+                    return;
+                }
+
+                if (!this.isServiceAccount(jwt) && image.created_by != jwt.userId) {
+                    console.log(`user ${jwt.userId} tried to get image ${req.params.id} but not authorized`)
                     res.status(404).send("not found")
                     return
                 }
@@ -261,12 +270,19 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
-                if (!image || (!this.isServiceAccount(jwt) && image.created_by !== jwt.userId)) {
+                if (!image) {
+                    console.log(`user ${jwt.userId} tried to update image ${req.params.id} which does not exist`)
+                    res.status(404).send("not found")
+                    return;
+                }
+                if (!this.isServiceAccount(jwt) && image.created_by !== jwt.userId) {
+                    console.log(`user ${jwt.userId} tried to update image ${req.params.id} but not authorized`)
                     res.status(404).send("not found")
                     return;
                 }
                 // this protects images from malicious use of service accounts
                 if (this.isServiceAccount(jwt) && image.status != ImageStatusEnum.Processing) {
+                    console.log(`service account ${jwt.userId} tried to update image ${req.params.id} in status ${image.status}`)
                     res.status(404).send("not found")
                     return;
                 }
@@ -284,7 +300,13 @@ export class Server {
                 // get image first and check created_by
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 let image = await this.backendService.getImage(req.params.id)
-                if (!image || image.created_by !== jwt.userId) {
+                if (!image) {
+                    console.log(`user ${jwt.userId} tried to delete image ${req.params.id} which does not exist`)
+                    res.status(404).send("not found")
+                    return;
+                }
+                if (image.created_by !== jwt.userId) {
+                    console.log(`user ${jwt.userId} tried to delete image ${req.params.id} but not authorized`)
                     res.status(404).send("not found")
                     return;
                 }
@@ -325,6 +347,7 @@ export class Server {
 
                 // only service accounts can process images
                 if (!this.isServiceAccount(jwt)) {
+                    console.log(`${jwt.userId} attempted to process image but is not a service acct`)
                     res.sendStatus(403)
                     return
                 }
@@ -341,6 +364,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // workers don't need to list suggestion seeds
                 if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to list suggestion seeds`)
                     res.sendStatus(403)
                     return
                 }
@@ -356,6 +380,7 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to create suggestion seed`)
                     res.sendStatus(403)
                     return
                 }
@@ -377,7 +402,7 @@ export class Server {
                 }
                 const seed = await this.backendService.getSuggestionSeed(req.params.id, user)
                 if (!seed) {
-                    console.log(`suggestion seed ${req.params.id} not found`)
+                    console.log(`user ${jwt.userId} get suggestion seed ${req.params.id} not found`)
                     res.status(404).send("not found")
                     return
                 }
@@ -393,11 +418,13 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to update suggestion seed ${req.params.id}`)
                     res.sendStatus(403)
                     return
                 }
                 const updatedSeed = await this.backendService.updateSuggestionSeed(req.params.id, jwt.userId, req.body)
                 if (!updatedSeed) {
+                    console.log(`user ${jwt.userId} tried to update suggestion seed ${req.params.id} not found`)
                     res.status(404).send("not found")
                     return
                 }
@@ -413,11 +440,13 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to delete suggestion seed ${req.params.id}`)
                     res.sendStatus(403)
                     return
                 }
                 const success = await this.backendService.deleteSuggestionSeed(req.params.id, jwt.userId)
                 if (!success) {
+                    console.log(`user ${jwt.userId} tried to delete suggestion seed ${req.params.id} not found`)
                     res.status(404).send("not found")
                     return
                 }
@@ -434,6 +463,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // worker doesn't need to list suggestions jobs
                 if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to list suggestions jobs`)
                     res.sendStatus(403)
                     return
                 }
@@ -451,12 +481,14 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // workers don't need to create suggestions jobs
                 if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to create suggestions job`)
                     res.sendStatus(403)
                     return
                 }
                 // get suggestion seed
                 const seed = await this.backendService.getSuggestionSeed(req.body.seed_id, jwt.userId)
                 if (!seed) {
+                    console.log(`user ${jwt.userId} tried to create suggestions job for seed ${req.body.seed_id} not found`)
                     res.status(404).send("not found")
                     return
                 }
@@ -478,6 +510,7 @@ export class Server {
                 }
                 const job = await this.backendService.getSuggestionsJob(req.params.id, user)
                 if (!job) {
+                    console.log(`user ${jwt.userId} tried to get suggestions job ${req.params.id} not found`)
                     res.status(404).send("not found")
                     return
                 }
@@ -498,6 +531,7 @@ export class Server {
                 }
                 const updatedJob = await this.backendService.updateSuggestionsJob(req.params.id, user, req.body)
                 if (!updatedJob) {
+                    console.log(`user ${jwt.userId} tried to update suggestions job ${req.params.id} not found`)
                     res.status(404).send("not found")
                     return
                 }
@@ -514,11 +548,13 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // workers don't need to delete suggestions jobs
                 if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to delete suggestions job ${req.params.id}`)
                     res.sendStatus(403)
                     return
                 }
                 const success = await this.backendService.deleteSuggestionsJob(req.params.id, jwt.userId)
                 if (!success) {
+                    console.log(`user ${jwt.userId} tried to delete suggestions job ${req.params.id} not found`)
                     res.status(404).send("not found")
                     return
                 }
@@ -534,6 +570,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // make sure user is a service acct
                 if (!this.isServiceAccount(jwt)) {
+                    console.log(`user ${jwt.userId} tried to process suggestions job`)
                     res.sendStatus(403)
                     return
                 }
