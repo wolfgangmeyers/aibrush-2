@@ -7,7 +7,7 @@ import { createHttpTerminator, HttpTerminator } from "http-terminator"
 
 import { BackendService } from "./backend";
 import { Config } from "./config"
-import { AuthHelper, authMiddleware } from "./auth"
+import { AuthHelper, AuthJWTPayload, authMiddleware } from "./auth"
 import { ImageStatusEnum } from "./client"
 
 export class Server {
@@ -22,8 +22,8 @@ export class Server {
         this.authHelper = new AuthHelper(config)
     }
 
-    private isServiceAccount(userId: string): boolean {
-        return this.config.serviceAccounts.indexOf(userId) != -1
+    private isServiceAccount(jwt: AuthJWTPayload): boolean {
+        return this.config.serviceAccounts.indexOf(jwt.userId) != -1 || !!jwt.serviceAccountConfig
     }
 
     async init() {
@@ -187,9 +187,9 @@ export class Server {
         // list images
         this.app.get("/api/images", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req)
+                const jwt = this.authHelper.getJWTFromRequest(req)
                 // service accounts can't list images
-                if (this.isServiceAccount(user)) {
+                if (this.isServiceAccount(jwt)) {
                     res.json({
                         images: []
                     })
@@ -207,7 +207,7 @@ export class Server {
                 } catch (err) { }
 
                 let query = {
-                    userId: user,
+                    userId: jwt.userId,
                     status: req.query.status as ImageStatusEnum,
                     cursor,
                     direction,
@@ -225,12 +225,12 @@ export class Server {
         // create image
         this.app.post("/api/images", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req)
-                if (this.isServiceAccount(user)) {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                if (this.isServiceAccount(jwt)) {
                     res.sendStatus(403)
                     return
                 }
-                const image = await this.backendService.createImage(user, req.body)
+                const image = await this.backendService.createImage(jwt.userId, req.body)
                 res.json(image)
             } catch (err) {
                 console.error(err)
@@ -243,8 +243,8 @@ export class Server {
             try {
                 const image = await this.backendService.getImage(req.params.id)
                 // check created_by
-                const user = this.authHelper.getUserFromRequest(req)
-                if (!image || (!this.isServiceAccount(user) && image.created_by != user)) {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                if (!image || (!this.isServiceAccount(jwt) && image.created_by != jwt.userId)) {
                     res.status(404).send("not found")
                     return
                 }
@@ -258,10 +258,15 @@ export class Server {
         // update image by id
         this.app.patch("/api/images/:id", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req);
+                const jwt = this.authHelper.getJWTFromRequest(req)
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
-                if (!image || (!this.isServiceAccount(user) && image.created_by !== user)) {
+                if (!image || (!this.isServiceAccount(jwt) && image.created_by !== jwt.userId)) {
+                    res.status(404).send("not found")
+                    return;
+                }
+                // this protects images from malicious use of service accounts
+                if (this.isServiceAccount(jwt) && image.status != ImageStatusEnum.Processing) {
                     res.status(404).send("not found")
                     return;
                 }
@@ -277,8 +282,9 @@ export class Server {
         this.app.delete("/api/images/:id", async (req, res) => {
             try {
                 // get image first and check created_by
+                const jwt = this.authHelper.getJWTFromRequest(req)
                 let image = await this.backendService.getImage(req.params.id)
-                if (!image || image.created_by !== this.authHelper.getUserFromRequest(req)) {
+                if (!image || image.created_by !== jwt.userId) {
                     res.status(404).send("not found")
                     return;
                 }
@@ -298,9 +304,9 @@ export class Server {
                     res.status(404).send("not found")
                     return;
                 }
-                const user = this.authHelper.getUserFromRequest(req)
+                const jwt = this.authHelper.getJWTFromRequest(req)
                 // only service account can update video data
-                if (!this.isServiceAccount(user)) {
+                if (!this.isServiceAccount(jwt)) {
                     res.sendStatus(404)
                     return;
                 }
@@ -314,10 +320,10 @@ export class Server {
 
         this.app.put("/api/process-image", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req)
+                const jwt = this.authHelper.getJWTFromRequest(req)
 
                 // only service accounts can process images
-                if (!this.isServiceAccount(user)) {
+                if (!this.isServiceAccount(jwt)) {
                     res.sendStatus(403)
                     return
                 }
@@ -331,8 +337,13 @@ export class Server {
 
         this.app.get("/api/suggestion-seeds", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req)
-                const seeds = await this.backendService.listSuggestionSeeds(user)
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // workers don't need to list suggestion seeds
+                if (this.isServiceAccount(jwt)) {
+                    res.sendStatus(403)
+                    return
+                }
+                const seeds = await this.backendService.listSuggestionSeeds(jwt.userId)
                 res.json(seeds)
             } catch (err) {
                 console.error(err)
@@ -342,8 +353,12 @@ export class Server {
 
         this.app.post("/api/suggestion-seeds", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req)
-                const seed = await this.backendService.createSuggestionSeed(user, req.body)
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                if (this.isServiceAccount(jwt)) {
+                    res.sendStatus(403)
+                    return
+                }
+                const seed = await this.backendService.createSuggestionSeed(jwt.userId, req.body)
                 res.json(seed)
             } catch (err) {
                 console.error(err)
@@ -354,9 +369,9 @@ export class Server {
         // get suggestion seed by id
         this.app.get("/api/suggestion-seeds/:id", async (req, res) => {
             try {
-                let user = this.authHelper.getUserFromRequest(req)
-                console.log(`user: ${user}`)
-                if (this.isServiceAccount(user)) {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                let user = jwt.userId
+                if (this.isServiceAccount(jwt)) {
                     user = undefined
                 }
                 const seed = await this.backendService.getSuggestionSeed(req.params.id, user)
@@ -375,8 +390,12 @@ export class Server {
         // update suggestion seed by id (patch)
         this.app.patch("/api/suggestion-seeds/:id", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req)
-                const updatedSeed = await this.backendService.updateSuggestionSeed(req.params.id, user, req.body)
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                if (this.isServiceAccount(jwt)) {
+                    res.sendStatus(403)
+                    return
+                }
+                const updatedSeed = await this.backendService.updateSuggestionSeed(req.params.id, jwt.userId, req.body)
                 if (!updatedSeed) {
                     res.status(404).send("not found")
                     return
@@ -391,8 +410,12 @@ export class Server {
         // delete suggestion seed
         this.app.delete("/api/suggestion-seeds/:id", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req)
-                const success = await this.backendService.deleteSuggestionSeed(req.params.id, user)
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                if (this.isServiceAccount(jwt)) {
+                    res.sendStatus(403)
+                    return
+                }
+                const success = await this.backendService.deleteSuggestionSeed(req.params.id, jwt.userId)
                 if (!success) {
                     res.status(404).send("not found")
                     return
@@ -407,8 +430,13 @@ export class Server {
         // list suggestions jobs
         this.app.get("/api/suggestions-jobs", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req)
-                const jobs = await this.backendService.listSuggestionsJobs(user)
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // worker doesn't need to list suggestions jobs
+                if (this.isServiceAccount(jwt)) {
+                    res.sendStatus(403)
+                    return
+                }
+                const jobs = await this.backendService.listSuggestionsJobs(jwt.userId)
                 res.json(jobs)
             } catch (err) {
                 console.error(err)
@@ -419,14 +447,19 @@ export class Server {
         // create suggestions job
         this.app.post("/api/suggestions-jobs", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req)
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // workers don't need to create suggestions jobs
+                if (this.isServiceAccount(jwt)) {
+                    res.sendStatus(403)
+                    return
+                }
                 // get suggestion seed
-                const seed = await this.backendService.getSuggestionSeed(req.body.seed_id, user)
+                const seed = await this.backendService.getSuggestionSeed(req.body.seed_id, jwt.userId)
                 if (!seed) {
                     res.status(404).send("not found")
                     return
                 }
-                const job = await this.backendService.createSuggestionsJob(user, req.body)
+                const job = await this.backendService.createSuggestionsJob(jwt.userId, req.body)
                 res.json(job)
             } catch (err) {
                 console.error(err)
@@ -437,8 +470,9 @@ export class Server {
         // get suggestions job by id
         this.app.get("/api/suggestions-jobs/:id", async (req, res) => {
             try {
-                let user = this.authHelper.getUserFromRequest(req)
-                if (this.isServiceAccount(user)) {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                let user = jwt.userId
+                if (this.isServiceAccount(jwt)) {
                     user = undefined
                 }
                 const job = await this.backendService.getSuggestionsJob(req.params.id, user)
@@ -456,8 +490,9 @@ export class Server {
         // update suggestions job by id (patch)
         this.app.patch("/api/suggestions-jobs/:id", async (req, res) => {
             try {
-                let user = this.authHelper.getUserFromRequest(req)
-                if (this.isServiceAccount(user)) {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                let user = jwt.userId
+                if (this.isServiceAccount(jwt)) {
                     user = undefined
                 }
                 const updatedJob = await this.backendService.updateSuggestionsJob(req.params.id, user, req.body)
@@ -475,8 +510,13 @@ export class Server {
         // delete suggestions job
         this.app.delete("/api/suggestions-jobs/:id", async (req, res) => {
             try {
-                let user = this.authHelper.getUserFromRequest(req)
-                const success = await this.backendService.deleteSuggestionsJob(req.params.id, user)
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // workers don't need to delete suggestions jobs
+                if (this.isServiceAccount(jwt)) {
+                    res.sendStatus(403)
+                    return
+                }
+                const success = await this.backendService.deleteSuggestionsJob(req.params.id, jwt.userId)
                 if (!success) {
                     res.status(404).send("not found")
                     return
@@ -490,9 +530,9 @@ export class Server {
 
         this.app.post("/api/process-suggestion-job", async (req, res) => {
             try {
-                const user = this.authHelper.getUserFromRequest(req)
+                const jwt = this.authHelper.getJWTFromRequest(req)
                 // make sure user is a service acct
-                if (!this.isServiceAccount(user)) {
+                if (!this.isServiceAccount(jwt)) {
                     res.sendStatus(403)
                     return
                 }

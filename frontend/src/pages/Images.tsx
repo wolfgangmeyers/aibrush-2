@@ -109,9 +109,9 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
         setErr("")
         // attempt to delete image
         try {
-            await api.deleteImage(image.id as string)
             // remove image from list
             setImages(images => images.filter(i => i.id !== image.id));
+            await api.deleteImage(image.id as string)
         } catch (err) {
             console.error(err)
             setErr("Could not delete image")

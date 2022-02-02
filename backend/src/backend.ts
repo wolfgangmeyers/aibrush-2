@@ -709,7 +709,7 @@ export class BackendService {
         if (!user) {
             return null;
         }
-        return this.authHelper.createTokens(user)
+        return this.authHelper.createTokens(user.userId, user.serviceAccountConfig)
     }
 
     // list databases for testing
