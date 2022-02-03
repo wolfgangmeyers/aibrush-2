@@ -475,6 +475,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginResult"
+  /api/auth/service-accounts:
+    post:
+      description: Create a service account
+      operationId: createServiceAccount
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceAccountInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResult"
   # healthcheck
   /api/healthcheck:
     get:
@@ -737,4 +755,10 @@ components:
         status:
           type: string
           enum: [ok]
+    CreateServiceAccountInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [public, private]
 

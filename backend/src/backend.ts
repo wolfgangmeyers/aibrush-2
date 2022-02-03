@@ -25,7 +25,7 @@ import {
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
 import { Config } from "./config"
-import { Authentication, AuthHelper } from "./auth";
+import { Authentication, AuthHelper, ServiceAccountConfig } from "./auth";
 import { LoginCode } from "./model"
 import { Filestore, S3Filestore, LocalFilestore } from "./filestore";
 
@@ -702,6 +702,12 @@ export class BackendService {
         } finally {
             client.release()
         }
+    }
+
+    async createServiceAccountCreds(userId: string, cfg: ServiceAccountConfig) {
+        // some day this probably will create a database entry so the creds
+        // can be revoked
+        return this.authHelper.createTokens(userId, cfg);
     }
 
     async refresh(refreshToken: string): Promise<Authentication> {

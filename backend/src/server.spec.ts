@@ -21,6 +21,7 @@ import {
     CreateSuggestionsJobInput,
     UpdateSuggestionsJobInput,
     UpdateSuggestionsJobInputStatusEnum,
+    CreateServiceAccountInputTypeEnum,
 } from "./client/api"
 
 import nodemailer from "nodemailer";
@@ -1521,6 +1522,32 @@ describe("server", () => {
             })
 
             // end suggestions job tests
+
+            // test create service account
+            describe.only("when creating a new service account", () => {
+
+                beforeEach(async () => {
+                    const creds = await client.createServiceAccount({
+                        type: CreateServiceAccountInputTypeEnum.Private
+                    });
+                    httpClient2.defaults.headers["Authorization"] = `Bearer ${creds.data.accessToken}`
+                })
+
+                describe("when processing images", () => {
+                    let response: AxiosResponse<Image>;
+
+                    beforeEach(async () => {
+                        response = await client2.processImage({zoom_supported: true});
+                    })
+
+                    it("should return an OK response", () => {
+                        expect(response.status).toBe(200);
+                    })
+                })
+            })
+            
+
+            // end create service account test
         }) // end authenticated tests
     })
 })

@@ -32,7 +32,7 @@ export interface AssetsUrl {
      * @type {string}
      * @memberof AssetsUrl
      */
-    assets_url?: string;
+    assets_url: string;
 }
 /**
  * 
@@ -113,6 +113,29 @@ export interface CreateImageInput {
      */
     model?: string;
 }
+/**
+ * 
+ * @export
+ * @interface CreateServiceAccountInput
+ */
+export interface CreateServiceAccountInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateServiceAccountInput
+     */
+    type?: CreateServiceAccountInputTypeEnum;
+}
+
+/**
+    * @export
+    * @enum {string}
+    */
+export enum CreateServiceAccountInputTypeEnum {
+    Public = 'public',
+    Private = 'private'
+}
+
 /**
  * 
  * @export
@@ -628,6 +651,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(createImageInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a service account
+         * @param {CreateServiceAccountInput} [createServiceAccountInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createServiceAccount: async (createServiceAccountInput?: CreateServiceAccountInput, options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/auth/service-accounts`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createServiceAccountInput, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1492,6 +1548,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a service account
+         * @param {CreateServiceAccountInput} [createServiceAccountInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createServiceAccount(createServiceAccountInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Create a new suggestion seed
          * @param {SuggestionSeedInput} [suggestionSeedInput] 
          * @param {*} [options] Override http request option.
@@ -1763,6 +1829,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createImage(createImageInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Create a service account
+         * @param {CreateServiceAccountInput} [createServiceAccountInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: any): AxiosPromise<LoginResult> {
+            return localVarFp.createServiceAccount(createServiceAccountInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Create a new suggestion seed
          * @param {SuggestionSeedInput} [suggestionSeedInput] 
          * @param {*} [options] Override http request option.
@@ -2008,6 +2083,17 @@ export class AIBrushApi extends BaseAPI {
      */
     public createImage(createImageInput?: CreateImageInput, options?: any) {
         return AIBrushApiFp(this.configuration).createImage(createImageInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a service account
+     * @param {CreateServiceAccountInput} [createServiceAccountInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: any) {
+        return AIBrushApiFp(this.configuration).createServiceAccount(createServiceAccountInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

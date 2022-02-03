@@ -7,7 +7,7 @@ import { createHttpTerminator, HttpTerminator } from "http-terminator"
 
 import { BackendService } from "./backend";
 import { Config } from "./config"
-import { AuthHelper, AuthJWTPayload, authMiddleware } from "./auth"
+import { AuthHelper, AuthJWTPayload, authMiddleware, ServiceAccountConfig } from "./auth"
 import { ImageStatusEnum } from "./client"
 
 export class Server {
@@ -576,6 +576,23 @@ export class Server {
                 }
                 const job = await this.backendService.processSuggestionsJob()
                 res.json(job)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        this.app.post("/api/auth/service-account", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // make sure user is a service acct
+                if (!this.isServiceAccount(jwt)) {
+                    res.sendStatus(403)
+                    return
+                }
+                const serviceAccountConfig = req.body as ServiceAccountConfig
+                const result = await this.backendService.createServiceAccountCreds(jwt.userId, serviceAccountConfig)
+                res.json(result)
             } catch (err) {
                 console.error(err)
                 res.sendStatus(500)

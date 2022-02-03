@@ -17,8 +17,6 @@ export interface AuthHelperConfig {
 
 export interface ServiceAccountConfig {
     type: "public" | "private";
-    name: string;
-    users: string[];
 }
 
 export interface AuthJWTPayload {
