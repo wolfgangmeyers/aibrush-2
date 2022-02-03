@@ -30,6 +30,8 @@ import { Config } from './config'
 import { Authentication } from './auth'
 import { sleep } from './sleep'
 
+jest.setTimeout(20000);
+
 async function authenticateUser(mailcatcher: Mailcatcher, client: AIBrushApi, httpClient: AxiosInstance, emailAddress: string) {
     await mailcatcher.clearAll()
 
@@ -284,7 +286,7 @@ describe("server", () => {
                         images = response.data
                     })
 
-                    it("should return the image", () => { // FIXME
+                    it("should return the image", () => {
                         expect(images.images).toHaveLength(1)
                         expect(images.images[0].id).toBe(image.id)
                         expect(images.images[0].phrases).toEqual(["test"])
@@ -388,7 +390,7 @@ describe("server", () => {
                             images = response.data
                         })
 
-                        it("should return the updated image", () => { // FIXME
+                        it("should return the updated image", () => {
                             expect(images.images).toHaveLength(1)
                             expect(images.images[0].id).toBe(image.id)
                             expect(images.images[0].phrases).toEqual(["test2"])
@@ -498,7 +500,7 @@ describe("server", () => {
                             await client.deleteImage(image.id)
                         })
 
-                        it("should remove the image and thumbnail files from the data folder", () => { // FIXME
+                        it("should remove the image and thumbnail files from the data folder", () => {
                             // data folder is "data_test"
                             const imagePath = path.join("data_test", image.id + ".image")
                             expect(fs.existsSync(imagePath)).toBe(false)
@@ -559,7 +561,7 @@ describe("server", () => {
                     })
                 })
 
-                describe("when updating a pending image with a service account", () => { // FIXME
+                describe("when updating a pending image with a service account", () => {
 
                     let updatedImage: Image;
 
@@ -611,7 +613,7 @@ describe("server", () => {
 
                     })
 
-                    describe("when updating a processing image with a service account", () => { // FIXME
+                    describe("when updating a processing image with a service account", () => {
 
                         let updatedImage: Image;
 
@@ -738,7 +740,7 @@ describe("server", () => {
                 })
 
 
-                describe("when updating video data as a service account", () => { // FIXME
+                describe("when updating video data as a service account", () => {
 
                     const fakeVideoData = new Uint8Array([1, 2, 3, 4])
                     let resp: AxiosResponse<void>;
@@ -786,7 +788,7 @@ describe("server", () => {
 
             })
 
-            describe("when creating an image with enable_video=true and enable_zoom=true and default zoom options", () => { // FIXME
+            describe("when creating an image with enable_video=true and enable_zoom=true and default zoom options", () => {
                 let image: Image;
 
                 beforeEach(async () => {
@@ -865,7 +867,7 @@ describe("server", () => {
                     })
 
                     it("should return null", () => {
-                        expect(processResponse.data).toBe(null) // FIXME
+                        expect(processResponse.data).toBe(null)
                     })
                 })
 
@@ -890,7 +892,7 @@ describe("server", () => {
                     })
 
                     it("should return the image", () => {
-                        expect(processResponse.data.id).toBe(image.id) // FIXME
+                        expect(processResponse.data.id).toBe(image.id)
                     })
                 })
             })
@@ -1077,7 +1079,7 @@ describe("server", () => {
                     })
 
                     it("should return the first 3 images", () => {
-                        expect(listResponse.data.images).toHaveLength(3) // FIXME
+                        expect(listResponse.data.images).toHaveLength(3)
                         expect(listResponse.data.images[0].id).toBe(images[2].id)
                         expect(listResponse.data.images[2].id).toBe(images[0].id)
                     })
@@ -1139,7 +1141,7 @@ describe("server", () => {
                     })
 
                     it("should return the created suggestion seed", () => {
-                        expect(listResponse.data.suggestionSeeds).toHaveLength(1) // FIXME
+                        expect(listResponse.data.suggestionSeeds).toHaveLength(1)
                         expect(listResponse.data.suggestionSeeds[0].id).toBe(createResponse.data.id)
                         expect(listResponse.data.suggestionSeeds[0].name).toBe("test")
                         expect(listResponse.data.suggestionSeeds[0].description).toBe("test")
@@ -1312,7 +1314,7 @@ describe("server", () => {
                     })
 
                     it("should return the created suggestions job", () => {
-                        expect(listResponse.data.suggestionsJobs).toHaveLength(1) // FIXME
+                        expect(listResponse.data.suggestionsJobs).toHaveLength(1)
                         expect(listResponse.data.suggestionsJobs[0].id).toBe(createResponse.data.id)
                         expect(listResponse.data.suggestionsJobs[0].seed_id).toBe(createSeedResponse.data.id)
                         expect(listResponse.data.suggestionsJobs[0].created_at).toBeDefined()
@@ -1485,7 +1487,7 @@ describe("server", () => {
                     })
 
                     it("should update the suggestions job", () => {
-                        expect(processResponse.data.id).toBe(createResponse.data.id) // FIXME
+                        expect(processResponse.data.id).toBe(createResponse.data.id)
                         expect(processResponse.data.status).toBe(UpdateSuggestionsJobInputStatusEnum.Processing)
                         expect(processResponse.data.result).toEqual([])
                         // other fields should be unchanged
@@ -1501,7 +1503,7 @@ describe("server", () => {
                         })
 
                         it("should return null", () => {
-                            expect(processResponse.data).toBeNull() // FIXME
+                            expect(processResponse.data).toBeNull()
                         })
                     })
                 })
@@ -1545,7 +1547,7 @@ describe("server", () => {
                     })
                 })
             })
-            
+
 
             // end create service account test
         }) // end authenticated tests

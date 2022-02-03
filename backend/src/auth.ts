@@ -38,7 +38,7 @@ export class AuthHelper {
         if (serviceAccountConfig) {
             accessTokenExpirationSeconds = this.config.serviceAccountAccessTokenExpirationSeconds;
         }
-        const accessToken = this.createToken(userId, "access", accessTokenExpirationSeconds);
+        const accessToken = this.createToken(userId, "access", accessTokenExpirationSeconds, serviceAccountConfig);
         const refreshToken = this.createToken(userId, "refresh", 2592000);
         return {
             accessToken,

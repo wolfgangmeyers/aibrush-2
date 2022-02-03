@@ -344,6 +344,7 @@ export class Server {
         this.app.put("/api/process-image", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
+                console.log(jwt);
 
                 // only service accounts can process images
                 if (!this.isServiceAccount(jwt)) {
@@ -582,11 +583,11 @@ export class Server {
             }
         })
 
-        this.app.post("/api/auth/service-account", async (req, res) => {
+        this.app.post("/api/auth/service-accounts", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                // make sure user is a service acct
-                if (!this.isServiceAccount(jwt)) {
+                // service accounts can't create new service accounts
+                if (this.isServiceAccount(jwt)) {
                     res.sendStatus(403)
                     return
                 }
