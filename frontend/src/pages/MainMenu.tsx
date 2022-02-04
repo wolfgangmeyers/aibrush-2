@@ -44,6 +44,12 @@ export const MainMenu: FC = () => {
                             <i className="fas fa-comments" />&nbsp;
                             Suggestions
                         </Link>
+                        {/* /worker-config */}
+                        <Link to="/worker-config" className="btn btn-primary">
+                            {/* font awesome wrench icon */}
+                            <i className="fas fa-wrench" />&nbsp;
+                            Worker Config
+                        </Link>
                     </div>
                 </div>
             </div>

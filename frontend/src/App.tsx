@@ -13,6 +13,7 @@ import { TokenRefresher } from "./components/TokenRefresher";
 import { Healthchecker } from './components/Healthchecker';
 import { InteractiveDesigner } from "./pages/InteractiveDesigner";
 import { SuggestionsPage } from "./pages/Suggestions";
+import { WorkerConfigPage } from "./pages/WorkerConfig";
 
 const config = getConfig()
 const httpClient = axios.default;
@@ -56,17 +57,6 @@ function App() {
     updateHttpClient(credentials);
   };
 
-  const onUpdateAPIUrl = () => {
-    let apiUrl = localStorage.getItem("apiUrl") || config.apiUrl;
-    const resp = prompt("Configure backend url", apiUrl)
-    if (resp) {
-      apiUrl = resp;
-      localStorage.setItem("apiUrl", apiUrl);
-      // reload page
-      window.location.reload();
-    }
-  }
-
   useEffect(() => {
     init();
   }, []);
@@ -80,12 +70,6 @@ function App() {
         <div className="container">
           <div className="row">
             <div className="col-lg-12">
-              {/* settings button */}
-              <button className="btn btn-primary top-button" onClick={onUpdateAPIUrl}>
-                {/* font awesome settings icon */}
-                <i className="fas fa-cog"></i>&nbsp;
-                Settings
-              </button>
               {/* if credentials are not set, show Login component */}
               {!credentials && <Login httpClient={httpClient} client={client} onLogin={onLogin} />}
               {/* if credentials are set, show a bootstrap logout button a the far top right corner div */}
@@ -101,6 +85,11 @@ function App() {
                   <i className="fas fa-home"></i>&nbsp;
                   Home
                 </Link>
+                {/* Link to github project at https://github.com/wolfgangmeyers/aibrush-2 */}
+                <a className="btn btn-primary top-button" href="https://github.com/wolfgangmeyers/aibrush-2" target="_blank">
+                  {/* font awesome github icon */}
+                  <i className="fab fa-github"></i>&nbsp;
+                </a>
               </>}
             </div>
           </div>
@@ -123,6 +112,9 @@ function App() {
             {/* /suggestions route */}
             <Route path="/suggestions">
               <SuggestionsPage api={client} apiUrl={config.apiUrl} />
+            </Route>
+            <Route path="/worker-config">
+              <WorkerConfigPage api={client} />
             </Route>
           </Switch>}
         </div>
