@@ -74,7 +74,7 @@ export class BackendService {
             // migrate
             const client = new Client({
                 connectionString: this.config.databaseUrl,
-                ssl: this.config.databaseSsl && {rejectUnauthorized: false},
+                ssl: this.config.databaseSsl && { rejectUnauthorized: false },
             })
             await client.connect()
             await migrate({ client }, "./src/migrations")
@@ -85,8 +85,8 @@ export class BackendService {
         }
 
         this.pool = new Pool({
-           connectionString: this.config.databaseUrl,
-           ssl: this.config.databaseSsl && {rejectUnauthorized: false},
+            connectionString: this.config.databaseUrl,
+            ssl: this.config.databaseSsl && { rejectUnauthorized: false },
         })
     }
 
@@ -260,7 +260,7 @@ export class BackendService {
         }
     }
 
-    async updateImage(id: string, body: UpdateImageInput) : Promise<Image> {
+    async updateImage(id: string, body: UpdateImageInput): Promise<Image> {
         const existingImage = await this.getImage(id)
         if (!existingImage) {
             console.log("Existing image not found: " + id)
@@ -325,7 +325,7 @@ export class BackendService {
         }
     }
 
-    async processImage(zoomSupported: boolean): Promise<Image> {
+    async processImage(zoomSupported: boolean, user?: string): Promise<Image> {
         let filter = "";
         if (!zoomSupported) {
             filter = " AND enable_zoom=false"
@@ -336,8 +336,11 @@ export class BackendService {
         if (users.length === 0) {
             return null
         }
-        // get random user
-        const user = users[Math.floor(Math.random() * users.length)]
+        if (!user) {
+            // get random user
+            user = users[Math.floor(Math.random() * users.length)]
+        }
+
         // get random image from user
         const client = await this.pool.connect()
         try {
@@ -347,6 +350,9 @@ export class BackendService {
                 `SELECT * FROM images WHERE created_by=$1 AND status='pending'${filter} ORDER BY created_at ASC LIMIT 1`,
                 [user]
             )
+            if (result.rows.length === 0) {
+                return null;
+            }
             const image = result.rows[0]
             // update image status to "processing"
             await client.query(
@@ -636,7 +642,7 @@ export class BackendService {
                 ...job,
                 status: SuggestionsJobStatusEnum.Processing,
             }
-        } catch(err) {
+        } catch (err) {
             // rollback transaction
             await client.query("ROLLBACK")
             console.error("Rolling back transaction", err)

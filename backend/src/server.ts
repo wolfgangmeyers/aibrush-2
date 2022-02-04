@@ -344,7 +344,6 @@ export class Server {
         this.app.put("/api/process-image", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                console.log(jwt);
 
                 // only service accounts can process images
                 if (!this.isServiceAccount(jwt)) {
@@ -352,7 +351,11 @@ export class Server {
                     res.sendStatus(403)
                     return
                 }
-                const image = await this.backendService.processImage(req.body.zoom_supported)
+                let user: string = undefined;
+                if (jwt.serviceAccountConfig?.type == "private") {
+                    user = jwt.userId;
+                }
+                const image = await this.backendService.processImage(req.body.zoom_supported, user)
                 res.json(image)
             } catch (err) {
                 console.error(err)

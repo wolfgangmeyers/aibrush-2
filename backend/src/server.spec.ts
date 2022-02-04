@@ -1526,7 +1526,7 @@ describe("server", () => {
             // end suggestions job tests
 
             // test create service account
-            describe.only("when creating a new service account", () => {
+            describe("when creating a new private service account", () => {
 
                 beforeEach(async () => {
                     const creds = await client.createServiceAccount({
@@ -1535,21 +1535,119 @@ describe("server", () => {
                     httpClient2.defaults.headers["Authorization"] = `Bearer ${creds.data.accessToken}`
                 })
 
-                describe("when processing images", () => {
+                describe("when processing images for the creator's account", () => {
+                    let createResponse: AxiosResponse<Image>;
                     let response: AxiosResponse<Image>;
 
+                    // create a new image
                     beforeEach(async () => {
-                        response = await client2.processImage({zoom_supported: true});
+                        createResponse = await client.createImage({
+                            phrases: ["test"],
+                            label: "test",
+                            iterations: 1,
+                            parent: "",
+                        })
                     })
 
-                    it("should return an OK response", () => {
+                    beforeEach(async () => {
+                        response = await client2.processImage({ zoom_supported: true });
+                    })
+
+                    it("should return pending images belonging to the creator", () => {
                         expect(response.status).toBe(200);
+                        expect(response.data).not.toBeNull();
+                        expect(response.data.id).toEqual(createResponse.data.id);
+                    })
+                })
+
+                describe("when processing images for a different user's account", () => {
+                    let createResponse: AxiosResponse<Image>;
+                    let response: AxiosResponse<Image>;
+
+                    // create a new image
+                    beforeEach(async () => {
+                        // authenticate second user
+                        await authenticateUser(mailcatcher, client, httpClient, "test2@test")
+                        createResponse = await client.createImage({
+                            phrases: ["test"],
+                            label: "test",
+                            iterations: 1,
+                            parent: "",
+                        })
+                    })
+
+                    beforeEach(async () => {
+                        response = await client2.processImage({ zoom_supported: true });
+                    })
+
+                    it("should return null", () => {
+                        expect(response.status).toBe(200);
+                        expect(response.data).toBeNull();
                     })
                 })
             })
 
+            describe("when creating a new public service account", () => {
+                beforeEach(async () => {
+                    const creds = await client.createServiceAccount({
+                        type: CreateServiceAccountInputTypeEnum.Public
+                    });
+                    httpClient2.defaults.headers["Authorization"] = `Bearer ${creds.data.accessToken}`
+                })
 
-            // end create service account test
+                describe("when processing images for the creator's account", () => {
+                    let createResponse: AxiosResponse<Image>;
+                    let response: AxiosResponse<Image>;
+
+                    // create a new image
+                    beforeEach(async () => {
+                        createResponse = await client.createImage({
+                            phrases: ["test"],
+                            label: "test",
+                            iterations: 1,
+                            parent: "",
+                        })
+                    })
+
+                    beforeEach(async () => {
+                        response = await client2.processImage({ zoom_supported: true });
+                    })
+
+                    it("should return pending images belonging to the creator", () => {
+                        expect(response.status).toBe(200);
+                        expect(response.data).not.toBeNull();
+                        expect(response.data.id).toEqual(createResponse.data.id);
+                    })
+                })
+
+                describe("when processing images for a different user's account", () => {
+                    let createResponse: AxiosResponse<Image>;
+                    let response: AxiosResponse<Image>;
+
+                    // create a new image
+                    beforeEach(async () => {
+                        // authenticate second user
+                        await authenticateUser(mailcatcher, client, httpClient, "test2@test")
+                        createResponse = await client.createImage({
+                            phrases: ["test"],
+                            label: "test",
+                            iterations: 1,
+                            parent: "",
+                        })
+                    })
+
+                    beforeEach(async () => {
+                        response = await client2.processImage({ zoom_supported: true });
+                    })
+
+                    it("should return pending images belonging to the creator", () => {
+                        expect(response.status).toBe(200);
+                        expect(response.data).not.toBeNull();
+                        expect(response.data.id).toEqual(createResponse.data.id);
+                    })
+                })
+
+            }) // end create service account test
         }) // end authenticated tests
     })
 })
