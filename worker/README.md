@@ -1,4 +1,12 @@
+## Images Worker Colab Notebook
+
+The following notebook can be used as a worker node for AIBrush:
+https://colab.research.google.com/drive/1cW3vVjdeI19o7a9miMu47J5EDyHfZT20#scrollTo=Ed1iT6_JK0Mo
+
 ## Images worker setup
+
+These instructions are for how to get a worker node running on a local machine or VM with an Nvidia GPU.
+At least 12GB of VRAM is needed to run the images worker, but 16GB is recommended (needed for zoom functionality)
 
 Note: Much of this setup is for (https://github.com/nerdyrodent/VQGAN-CLIP)[VQGAN-CLIP]
 
