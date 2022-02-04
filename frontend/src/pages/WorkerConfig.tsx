@@ -7,7 +7,7 @@ interface Props {
     api: AIBrushApi;
 }
 
-export const WorkerConfigPage: FC<Props> = ({api}) => {
+export const WorkerConfigPage: FC<Props> = ({ api }) => {
 
     const [type, setType] = useState<CreateServiceAccountInputTypeEnum>(CreateServiceAccountInputTypeEnum.Private);
 
@@ -33,6 +33,20 @@ export const WorkerConfigPage: FC<Props> = ({api}) => {
                         </p>
                     </div>
                 </div>
+                <div className="row">
+                    <div className="col-lg-6 offset-lg-3">
+                        <hr/>
+                        <p>
+                            Here is a link to a Google Colab notebook that can be used as a worker node:
+                        </p>
+                        {/* Link to google colab notebook at https://colab.research.google.com/drive/1cW3vVjdeI19o7a9miMu47J5EDyHfZT20#scrollTo=Ed1iT6_JK0Mo */}
+                        <a className="btn btn-primary top-button" href="https://colab.research.google.com/drive/1cW3vVjdeI19o7a9miMu47J5EDyHfZT20#scrollTo=Ed1iT6_JK0Mo" target="_blank">
+                            {/* font awesome google colab icon */}
+                            <i className="fab fa-google"></i>&nbsp;
+                            Google Colab Notebook
+                        </a>
+                    </div>
+                </div>
             </>
         )
     }
@@ -41,7 +55,7 @@ export const WorkerConfigPage: FC<Props> = ({api}) => {
         const creds = await api.createServiceAccount({
             type: type
         })
-        const blob = new Blob([JSON.stringify(creds.data)], {type: "application/json"});
+        const blob = new Blob([JSON.stringify(creds.data)], { type: "application/json" });
         saveAs(blob, "credentials.json");
     }
 
