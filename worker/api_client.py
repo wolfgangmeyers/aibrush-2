@@ -78,7 +78,7 @@ class AIBrushAPI(object):
         return resp.content
 
     def update_video_data(self, image_id: str, video_data: bytes):
-        resp = self.http_request(f"/images/{image_id}.video.mp4", "PUT", video_data)
+        resp = self.http_request(f"/images/{image_id}.mp4", "PUT", video_data)
         if resp.status_code != 204:
             print(f"Error updating video data ({resp.status_code}): {resp.text}")
             return False
