@@ -22,6 +22,8 @@ import {
     UpdateSuggestionsJobInput,
     UpdateSuggestionsJobInputStatusEnum,
     CreateServiceAccountInputTypeEnum,
+    SvgJob,
+    SvgJobStatusEnum,
 } from "./client/api"
 
 import nodemailer from "nodemailer";
@@ -1648,6 +1650,310 @@ describe("server", () => {
                 })
 
             }) // end create service account test
+
+            // svg jobs tests
+            describe("when creating a new svg job", () => {
+                let createImageResponse: AxiosResponse<Image>;
+                let createSvgResponse: AxiosResponse<SvgJob>;
+
+                beforeEach(async () => {
+                    // authenticate second user as service account
+                    await authenticateUser(mailcatcher, client2, httpClient2, "service-account@test.test")
+                })
+
+                beforeEach(async () => {
+                    // create a new image
+                    createImageResponse = await client.createImage({
+                        phrases: ["test"],
+                        label: "test",
+                        iterations: 1,
+                        parent: "",
+                    })
+                })
+
+                beforeEach(async () => {
+                    // process the image to kick it into processing status
+                    await client2.processImage({ zoom_supported: true });
+                })
+
+                beforeEach(async () => {
+                    // update image to completed
+                    await client2.updateImage(createImageResponse.data.id, {
+                        status: UpdateImageInputStatusEnum.Completed,
+                    })
+                })
+
+                beforeEach(async () => {
+                    // create the svg job
+                    createSvgResponse = await client.createSvgJob({
+                        image_id: createImageResponse.data.id,
+                    })
+                })
+
+                it("should return the svg job", () => {
+                    expect(createSvgResponse.status).toBe(200);
+                    expect(createSvgResponse.data).not.toBeNull();
+                    expect(createSvgResponse.data.id).toBeDefined();
+                    expect(createSvgResponse.data.created_at).toBeDefined();
+                    expect(createSvgResponse.data.updated_at).toBeDefined();
+                    expect(createSvgResponse.data.status).toEqual(SvgJobStatusEnum.Pending);
+                    expect(createSvgResponse.data.image_id).toEqual(createImageResponse.data.id);
+                    expect(createSvgResponse.data.created_by).toEqual("test@test.test");
+                })
+
+                describe("when getting the svg job by id", () => {
+                    let response: AxiosResponse<SvgJob>;
+
+                    beforeEach(async () => {
+                        response = await client.getSvgJob(createSvgResponse.data.id);
+                    })
+
+                    it("should return the svg job", () => {
+                        expect(response.status).toBe(200);
+                        expect(response.data).not.toBeNull();
+                        expect(response.data.id).toBeDefined();
+                        expect(response.data.created_at).toBeDefined();
+                        expect(response.data.updated_at).toBeDefined();
+                        expect(response.data.status).toEqual(SvgJobStatusEnum.Pending);
+                        expect(response.data.image_id).toEqual(createImageResponse.data.id);
+                        expect(response.data.created_by).toEqual("test@test.test")
+                    })
+                })
+
+                describe("when getting the svg job result", () => {
+                    let response: AxiosResponse<string>;
+
+                    beforeEach(async () => {
+                        response = await client.getSvgJobResult(createSvgResponse.data.id);
+                    })
+
+                    it("should return the svg job result", () => {
+                        expect(response.data).toHaveLength(0);
+                    })
+                })
+
+                describe("when updating the svg job with a service account while it's in pending", () => {
+                    it("should fail with 403", async () => {
+                        await expect(client2.updateSvgJob(createSvgResponse.data.id, {
+                            result: "<svg></svg>",
+                        })).rejects.toThrow(/403/);
+                    })
+                })
+
+                describe("when getting the svg job by id as a service account", () => {
+                    let response: AxiosResponse<SvgJob>;
+
+                    beforeEach(async () => {
+                        response = await client2.getSvgJob(createSvgResponse.data.id);
+                    })
+
+                    it("should return the svg job", () => {
+                        expect(response.status).toBe(200);
+                        expect(response.data).not.toBeNull();
+                        expect(response.data.id).toBeDefined();
+                        expect(response.data.created_at).toBeDefined();
+                        expect(response.data.updated_at).toBeDefined();
+                        expect(response.data.status).toEqual(SvgJobStatusEnum.Pending);
+                        expect(response.data.image_id).toEqual(createImageResponse.data.id);
+                        expect(response.data.created_by).toEqual("test@test.test")
+                    })
+                })
+
+                describe("when getting the svg job by id as another user", () => {
+                    let response: AxiosResponse<SvgJob>;
+
+                    beforeEach(async () => {
+                        // authenticate as second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test.test")
+                    })
+
+                    it("should fail with 404", async () => {
+                        await expect(client2.getSvgJob(createSvgResponse.data.id)).rejects.toThrow(/Request failed with status code 404/);
+                    })
+
+                })
+
+                describe("when processing job as a public service account", () => {
+                    let response: AxiosResponse<SvgJob>;
+
+                    beforeEach(async () => {
+                        // process job as service acct
+                        response = await client2.processSvgJob(createSvgResponse.data.id);
+                    })
+
+                    it("should return the svg job", () => {
+                        expect(response.status).toBe(200);
+                        expect(response.data).not.toBeNull();
+                        expect(response.data.id).toBeDefined();
+                        expect(response.data.created_at).toBeDefined();
+                        expect(response.data.updated_at).toBeDefined();
+                        expect(response.data.status).toEqual(SvgJobStatusEnum.Processing);
+                        expect(response.data.image_id).toEqual(createImageResponse.data.id);
+                        expect(response.data.created_by).toEqual("test@test.test");
+                    })
+
+                    describe("when updating the svg job to completed with result as a service account", () => {
+                        let response: AxiosResponse<SvgJob>;
+
+                        beforeEach(async () => {
+                            response = await client2.updateSvgJob(createSvgResponse.data.id, {
+                                result: "<svg></svg>",
+                            })
+                        })
+
+                        it("should return the updated job", () => {
+                            expect(response.status).toBe(200);
+                            expect(response.data).not.toBeNull();
+                            expect(response.data.id).toBeDefined();
+                            expect(response.data.created_at).toBeDefined();
+                            expect(response.data.updated_at).toBeDefined();
+                            expect(response.data.status).toEqual(SvgJobStatusEnum.Completed);
+                            expect(response.data.image_id).toEqual(createImageResponse.data.id);
+                            expect(response.data.created_by).toEqual("test@test.test")
+                        })
+
+                        describe("when updating the svg job after it is completed as a service account", () => {
+                            it("should fail with 403", async () => {
+                                await expect(client2.updateSvgJob(createSvgResponse.data.id, {
+                                    result: "<svg></svg>",
+                                })).rejects.toThrow(/403/);
+                            })
+                        })
+                    })
+
+                    describe("when processing job again as a public service account", () => {
+                        let response: AxiosResponse<SvgJob>;
+
+                        beforeEach(async () => {
+                            response = await client2.processSvgJob(createSvgResponse.data.id);
+                        })
+
+                        it("should return the svg job", () => {
+                            expect(response.status).toBe(200);
+                            expect(response.data).toBeNull()
+                        })
+                    })
+
+                })
+
+                describe("when processing job as a private service account from the same user", () => {
+                    let createServiceAccountResponse: AxiosResponse<LoginResult>;
+                    let response: AxiosResponse<SvgJob>;
+
+                    beforeEach(async () => {
+                        // create a private service account for the user
+                        createServiceAccountResponse = await client.createServiceAccount({
+                            type: CreateServiceAccountInputTypeEnum.Private,
+                        });
+                    })
+
+                    beforeEach(async () => {
+                        // set credentials for the service account
+                        httpClient2.defaults.headers["Authorization"] = `Bearer ${createServiceAccountResponse.data.accessToken}`;
+                    })
+
+                    beforeEach(async () => {
+                        // process job as service acct
+                        response = await client2.processSvgJob(createSvgResponse.data.id);
+                    })
+
+                    it("should return the svg job", () => {
+                        expect(response.status).toBe(200);
+                        expect(response.data).not.toBeNull();
+                        expect(response.data.id).toBeDefined();
+                        expect(response.data.created_at).toBeDefined();
+                        expect(response.data.updated_at).toBeDefined();
+                        expect(response.data.status).toEqual(SvgJobStatusEnum.Processing);
+                        expect(response.data.image_id).toEqual(createImageResponse.data.id);
+                        expect(response.data.created_by).toEqual("test@test.test");
+                    })
+                })
+
+                describe("when processing job as a private service account from a different user", () => {
+                    let createServiceAccountResponse: AxiosResponse<LoginResult>;
+                    let response: AxiosResponse<SvgJob>;
+
+                    beforeEach(async () => {
+                        // authenticate as second user
+                        await authenticateUser(mailcatcher, client, httpClient, "test2@test.test")
+                    })
+
+                    beforeEach(async () => {
+                        // create a private service account for the user
+                        createServiceAccountResponse = await client.createServiceAccount({
+                            type: CreateServiceAccountInputTypeEnum.Private,
+                        });
+                    })
+
+                    beforeEach(async () => {
+                        // set credentials for the service account
+                        httpClient2.defaults.headers["Authorization"] = `Bearer ${createServiceAccountResponse.data.accessToken}`;
+                    })
+
+                    beforeEach(async () => {
+                        // process job as service acct
+                        response = await client2.processSvgJob(createSvgResponse.data.id);
+                    })
+
+                    it("should return null", () => {
+                        expect(response.status).toBe(200);
+                        expect(response.data).toBeNull()
+                    })
+                })
+
+                describe("when deleting the svg job as the owner", () => {
+                    let response: AxiosResponse<void>;
+
+                    beforeEach(async () => {
+                        response = await client.deleteSvgJob(createSvgResponse.data.id);
+                    })
+
+                    it("should return 204", () => {
+                        expect(response.status).toBe(204);
+                    })
+
+                    describe("when getting the svg job by id", () => {
+                        it("should fail with 404", async () => {
+                            await expect(client.getSvgJob(createSvgResponse.data.id)).rejects.toThrow(/Request failed with status code 404/);
+                        })
+                    })
+                })
+
+
+                describe("when deleting the svg job as a different user", () => {
+
+                    beforeEach(async () => {
+                        // authenticate as second user
+                        await authenticateUser(mailcatcher, client2, httpClient2, "test2@test.test")
+                    })
+
+                    it("should fail with 404", async () => {
+                        await expect(client2.deleteSvgJob(createSvgResponse.data.id)).rejects.toThrow(/Request failed with status code 404/);
+                    })
+                })
+
+                describe("when deleting the svg job as a service account", () => {
+
+                    let createServiceAccountResponse: AxiosResponse<LoginResult>;
+
+                    beforeEach(async () => {
+                        // create a private service account for the user
+                        createServiceAccountResponse = await client.createServiceAccount({
+                            type: CreateServiceAccountInputTypeEnum.Private,
+                        });
+                    })
+
+                    beforeEach(async () => {
+                        // set credentials for the service account
+                        httpClient2.defaults.headers["Authorization"] = `Bearer ${createServiceAccountResponse.data.accessToken}`;
+                    })
+
+                    it("should fail with 403", async () => {
+                        await expect(client2.deleteSvgJob(createSvgResponse.data.id)).rejects.toThrow(/Request failed with status code 403/);
+                    })
+                })
+            })
+            // end svg jobs tests
         }) // end authenticated tests
     })
 })

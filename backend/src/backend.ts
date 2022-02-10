@@ -21,6 +21,10 @@ import {
     CreateSuggestionsJobInput,
     UpdateSuggestionsJobInput,
     UpdateSuggestionsJobInputStatusEnum,
+    CreateSvgJobInput,
+    SvgJob,
+    SvgJobStatusEnum,
+    UpdateSvgJobInput,
 } from "./client/api"
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
@@ -652,6 +656,146 @@ export class BackendService {
         return null
     }
 
+    async createSvgJob(user: string, body: CreateSvgJobInput): Promise<SvgJob> {
+        const client = await this.pool.connect()
+        const now = moment().valueOf()
+        try {
+            const result = await client.query(
+                `INSERT INTO svg_jobs (id, created_by, created_at, updated_at, image_id, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+                [uuid.v4(), user, now, now, body.image_id, "pending"]
+            )
+            return result.rows[0]
+        } catch (err) {
+            await client.query("ROLLBACK")
+            console.error("Rolling back transaction", err)
+        } finally {
+            client.release()
+        }
+        return null;
+    }
+
+    async getSvgJob(id: string, userId?: string): Promise<SvgJob> {
+        const client = await this.pool.connect()
+        try {
+            let query = `SELECT * FROM svg_jobs WHERE id=$1`
+            let args = [id]
+            if (userId) {
+                query += ` AND created_by=$2`
+                args.push(userId)
+            }
+            const result = await client.query(
+                query,
+                args,
+            )
+            // if no svg job found, return null
+            if (result.rowCount === 0) {
+                return null
+            }
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    private async getUsersWithPendingSvgJobs(): Promise<string[]> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT DISTINCT created_by FROM svg_jobs WHERE status='pending'`
+            )
+            return result.rows.map(row => row.created_by)
+        } finally {
+            client.release()
+        }
+    }
+
+    async processSvgJob(user?: string): Promise<SvgJob> {
+        const users = await this.getUsersWithPendingSvgJobs()
+        // if there are no users, return null
+        if (users.length === 0) {
+            return null
+        }
+        if (!user) {
+            // get random user
+            user = users[Math.floor(Math.random() * users.length)]
+        }
+
+        const client = await this.pool.connect()
+        try {
+            // begin transaction
+            await client.query("BEGIN")
+            const result = await client.query(
+                `SELECT * FROM svg_jobs WHERE status='pending' AND created_by=$1 ORDER BY created_at ASC LIMIT 1`,
+                [user]
+            )
+            if (result.rowCount === 0) {
+                return null
+            }
+            const job = result.rows[0]
+            // update job status to processing
+            await client.query(
+                `UPDATE svg_jobs SET status='processing' WHERE id=$1`,
+                [job.id],
+            )
+            // commit transaction
+            await client.query("COMMIT")
+            job.status = SvgJobStatusEnum.Processing
+            return job
+        } catch (err) {
+            // rollback transaction
+            await client.query("ROLLBACK")
+            console.error("Rolling back transaction", err)
+        } finally {
+            client.release()
+        }
+        return null
+    }
+
+    async getSvgJobResult(id: string): Promise<string> {
+        // check if exists in the filestore
+        const exists = await this.filestore.exists(`${id}.svg`)
+        if (!exists) {
+            return "";
+        }
+        // get the file
+        const file = await this.filestore.readFile(`${id}.svg`)
+        return file
+    }
+
+    async updateSvgJob(id: string, body: UpdateSvgJobInput): Promise<SvgJob> {
+        const client = await this.pool.connect()
+        try {
+            // save result to filestore
+            await this.filestore.writeFile(`${id}.svg`, body.result)
+            const result = await client.query(
+                `UPDATE svg_jobs SET status='completed' WHERE id=$1 RETURNING *`,
+                [id]
+            )
+            if (result.rowCount === 0) {
+                return null
+            }
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+        return null
+    }
+
+    async deleteSvgJob(id: string): Promise<void> {
+        const client = await this.pool.connect()
+        try {
+            await client.query(
+                `DELETE FROM svg_jobs WHERE id=$1`,
+                [id]
+            )
+            // remove from filestore if file exists
+            if (await this.filestore.exists(`${id}.svg`)) {
+                await this.filestore.deleteFile(`${id}.svg`)
+            }
+        } finally {
+            client.release()
+        }
+    }
 
     async login(email: string): Promise<void> {
         // generate crypto random 6 digit code

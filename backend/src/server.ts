@@ -586,6 +586,145 @@ export class Server {
             }
         })
 
+        this.app.post("/api/svg-jobs", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // service accounts can't create svg jobs
+                if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to create svg job`)
+                    res.sendStatus(403)
+                    return
+                }
+                const job = await this.backendService.createSvgJob(jwt.userId, req.body)
+                res.json(job)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        this.app.get("/api/svg-jobs/:id", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                let user = jwt.userId
+                if (this.isServiceAccount(jwt)) {
+                    if (!jwt.serviceAccountConfig || jwt.serviceAccountConfig.type == "public"){
+                        user = undefined
+                    }
+
+                }
+                const job = await this.backendService.getSvgJob(req.params.id, user)
+                if (!job) {
+                    console.log(`user ${jwt.userId} tried to get svg job ${req.params.id} not found`)
+                    res.status(404).send("not found")
+                    return
+                }
+                res.json(job)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        this.app.post("/api/process-svg-job", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // make sure user is a service acct
+                if (!this.isServiceAccount(jwt)) {
+                    console.log(`user ${jwt.userId} tried to process svg job but is not a service account`)
+                    res.sendStatus(403)
+                    return
+                }
+                let user: string = undefined;
+                if (jwt.serviceAccountConfig?.type == "private") {
+                    user = jwt.userId;
+                }
+                const job = await this.backendService.processSvgJob(user)
+                res.json(job)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        this.app.get("/api/svg-jobs/:id/result.svg", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // service accounts can't get svg job results
+                if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to get svg job result ${req.params.id}`)
+                    res.sendStatus(403)
+                    return
+                }
+                const result = await this.backendService.getSvgJobResult(req.params.id)
+                res.status(200).send(result)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        this.app.patch("/api/svg-jobs/:id", async (req, res) => {
+            try {
+                const job = await this.backendService.getSvgJob(req.params.id)
+                if (!job) {
+                    console.log(`user tried to update svg job ${req.params.id} not found`)
+                    res.status(404).send("not found")
+                    return
+                }
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // service accounts can only update jobs in processing state
+                if (this.isServiceAccount(jwt) && job.status != "processing") {
+                    console.log(`service account ${jwt.userId} tried to update svg job ${req.params.id} but job is not in processing state`)
+                    res.sendStatus(403)
+                    return
+                }
+                // if this isn't a service account, make sure the job is owned by the user
+                if (!this.isServiceAccount(jwt) && job.created_by != jwt.userId) {
+                    console.log(`user ${jwt.userId} tried to update svg job ${req.params.id} but job is not owned by user`)
+                    res.sendStatus(404)
+                    return
+                }
+                const result = await this.backendService.updateSvgJob(req.params.id, req.body)
+                res.send(result)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        this.app.delete("/api/svg-jobs/:id", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // service accounts can't delete svg jobs
+                if (this.isServiceAccount(jwt)) {
+                    console.log(`service account ${jwt.userId} tried to delete svg job ${req.params.id}`)
+                    res.sendStatus(403)
+                    return
+                }
+
+                const job = await this.backendService.getSvgJob(req.params.id)
+                if (!job) {
+                    console.log(`user tried to delete svg job ${req.params.id} not found`)
+                    res.status(404).send("not found")
+                    return
+                }
+
+                // user must own the job in order to delete it
+                if (job.created_by != jwt.userId) {
+                    console.log(`user ${jwt.userId} tried to delete svg job ${req.params.id} but job is not owned by user`)
+                    res.sendStatus(404)
+                    return
+                }
+                await this.backendService.deleteSvgJob(req.params.id)
+                res.sendStatus(204)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+
         this.app.post("/api/auth/service-accounts", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)

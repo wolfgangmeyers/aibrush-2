@@ -74,12 +74,6 @@ paths:
           required: true
           schema:
             type: string
-        - name: download
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: ["thumbnail", "image"]
       responses:
         "200":
           description: Success
@@ -409,6 +403,113 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuggestionsJob"
+  /api/svg-jobs:
+    post:
+      description: Create a new svg job
+      operationId: createSvgJob
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSvgJobInput"
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SvgJob"
+  /api/svg-jobs/{id}:
+    get:
+      description: Get a svg job by id
+      operationId: getSvgJob
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SvgJob"
+    patch:
+      description: Update a svg job
+      operationId: updateSvgJob
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSvgJobInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SvgJob"
+    delete:
+      description: Delete a svg job
+      operationId: deleteSvgJob
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+  /api/svg-jobs/{id}/result.svg:
+    get:
+      description: Get a svg job by id
+      operationId: getSvgJobResult
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+  # process svg job
+  /api/process-svg-job:
+    post:
+      description: Process a svg job
+      operationId: processSvgJob
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SvgJob"
   /api/assets-url:
     get:
       description: Get the assets url
@@ -742,6 +843,32 @@ components:
           type: array
           items:
             type: string
+    SvgJob:
+      type: object
+      properties:
+        id:
+          type: string
+        created_by:
+          type: string
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+        image_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed]
+    CreateSvgJobInput:
+      type: object
+      properties:
+        image_id:
+          type: string
+    UpdateSvgJobInput:
+      type: object
+      properties:
+        result:
+          type: string
     AssetsUrl:
       type: object
       properties:
