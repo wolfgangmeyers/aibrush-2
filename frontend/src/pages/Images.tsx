@@ -6,6 +6,7 @@ import { Link, useHistory } from "react-router-dom";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { AIBrushApi, Image } from "../client/api";
 import { ImagePopup } from "../components/ImagePopup";
+import { SvgPopup } from "../components/SvgPopup";
 import { setDesignerCurrentImageId } from "../lib/designer";
 import { LoadMoreImages } from "../components/LoadMoreImages";
 
@@ -21,6 +22,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
     const [err, setErr] = useState<string | null>(null);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const [loadingMore, setLoadingMore] = useState<boolean>(false);
+    const [generatingSvg, setGeneratingSvg] = useState<Image | null>(null);
 
     const onForkImage = async (image: Image) => {
         // navigate to /create-image with ?parent=image.id
@@ -123,6 +125,10 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
         history.push("/designer")
     }
 
+    const onSvg = async (image: Image) => {
+        setGeneratingSvg(image);
+    }
+
     const onLoadMore = async () => {
         setLoadingMore(true)
         try {
@@ -181,6 +187,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
                                 onFork={onForkImage}
                                 onClick={setSelectedImage}
                                 onDesign={onDesignImage}
+                                onSvg={onSvg}
                                 assetsUrl={assetsUrl}
                                 apiUrl={apiUrl}
                                 key={image.id}
@@ -201,6 +208,9 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
                     onFork={onForkImage}
                     onDesign={onDesignImage}
                 />
+            )}
+            {generatingSvg && (
+                <SvgPopup api={api} apiUrl={apiUrl} image={generatingSvg} onClose={() => setGeneratingSvg(null)} />
             )}
         </>
     );

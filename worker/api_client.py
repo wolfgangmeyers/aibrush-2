@@ -10,7 +10,9 @@ class AIBrushAPI(object):
         self.api_url = api_url
         self.token = token
 
-    def http_request(self, path, method, body=None) -> requests.Response:
+    def http_request(self, path, method, body=None, content_type=None) -> requests.Response:
+        if not content_type:
+            content_type = "application/json"
         url = f"{self.api_url}/api{path}"
         print(f"{method} {url}")
         backoff = 2
@@ -18,11 +20,11 @@ class AIBrushAPI(object):
             try:
                 if isinstance(body, bytes):
                     return requests.request(method, url, data=body, headers={
-                        "Content-Type": "video/mp4",
+                        "Content-Type": content_type,
                         "Authorization": f"Bearer {self.token}",
                     }, timeout=10)
                 return requests.request(method, url, json=body, headers={
-                    "Content-Type": "application/json",
+                    "Content-Type": content_type,
                     "Authorization": f"Bearer {self.token}",
                 }, timeout=10)
             except Exception as err:
@@ -78,7 +80,7 @@ class AIBrushAPI(object):
         return resp.content
 
     def update_video_data(self, image_id: str, video_data: bytes):
-        resp = self.http_request(f"/images/{image_id}.mp4", "PUT", video_data)
+        resp = self.http_request(f"/images/{image_id}.mp4", "PUT", video_data, "video/mp4")
         if resp.status_code != 204:
             print(f"Error updating video data ({resp.status_code}): {resp.text}")
             return False
@@ -99,4 +101,16 @@ class AIBrushAPI(object):
         resp = self.http_request(f"/suggestion-seeds/{seed_id}", "GET")
         # print response code and text
         print(f"{resp.status_code}: {resp.text}")
+        return self.parse_json(resp.text)
+
+    # svg jobs
+    def process_svg_job(self) -> SimpleNamespace:
+        resp = self.http_request("/process-svg-job", "POST")
+        return self.parse_json(resp.text)
+
+    def update_svg_job(self, job_id: str, result: str) -> SimpleNamespace:
+        body = {
+            "result": result,
+        }
+        resp = self.http_request(f"/svg-jobs/{job_id}", "PATCH", body)
         return self.parse_json(resp.text)

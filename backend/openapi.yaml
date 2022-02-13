@@ -859,6 +859,13 @@ components:
         status:
           type: string
           enum: [pending, processing, completed]
+      required:
+        - id
+        - created_by
+        - created_at
+        - updated_at
+        - image_id
+        - status
     CreateSvgJobInput:
       type: object
       properties:

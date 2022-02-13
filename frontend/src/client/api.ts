@@ -152,6 +152,19 @@ export interface CreateSuggestionsJobInput {
 /**
  * 
  * @export
+ * @interface CreateSvgJobInput
+ */
+export interface CreateSvgJobInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateSvgJobInput
+     */
+    image_id?: string;
+}
+/**
+ * 
+ * @export
  * @interface Healthcheck
  */
 export interface Healthcheck {
@@ -521,6 +534,60 @@ export interface SuggestionsJobList {
 /**
  * 
  * @export
+ * @interface SvgJob
+ */
+export interface SvgJob {
+    /**
+     * 
+     * @type {string}
+     * @memberof SvgJob
+     */
+    id: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SvgJob
+     */
+    created_by: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof SvgJob
+     */
+    created_at: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof SvgJob
+     */
+    updated_at: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof SvgJob
+     */
+    image_id: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SvgJob
+     */
+    status: SvgJobStatusEnum;
+}
+
+/**
+    * @export
+    * @enum {string}
+    */
+export enum SvgJobStatusEnum {
+    Pending = 'pending',
+    Processing = 'processing',
+    Completed = 'completed'
+}
+
+/**
+ * 
+ * @export
  * @interface UpdateImageInput
  */
 export interface UpdateImageInput {
@@ -598,6 +665,19 @@ export enum UpdateSuggestionsJobInputStatusEnum {
     Saved = 'saved'
 }
 
+/**
+ * 
+ * @export
+ * @interface UpdateSvgJobInput
+ */
+export interface UpdateSvgJobInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateSvgJobInput
+     */
+    result?: string;
+}
 /**
  * 
  * @export
@@ -757,6 +837,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Create a new svg job
+         * @param {CreateSvgJobInput} [createSvgJobInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createSvgJob: async (createSvgJobInput?: CreateSvgJobInput, options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/svg-jobs`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createSvgJobInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -856,6 +969,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Delete a svg job
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteSvgJob: async (id: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('deleteSvgJob', 'id', id)
+            const localVarPath = `/api/svg-jobs/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Get the assets url
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -887,11 +1033,10 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * Get a saved image by id
          * @param {string} id 
-         * @param {'thumbnail' | 'image'} [download] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getImage: async (id: string, download?: 'thumbnail' | 'image', options: any = {}): Promise<RequestArgs> => {
+        getImage: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getImage', 'id', id)
             const localVarPath = `/api/images/{id}`
@@ -906,10 +1051,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
-
-            if (download !== undefined) {
-                localVarQueryParameter['download'] = download;
-            }
 
 
     
@@ -998,6 +1139,72 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getSuggestionsJob', 'id', id)
             const localVarPath = `/api/suggestions-jobs/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get a svg job by id
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getSvgJob: async (id: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getSvgJob', 'id', id)
+            const localVarPath = `/api/svg-jobs/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get a svg job by id
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getSvgJobResult: async (id: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getSvgJobResult', 'id', id)
+            const localVarPath = `/api/svg-jobs/{id}/result.svg`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1314,6 +1521,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Process a svg job
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        processSvgJob: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/process-svg-job`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -1458,6 +1694,43 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Update a svg job
+         * @param {string} id 
+         * @param {UpdateSvgJobInput} [updateSvgJobInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateSvgJob: async (id: string, updateSvgJobInput?: UpdateSvgJobInput, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('updateSvgJob', 'id', id)
+            const localVarPath = `/api/svg-jobs/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateSvgJobInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Update the video data
          * @param {string} id 
          * @param {any} [body] 
@@ -1578,6 +1851,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a new svg job
+         * @param {CreateSvgJobInput} [createSvgJobInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createSvgJob(createSvgJobInput?: CreateSvgJobInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createSvgJob(createSvgJobInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1608,6 +1891,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Delete a svg job
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteSvgJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteSvgJob(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Get the assets url
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1619,12 +1912,11 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
         /**
          * Get a saved image by id
          * @param {string} id 
-         * @param {'thumbnail' | 'image'} [download] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getImage(id: string, download?: 'thumbnail' | 'image', options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getImage(id, download, options);
+        async getImage(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getImage(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -1655,6 +1947,26 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async getSuggestionsJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getSuggestionsJob(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get a svg job by id
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getSvgJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getSvgJob(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get a svg job by id
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getSvgJobResult(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<string>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getSvgJobResult(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -1746,6 +2058,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Process a svg job
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async processSvgJob(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.processSvgJob(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -1786,6 +2107,17 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async updateSuggestionsJob(id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateSuggestionsJob(id, updateSuggestionsJobInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Update a svg job
+         * @param {string} id 
+         * @param {UpdateSvgJobInput} [updateSvgJobInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateSvgJob(id: string, updateSvgJobInput?: UpdateSvgJobInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateSvgJob(id, updateSvgJobInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -1856,6 +2188,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createSuggestionsJob(createSuggestionsJobInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Create a new svg job
+         * @param {CreateSvgJobInput} [createSvgJobInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createSvgJob(createSvgJobInput?: CreateSvgJobInput, options?: any): AxiosPromise<SvgJob> {
+            return localVarFp.createSvgJob(createSvgJobInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1883,6 +2224,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.deleteSuggestionsJob(id, options).then((request) => request(axios, basePath));
         },
         /**
+         * Delete a svg job
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteSvgJob(id: string, options?: any): AxiosPromise<void> {
+            return localVarFp.deleteSvgJob(id, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get the assets url
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1893,12 +2243,11 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
         /**
          * Get a saved image by id
          * @param {string} id 
-         * @param {'thumbnail' | 'image'} [download] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getImage(id: string, download?: 'thumbnail' | 'image', options?: any): AxiosPromise<Image> {
-            return localVarFp.getImage(id, download, options).then((request) => request(axios, basePath));
+        getImage(id: string, options?: any): AxiosPromise<Image> {
+            return localVarFp.getImage(id, options).then((request) => request(axios, basePath));
         },
         /**
          * Get the binary image data
@@ -1926,6 +2275,24 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         getSuggestionsJob(id: string, options?: any): AxiosPromise<SuggestionsJob> {
             return localVarFp.getSuggestionsJob(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get a svg job by id
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getSvgJob(id: string, options?: any): AxiosPromise<SvgJob> {
+            return localVarFp.getSvgJob(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get a svg job by id
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getSvgJobResult(id: string, options?: any): AxiosPromise<string> {
+            return localVarFp.getSvgJobResult(id, options).then((request) => request(axios, basePath));
         },
         /**
          * Get the binary thumbnail data
@@ -2007,6 +2374,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.processSuggestionsJob(options).then((request) => request(axios, basePath));
         },
         /**
+         * Process a svg job
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        processSvgJob(options?: any): AxiosPromise<SvgJob> {
+            return localVarFp.processSvgJob(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2044,6 +2419,16 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         updateSuggestionsJob(id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options?: any): AxiosPromise<SuggestionsJob> {
             return localVarFp.updateSuggestionsJob(id, updateSuggestionsJobInput, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Update a svg job
+         * @param {string} id 
+         * @param {UpdateSvgJobInput} [updateSvgJobInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateSvgJob(id: string, updateSvgJobInput?: UpdateSvgJobInput, options?: any): AxiosPromise<SvgJob> {
+            return localVarFp.updateSvgJob(id, updateSvgJobInput, options).then((request) => request(axios, basePath));
         },
         /**
          * Update the video data
@@ -2119,6 +2504,17 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Create a new svg job
+     * @param {CreateSvgJobInput} [createSvgJobInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createSvgJob(createSvgJobInput?: CreateSvgJobInput, options?: any) {
+        return AIBrushApiFp(this.configuration).createSvgJob(createSvgJobInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Delete a saved image
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -2152,6 +2548,17 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Delete a svg job
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public deleteSvgJob(id: string, options?: any) {
+        return AIBrushApiFp(this.configuration).deleteSvgJob(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Get the assets url
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -2164,13 +2571,12 @@ export class AIBrushApi extends BaseAPI {
     /**
      * Get a saved image by id
      * @param {string} id 
-     * @param {'thumbnail' | 'image'} [download] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getImage(id: string, download?: 'thumbnail' | 'image', options?: any) {
-        return AIBrushApiFp(this.configuration).getImage(id, download, options).then((request) => request(this.axios, this.basePath));
+    public getImage(id: string, options?: any) {
+        return AIBrushApiFp(this.configuration).getImage(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -2204,6 +2610,28 @@ export class AIBrushApi extends BaseAPI {
      */
     public getSuggestionsJob(id: string, options?: any) {
         return AIBrushApiFp(this.configuration).getSuggestionsJob(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get a svg job by id
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getSvgJob(id: string, options?: any) {
+        return AIBrushApiFp(this.configuration).getSvgJob(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get a svg job by id
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getSvgJobResult(id: string, options?: any) {
+        return AIBrushApiFp(this.configuration).getSvgJobResult(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -2304,6 +2732,16 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Process a svg job
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public processSvgJob(options?: any) {
+        return AIBrushApiFp(this.configuration).processSvgJob(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Refresh Login code
      * @param {RefreshLoginInput} [refreshLoginInput] 
      * @param {*} [options] Override http request option.
@@ -2348,6 +2786,18 @@ export class AIBrushApi extends BaseAPI {
      */
     public updateSuggestionsJob(id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options?: any) {
         return AIBrushApiFp(this.configuration).updateSuggestionsJob(id, updateSuggestionsJobInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update a svg job
+     * @param {string} id 
+     * @param {UpdateSvgJobInput} [updateSvgJobInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public updateSvgJob(id: string, updateSvgJobInput?: UpdateSvgJobInput, options?: any) {
+        return AIBrushApiFp(this.configuration).updateSvgJob(id, updateSvgJobInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

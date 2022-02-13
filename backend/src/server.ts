@@ -29,7 +29,7 @@ export class Server {
     async init() {
         await this.backendService.init();
         this.app.use(express.json({
-            limit: "2mb",
+            limit: "10mb",
         }))
         this.app.use(express.raw({
             type: "video/mp4",
@@ -754,6 +754,7 @@ export class Server {
                 console.log("timer callback")
                 this.backendService.cleanupStuckImages()
                 this.backendService.cleanupSuggestionsJobs()
+                this.backendService.cleanupSvgJobs()
             }, 1000 * 60)
         })
     }

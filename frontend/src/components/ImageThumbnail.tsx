@@ -11,9 +11,10 @@ interface ImageThumbnailProps {
     onDelete?: (image: Image) => void;
     onFork?: (image: Image) => void;
     onDesign?: (image: Image) => void;
+    onSvg?: (image: Image) => void;
 }
 
-export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, image, onClick, onDelete, onFork, onDesign }) => {
+export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, image, onClick, onDelete, onFork, onDesign, onSvg }) => {
 
     const src = `${assetsUrl}/${image.id}.thumbnail.jpg?updated_at=${image.updated_at}`;
 
@@ -62,6 +63,9 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, ima
                 </button>}
                 {(image.status === "completed" || image.status === "saved") && image.enable_video && <button className="btn btn-secondary btn-sm" onClick={() => window.open(`${apiUrl}/api/images/${image.id}.mp4`)} style={{marginRight: "5px", marginTop: "5px"}}>
                     <i className="fas fa-video"></i>
+                </button>}
+                {onSvg && (image.status === "completed" || image.status === "saved") && <button className="btn btn-secondary btn-sm" onClick={() => onSvg && onSvg(image)} style={{marginRight: "5px", marginTop: "5px"}}>
+                    <i className="fas fa-file-code"></i>
                 </button>}
             </div>
         </div>

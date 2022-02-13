@@ -542,37 +542,37 @@ export interface SvgJob {
      * @type {string}
      * @memberof SvgJob
      */
-    id?: string;
+    id: string;
     /**
      * 
      * @type {string}
      * @memberof SvgJob
      */
-    created_by?: string;
+    created_by: string;
     /**
      * 
      * @type {number}
      * @memberof SvgJob
      */
-    created_at?: number;
+    created_at: number;
     /**
      * 
      * @type {number}
      * @memberof SvgJob
      */
-    updated_at?: number;
+    updated_at: number;
     /**
      * 
      * @type {string}
      * @memberof SvgJob
      */
-    image_id?: string;
+    image_id: string;
     /**
      * 
      * @type {string}
      * @memberof SvgJob
      */
-    status?: SvgJobStatusEnum;
+    status: SvgJobStatusEnum;
 }
 
 /**

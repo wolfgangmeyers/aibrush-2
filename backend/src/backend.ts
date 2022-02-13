@@ -797,6 +797,38 @@ export class BackendService {
         }
     }
 
+    /*
+     // clean up old suggestion jobs
+    async cleanupSuggestionsJobs(): Promise<void> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `DELETE FROM suggestions_jobs WHERE updated_at < $1`,
+                [moment().subtract(1, "hours").valueOf()]
+            )
+        } finally {
+            client.release()
+        }
+    }
+    */
+    async cleanupSvgJobs(): Promise<void> {
+        // clean up any svj jobs that are older than 1 hours
+        const client = await this.pool.connect()
+        try {
+            // list jobs
+            const result = await client.query(
+                `SELECT * FROM svg_jobs WHERE created_at < $1`,
+                [moment().subtract(1, "hours").valueOf()]
+            )
+            // delete jobs
+            for (const job of result.rows) {
+                await this.deleteSvgJob(job.id)
+            }
+        } finally {
+            client.release()
+        }
+    }
+
     async login(email: string): Promise<void> {
         // generate crypto random 6 digit code
         const code = uuid.v4().substr(0, 6).toUpperCase()
