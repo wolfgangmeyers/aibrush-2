@@ -10,6 +10,8 @@ import traceback
 
 from vqgan_clip.generate import run, default_args
 
+
+
 api_url = "https://www.aibrush.art"
 if len(sys.argv) > 1:
     api_url = sys.argv[1]
@@ -29,11 +31,15 @@ except:
 
 client = AIBrushAPI(api_url, access_token)
 
+# create an 'images' folder if it doesn't exist
+if not os.path.exists("images"):
+    os.makedirs("images")
+
 def cleanup():
     # delete all files in the current folder ending in .png or .backup
-    for fname in os.listdir("."):
+    for fname in os.listdir("images"):
         if fname.endswith(".jpg") or fname.endswith(".mp4"):
-            os.remove(fname)
+            os.remove(os.path.join("images", fname))
     if os.path.exists("steps"):
         for fname in os.listdir("steps"):
             os.remove(os.path.join("steps", fname))
@@ -51,7 +57,7 @@ def process_image():
 
         def update_image(iterations: int, status: str):
             # get output image
-            with open(image.id + ".jpg", "rb") as f:
+            with open(os.path.join("images", image.id + ".jpg"), "rb") as f:
                 image_data = f.read()
             # base64 encode image
             image_data = base64.encodebytes(image_data).decode("utf-8")
@@ -61,15 +67,15 @@ def process_image():
         def update_video_data():
             print("Updating video data")
             # get video data
-            with open(image.id + ".mp4", "rb") as f:
+            with open(os.path.join("images", image.id + ".mp4"), "rb") as f:
                 video_data = f.read()
             client.update_video_data(image.id, video_data)
 
         if image_data:
             # save image
-            with open(image.id + "-init.jpg", "wb") as f:
+            with open(os.path.join("images", image.id + "-init.jpg"), "wb") as f:
                 f.write(image_data)
-            args.init_image = image.id + "-init.jpg"
+            args.init_image = os.path.join("images", image.id + "-init.jpg")
         args.max_iterations = image.iterations
         args.prompts = " | ".join(image.phrases)
         if image.enable_video:
@@ -81,7 +87,7 @@ def process_image():
                 args.zoom_shift_y = image.zoom_shift_y
             else:
                 args.make_video = True
-        args.output = image.id + ".jpg"
+        args.output = os.path.join("images", image.id + ".jpg")
         args.display_freq = 50
         if args.max_iterations < args.display_freq:
             args.display_freq = args.max_iterations

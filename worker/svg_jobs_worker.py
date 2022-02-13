@@ -17,6 +17,11 @@ with open('credentials.json') as f:
 
 client = AIBrushAPI(api_url, access_token)
 
+# create 'svg_jobs' folder if it doesn't exist
+if not os.path.exists("svg_jobs"):
+    os.makedirs("svg_jobs")
+os.chdir("svg_jobs")
+
 def cleanup():
     # delete all files in the current folder ending in .jpg or .svg
     for fname in os.listdir("."):
