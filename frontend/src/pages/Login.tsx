@@ -24,10 +24,15 @@ export const Login: FC<LoginProps> = props => {
             setErr("Invalid email address");
             return;
         }
-        await props.client.login({
-            email
-        })
-        setEmailSubmitted(true);
+        try {
+            await props.client.login({
+                email
+            })
+            setEmailSubmitted(true);
+        } catch (err) {
+            console.error(err);
+            setErr("Could not login");
+        }
     }
 
     const onVerify = async () => {

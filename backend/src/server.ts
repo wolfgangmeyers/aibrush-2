@@ -49,6 +49,12 @@ export class Server {
                 const token = await this.backendService.login(req.body.email)
                 res.sendStatus(204)
             } catch (err) {
+                // if "User not allowed" then return 403
+                if (err.message === "User not allowed") {
+                    console.log("User not allowed: " + req.body.email)
+                    res.sendStatus(403)
+                    return
+                }
                 console.error(err)
                 res.sendStatus(500)
             }

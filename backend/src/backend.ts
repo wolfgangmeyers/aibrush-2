@@ -829,7 +829,17 @@ export class BackendService {
         }
     }
 
+    isUserAllowed(email: string): boolean {
+        if (!this.config.userWhitelist || this.config.userWhitelist.length === 0) {
+            return true
+        }
+        return this.config.userWhitelist.includes(email)
+    }
+
     async login(email: string): Promise<void> {
+        if (!this.isUserAllowed(email)) {
+            throw new Error("User not allowed")
+        }
         // generate crypto random 6 digit code
         const code = uuid.v4().substr(0, 6).toUpperCase()
         // calculate expiration based on config.loginCodeExpirationSeconds
