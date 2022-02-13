@@ -833,7 +833,7 @@ export class BackendService {
         if (!this.config.userWhitelist || this.config.userWhitelist.length === 0) {
             return true
         }
-        return this.config.userWhitelist.includes(email)
+        return this.config.userWhitelist.includes(email.toLowerCase())
     }
 
     async login(email: string): Promise<void> {

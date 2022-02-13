@@ -40,7 +40,7 @@ export const loadConfig = (): Config => {
         userAccessTokenExpirationSeconds: parseInt(process.env.USER_ACCESS_TOKEN_EXPIRATION_SECONDS, 10),
         serviceAccountAccessTokenExpirationSeconds: parseInt(process.env.SERVICE_ACCOUNT_ACCESS_TOKEN_EXPIRATION_SECONDS, 10),
         serviceAccounts: process.env.SERVICE_ACCOUNTS ? process.env.SERVICE_ACCOUNTS.split(",") : [],
-        userWhitelist: process.env.USER_WHITELIST ? process.env.USER_WHITELIST.split(",") : [],
+        userWhitelist: process.env.USER_WHITELIST ? process.env.USER_WHITELIST.split(",").map(u => u.toLowerCase()) : [],
         assetsBaseUrl: process.env.ASSETS_BASE_URL || "/api/images",
     };
     return config;
