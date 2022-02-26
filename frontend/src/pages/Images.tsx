@@ -29,8 +29,6 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
         history.push(`/create-image?parent=${image.id}`)
     }
 
-
-
     useEffect(() => {
         if (!api) {
             return
@@ -77,7 +75,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
                     const updatedImages = resp.data.images.filter(image => {
                         return images.findIndex(i => i.id === image.id) >= 0
                     })
-                    setImages([
+                    setImages(images => [
                         ...images.map(image => {
                             const updatedImage = updatedImages.find(i => i.id === image.id)
                             if (updatedImage) {
@@ -141,9 +139,9 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
             const resp = await api.listImages(minUpdatedAt - 1, 100, "desc")
             if (resp.data.images) {
                 // combine images with new images and sort by updated_at descending
-                setImages([
+                setImages(images => [
                     ...images,
-                    ...resp.data.images
+                    ...(resp.data.images || [])
                 ].sort((a, b) => {
                     return b.updated_at - a.updated_at
                 }))

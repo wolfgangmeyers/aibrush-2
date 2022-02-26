@@ -28,13 +28,9 @@ class AIBrushAPI(object):
                     "Authorization": f"Bearer {self.token}",
                 }, timeout=10)
             except Exception as err:
-                # is this a connection error?
-                if isinstance(err, requests.exceptions.ConnectionError):
-                    print(f"Connection error: {err}")
-                    time.sleep(backoff)
-                    backoff *= 2
-                else:
-                    raise err
+                print(f"Error making request: {err}")
+                time.sleep(backoff)
+                backoff *= 2
 
     def parse_json(self, json_str):
         try:
