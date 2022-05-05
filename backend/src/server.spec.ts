@@ -271,7 +271,7 @@ describe("server", () => {
                 image = response.data
             })
 
-            it("should return the image", () => {
+            it.only("should return the image", () => {
                 expect(image.id).toBeDefined()
                 expect(image.phrases).toEqual(["test"])
                 expect(image.label).toBe("test")
@@ -279,6 +279,7 @@ describe("server", () => {
                 expect(image.parent).toBe("")
                 expect(image.enable_video).toBe(false)
                 expect(image.enable_zoom).toBe(false)
+                expect(image.model).toBe("vqgan_imagenet_f16_16384")
             })
 
             describe("when listing images", () => {
