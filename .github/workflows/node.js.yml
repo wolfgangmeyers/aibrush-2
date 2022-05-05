@@ -26,6 +26,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        cache_dependency_path: 'backend/yarn.lock'
     - run: npm ci
       working-directory: backend
     - run: npm run build --if-present
