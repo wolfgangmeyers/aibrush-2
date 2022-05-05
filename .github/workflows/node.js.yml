@@ -27,5 +27,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
         cache-dependency-path: 'backend/yarn.lock'
+    - run: yarn
+      working-directory: backend
+    - run: docker-compose up -d
     - run: yarn test
       working-directory: backend
