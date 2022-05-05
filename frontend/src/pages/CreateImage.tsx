@@ -25,7 +25,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         zoom_scale: 0.99,
         zoom_shift_x: 0,
         zoom_shift_y: 0,
-        model: undefined,
+        model: "vqgan_imagenet_f16_16384",
     });
     const [editingImage, setEditingImage] = useState<string | null>(null);
     const [count, setCount] = useState(1)
@@ -107,48 +107,6 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         setEditingImage(null)
     }
 
-    const onRandomizeImage = () => {
-        // create a new canvas
-        const canvas = document.createElement("canvas")
-        canvas.width = 512
-        canvas.height = 512
-        const ctx = canvas.getContext("2d")
-        if (ctx) {
-            ctx.fillStyle = "white"
-            ctx.fillRect(0, 0, 512, 512)
-            // draw random circles and rectangles
-            for (let i = 0; i < 2048; i++) {
-                const x = Math.random() * 512
-                const y = Math.random() * 512
-                const w = Math.random() * 20
-                const h = Math.random() * 20
-                // random fillStyle and strokeStyle
-                ctx.fillStyle = `rgb(${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)})`
-                ctx.strokeStyle = `rgb(${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)})`
-                // random shape
-                const shape = Math.floor(Math.random() * 3)
-                if (shape === 0) {
-                    ctx.fillRect(x, y, w, h)
-                } else if (shape === 1) {
-                    ctx.beginPath()
-                    ctx.arc(x, y, w, 0, 2 * Math.PI)
-                    ctx.fill()
-                } else {
-                    ctx.beginPath()
-                    ctx.arc(x, y, w, 0, 2 * Math.PI)
-                    ctx.stroke()
-                }
-            }
-            // convert image to base64
-            const dataUrl = canvas.toDataURL("image/jpeg")
-            const base64 = dataUrl.split(",")[1]
-            setInput({
-                ...input,
-                encoded_image: base64
-            })
-        }
-    }
-
     useEffect(() => {
 
         const loadParent = async (parentId: string) => {
@@ -173,6 +131,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                 zoom_scale: image.data.zoom_scale || 0.99,
                 zoom_shift_x: image.data.zoom_shift_x || 0,
                 zoom_shift_y: image.data.zoom_shift_y || 0,
+                model: image.data.model || "vqgan_imagenet_f16_16384",
             }))
         }
 
@@ -243,13 +202,13 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             <input className="form-control" type="number" max={10} min={1} value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
                         </div>
                         {/* model dropdown (faces or unset) */}
-                        {/* <div className="form-group">
+                        <div className="form-group">
                             <label>Model</label>
                             <select className="form-control" value={input.model} onChange={(e) => setInput({ ...input, model: e.target.value })}>
-                                <option value={undefined}>ImageNet</option>
-                                <option value="faces">FacesHQ</option>
+                                <option value="vqgan_imagenet_f16_16384">VQGAN ImageNet</option>
+                                <option value="glid_3_xl">Glid-3 XL</option>
                             </select>
-                        </div> */}
+                        </div>
                         {/* boolean enable_video (bootstrap styled checkbox) */}
                         <div className="form-group">
                             <label style={{ marginRight: "10px" }}>Enable video</label>
