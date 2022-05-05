@@ -109,6 +109,9 @@ def process_image():
         # args.vqgan_config = "checkpoints/WikiArt_augmented_Steps_7mil_finetuned_1mil.yaml"
         # args.vqgan_checkpoint = "checkpoints/imagenet_16384_slim.ckpt"
 
+        # Testing out LARGE images
+        # args.size = [900,900]
+
         # run vqgan
         run(args)
         if image.enable_video:

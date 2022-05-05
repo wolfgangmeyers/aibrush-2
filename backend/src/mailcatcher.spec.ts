@@ -17,7 +17,7 @@ async function sendMail(to: string, subject: string, text: string) {
     await transporter.sendMail(mailOptions)
 }
 
-describe("Mailcatcher", () => {
+describe.skip("Mailcatcher", () => {
 
     var mailcatcher: Mailcatcher;
 

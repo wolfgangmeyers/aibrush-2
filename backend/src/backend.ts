@@ -79,9 +79,11 @@ export class BackendService {
             const client = new Client({
                 connectionString: this.config.databaseUrl,
                 ssl: this.config.databaseSsl && { rejectUnauthorized: false },
+                keepAlive: false,
             })
             await client.connect()
             await migrate({ client }, "./src/migrations")
+            await client.end()
             await sleep(100)
         } catch (error) {
             console.error(error)
@@ -836,12 +838,12 @@ export class BackendService {
         return this.config.userWhitelist.includes(email.toLowerCase())
     }
 
-    async login(email: string): Promise<void> {
+    async login(email: string, sendEmail=true): Promise<string> {
         if (!this.isUserAllowed(email)) {
             throw new Error("User not allowed")
         }
         // generate crypto random 6 digit code
-        const code = uuid.v4().substr(0, 6).toUpperCase()
+        const code = uuid.v4().substring(0, 6).toUpperCase()
         // calculate expiration based on config.loginCodeExpirationSeconds
         const expiresAt = moment().add(this.config.loginCodeExpirationSeconds, "seconds")
         // insert login_code
@@ -851,14 +853,17 @@ export class BackendService {
                 `INSERT INTO login_codes (code, user_email, expires_at) VALUES ($1, $2, $3)`,
                 [code, email, expiresAt.toDate()]
             )
-            // send email with code
-            const message: EmailMessage = {
-                from: this.config.smtpFrom,
-                to: email,
-                subject: "Login code",
-                text: `Your login code is ${code}`
+            if (sendEmail) {
+                // send email with code
+                const message: EmailMessage = {
+                    from: this.config.smtpFrom,
+                    to: email,
+                    subject: "Login code",
+                    text: `Your login code is ${code}`
+                }
+                await this.sendMail(message)
             }
-            await this.sendMail(message)
+            return code
         } finally {
             client.release()
         }

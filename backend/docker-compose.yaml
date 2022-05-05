@@ -10,17 +10,17 @@ services:
         volumes:
             - pg-data:/var/lib/postgresql
     # mailcatcher
-    mailcatcher:
-        image: schickling/mailcatcher
-        ports:
-            - "1080:1080"
-            - "1025:1025"
-        environment:
-            MAILCATCHER_SMTP_PORT: 1025
-            MAILCATCHER_SMTP_AUTHENTICATION: "off"
-            MAILCATCHER_START_SCRIPT: "true"
-        volumes:
-            - mail-data:/var/mail
+    # mailcatcher:
+    #     image: schickling/mailcatcher
+    #     ports:
+    #         - "1080:1080"
+    #         - "1025:1025"
+    #     environment:
+    #         MAILCATCHER_SMTP_PORT: 1025
+    #         MAILCATCHER_SMTP_AUTHENTICATION: "off"
+    #         MAILCATCHER_START_SCRIPT: "true"
+    #     volumes:
+    #         - mail-data:/var/mail
 volumes:
     pg-data: {}
-    mail-data: {}
+    # mail-data: {}

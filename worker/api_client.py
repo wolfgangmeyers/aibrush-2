@@ -26,7 +26,7 @@ class AIBrushAPI(object):
                 return requests.request(method, url, json=body, headers={
                     "Content-Type": content_type,
                     "Authorization": f"Bearer {self.token}",
-                }, timeout=10)
+                }, timeout=30)
             except Exception as err:
                 print(f"Error making request: {err}")
                 time.sleep(backoff)
