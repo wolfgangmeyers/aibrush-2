@@ -41,20 +41,28 @@ export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, assetsUrl, image, onCl
                 <div className="row">
                     <div className="col-lg-12">
                         <p>Status: {image.status}</p>
+                        <p>Size: {image.size}</p>
                         <p>Iterations: {image.iterations}</p>
                         <p>Phrases: {image.phrases.join(", ")}</p>
+                        <p>Model: {image.model}</p>
                         {/* enable_video */}
-                        <p>Enable Video: {image.enable_video ? "Yes" : "No"}</p>
+                        {image.model == "vqgan_imagenet_f16_16384" && <p>Enable Video: {image.enable_video ? "Yes" : "No"}</p>}
                         {/* enable_zoom */}
-                        {image.enable_video && <p>Enable Zoom: {image.enable_zoom ? "Yes" : "No"}</p>}
+                        {image.model == "vqgan_imagenet_f16_16384" && image.enable_video && <p>Enable Zoom: {image.enable_zoom ? "Yes" : "No"}</p>}
                         {/* zoom_frequency */}
-                        {image.enable_zoom && image.enable_zoom && <p>Zoom Frequency: {image.zoom_frequency}</p>}
+                        {image.model == "vqgan_imagenet_f16_16384" && image.enable_zoom && <p>Zoom Frequency: {image.zoom_frequency}</p>}
                         {/* zoom_scale */}
-                        {image.enable_zoom && image.enable_zoom && <p>Zoom Scale: {image.zoom_scale}</p>}
+                        {image.model == "vqgan_imagenet_f16_16384" && image.enable_zoom && <p>Zoom Scale: {image.zoom_scale}</p>}
                         {/* zoom_shift_x */}
-                        {image.enable_zoom && image.enable_zoom && <p>Zoom Shift X: {image.zoom_shift_x}</p>}
+                        {image.model == "vqgan_imagenet_f16_16384" && image.enable_zoom  && <p>Zoom Shift X: {image.zoom_shift_x}</p>}
                         {/* zoom_shift_y */}
-                        {image.enable_zoom && image.enable_zoom && <p>Zoom Shift Y: {image.zoom_shift_y}</p>}
+                        {image.model == "vqgan_imagenet_f16_16384" && image.enable_zoom && <p>Zoom Shift Y: {image.zoom_shift_y}</p>}
+                        {/* glid_3_xl_skip_iterations */}
+                        {image.model == "glid_3_xl" &&<p>Skip Iterations: {image.glid_3_xl_skip_iterations}</p>}
+                        {/* glid_3_xl_clip_guidance */}
+                        {image.model == "glid_3_xl" &&<p>Clip Guidance: {image.glid_3_xl_clip_guidance ? "Yes" : "No"}</p>}
+                        {/* glid_3_xl_clip_guidance_scale */}
+                        {image.model == "glid_3_xl" &&<p>Clip Guidance Scale: {image.glid_3_xl_clip_guidance_scale}</p>}
                     </div>
                 </div>
                 {/* controls */}

@@ -79,9 +79,11 @@ export class BackendService {
             const client = new Client({
                 connectionString: this.config.databaseUrl,
                 ssl: this.config.databaseSsl && { rejectUnauthorized: false },
+                keepAlive: false,
             })
             await client.connect()
             await migrate({ client }, "./src/migrations")
+            await client.end()
             await sleep(100)
         } catch (error) {
             console.error(error)
@@ -232,11 +234,11 @@ export class BackendService {
         try {
             const result = await client.query(
                 `INSERT INTO images
-                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status, enable_video, enable_zoom, zoom_frequency, zoom_scale, zoom_shift_x, zoom_shift_y, model)
+                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status, enable_video, enable_zoom, zoom_frequency, zoom_scale, zoom_shift_x, zoom_shift_y, model, glid_3_xl_skip_iterations, glid_3_xl_clip_guidance, glid_3_xl_clip_guidance_scale, size)
                 VALUES
-                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
                 RETURNING *`,
-                [uuid.v4(), createdBy, new Date().getTime(), new Date().getTime(), body.label, body.parent, body.phrases, body.iterations, 0, 0, "pending", !!body.enable_video, !!body.enable_zoom, body.zoom_frequency || 10, body.zoom_scale || 0.99, body.zoom_shift_x || 0, body.zoom_shift_y || 0, body.model]
+                [uuid.v4(), createdBy, new Date().getTime(), new Date().getTime(), body.label, body.parent, body.phrases, body.iterations, 0, 0, "pending", !!body.enable_video, !!body.enable_zoom, body.zoom_frequency || 10, body.zoom_scale || 0.99, body.zoom_shift_x || 0, body.zoom_shift_y || 0, body.model || "vqgan_imagenet_f16_16384", body.glid_3_xl_skip_iterations || 0, body.glid_3_xl_clip_guidance || false, body.glid_3_xl_clip_guidance_scale || 150, body.size || 256]
             )
             const image = result.rows[0] as Image
             let encoded_image = body.encoded_image;
@@ -360,8 +362,8 @@ export class BackendService {
             const image = result.rows[0]
             // update image status to "processing"
             await client.query(
-                `UPDATE images SET status='processing' WHERE id=$1`,
-                [image.id]
+                `UPDATE images SET status='processing', updated_at=$2 WHERE id=$1`,
+                [image.id, new Date().getTime()]
             )
             // commit transaction
             await client.query("COMMIT")
@@ -384,7 +386,7 @@ export class BackendService {
         try {
             const result = await client.query(
                 `UPDATE images SET status='pending', updated_at=$2 WHERE status='processing' AND updated_at < $1`,
-                [new Date().getTime() - (5 * 60 * 1000), new Date().getTime()]
+                [new Date().getTime() - (60 * 60 * 1000), new Date().getTime()]
             )
             // if any images were updated, log the number
             if (result.rowCount > 0) {
@@ -836,12 +838,12 @@ export class BackendService {
         return this.config.userWhitelist.includes(email.toLowerCase())
     }
 
-    async login(email: string): Promise<void> {
+    async login(email: string, sendEmail=true): Promise<string> {
         if (!this.isUserAllowed(email)) {
             throw new Error("User not allowed")
         }
         // generate crypto random 6 digit code
-        const code = uuid.v4().substr(0, 6).toUpperCase()
+        const code = uuid.v4().substring(0, 6).toUpperCase()
         // calculate expiration based on config.loginCodeExpirationSeconds
         const expiresAt = moment().add(this.config.loginCodeExpirationSeconds, "seconds")
         // insert login_code
@@ -851,14 +853,17 @@ export class BackendService {
                 `INSERT INTO login_codes (code, user_email, expires_at) VALUES ($1, $2, $3)`,
                 [code, email, expiresAt.toDate()]
             )
-            // send email with code
-            const message: EmailMessage = {
-                from: this.config.smtpFrom,
-                to: email,
-                subject: "Login code",
-                text: `Your login code is ${code}`
+            if (sendEmail) {
+                // send email with code
+                const message: EmailMessage = {
+                    from: this.config.smtpFrom,
+                    to: email,
+                    subject: "Login code",
+                    text: `Your login code is ${code}`
+                }
+                await this.sendMail(message)
             }
-            await this.sendMail(message)
+            return code
         } finally {
             client.release()
         }

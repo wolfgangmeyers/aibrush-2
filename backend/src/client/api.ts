@@ -112,7 +112,43 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     model?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    glid_3_xl_skip_iterations?: number;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof CreateImageInput
+     */
+    glid_3_xl_clip_guidance?: boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    glid_3_xl_clip_guidance_scale?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    size?: CreateImageInputSizeEnum;
 }
+
+/**
+    * @export
+    * @enum {string}
+    */
+export enum CreateImageInputSizeEnum {
+    NUMBER_128 = 128,
+    NUMBER_256 = 256,
+    NUMBER_384 = 384,
+    NUMBER_512 = 512
+}
+
 /**
  * 
  * @export
@@ -298,6 +334,30 @@ export interface Image {
      * @memberof Image
      */
     model: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    glid_3_xl_skip_iterations?: number;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Image
+     */
+    glid_3_xl_clip_guidance?: boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    glid_3_xl_clip_guidance_scale?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    size: ImageSizeEnum;
 }
 
 /**
@@ -308,7 +368,18 @@ export enum ImageStatusEnum {
     Pending = 'pending',
     Processing = 'processing',
     Completed = 'completed',
-    Saved = 'saved'
+    Saved = 'saved',
+    Error = 'error'
+}
+/**
+    * @export
+    * @enum {string}
+    */
+export enum ImageSizeEnum {
+    NUMBER_128 = 128,
+    NUMBER_256 = 256,
+    NUMBER_384 = 384,
+    NUMBER_512 = 512
 }
 
 /**

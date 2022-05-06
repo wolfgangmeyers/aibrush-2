@@ -640,6 +640,16 @@ components:
           type: number
         model:
           type: string
+        # glid-3 xl specific options
+        glid_3_xl_skip_iterations:
+          type: number
+        glid_3_xl_clip_guidance:
+          type: boolean
+        glid_3_xl_clip_guidance_scale:
+          type: number
+        size:
+          type: integer
+          enum: [128, 256, 384, 512]
 
     UpdateImageInput:
       type: object
@@ -684,7 +694,7 @@ components:
           type: integer
         status:
           type: string
-          enum: [pending, processing, completed, saved]
+          enum: [pending, processing, completed, saved, error]
         enable_video:
           type: boolean
         enable_zoom:
@@ -699,6 +709,16 @@ components:
           type: number
         model:
           type: string
+        # glid-3 xl specific options
+        glid_3_xl_skip_iterations:
+          type: number
+        glid_3_xl_clip_guidance:
+          type: boolean
+        glid_3_xl_clip_guidance_scale:
+          type: number
+        size:
+          type: integer
+          enum: [128, 256, 384, 512]
       required:
         - id
         - created_at
@@ -713,6 +733,7 @@ components:
         - status
         - enable_video
         - model
+        - size
     ImageList:
       properties:
         images:

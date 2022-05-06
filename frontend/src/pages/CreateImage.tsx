@@ -1,6 +1,6 @@
 import React, { FC, useState, useEffect } from 'react';
 import { useHistory } from "react-router-dom"
-import { AIBrushApi, CreateImageInput } from "../client/api"
+import { AIBrushApi, CreateImageInput, CreateImageInputSizeEnum } from "../client/api"
 import loadImage from "blueimp-load-image"
 import qs from "qs";
 import { ImageEditor } from "../components/ImageEditor";
@@ -25,7 +25,11 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         zoom_scale: 0.99,
         zoom_shift_x: 0,
         zoom_shift_y: 0,
-        model: undefined,
+        model: "vqgan_imagenet_f16_16384",
+        glid_3_xl_clip_guidance: false,
+        glid_3_xl_clip_guidance_scale: 150,
+        glid_3_xl_skip_iterations: 0,
+        size: 256,
     });
     const [editingImage, setEditingImage] = useState<string | null>(null);
     const [count, setCount] = useState(1)
@@ -107,46 +111,14 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         setEditingImage(null)
     }
 
-    const onRandomizeImage = () => {
-        // create a new canvas
-        const canvas = document.createElement("canvas")
-        canvas.width = 512
-        canvas.height = 512
-        const ctx = canvas.getContext("2d")
-        if (ctx) {
-            ctx.fillStyle = "white"
-            ctx.fillRect(0, 0, 512, 512)
-            // draw random circles and rectangles
-            for (let i = 0; i < 2048; i++) {
-                const x = Math.random() * 512
-                const y = Math.random() * 512
-                const w = Math.random() * 20
-                const h = Math.random() * 20
-                // random fillStyle and strokeStyle
-                ctx.fillStyle = `rgb(${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)})`
-                ctx.strokeStyle = `rgb(${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)},${Math.floor(Math.random() * 256)})`
-                // random shape
-                const shape = Math.floor(Math.random() * 3)
-                if (shape === 0) {
-                    ctx.fillRect(x, y, w, h)
-                } else if (shape === 1) {
-                    ctx.beginPath()
-                    ctx.arc(x, y, w, 0, 2 * Math.PI)
-                    ctx.fill()
-                } else {
-                    ctx.beginPath()
-                    ctx.arc(x, y, w, 0, 2 * Math.PI)
-                    ctx.stroke()
-                }
-            }
-            // convert image to base64
-            const dataUrl = canvas.toDataURL("image/jpeg")
-            const base64 = dataUrl.split(",")[1]
-            setInput({
-                ...input,
-                encoded_image: base64
-            })
+    const onChangeModel = (model: string) => {
+        let newInput = { ...input, model }
+        if (model === "vqgan_imagenet_f16_16384") {
+            newInput.iterations = 300;
+        } else if (model == "glid_3_xl") {
+            newInput.iterations = 50;
         }
+        setInput({ ...input, model: model })
     }
 
     useEffect(() => {
@@ -173,6 +145,11 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                 zoom_scale: image.data.zoom_scale || 0.99,
                 zoom_shift_x: image.data.zoom_shift_x || 0,
                 zoom_shift_y: image.data.zoom_shift_y || 0,
+                model: image.data.model || "vqgan_imagenet_f16_16384",
+                glid_3_xl_clip_guidance: !!image.data.glid_3_xl_clip_guidance,
+                glid_3_xl_clip_guidance_scale: image.data.glid_3_xl_clip_guidance_scale || 150,
+                glid_3_xl_skip_iterations: image.data.glid_3_xl_skip_iterations || 0,
+                size: image.data.size as any as CreateImageInputSizeEnum || 256,
             }))
         }
 
@@ -233,6 +210,20 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                 onChange={(e) => setInput({ ...input, label: e.target.value })}
                                 placeholder="Label" />
                         </div>
+                        {/* size - dropdown with 128, 256, 384 and 512 */}
+                        <div className="form-group">
+                            <label>Size</label>
+                            <select
+                                className="form-control"
+                                value={input.size}
+                                onChange={(e) => setInput({ ...input, size: parseInt(e.target.value) })}
+                            >
+                                <option value="128">128x128</option>
+                                <option value="256">256x256</option>
+                                <option value="384">384x384</option>
+                                <option value="512">512x512</option>
+                            </select>
+                        </div>
                         <div className="form-group">
                             <label>Iterations</label>
                             <input min={1} max={10000} className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
@@ -242,23 +233,23 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             <label>Count</label>
                             <input className="form-control" type="number" max={10} min={1} value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
                         </div>
-                        {/* model dropdown (faces or unset) */}
-                        {/* <div className="form-group">
-                            <label>Model</label>
-                            <select className="form-control" value={input.model} onChange={(e) => setInput({ ...input, model: e.target.value })}>
-                                <option value={undefined}>ImageNet</option>
-                                <option value="faces">FacesHQ</option>
-                            </select>
-                        </div> */}
-                        {/* boolean enable_video (bootstrap styled checkbox) */}
+                        {/* model dropdown */}
                         <div className="form-group">
+                            <label>Model</label>
+                            <select className="form-control" value={input.model} onChange={(e) => onChangeModel(e.target.value)}>
+                                <option value="vqgan_imagenet_f16_16384">VQGAN ImageNet</option>
+                                <option value="glid_3_xl">Glid-3 XL</option>
+                            </select>
+                        </div>
+                        {/* boolean enable_video (bootstrap styled checkbox) */}
+                        {input.model == "vqgan_imagenet_f16_16384" && <div className="form-group">
                             <label style={{ marginRight: "10px" }}>Enable video</label>
                             <div className="form-check">
                                 <input className="form-check-input" type="checkbox" checked={input.enable_video} onChange={(e) => setInput({ ...input, enable_video: e.target.checked })} />
                             </div>
-                        </div>
+                        </div>}
                         {/* boolean enable_zoom (bootstrap styled checkbox) */}
-                        {input.enable_video && <div className="form-group">
+                        {input.model == "vqgan_imagenet_f16_16384" && input.enable_video && <div className="form-group">
                             <label style={{ marginRight: "10px" }}>Enable zoom</label>
                             <div className="form-check">
                                 <input className="form-check-input" type="checkbox" checked={input.enable_zoom} onChange={(e) => setInput({ ...input, enable_zoom: e.target.checked })} />
@@ -266,24 +257,44 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         </div>}
 
                         {/* if enable_zoom, show zoom_interval input */}
-                        {input.enable_zoom && <div className="form-group">
+                        {input.model == "vqgan_imagenet_f16_16384" && input.enable_zoom && <div className="form-group">
                             <label>Zoom interval</label>
                             <input min={1} max={100} className="form-control" type="number" value={input.zoom_frequency} onChange={(e) => setInput({ ...input, zoom_frequency: parseInt(e.target.value) })} />
                         </div>}
                         {/* if enable_zoom, show zoom_scale input */}
-                        {input.enable_zoom && <div className="form-group">
+                        {input.model == "vqgan_imagenet_f16_16384" && input.enable_zoom && <div className="form-group">
                             <label>Zoom scale</label>
                             <input min={0.1} max={10} step={0.01} className="form-control" type="number" value={input.zoom_scale} onChange={(e) => setInput({ ...input, zoom_scale: parseFloat(e.target.value) })} />
                         </div>}
                         {/* if enable_zoom, show zoom_shift_x input */}
-                        {input.enable_zoom && <div className="form-group">
+                        {input.model == "vqgan_imagenet_f16_16384" && input.enable_zoom && <div className="form-group">
                             <label>Zoom shift x</label>
                             <input min={-10} max={10} className="form-control" type="number" value={input.zoom_shift_x} onChange={(e) => setInput({ ...input, zoom_shift_x: parseInt(e.target.value) })} />
                         </div>}
                         {/* if enable_zoom, show zoom_shift_y input */}
-                        {input.enable_zoom && <div className="form-group">
+                        {input.model == "vqgan_imagenet_f16_16384" && input.enable_zoom && <div className="form-group">
                             <label>Zoom shift y</label>
                             <input min={-10} max={10} className="form-control" type="number" value={input.zoom_shift_y} onChange={(e) => setInput({ ...input, zoom_shift_y: parseInt(e.target.value) })} />
+                        </div>}
+
+                        {/* glid_3_xl_skip_iterations number input*/}
+                        {input.model == "glid_3_xl" && <div className="form-group">
+                            <label>Skip iterations</label>
+                            <input min={0} max={10000} className="form-control" type="number" value={input.glid_3_xl_skip_iterations} onChange={(e) => setInput({ ...input, glid_3_xl_skip_iterations: parseInt(e.target.value) })} />
+                        </div>}
+
+                        {/* glid_3_xl_clip_guidance checkbox */}
+                        {input.model == "glid_3_xl" && <div className="form-group">
+                            <label style={{ marginRight: "10px" }}>Clip guidance</label>
+                            <div className="form-check">
+                                <input className="form-check-input" type="checkbox" checked={input.glid_3_xl_clip_guidance} onChange={(e) => setInput({ ...input, glid_3_xl_clip_guidance: e.target.checked })} />
+                            </div>
+                        </div>}
+
+                        {/* glid_3_xl_clip_guidance_scale number input */}
+                        {input.model == "glid_3_xl" && input.glid_3_xl_clip_guidance && <div className="form-group">
+                            <label>Clip guidance scale</label>
+                            <input min={10} max={2000} step={1} className="form-control" type="number" value={input.glid_3_xl_clip_guidance_scale} onChange={(e) => setInput({ ...input, glid_3_xl_clip_guidance_scale: parseFloat(e.target.value) })} />
                         </div>}
 
                         {/* If encoded_image (base64 only) is set, show the image using a base64 image url*/}
