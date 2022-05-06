@@ -6,3 +6,6 @@ checkpoints
 credentials.json
 *.jpg
 __pycache__
+glid-3-xl
+output*
+*.pt

@@ -65,8 +65,9 @@ class AIBrushAPI(object):
         body = {
             "current_iterations": current_iterations,
             "status": status,
-            "encoded_image": encoded_image,
         }
+        if encoded_image:
+            body["encoded_image"] = encoded_image
         resp = self.http_request(f"/images/{image_id}", "PATCH", body)
         return self.parse_json(resp.text)
 

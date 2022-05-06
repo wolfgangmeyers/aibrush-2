@@ -271,7 +271,7 @@ describe("server", () => {
                 image = response.data
             })
 
-            it.only("should return the image", () => {
+            it("should return the image", () => {
                 expect(image.id).toBeDefined()
                 expect(image.phrases).toEqual(["test"])
                 expect(image.label).toBe("test")
@@ -280,6 +280,9 @@ describe("server", () => {
                 expect(image.enable_video).toBe(false)
                 expect(image.enable_zoom).toBe(false)
                 expect(image.model).toBe("vqgan_imagenet_f16_16384")
+                expect(image.glid_3_xl_skip_iterations).toBe(0)
+                expect(image.glid_3_xl_clip_guidance).toBe(false)
+                expect(image.glid_3_xl_clip_guidance_scale).toBe(150)
             })
 
             describe("when listing images", () => {
@@ -988,6 +991,31 @@ describe("server", () => {
                 const thumbnailData = thumbnailDataResponse.data
                 expect(thumbnailData).toBeDefined()
                 expect(thumbnailData.length).toBeLessThan(imageData.length)
+            })
+        })
+
+        describe.only("when creating an image with non-default glid-3 xl options", () => {
+            let image: Image;
+
+            beforeEach(async () => {
+                const response = await client.createImage({
+                    phrases: ["test"],
+                    label: "test",
+                    iterations: 2,
+                    parent: "",
+                    model: "glid_3_xl",
+                    glid_3_xl_clip_guidance: true,
+                    glid_3_xl_clip_guidance_scale: 300,
+                    glid_3_xl_skip_iterations: 1
+                })
+                image = response.data
+            })
+
+            it("should return the image", () => {
+                expect(image.model).toBe("glid_3_xl")
+                expect(image.glid_3_xl_clip_guidance).toBe(true)
+                expect(image.glid_3_xl_clip_guidance_scale).toBe(300)
+                expect(image.glid_3_xl_skip_iterations).toBe(1)
             })
         })
 

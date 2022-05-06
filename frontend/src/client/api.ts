@@ -112,6 +112,24 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     model?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    glid_3_xl_skip_iterations?: number;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof CreateImageInput
+     */
+    glid_3_xl_clip_guidance?: boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    glid_3_xl_clip_guidance_scale?: number;
 }
 /**
  * 
@@ -298,6 +316,24 @@ export interface Image {
      * @memberof Image
      */
     model: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    glid_3_xl_skip_iterations?: number;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Image
+     */
+    glid_3_xl_clip_guidance?: boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    glid_3_xl_clip_guidance_scale?: number;
 }
 
 /**
@@ -308,7 +344,8 @@ export enum ImageStatusEnum {
     Pending = 'pending',
     Processing = 'processing',
     Completed = 'completed',
-    Saved = 'saved'
+    Saved = 'saved',
+    Error = 'error'
 }
 
 /**
