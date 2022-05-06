@@ -265,6 +265,7 @@ describe("server", () => {
                 const response = await client.createImage({
                     phrases: ["test"],
                     label: "test",
+                    size: 512,
                     iterations: 1,
                     parent: "",
                 })
@@ -476,6 +477,7 @@ describe("server", () => {
                             parent: image.id,
                             phrases: ["test2"],
                             label: "test2",
+                            size: 512,
                             iterations: 1,
                         })
                         childImage = response.data
@@ -717,6 +719,7 @@ describe("server", () => {
                     enable_video: true,
                     phrases: ["test"],
                     label: "test",
+                    size: 512,
                     iterations: 1,
                 })
                 image = response.data
@@ -803,6 +806,7 @@ describe("server", () => {
                     enable_video: true,
                     phrases: ["test"],
                     label: "test",
+                    size: 512,
                     iterations: 1,
                     enable_zoom: true,
                 })
@@ -910,6 +914,7 @@ describe("server", () => {
                     enable_video: true,
                     phrases: ["test"],
                     label: "test",
+                    size: 512,
                     iterations: 1,
                     enable_zoom: true,
                     zoom_frequency: 20,
@@ -976,6 +981,7 @@ describe("server", () => {
                     encoded_image: base64Image,
                     phrases: ["test"],
                     label: "test",
+                    size: 512,
                     iterations: 1
                 })
                 image = response.data
@@ -994,13 +1000,14 @@ describe("server", () => {
             })
         })
 
-        describe.only("when creating an image with non-default glid-3 xl options", () => {
+        describe("when creating an image with non-default glid-3 xl options", () => {
             let image: Image;
 
             beforeEach(async () => {
                 const response = await client.createImage({
                     phrases: ["test"],
                     label: "test",
+                    size: 256,
                     iterations: 2,
                     parent: "",
                     model: "glid_3_xl",
@@ -1048,6 +1055,7 @@ describe("server", () => {
                     const resp = await client.createImage({
                         phrases: ["test"],
                         label: "test",
+                        size: 512,
                         iterations: 1
                     })
                     images.push(resp.data)
@@ -1577,6 +1585,7 @@ describe("server", () => {
                     createResponse = await client.createImage({
                         phrases: ["test"],
                         label: "test",
+                        size: 512,
                         iterations: 1,
                         parent: "",
                     })
@@ -1604,6 +1613,7 @@ describe("server", () => {
                     createResponse = await client.createImage({
                         phrases: ["test"],
                         label: "test",
+                        size: 512,
                         iterations: 1,
                         parent: "",
                     })
@@ -1640,6 +1650,7 @@ describe("server", () => {
                     createResponse = await client.createImage({
                         phrases: ["test"],
                         label: "test",
+                        size: 512,
                         iterations: 1,
                         parent: "",
                     })
@@ -1667,6 +1678,7 @@ describe("server", () => {
                     createResponse = await client.createImage({
                         phrases: ["test"],
                         label: "test",
+                        size: 512,
                         iterations: 1,
                         parent: "",
                     })
@@ -1700,6 +1712,7 @@ describe("server", () => {
                 createImageResponse = await client.createImage({
                     phrases: ["test"],
                     label: "test",
+                    size: 512,
                     iterations: 1,
                     parent: "",
                 })

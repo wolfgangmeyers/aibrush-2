@@ -130,7 +130,25 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     glid_3_xl_clip_guidance_scale?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    size?: CreateImageInputSizeEnum;
 }
+
+/**
+    * @export
+    * @enum {string}
+    */
+export enum CreateImageInputSizeEnum {
+    NUMBER_128 = 128,
+    NUMBER_256 = 256,
+    NUMBER_384 = 384,
+    NUMBER_512 = 512
+}
+
 /**
  * 
  * @export
@@ -334,6 +352,12 @@ export interface Image {
      * @memberof Image
      */
     glid_3_xl_clip_guidance_scale?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    size: ImageSizeEnum;
 }
 
 /**
@@ -346,6 +370,16 @@ export enum ImageStatusEnum {
     Completed = 'completed',
     Saved = 'saved',
     Error = 'error'
+}
+/**
+    * @export
+    * @enum {string}
+    */
+export enum ImageSizeEnum {
+    NUMBER_128 = 128,
+    NUMBER_256 = 256,
+    NUMBER_384 = 384,
+    NUMBER_512 = 512
 }
 
 /**

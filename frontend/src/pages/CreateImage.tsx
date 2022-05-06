@@ -1,6 +1,6 @@
 import React, { FC, useState, useEffect } from 'react';
 import { useHistory } from "react-router-dom"
-import { AIBrushApi, CreateImageInput } from "../client/api"
+import { AIBrushApi, CreateImageInput, CreateImageInputSizeEnum } from "../client/api"
 import loadImage from "blueimp-load-image"
 import qs from "qs";
 import { ImageEditor } from "../components/ImageEditor";
@@ -29,6 +29,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         glid_3_xl_clip_guidance: false,
         glid_3_xl_clip_guidance_scale: 150,
         glid_3_xl_skip_iterations: 0,
+        size: 256,
     });
     const [editingImage, setEditingImage] = useState<string | null>(null);
     const [count, setCount] = useState(1)
@@ -110,6 +111,16 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         setEditingImage(null)
     }
 
+    const onChangeModel = (model: string) => {
+        let newInput = { ...input, model }
+        if (model === "vqgan_imagenet_f16_16384") {
+            newInput.iterations = 300;
+        } else if (model == "glid_3_xl") {
+            newInput.iterations = 50;
+        }
+        setInput({ ...input, model: model })
+    }
+
     useEffect(() => {
 
         const loadParent = async (parentId: string) => {
@@ -135,6 +146,10 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                 zoom_shift_x: image.data.zoom_shift_x || 0,
                 zoom_shift_y: image.data.zoom_shift_y || 0,
                 model: image.data.model || "vqgan_imagenet_f16_16384",
+                glid_3_xl_clip_guidance: !!image.data.glid_3_xl_clip_guidance,
+                glid_3_xl_clip_guidance_scale: image.data.glid_3_xl_clip_guidance_scale || 150,
+                glid_3_xl_skip_iterations: image.data.glid_3_xl_skip_iterations || 0,
+                size: image.data.size as any as CreateImageInputSizeEnum || 256,
             }))
         }
 
@@ -195,6 +210,20 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                 onChange={(e) => setInput({ ...input, label: e.target.value })}
                                 placeholder="Label" />
                         </div>
+                        {/* size - dropdown with 128, 256, 384 and 512 */}
+                        <div className="form-group">
+                            <label>Size</label>
+                            <select
+                                className="form-control"
+                                value={input.size}
+                                onChange={(e) => setInput({ ...input, size: parseInt(e.target.value) })}
+                            >
+                                <option value="128">128x128</option>
+                                <option value="256">256x256</option>
+                                <option value="384">384x384</option>
+                                <option value="512">512x512</option>
+                            </select>
+                        </div>
                         <div className="form-group">
                             <label>Iterations</label>
                             <input min={1} max={10000} className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
@@ -207,7 +236,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         {/* model dropdown */}
                         <div className="form-group">
                             <label>Model</label>
-                            <select className="form-control" value={input.model} onChange={(e) => setInput({ ...input, model: e.target.value })}>
+                            <select className="form-control" value={input.model} onChange={(e) => onChangeModel(e.target.value)}>
                                 <option value="vqgan_imagenet_f16_16384">VQGAN ImageNet</option>
                                 <option value="glid_3_xl">Glid-3 XL</option>
                             </select>

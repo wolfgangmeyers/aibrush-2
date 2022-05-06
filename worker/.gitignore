@@ -9,3 +9,4 @@ __pycache__
 glid-3-xl
 output*
 *.pt
+latent-diffusion

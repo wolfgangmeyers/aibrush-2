@@ -41,6 +41,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, assetsUrl, image, onCl
                 <div className="row">
                     <div className="col-lg-12">
                         <p>Status: {image.status}</p>
+                        <p>Size: {image.size}</p>
                         <p>Iterations: {image.iterations}</p>
                         <p>Phrases: {image.phrases.join(", ")}</p>
                         <p>Model: {image.model}</p>

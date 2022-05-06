@@ -8,8 +8,6 @@ https://colab.research.google.com/drive/1cW3vVjdeI19o7a9miMu47J5EDyHfZT20#scroll
 These instructions are for how to get a worker node running on a local machine or VM with an Nvidia GPU.
 At least 12GB of VRAM is needed to run the images worker, but 16GB is recommended (needed for zoom functionality)
 
-Note: Much of this setup is for (https://github.com/nerdyrodent/VQGAN-CLIP)[VQGAN-CLIP]
-
 Create a new virtual Python environment for VQGAN-CLIP:
 
 ```sh
@@ -22,13 +20,22 @@ conda activate vqgan
 Note: This installs the CUDA version of Pytorch, if you want to use an AMD graphics card, read the [AMD section below](#using-an-amd-graphics-card).
 
 ```sh
-pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
+pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html cython
+```
+
+### Install Glid-3 XL dependencies
+
+```sh
+pip install dalle_pytorch albumentations opencv-python imageio imageio-ffmpeg pytorch-lightning omegaconf test-tube streamlit einops torch-fidelity transformers 
+
+pip install -e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers
+pip install -e git+https://github.com/openai/CLIP.git@main#egg=clip
 ```
 
 ### Install other required Python packages:
 
 ```sh
-pip install ftfy regex tqdm omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests
+pip install ftfy regex tqdm omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests 
 ```
 
 ### Clone additional dependencies
@@ -37,6 +44,9 @@ pip install ftfy regex tqdm omegaconf pytorch-lightning IPython kornia imageio i
 git clone 'https://github.com/wolfgangmeyers/VQGAN-CLIP' vqgan_clip
 git clone 'https://github.com/openai/CLIP'
 git clone 'https://github.com/CompVis/taming-transformers'
+git clone 'https://github.com/CompVis/latent-diffusion.git'
+
+pip install -e ./latent-diffusion
 ```
 
 ### Download pre-trained models

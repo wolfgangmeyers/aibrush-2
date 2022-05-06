@@ -647,6 +647,9 @@ components:
           type: boolean
         glid_3_xl_clip_guidance_scale:
           type: number
+        size:
+          type: integer
+          enum: [128, 256, 384, 512]
 
     UpdateImageInput:
       type: object
@@ -713,6 +716,9 @@ components:
           type: boolean
         glid_3_xl_clip_guidance_scale:
           type: number
+        size:
+          type: integer
+          enum: [128, 256, 384, 512]
       required:
         - id
         - created_at
@@ -727,6 +733,7 @@ components:
         - status
         - enable_video
         - model
+        - size
     ImageList:
       properties:
         images:
