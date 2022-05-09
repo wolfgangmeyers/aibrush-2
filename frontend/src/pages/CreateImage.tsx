@@ -117,8 +117,9 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
             newInput.iterations = 300;
         } else if (model == "glid_3_xl") {
             newInput.iterations = 50;
+            newInput.enable_video = false;
         }
-        setInput({ ...input, model: model })
+        setInput({ ...newInput, model: model })
     }
 
     useEffect(() => {
