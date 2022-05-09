@@ -73,7 +73,7 @@ def _vqgan_args(image_data, image):
     if args.max_iterations < args.display_freq:
         args.display_freq = args.max_iterations
     # args.on_save_callback = lambda i: update_image(i, "processing")
-    args.size = image.size
+    args.size = [image.size, image.size]
 
     # total laziness, I didn't want to refactor this after switching to invoking over cli.
     arg_mapping = {
@@ -106,7 +106,10 @@ def _to_args_list(args: SimpleNamespace, arg_mapping=None):
                 key = arg_mapping[k]
             if v != False:
                 args_list.append("--{}".format(key))
-                if v is not True and v is not False:
+                # if v is a list, join with space
+                if isinstance(v, list):
+                    args_list.extend([str(item) for item in v])
+                elif v is not True and v is not False:
                     args_list.append(str(v))
     return args_list
 
@@ -200,7 +203,8 @@ def process_image():
         result = subprocess.run(["python", cmd] + args_list)
         if result.returncode != 0:
             raise Exception("Error running generator")
-        if image.enable_video:
+        #  only update video if vqgan
+        if image.model == "vqgan_imagenet_f16_16384" and image.enable_video:
             update_video_data()
         update_image(image.iterations, "completed")
         return True
