@@ -133,17 +133,18 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
             console.log("renderInitImage")
             const ctx = canvasRef.current.getContext("2d")
             if (ctx) {
+                const size = input.size as number;
                 const image = new Image()
                 image.src = `data:image/jpeg;base64,${encoded_image}`
                 image.onload = () => {
                     ctx.globalAlpha = 1
-                    ctx.drawImage(image, 0, 0, 512, 512)
+                    ctx.drawImage(image, 0, 0, size, size)
                     if (encoded_mask) {
                         const mask = new Image()
                         mask.src = `data:image/jpeg;base64,${encoded_mask}`
                         mask.onload = () => {
                             ctx.globalAlpha = 0.5
-                            ctx.drawImage(mask, 0, 0, 512, 512)
+                            ctx.drawImage(mask, 0, 0, size, size)
                         }
                     }
                 }
