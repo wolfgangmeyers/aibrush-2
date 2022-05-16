@@ -113,7 +113,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         }))
         seteditingMask(null)
         if (input.encoded_image) {
-            renderInitImage(input.encoded_image, base64)
+            renderInitImage(input.encoded_image, base64, input.size || 256)
         }
     }
 
@@ -128,7 +128,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         setInput({ ...newInput, model: model })
     }
 
-    const renderInitImage = (encoded_image: string, encoded_mask: string) => {
+    const renderInitImage = (encoded_image: string, encoded_mask: string, size: number) => {
         if (canvasRef.current && encoded_image) {
             console.log("renderInitImage")
             const ctx = canvasRef.current.getContext("2d")
@@ -206,7 +206,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                 glid_3_xl_skip_iterations: image.data.glid_3_xl_skip_iterations || 0,
                 size: image.data.size as any as CreateImageInputSizeEnum || 256,
             }))
-            renderInitImage(base64ImageData, base64NpyData)
+            renderInitImage(base64ImageData, base64NpyData, image.data.size as any as CreateImageInputSizeEnum || 256)
         }
 
         if (searchParams.parent) {
