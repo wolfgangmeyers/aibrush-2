@@ -3,7 +3,11 @@ A second iteration on the AI brush system, using VQGAN+CLIP to generate images
 
 The goal of the project is to provide a unique user experience for creating artwork by leveraging the power of state-of-the art AI-based image generation.
 
-This system provides an advanced interface to the (https://github.com/nerdyrodent/VQGAN-CLIP)[VQGAN+CLIP] tool.
+This system provides an advanced interface a select set of open-source image generation models.
+
+Supported models:
+- [VQGAN+CLIP](https://github.com/nerdyrodent/VQGAN-CLIP)
+- [Glid-3 XL](https://github.com/Jack000/glid-3-xl)
 
 ## Gallery
 
