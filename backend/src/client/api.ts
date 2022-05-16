@@ -72,6 +72,18 @@ export interface CreateImageInput {
     encoded_image?: string;
     /**
      * 
+     * @type {string}
+     * @memberof CreateImageInput
+     */
+    encoded_mask?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateImageInput
+     */
+    encoded_npy?: string;
+    /**
+     * 
      * @type {boolean}
      * @memberof CreateImageInput
      */
@@ -692,6 +704,12 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     encoded_image?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateImageInput
+     */
+    encoded_npy?: string;
 }
 
 /**
@@ -1144,6 +1162,72 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getImageData', 'id', id)
             const localVarPath = `/api/images/{id}.image.jpg`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get the binary mask data
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getMaskData: async (id: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getMaskData', 'id', id)
+            const localVarPath = `/api/images/{id}.mask.jpg`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get the binary image data
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getNpyData: async (id: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getNpyData', 'id', id)
+            const localVarPath = `/api/images/{id}.npy`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2001,6 +2085,26 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Get the binary mask data
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getMaskData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getMaskData(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get the binary image data
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getNpyData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getNpyData(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Get a suggestion seed by id
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2328,6 +2432,24 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         getImageData(id: string, options?: any): AxiosPromise<any> {
             return localVarFp.getImageData(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get the binary mask data
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getMaskData(id: string, options?: any): AxiosPromise<any> {
+            return localVarFp.getMaskData(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get the binary image data
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getNpyData(id: string, options?: any): AxiosPromise<any> {
+            return localVarFp.getNpyData(id, options).then((request) => request(axios, basePath));
         },
         /**
          * Get a suggestion seed by id
@@ -2659,6 +2781,28 @@ export class AIBrushApi extends BaseAPI {
      */
     public getImageData(id: string, options?: any) {
         return AIBrushApiFp(this.configuration).getImageData(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get the binary mask data
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getMaskData(id: string, options?: any) {
+        return AIBrushApiFp(this.configuration).getMaskData(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get the binary image data
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getNpyData(id: string, options?: any) {
+        return AIBrushApiFp(this.configuration).getNpyData(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

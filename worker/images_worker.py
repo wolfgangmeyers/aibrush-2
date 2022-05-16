@@ -41,11 +41,13 @@ for folder in ["images", "output", "output_npy"]:
 def cleanup():
     # delete all files in the current folder ending in .png or .backup
     for fname in os.listdir("images"):
-        if fname.endswith(".jpg") or fname.endswith(".mp4"):
+        if fname.endswith(".jpg") or fname.endswith(".mp4") or fname.endswith(".npy"):
             os.remove(os.path.join("images", fname))
     for fname in os.listdir("output"):
         if fname.endswith(".png"):
             os.remove(os.path.join("output", fname))
+    for fname in os.listdir("output_npy"):
+        os.remove(os.path.join("output_npy", fname))
     if os.path.exists("steps"):
         for fname in os.listdir("steps"):
             os.remove(os.path.join("steps", fname))
@@ -113,13 +115,28 @@ def _to_args_list(args: SimpleNamespace, arg_mapping=None):
                     args_list.append(str(v))
     return args_list
 
-def _glid_3_xl_args(image_data, image):
+def _glid_3_xl_args(image_data, mask_data, npy_data, image):
     args = SimpleNamespace()
+    # TODO: attempt to edit using npy if available, otherwise use the init image.
     if image_data:
         # save image
         with open(os.path.join("images", image.id + "-init.jpg"), "wb") as f:
             f.write(image_data)
-        args.init_image = os.path.join("images", image.id + "-init.jpg")
+        if not mask_data:
+            args.init_image = os.path.join("images", image.id + "-init.jpg")
+    if mask_data:
+        # save mask
+        with open(os.path.join("images", image.id + "-mask.jpg"), "wb") as f:
+            f.write(mask_data)
+        args.mask = os.path.join("images", image.id + "-mask.jpg")
+
+        if npy_data:
+            # save npy
+            with open(os.path.join("images", image.id + "-npy.npy"), "wb") as f:
+                f.write(npy_data)
+            args.edit = os.path.join("images", image.id + "-npy.npy")
+        else:
+            args.edit = os.path.join("images", image.id + "-init.jpg")
     '''
     parser.add_argument('--model_path', type=str, default = 'finetune.pt',
                    help='path to the diffusion model')
@@ -149,7 +166,10 @@ parser.add_argument('--clip_guidance', dest='clip_guidance', action='store_true'
 parser.add_argument('--clip_guidance_scale', type = float, default = 150, required = False,
                     help='Controls how much the image should look like the prompt') # may need to use lower value for ddim
     '''
-    args.model_path = "finetune.pt"
+    if mask_data:
+        args.model_path = "inpaint.pt"
+    else:
+        args.model_path = "finetune.pt"
     args.text = " | ".join(image.phrases)
     args.skip_timesteps = image.glid_3_xl_skip_iterations
     args.clip_guidance = image.glid_3_xl_clip_guidance
@@ -172,6 +192,7 @@ def process_image():
 
         def update_image(iterations: int, status: str):
             image_data = None
+            npy_data = None
             # get output image
             image_path = os.path.join("images", image.id + ".jpg")
             if image.model == "glid_3_xl" and os.path.exists(os.path.join("output", "00000.png")):
@@ -182,8 +203,14 @@ def process_image():
                     image_data = f.read()
                 # base64 encode image
                 image_data = base64.encodebytes(image_data).decode("utf-8")
+            if image.model == "glid_3_xl":
+                npy_path = os.path.join("output_npy", "00000.npy")
+                if os.path.exists(npy_path):
+                    with open(npy_path, "rb") as f:
+                        npy_data = f.read()
+                        npy_data = base64.encodebytes(npy_data).decode("utf-8")
             # update image
-            client.update_image(image.id, image_data, iterations, status)
+            client.update_image(image.id, image_data, npy_data, iterations, status)
         
         def update_video_data():
             print("Updating video data")
@@ -196,11 +223,15 @@ def process_image():
             args_list = _vqgan_args(image_data, image)
             cmd = "vqgan_clip/generate.py"
         elif image.model == "glid_3_xl":
-            args_list = _glid_3_xl_args(image_data, image)
+            mask_data = client.get_mask_data(image.id)
+            npy_data = client.get_npy_data(image.id)
+            args_list = _glid_3_xl_args(image_data, mask_data, npy_data, image)
             cmd = "glid-3-xl/sample.py"
 
         update_image(0, "processing")
-        result = subprocess.run(["python", cmd] + args_list)
+        processor_cmd = ["python", cmd] + args_list
+        print(f"Running {' '.join(processor_cmd)}")
+        result = subprocess.run(processor_cmd)
         if result.returncode != 0:
             raise Exception("Error running generator")
         #  only update video if vqgan

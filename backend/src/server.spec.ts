@@ -517,6 +517,40 @@ describe("server", () => {
                         expect(fs.existsSync(thumbnailPath)).toBe(false)
                     })
                 })
+            }) // end of describe("when updating an image with encoded_image")
+
+            describe("when updating an image with encoded_npy", () => {
+                let savedNPYData: Buffer;
+
+                beforeEach(async () => {
+                    // read 256.npy from file and base64 encode it
+                    const npyData = fs.readFileSync("256.npy")
+                    const base64NPY = Buffer.from(npyData).toString('base64')
+                    await client.updateImage(image.id, {
+                        encoded_npy: base64NPY
+                    })
+                })
+
+                describe("when getting npy data", () => {
+                    beforeEach(async () => {
+                        const npyDataResponse = await client.getNpyData(image.id)
+                        savedNPYData = npyDataResponse.data
+                    })
+
+                    it("should return the npy data", () => {
+                        expect(savedNPYData).toBeDefined()
+                    })
+                })
+
+                describe("after deleting the image and then trying to get npy data", () => {
+                    beforeEach(async () => {
+                        await client.deleteImage(image.id)
+                    })
+
+                    it("should reject the call with not found", async () => {
+                        await expect(client.getNpyData(image.id)).rejects.toThrow(/Request failed with status code 404/)
+                    })
+                })
             })
 
             describe("when listing images as a different user", () => {
@@ -796,7 +830,7 @@ describe("server", () => {
                 })
             })
 
-        })
+        }) // end of describe "when creating an image with enable_video=true"
 
         describe("when creating an image with enable_video=true and enable_zoom=true and default zoom options", () => {
             let image: Image;
@@ -904,7 +938,7 @@ describe("server", () => {
                     expect(processResponse.data.id).toBe(image.id)
                 })
             })
-        })
+        }) // end of describe "when creating an image with enable_video=true and enable_zoom=true and default zoom options"
 
         describe("when creating an image with enable_video=true and enable_zoom=true and non-default zoom options", () => {
             let image: Image;
@@ -968,7 +1002,7 @@ describe("server", () => {
                     expect(listResponse.data.images[0].zoom_shift_y).toBe(2)
                 })
             })
-        })
+        }) // end of describe "when creating an image with enable_video=true and enable_zoom=true and non-default zoom options"
 
         describe("when creating an image with encoded_image", () => {
             let image: Image;
@@ -998,7 +1032,34 @@ describe("server", () => {
                 expect(thumbnailData).toBeDefined()
                 expect(thumbnailData.length).toBeLessThan(imageData.length)
             })
-        })
+        }) // end of describe "when creating an image with encoded_image"
+
+        describe("when creating an image with encoded_mask", () => {
+            let image: Image;
+
+            beforeEach(async () => {
+                // read 512.jpg from file and base64 encode it
+                const imageData = fs.readFileSync("512.jpg")
+                const base64Image = Buffer.from(imageData).toString('base64')
+                const response = await client.createImage({
+                    encoded_image: base64Image,
+                    encoded_mask: base64Image,
+                    phrases: ["test"],
+                    label: "test",
+                    size: 512,
+                    iterations: 1
+                })
+                image = response.data
+            })
+
+            it("should save the mask data", async () => {
+                // get image data
+                const maskDataResponse = await client.getMaskData(image.id)
+                const maskData = maskDataResponse.data
+                expect(maskData).toBeDefined()
+            })
+        }) // end of describe "when creating an image with encoded_mask"
+
 
         describe("when creating an image with non-default glid-3 xl options", () => {
             let image: Image;

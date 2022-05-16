@@ -118,11 +118,6 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
         }
     }
 
-    const onDesignImage = async (image: Image) => {
-        setDesignerCurrentImageId(image.id)
-        history.push("/designer")
-    }
-
     const onSvg = async (image: Image) => {
         setGeneratingSvg(image);
     }
@@ -184,7 +179,6 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
                                 onDelete={onDeleteImage}
                                 onFork={onForkImage}
                                 onClick={setSelectedImage}
-                                onDesign={onDesignImage}
                                 onSvg={onSvg}
                                 assetsUrl={assetsUrl}
                                 apiUrl={apiUrl}
@@ -204,7 +198,6 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
                     onClose={() => setSelectedImage(null)}
                     onDelete={onDeleteImage}
                     onFork={onForkImage}
-                    onDesign={onDesignImage}
                 />
             )}
             {generatingSvg && (

@@ -10,11 +10,10 @@ interface ImageThumbnailProps {
     onClick: (image: Image) => void;
     onDelete?: (image: Image) => void;
     onFork?: (image: Image) => void;
-    onDesign?: (image: Image) => void;
     onSvg?: (image: Image) => void;
 }
 
-export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, image, onClick, onDelete, onFork, onDesign, onSvg }) => {
+export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, image, onClick, onDelete, onFork, onSvg }) => {
 
     const src = `${assetsUrl}/${image.id}.thumbnail.jpg?updated_at=${image.updated_at}`;
 
@@ -56,10 +55,6 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, ima
                 </button>}
                 {onFork && (image.status === "completed" || image.status === "saved") && <button className="btn btn-secondary btn-sm" onClick={() => onFork && onFork(image)} style={{marginRight: "5px"}}>
                     <i className="fas fa-code-branch"></i>
-                </button>}
-                {/*  interactive designer */}
-                {onDesign && <button className="btn btn-secondary btn-sm" onClick={() => onDesign && onDesign(image)} style={{marginRight: "5px"}}>
-                    <i className="fas fa-pencil-alt"></i>
                 </button>}
                 {(image.status === "completed" || image.status === "saved") && image.enable_video && <button className="btn btn-secondary btn-sm" onClick={() => window.open(`${apiUrl}/api/images/${image.id}.mp4`)} style={{marginRight: "5px", marginTop: "5px"}}>
                     <i className="fas fa-video"></i>

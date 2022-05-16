@@ -33,11 +33,6 @@ export const MainMenu: FC = () => {
                             <i className="fas fa-folder-open" />&nbsp;
                             My Images
                         </Link>
-                        <Link to="/designer" className="btn btn-primary">
-                            {/* font awesome pencil icon */}
-                            <i className="fas fa-pencil-alt" />&nbsp;
-                            Interactive Designer
-                        </Link>
                         {/* /suggestions */}
                         <Link to="/suggestions" className="btn btn-primary">
                             {/* font awesome comments icon */}

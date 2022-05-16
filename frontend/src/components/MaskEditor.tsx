@@ -2,17 +2,20 @@
 // Brush size, brush size preview, color selector, color picker
 // Save and cancel buttons
 
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC, useState, useEffect, useRef } from 'react';
 import { Modal } from "react-bootstrap";
 
-interface ImageEditorProps {
-    encodedImage: string | null;
+interface MaskEditorProps {
+    encodedImage: string; // image is required in order to draw a mask
     onSave: (image: string) => void;
     onCancel: () => void;
 }
 
-export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCancel }) => {
-    const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+export const MaskEditor: FC<MaskEditorProps> = ({ encodedImage, onSave, onCancel }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    const [image, setImage] = useState<HTMLImageElement | null>(null);
+    const [offscreenCanvas, setOffscreenCanvas] = useState<HTMLCanvasElement | null>(null);
     const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
     const [brushSize, setBrushSize] = useState(10);
     const [brushColor, setBrushColor] = useState('#000000');
@@ -21,30 +24,48 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
     const [lastY, setLastY] = useState(0);
 
     useEffect(() => {
-        const c = document.getElementById('canvas') as HTMLCanvasElement;
-        if (c) {
-            setCanvas(c);
-            setCtx(c.getContext('2d'));
+        const img = new Image();
+        img.src = encodedImage;
+        img.onload = () => {
+            setImage(img)
         }
-    }, [canvas]);
+    }, [encodedImage])
 
     useEffect(() => {
-        if (ctx && canvas) {
-            // if image is not null, draw it on the canvas
-            if (encodedImage) {
-                const img = new Image();
-                img.src = encodedImage;
-                img.onload = () => {
-                    ctx.drawImage(img, 0, 0);
-                }
-            } else {
+        if (canvasRef.current && image) {
+            const offscreenCanvas = document.createElement('canvas');
+            // hide it
+            offscreenCanvas.style.display = 'none';
+            offscreenCanvas.width = image.width;
+            offscreenCanvas.height = image.height;
+            const ctx = offscreenCanvas.getContext('2d');
+            if (ctx) {
+                setOffscreenCanvas(offscreenCanvas);
+                setCtx(ctx);
                 ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                render(offscreenCanvas, image, lastX, lastY, brushColor, brushSize);
+            }
+            setCtx(ctx);
+        }
+    }, [canvasRef.current, image]);
+
+    const render = (canvas: HTMLCanvasElement, image: HTMLImageElement | null, lastX: number, lastY: number, brushColor: string, brushSize: number) => {
+        if (canvasRef.current && image && canvas) {
+            const renderCtx = canvasRef.current.getContext('2d');
+            if (renderCtx) {
+                renderCtx.drawImage(image, 0, 0);
+                renderCtx.globalAlpha = 0.5;
+                renderCtx.drawImage(canvas, 0, 0);
+                // draw the brush
+                renderCtx.globalAlpha = 1;
+                drawDot(renderCtx, lastX, lastY, brushColor, brushSize);
             }
         }
-    }, [ctx, canvas, encodedImage])
+    }
 
     const getMousePos = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
         if (!canvas) {
             throw Error("No canvas")
         }
@@ -69,7 +90,8 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
     }
 
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-        if (!canvas) {
+        const canvas = canvasRef.current;
+        if (!canvas || !offscreenCanvas) {
             return;
         }
         setIsDrawing(true);
@@ -77,10 +99,11 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
         setLastX(mousePos.x);
         setLastY(mousePos.y);
         // draw a single dot in case the user clicks without moving the mouse
-        drawDot(mousePos.x, mousePos.y);
+        drawDot(ctx, mousePos.x, mousePos.y, brushColor, brushSize);
+        render(offscreenCanvas, image, mousePos.x, mousePos.y, brushColor, brushSize);
     };
 
-    const drawDot = (x: number, y: number) => {
+    const drawDot = (ctx: CanvasRenderingContext2D | null, x: number, y: number, brushColor: string, brushSize: number) => {
         if (!ctx) {
             return;
         }
@@ -91,28 +114,32 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
     }
 
     const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-        if (!isDrawing || !ctx || !canvas) {
+        const canvas = canvasRef.current;
+        if (!ctx || !canvas || !offscreenCanvas) {
             return;
         }
 
-        e.preventDefault()
-        e.stopPropagation()
         // get x and y relative to the canvas
         const mousePos = getMousePos(e);
         const x = mousePos.x;
         const y = mousePos.y;
 
-        ctx.beginPath();
-        ctx.moveTo(lastX, lastY);
-        ctx.lineTo(x, y);
-        ctx.strokeStyle = brushColor;
-        ctx.lineWidth = brushSize;
-        // line caps
-        ctx.lineCap = 'round';
-        ctx.stroke();
+        if (isDrawing) {
+            e.preventDefault()
+            e.stopPropagation()
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = brushColor;
+            ctx.lineWidth = brushSize;
+            // line caps
+            ctx.lineCap = 'round';
+            ctx.stroke();
 
-        setLastX(x);
-        setLastY(y);
+            setLastX(x);
+            setLastY(y);
+        }
+        render(offscreenCanvas, image, x, y, brushColor, brushSize);
     };
 
     const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -121,15 +148,21 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
 
     const handleBrushSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setBrushSize(parseFloat(e.target.value));
+        if (offscreenCanvas) {
+            render(offscreenCanvas, image, lastX, lastY, brushColor, brushSize);
+        }
     };
 
-    const handleBrushColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setBrushColor(e.target.value);
+    const handleBrushColorChange = (newColor: string) => {
+        setBrushColor(newColor);
+        if (offscreenCanvas) {
+            render(offscreenCanvas, image, lastX, lastY, brushColor, brushSize);
+        }
     };
 
     const handleSave = () => {
-        if (canvas && ctx) {
-            const data = canvas.toDataURL('image/png');
+        if (offscreenCanvas) {
+            const data = offscreenCanvas.toDataURL('image/jpg');
             onSave(data);
         }
     };
@@ -144,18 +177,22 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
                 <Modal.Title>Image Editor</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <canvas
+                <p>
+                    Areas in black will be repainted, areas in white will be preserved.
+                </p>
+                {image && <canvas
                     style={{ width: "100%" }}
-                    id="canvas"
-                    width="512"
-                    height="512"
+                    id="maskEditorCanvas"
+                    width={image.width}
+                    height={image.height}
+                    ref={canvasRef}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
                     onTouchStart={handleMouseDown}
                     onTouchMove={handleMouseMove}
                     onTouchEnd={handleMouseUp}
-                ></canvas>
+                ></canvas>}
                 <div className="row">
                     <div className="col-md-6">
                         <div className="form-group">
@@ -167,7 +204,11 @@ export const ImageEditor: FC<ImageEditorProps> = ({ encodedImage, onSave, onCanc
                     <div className="col-md-6">
                         <div className="form-group">
                             <label htmlFor="brushColor">Brush Color</label>
-                            <input type="color" className="form-control" id="brushColor" value={brushColor} onChange={handleBrushColorChange} />
+                            {/* Show two toggle buttons for white and black */}
+                            <div className="btn-group" role="group" aria-label="Brush Color" style={{marginLeft: "20px"}}>
+                                <button type="button" className="btn btn-secondary" style={{ backgroundColor: "white", padding: "30px" }} onClick={() => handleBrushColorChange("white")}></button>
+                                <button type="button" className="btn btn-secondary" style={{ backgroundColor: "black", padding: "30px" }} onClick={() => handleBrushColorChange("black")}></button>
+                            </div>
                         </div>
                     </div>
                 </div>

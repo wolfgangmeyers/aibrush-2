@@ -11,7 +11,6 @@ import { CreateImage } from "./pages/CreateImage"
 import { ImagesPage } from "./pages/Images";
 import { TokenRefresher } from "./components/TokenRefresher";
 import { Healthchecker } from './components/Healthchecker';
-import { InteractiveDesigner } from "./pages/InteractiveDesigner";
 import { SuggestionsPage } from "./pages/Suggestions";
 import { WorkerConfigPage } from "./pages/WorkerConfig";
 
@@ -104,10 +103,6 @@ function App() {
             </Route>
             <Route path="/images">
               <ImagesPage apiUrl={config.apiUrl} api={client} assetsUrl={assetsUrl} />
-            </Route>
-            {/* /designer route */}
-            <Route path="/designer">
-              <InteractiveDesigner api={client} apiUrl={config.apiUrl} />
             </Route>
             {/* /suggestions route */}
             <Route path="/suggestions">

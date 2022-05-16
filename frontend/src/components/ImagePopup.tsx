@@ -9,10 +9,9 @@ interface ImagePopupProps {
     onClose: () => void;
     onDelete?: (image: Image) => void;
     onFork?: (image: Image) => void;
-    onDesign?: (image: Image) => void;
 }
 
-export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, assetsUrl, image, onClose, onDelete, onDesign, onFork }) => {
+export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, assetsUrl, image, onClose, onDelete, onFork }) => {
 
     const img = useRef<HTMLImageElement>(null);
     const src = `${assetsUrl}/${image.id}.image.jpg?updated_at=${image.updated_at}`;
@@ -73,10 +72,6 @@ export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, assetsUrl, image, onCl
                         </button>}
                         {onFork && image.status === "saved" && <button className="btn btn-secondary btn-sm" onClick={() => onFork && onFork(image)} style={{ marginRight: "5px" }}>
                             <i className="fas fa-code-branch"></i>
-                        </button>}
-                        {/*  interactive designer */}
-                        {onDesign && <button className="btn btn-secondary btn-sm" onClick={() => onDesign && onDesign(image)} style={{ marginRight: "5px" }}>
-                            <i className="fas fa-pencil-alt"></i>
                         </button>}
                         {(image.status === "completed" || image.status === "saved") && image.enable_video && <button className="btn btn-secondary btn-sm" onClick={() => window.open(`${apiUrl}/api/images/${image.id}.mp4`)} style={{ marginRight: "5px", marginTop: "5px" }}>
                             <i className="fas fa-video"></i>

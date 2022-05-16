@@ -61,18 +61,36 @@ class AIBrushAPI(object):
         resp = self.http_request("/auth/verify", "POST", body)
         return self.parse_json(resp.text)
 
-    def update_image(self, image_id: str, encoded_image: str, current_iterations: int, status: str) -> SimpleNamespace:
+    def update_image(self, image_id: str, encoded_image: str, encoded_npy: str, current_iterations: int, status: str) -> SimpleNamespace:
         body = {
             "current_iterations": current_iterations,
             "status": status,
         }
         if encoded_image:
             body["encoded_image"] = encoded_image
+        if encoded_npy:
+            body["encoded_npy"] = encoded_npy
         resp = self.http_request(f"/images/{image_id}", "PATCH", body)
         return self.parse_json(resp.text)
 
     def get_image_data(self, image_id: str) -> bytes:
         resp = self.http_request(f"/images/{image_id}.image.jpg", "GET")
+        if resp.status_code != 200:
+            return None
+        # read binary data
+        return resp.content
+
+    def get_mask_data(self, image_id: str) -> bytes:
+        resp = self.http_request(f"/images/{image_id}.mask.jpg", "GET")
+        if resp.status_code != 200:
+            return None
+        # read binary data
+        return resp.content
+
+    def get_npy_data(self, image_id: str) -> bytes:
+        resp = self.http_request(f"/images/{image_id}.npy", "GET")
+        if resp.status_code != 200:
+            return None
         # read binary data
         return resp.content
 

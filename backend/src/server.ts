@@ -129,6 +129,48 @@ export class Server {
             }
         })
 
+        this.app.get("/api/images/:id.npy", async (req, res) => {
+            try {
+                // get image first and check created_by
+                let image = await this.backendService.getImage(req.params.id)
+                if (!image) {
+                    res.status(404).send("not found")
+                    return;
+                }
+                const npyData = await this.backendService.getNpyData(req.params.id)
+                if (!npyData) {
+                    res.status(404).send("not found")
+                    return;
+                }
+                res.setHeader("Content-Type", "application/octet-stream")
+                res.send(npyData)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        this.app.get("/api/images/:id.mask.jpg", async (req, res) => {
+            try {
+                // get image first and check created_by
+                let image = await this.backendService.getImage(req.params.id)
+                if (!image) {
+                    res.status(404).send("not found")
+                    return;
+                }
+                const maskData = await this.backendService.getMaskData(req.params.id)
+                if (!maskData) {
+                    res.status(404).send("not found")
+                    return;
+                }
+                res.setHeader("Content-Type", "image/jpeg")
+                res.send(maskData)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
         this.app.get("/api/images/:id.mp4", async (req, res) => {
             try {
                 // get image first and check created_by

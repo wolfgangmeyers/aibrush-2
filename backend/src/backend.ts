@@ -180,20 +180,47 @@ export class BackendService {
             console.error(err)
             return null
         }
-
     }
 
     // get thumbnail data
     async getThumbnailData(id: string): Promise<Buffer> {
-        try {
-            // load image data from file and convert from base64 to buffer
-            const thumbnail = await this.filestore.readBinaryFile(`${id}.thumbnail.jpg`)
-            return thumbnail
-        } catch (err) {
-            console.error(err)
-            return null
+        if (await this.filestore.exists(`${id}.thumbnail.jpg`)) {
+            try {
+                // load image data from file and convert from base64 to buffer
+                const thumbnail = await this.filestore.readBinaryFile(`${id}.thumbnail.jpg`)
+                return thumbnail
+            } catch (err) {
+                console.error(err)
+            }
         }
+        return null
+    }
 
+    // get .npy data
+    async getNpyData(id: string): Promise<Buffer> {
+        if (await this.filestore.exists(`${id}.npy`)) {
+            try {
+                // load image data from file and convert from base64 to buffer
+                const npy = await this.filestore.readBinaryFile(`${id}.npy`)
+                return npy
+            } catch (err) {
+                console.error(err)
+            }
+        }
+        return null
+    }
+
+    async getMaskData(id: string) {
+        if (await this.filestore.exists(`${id}.mask.jpg`)) {
+            try {
+                // load image data from file and convert from base64 to buffer
+                const mask = this.filestore.readBinaryFile(`${id}.mask.jpg`)
+                return mask
+            } catch (err) {
+                console.error(err)
+            }
+        }
+        return null
     }
 
     // delete image
@@ -212,9 +239,17 @@ export class BackendService {
             if (await this.filestore.exists(`${id}.thumbnail.jpg`)) {
                 await this.filestore.deleteFile(`${id}.thumbnail.jpg`)
             }
+            // delete mask file, if one exists
+            if (await this.filestore.exists(`${id}.mask.jpg`)) {
+                await this.filestore.deleteFile(`${id}.mask.jpg`)
+            }
             // delete mp4 file, if one exists
             if (await this.filestore.exists(`${id}.mp4`)) {
                 await this.filestore.deleteFile(`${id}.mp4`)
+            }
+            // delete npy file, if one exists
+            if (await this.filestore.exists(`${id}.npy`)) {
+                await this.filestore.deleteFile(`${id}.npy`)
             }
         } finally {
             client.release()
@@ -257,6 +292,21 @@ export class BackendService {
                 const encoded_thumbnail = await this.createThumbnail(encoded_image)
                 const binary_thumbnail = Buffer.from(encoded_thumbnail, "base64")
                 await this.filestore.writeFile(`${image.id}.thumbnail.jpg`, binary_thumbnail)
+            }
+            let encoded_npy = body.encoded_npy;
+
+            // if encoded_npy is set, save npy
+            if (encoded_npy) {
+                const binary_npy = Buffer.from(encoded_npy, "base64")
+                await this.filestore.writeFile(`${image.id}.npy`, binary_npy)
+            }
+
+            let encoded_mask = body.encoded_mask;
+
+            // if encoded_mask is set, save mask
+            if (encoded_mask) {
+                const binary_mask = Buffer.from(encoded_mask, "base64")
+                await this.filestore.writeFile(`${image.id}.mask.jpg`, binary_mask)
             }
             return this.hydrateImage({
                 ...image,
@@ -306,6 +356,10 @@ export class BackendService {
                 const encoded_thumbnail = await this.createThumbnail(body.encoded_image)
                 const binaryThumbnail = Buffer.from(encoded_thumbnail, "base64")
                 await this.filestore.writeFile(`${image.id}.thumbnail.jpg`, binaryThumbnail)
+            }
+            if (body.encoded_npy) {
+                const binaryNpy = Buffer.from(body.encoded_npy, "base64")
+                await this.filestore.writeFile(`${image.id}.npy`, binaryNpy)
             }
             return this.hydrateImage({
                 ...image,

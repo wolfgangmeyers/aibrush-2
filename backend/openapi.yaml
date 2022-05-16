@@ -140,6 +140,27 @@ paths:
               schema:
                 type: string
                 format: binary
+  # get image mask.jpg
+  /api/images/{id}.mask.jpg:
+    get:
+      description: Get the binary mask data
+      operationId: getMaskData
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
   /api/images/{id}.thumbnail.jpg:
     get:
       description: Get the binary thumbnail data
@@ -160,6 +181,28 @@ paths:
               schema:
                 type: string
                 format: binary
+  # handle image .npy files
+  /api/images/{id}.npy:
+    get:
+      description: Get the binary image data
+      operationId: getNpyData
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
   /api/images/{id}.mp4:
     get:
       description: Get the binary video data
@@ -626,6 +669,10 @@ components:
           type: string
         encoded_image:
           type: string
+        encoded_mask:
+          type: string
+        encoded_npy:
+          type: string
         enable_video:
           type: boolean
         enable_zoom:
@@ -666,6 +713,8 @@ components:
           type: string
           enum: [pending, processing, completed, saved]
         encoded_image:
+          type: string
+        encoded_npy:
           type: string
 
     Image:

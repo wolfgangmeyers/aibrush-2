@@ -1,9 +1,10 @@
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC, useState, useEffect, useRef } from 'react';
 import { useHistory } from "react-router-dom"
+import { AxiosResponse } from "axios";
 import { AIBrushApi, CreateImageInput, CreateImageInputSizeEnum } from "../client/api"
 import loadImage from "blueimp-load-image"
 import qs from "qs";
-import { ImageEditor } from "../components/ImageEditor";
+import { MaskEditor } from "../components/MaskEditor";
 
 interface CreateImageProps {
     api: AIBrushApi
@@ -19,6 +20,8 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         label: "",
         iterations: 300,
         encoded_image: "",
+        encoded_npy: "",
+        encoded_mask: "",
         enable_video: false,
         enable_zoom: false,
         zoom_frequency: 10,
@@ -31,8 +34,9 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         glid_3_xl_skip_iterations: 0,
         size: 256,
     });
-    const [editingImage, setEditingImage] = useState<string | null>(null);
+    const [editingMask, seteditingMask] = useState<string | null>(null);
     const [count, setCount] = useState(1)
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,7 +73,8 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
             const base64 = dataUrl.split(",")[1]
             setInput({
                 ...input,
-                encoded_image: base64
+                encoded_image: base64,
+                encoded_npy: undefined,
             })
         }, {
             maxWidth: 512,
@@ -79,9 +84,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         })
     }
 
-
-
-    const onEditImage = () => {
+    const onEditMask = () => {
         let img = input.encoded_image;
         if (!img) {
             // blank 512 x 512 image with white background
@@ -97,18 +100,21 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
             }
         }
         if (img) {
-            setEditingImage(`data:image/jpeg;base64,${img}`)
+            seteditingMask(`data:image/jpeg;base64,${img}`)
         }
     }
 
-    const onImageEdited = (imageUri: string) => {
+    const onMaskEdited = (imageUri: string) => {
         // extract base64 portion of the image uri
         const base64 = imageUri.split(",")[1]
-        setInput({
+        setInput(input => ({
             ...input,
-            encoded_image: base64
-        })
-        setEditingImage(null)
+            encoded_mask: base64,
+        }))
+        seteditingMask(null)
+        if (input.encoded_image) {
+            renderInitImage(input.encoded_image, base64)
+        }
     }
 
     const onChangeModel = (model: string) => {
@@ -122,17 +128,63 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         setInput({ ...newInput, model: model })
     }
 
+    const renderInitImage = (encoded_image: string, encoded_mask: string) => {
+        if (canvasRef.current && encoded_image) {
+            console.log("renderInitImage")
+            const ctx = canvasRef.current.getContext("2d")
+            if (ctx) {
+                const image = new Image()
+                image.src = `data:image/jpeg;base64,${encoded_image}`
+                image.onload = () => {
+                    ctx.globalAlpha = 1
+                    ctx.drawImage(image, 0, 0, 512, 512)
+                    if (encoded_mask) {
+                        const mask = new Image()
+                        mask.src = `data:image/jpeg;base64,${encoded_mask}`
+                        mask.onload = () => {
+                            ctx.globalAlpha = 0.5
+                            ctx.drawImage(mask, 0, 0, 512, 512)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     useEffect(() => {
 
         const loadParent = async (parentId: string) => {
             const image = await props.api.getImage(parentId)
             // get encoded image data for parent
-            const resp = await props.api.getImageData(image.data.id, {
+            const imageDataPromise = props.api.getImageData(image.data.id, {
                 responseType: "arraybuffer"
             })
-            const binaryImageData = Buffer.from(resp.data, "binary");
+            // only glide-3-xl iamges have .npy files
+            let npyDataPromise: Promise<AxiosResponse<any>> | null = null;
+            if (image.data.model === "glid_3_xl") {
+                npyDataPromise = props.api.getNpyData(image.data.id, {
+                    responseType: "arraybuffer",
+                })
+            }
+
+            const imageResp = await imageDataPromise
+            const binaryImageData = Buffer.from(imageResp.data, "binary");
             // convert binary to base64
             const base64ImageData = binaryImageData.toString("base64");
+
+            let base64NpyData = "";
+
+            if (npyDataPromise) {
+                try {
+                    const npyResp = await npyDataPromise
+                    const binaryNpyData = Buffer.from(npyResp.data, "binary");
+                    base64NpyData = binaryNpyData.toString("base64");
+                    console.log("loaded npy data successfully")
+                } catch {
+                    console.log("failed to load npy data")
+                }
+            }
+
             setInput(input => ({
                 ...input,
                 label: image.data.label,
@@ -140,6 +192,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                 iterations: image.data.iterations,
                 parent: parentId,
                 encoded_image: base64ImageData,
+                encoded_npy: base64NpyData || undefined,
                 enable_video: !!image.data.enable_video,
                 enable_zoom: !!image.data.enable_zoom,
                 zoom_frequency: image.data.zoom_frequency || 10,
@@ -152,6 +205,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                 glid_3_xl_skip_iterations: image.data.glid_3_xl_skip_iterations || 0,
                 size: image.data.size as any as CreateImageInputSizeEnum || 256,
             }))
+            renderInitImage(base64ImageData, base64NpyData)
         }
 
         if (searchParams.parent) {
@@ -301,7 +355,8 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         {/* If encoded_image (base64 only) is set, show the image using a base64 image url*/}
                         {input.encoded_image && <div className="form-group">
                             <h5>Initial Image</h5>
-                            <img alt="" src={`data:image/jpeg;base64,${input.encoded_image}`} style={{ maxWidth: "100%" }} />
+                            {/* <img alt="" src={`data:image/jpeg;base64,${input.encoded_image}`} style={{ maxWidth: "100%" }} /> */}
+                            <canvas ref={canvasRef} style={{ maxWidth: "100%" }} width={input.size} height={input.size} />
                         </div>}
                         {/* If encoded_image is set, display edit button */}
                         <div className="form-group">
@@ -318,12 +373,8 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                     onChange={e => onImageSelected(e)}
                                 />
                             </label>
-                            <button type="button" className="btn btn-sm btn-primary" onClick={onEditImage}>Edit Image</button>
-
+                            {input.encoded_image && input.model == "glid_3_xl" && <button type="button" className="btn btn-sm btn-primary" onClick={onEditMask}>Edit Mask</button>}
                         </div>
-                        {/* <div className="form-group">
-                                <button type="button" className="btn btn-sm btn-primary" onClick={onRandomizeImage}>Randomize Image</button>
-                            </div> */}
 
                         <div className="form-group">
                             {/* Cancel button "/" */}
@@ -335,11 +386,11 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                     </form>
                 </div>
             </div>
-            {editingImage && (
-                <ImageEditor
-                    encodedImage={`${editingImage}`}
-                    onCancel={() => setEditingImage(null)}
-                    onSave={onImageEdited}
+            {editingMask && (
+                <MaskEditor
+                    encodedImage={editingMask}
+                    onCancel={() => seteditingMask(null)}
+                    onSave={onMaskEdited}
                 />
             )}
         </>

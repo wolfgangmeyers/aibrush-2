@@ -6,3 +6,4 @@ openapitools.json
 aibrush-config.json
 test_data
 .env_local
+.env_cloud
