@@ -133,7 +133,6 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
             console.log("renderInitImage")
             const ctx = canvasRef.current.getContext("2d")
             if (ctx) {
-                const size = input.size as number;
                 const image = new Image()
                 image.src = `data:image/jpeg;base64,${encoded_image}`
                 image.onload = () => {
