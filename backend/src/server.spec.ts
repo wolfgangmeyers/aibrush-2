@@ -264,6 +264,7 @@ describe("server", () => {
             beforeEach(async () => {
                 const response = await client.createImage({
                     phrases: ["test"],
+                    negative_phrases: ["foobar"],
                     label: "test",
                     size: 512,
                     iterations: 1,
@@ -275,6 +276,7 @@ describe("server", () => {
             it("should return the image", () => {
                 expect(image.id).toBeDefined()
                 expect(image.phrases).toEqual(["test"])
+                expect(image.negative_phrases).toEqual(["foobar"])
                 expect(image.label).toBe("test")
                 expect(image.iterations).toBe(1)
                 expect(image.parent).toBe("")
@@ -298,6 +300,7 @@ describe("server", () => {
                     expect(images.images).toHaveLength(1)
                     expect(images.images[0].id).toBe(image.id)
                     expect(images.images[0].phrases).toEqual(["test"])
+                    expect(images.images[0].negative_phrases).toEqual(["foobar"])
                     expect(images.images[0].label).toBe("test")
                     expect(images.images[0].iterations).toBe(1)
                     expect(images.images[0].parent).toBe("")
@@ -317,6 +320,7 @@ describe("server", () => {
                 it("should return the image", () => {
                     expect(img.id).toBeDefined()
                     expect(img.phrases).toEqual(["test"])
+                    expect(img.negative_phrases).toEqual(["foobar"])
                     expect(img.label).toBe("test")
                     expect(img.iterations).toBe(1)
                     expect(img.parent).toBe("")
@@ -341,6 +345,7 @@ describe("server", () => {
                 it("should return the image", () => {
                     expect(img.id).toBeDefined()
                     expect(img.phrases).toEqual(["test"])
+                    expect(img.negative_phrases).toEqual(["foobar"])
                     expect(img.label).toBe("test")
                     expect(img.iterations).toBe(1)
                     expect(img.parent).toBe("")
@@ -373,7 +378,6 @@ describe("server", () => {
 
                 beforeEach(async () => {
                     const response = await client.updateImage(image.id, {
-                        phrases: ["test2"],
                         label: "test2",
                         current_iterations: 1,
                         status: UpdateImageInputStatusEnum.Processing
@@ -383,7 +387,6 @@ describe("server", () => {
 
                 it("should return the updated image", () => {
                     expect(updatedImage.id).toBe(image.id)
-                    expect(updatedImage.phrases).toEqual(["test2"])
                     expect(updatedImage.label).toBe("test2")
                     expect(updatedImage.iterations).toBe(1)
                     expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Processing)
@@ -401,7 +404,6 @@ describe("server", () => {
                     it("should return the updated image", () => {
                         expect(images.images).toHaveLength(1)
                         expect(images.images[0].id).toBe(image.id)
-                        expect(images.images[0].phrases).toEqual(["test2"])
                         expect(images.images[0].label).toBe("test2")
                         expect(images.images[0].iterations).toBe(1)
                         expect(images.images[0].parent).toBe("")
@@ -426,7 +428,6 @@ describe("server", () => {
             describe("when updating an image that doesn't exist", () => {
                 it("should reject the call with not found", async () => {
                     await expect(client.updateImage("does-not-exist", {
-                        phrases: ["test2"],
                         label: "test2",
                         current_iterations: 1,
                         status: UpdateImageInputStatusEnum.Processing
@@ -596,7 +597,6 @@ describe("server", () => {
 
                 it("should reject the request with not found error", async () => {
                     await expect(client2.updateImage(image.id, {
-                        phrases: ["test2"],
                         label: "test2",
                         current_iterations: 1,
                         status: UpdateImageInputStatusEnum.Processing
@@ -615,7 +615,6 @@ describe("server", () => {
 
                 it("should fail with 404", async () => {
                     await expect(client2.updateImage(image.id, {
-                        phrases: ["test2"],
                         label: "test2",
                         current_iterations: 1,
                         status: UpdateImageInputStatusEnum.Processing
@@ -668,7 +667,6 @@ describe("server", () => {
                     beforeEach(async () => {
                         // update the image
                         const response = await client2.updateImage(image.id, {
-                            phrases: ["test2"],
                             label: "test2",
                             current_iterations: 1,
                             status: UpdateImageInputStatusEnum.Processing
@@ -678,7 +676,6 @@ describe("server", () => {
 
                     it("should update the image", async () => {
                         expect(updatedImage.id).toBe(image.id)
-                        expect(updatedImage.phrases).toEqual(["test2"])
                         expect(updatedImage.label).toBe("test2")
                         expect(updatedImage.iterations).toBe(1)
                         expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Processing)

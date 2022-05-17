@@ -48,6 +48,12 @@ export interface CreateImageInput {
     phrases?: Array<string>;
     /**
      * 
+     * @type {Array<string>}
+     * @memberof CreateImageInput
+     */
+    negative_phrases?: Array<string>;
+    /**
+     * 
      * @type {string}
      * @memberof CreateImageInput
      */
@@ -268,6 +274,12 @@ export interface Image {
      * @memberof Image
      */
     phrases: Array<string>;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof Image
+     */
+    negative_phrases: Array<string>;
     /**
      * 
      * @type {string}
@@ -686,12 +698,6 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     current_iterations?: number;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof UpdateImageInput
-     */
-    phrases?: Array<string>;
     /**
      * 
      * @type {string}

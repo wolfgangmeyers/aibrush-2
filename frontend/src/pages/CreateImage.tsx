@@ -17,6 +17,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
     const history = useHistory()
     const [input, setInput] = useState<CreateImageInput>({
         phrases: [],
+        negative_phrases: [],
         label: "",
         iterations: 300,
         encoded_image: "",
@@ -189,6 +190,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                 ...input,
                 label: image.data.label,
                 phrases: image.data.phrases,
+                negative_phrases: image.data.negative_phrases,
                 iterations: image.data.iterations,
                 parent: parentId,
                 encoded_image: base64ImageData,
@@ -256,6 +258,18 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                 onChange={(e) => setInput({ ...input, phrases: e.target.value.split("|") })}
                                 placeholder="Separate | phrases | like this" />
                         </div>
+                        {/* negative phrases for glid 3 xl */}
+                        {   input.model === "glid_3_xl" && (
+                            <div className="form-group">
+                                <label>Negative phrases</label>
+                                <input
+                                    className="form-control"
+                                    type="text"
+                                    value={input.negative_phrases?.join("|")}
+                                    onChange={(e) => setInput({ ...input, negative_phrases: e.target.value.split("|") })}
+                                    placeholder="Separate | phrases | like this" />
+                            </div>
+                        )}
                         <div className="form-group">
                             <label>Label</label>
                             <input

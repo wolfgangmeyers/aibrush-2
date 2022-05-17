@@ -170,7 +170,10 @@ parser.add_argument('--clip_guidance_scale', type = float, default = 150, requir
         args.model_path = "inpaint.pt"
     else:
         args.model_path = "finetune.pt"
-    args.text = " | ".join(image.phrases)
+    if len(image.phrases) > 0:
+        args.text = "|".join(image.phrases)
+    if len(image.negative_phrases) > 0:
+        args.negative = "|".join(image.negative_phrases)
     args.skip_timesteps = image.glid_3_xl_skip_iterations
     args.clip_guidance = image.glid_3_xl_clip_guidance
     args.clip_guidance_scale = image.glid_3_xl_clip_guidance_scale
@@ -255,6 +258,6 @@ if __name__ == "__main__":
             backoff = 1
             time.sleep(0.1)
         else:
-            if backoff < 60:
+            if backoff < 10:
                 backoff *= 2
             time.sleep(backoff)

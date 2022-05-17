@@ -661,6 +661,10 @@ components:
           type: array
           items:
             type: string
+        negative_phrases:
+          type: array
+          items:
+            type: string
         label:
           type: string
         iterations:
@@ -705,10 +709,6 @@ components:
           type: string
         current_iterations:
           type: integer
-        phrases:
-          type: array
-          items:
-            type: string
         status:
           type: string
           enum: [pending, processing, completed, saved]
@@ -728,6 +728,10 @@ components:
         updated_at:
           type: integer
         phrases:
+          type: array
+          items:
+            type: string
+        negative_phrases:
           type: array
           items:
             type: string
@@ -774,6 +778,7 @@ components:
         - created_by
         - updated_at
         - phrases
+        - negative_phrases
         - label
         - parent
         - iterations
