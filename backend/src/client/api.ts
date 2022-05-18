@@ -279,7 +279,7 @@ export interface Image {
      * @type {Array<string>}
      * @memberof Image
      */
-    negative_phrases?: Array<string>;
+    negative_phrases: Array<string>;
     /**
      * 
      * @type {string}
@@ -716,6 +716,12 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     encoded_npy?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateImageInput
+     */
+    score?: number;
 }
 
 /**

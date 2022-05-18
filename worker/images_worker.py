@@ -9,7 +9,10 @@ import base64
 import traceback
 import subprocess
 from PIL import Image
+import torch
+import argparse
 
+import clip_rank
 # from vqgan_clip.generate import run, default_args
 
 
@@ -194,6 +197,7 @@ def process_image():
         image_data = client.get_image_data(image.id)
 
         def update_image(iterations: int, status: str):
+            score = 0
             image_data = None
             npy_data = None
             # get output image
@@ -202,6 +206,10 @@ def process_image():
                 Image.open(os.path.join("output", "00000.png")).save(image_path)
                 
             if os.path.exists(image_path):
+                prompts = "|".join(image.phrases)
+                print(f"Calculating clip ranking for '{prompts}'")
+                score = clip_rank.rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
+                torch.cuda.empty_cache()
                 with open(image_path, "rb") as f:
                     image_data = f.read()
                 # base64 encode image
@@ -213,7 +221,7 @@ def process_image():
                         npy_data = f.read()
                         npy_data = base64.encodebytes(npy_data).decode("utf-8")
             # update image
-            client.update_image(image.id, image_data, npy_data, iterations, status)
+            client.update_image(image.id, image_data, npy_data, iterations, status, score)
         
         def update_video_data():
             print("Updating video data")

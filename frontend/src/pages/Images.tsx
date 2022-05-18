@@ -84,9 +84,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
                             return image
                         }),
                         ...newImages
-                    ].sort((a, b) => {
-                        return b.updated_at - a.updated_at
-                    }))
+                    ].sort(sortImages))
                 }
                 return images;
             } catch (err) {
@@ -122,6 +120,19 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
         setGeneratingSvg(image);
     }
 
+    const sortImages = (a: Image, b: Image) => {
+        // if the parent is the same, sort by score descending
+        // otherwise, sort by updated_at
+        if (a.parent === b.parent) {
+            // if the score is the same, sort by updated_at
+            if (a.score === b.score) {
+                return b.updated_at - a.updated_at
+            }
+            return b.score - a.score
+        }
+        return b.updated_at - a.updated_at
+    }
+
     const onLoadMore = async () => {
         setLoadingMore(true)
         try {
@@ -137,9 +148,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
                 setImages(images => [
                     ...images,
                     ...(resp.data.images || [])
-                ].sort((a, b) => {
-                    return b.updated_at - a.updated_at
-                }))
+                ].sort(sortImages))
             }
         } finally {
             setLoadingMore(false)

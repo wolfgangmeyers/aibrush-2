@@ -336,14 +336,16 @@ export class BackendService {
                     current_iterations=$2,
                     phrases=$3,
                     status=$4,
-                    updated_at=$5
-                WHERE id=$6 RETURNING *`,
+                    updated_at=$5,
+                    score=$6
+                WHERE id=$7 RETURNING *`,
                 [
                     existingImage.label,
                     existingImage.current_iterations,
                     existingImage.phrases,
                     existingImage.status,
                     new Date().getTime(),
+                    existingImage.score,
                     id
                 ]
             )

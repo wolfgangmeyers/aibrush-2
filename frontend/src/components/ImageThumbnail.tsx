@@ -16,6 +16,15 @@ interface ImageThumbnailProps {
 export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, image, onClick, onDelete, onFork, onSvg }) => {
 
     const src = `${assetsUrl}/${image.id}.thumbnail.jpg?updated_at=${image.updated_at}`;
+    let fontSize = "1.5em";
+    // shrink the font size depending on the length of image.label
+    if (image.label.length > 20) {
+        fontSize = "1em";
+    } else if (image.label.length > 15) {
+        fontSize = "1.2em";
+    } else if (image.label.length > 10) {
+        fontSize = "1.4em";
+    }
 
     useEffect(() => {
         const img = document.getElementById(`image-${image.id}`) as HTMLImageElement;
@@ -34,14 +43,18 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, ima
                 alt={image.label} onClick={() => onClick(image)} />
             <div className="card-body">
                 <div>
-                    <h5 className="card-title">
+                    {/* label */}
+                    <h5 className="card-title" style={{fontSize: fontSize}}>
                         {image.label}
                     </h5>
+
                     <p className="card-text">
                         {/* icon for image status */}
                         <i className={imageStatusToIconClass(image.status as ImageStatusEnum)}></i>&nbsp;
                         {image.status}
                     </p>
+                    {/* if the image score > 0, display it */}
+                    {image.score > 0 && <p className="card-text">Score: {image.score.toFixed(5)}</p>}
                     {/* if status is "processing" then show bootstrap progress bar for image.current_iterations / image.iterations */}
                     {image.status === "processing" && <div className="progress">
                         <div className="progress-bar" role="progressbar" style={{ width: `${(image.current_iterations * 1.0) / image.iterations * 100}%` }}>
