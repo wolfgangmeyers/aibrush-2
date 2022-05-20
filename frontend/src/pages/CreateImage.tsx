@@ -141,7 +141,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         renderInitImage(imageBase64, maskBase64, width, height)
     }
 
-    const onWidthChanged = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const onWidthChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
         const width = parseInt(e.target.value)
         if (width) {
             setInput(input => ({
@@ -154,7 +154,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         }
     }
 
-    const onHeightChanged = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const onHeightChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
         const height = parseInt(e.target.value)
         if (height) {
             setInput(input => ({
@@ -332,37 +332,11 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         </div>
                         <div className="form-group">
                             <label>Width</label>
-                            <select
-                                className="form-control"
-                                value={input.width}
-                                onChange={onWidthChanged}
-                            >
-                                <option value="128">128</option>
-                                <option value="256">256</option>
-                                <option value="384">384</option>
-                                <option value="512">512</option>
-                                <option value="640">640</option>
-                                <option value="768">768</option>
-                                <option value="896">896</option>
-                                <option value="1024">1024</option>
-                            </select>
+                            <input type="number" className="form-control" min={128} max={1024} step={64} value={input.width} onChange={onWidthChanged} />
                         </div>
                         <div className="form-group">
                             <label>Height</label>
-                            <select
-                                className="form-control"
-                                value={input.height}
-                                onChange={onHeightChanged}
-                            >
-                                <option value="128">128</option>
-                                <option value="256">256</option>
-                                <option value="384">384</option>
-                                <option value="512">512</option>
-                                <option value="640">640</option>
-                                <option value="768">768</option>
-                                <option value="896">896</option>
-                                <option value="1024">1024</option>
-                            </select>
+                            <input type="number" className="form-control" min={128} max={1024} step={64} value={input.height} onChange={onHeightChanged} />
                         </div>
                         <div className="form-group">
                             <label>Iterations</label>

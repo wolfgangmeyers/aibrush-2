@@ -65,7 +65,7 @@ export const Uncropper: FC<UncropperProps> = ({ encodedImage, onSave, onCancel }
         }
     }
 
-    const onWidthChanged = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const onWidthChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newWidth = parseInt(e.target.value);
         setWidth(newWidth);
         if (canvasRef.current) {
@@ -78,7 +78,7 @@ export const Uncropper: FC<UncropperProps> = ({ encodedImage, onSave, onCancel }
         }
     }
 
-    const onHeightChanged = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const onHeightChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newHeight = parseInt(e.target.value);
         setHeight(newHeight);
         if (canvasRef.current) {
@@ -175,38 +175,12 @@ export const Uncropper: FC<UncropperProps> = ({ encodedImage, onSave, onCancel }
                         {/* width */}
                         <div className="form-group">
                             <label>Width</label>
-                            <select
-                                className="form-control"
-                                value={width}
-                                onChange={onWidthChanged}
-                            >
-                                <option value="128">128</option>
-                                <option value="256">256</option>
-                                <option value="384">384</option>
-                                <option value="512">512</option>
-                                <option value="640">640</option>
-                                <option value="768">768</option>
-                                <option value="896">896</option>
-                                <option value="1024">1024</option>
-                            </select>
+                            <input type="number" className="form-control" value={width} onChange={onWidthChanged} min={128} max={1024} step={64} />
                         </div>
                         {/* height */}
                         <div className="form-group">
                             <label>Height</label>
-                            <select
-                                className="form-control"
-                                value={height}
-                                onChange={onHeightChanged}
-                            >
-                                <option value="128">128</option>
-                                <option value="256">256</option>
-                                <option value="384">384</option>
-                                <option value="512">512</option>
-                                <option value="640">640</option>
-                                <option value="768">768</option>
-                                <option value="896">896</option>
-                                <option value="1024">1024</option>
-                            </select>
+                            <input type="number" className="form-control" value={height} onChange={onHeightChanged} min={128} max={1024} step={64} />
                         </div>
                         
                     </div>
@@ -216,6 +190,9 @@ export const Uncropper: FC<UncropperProps> = ({ encodedImage, onSave, onCancel }
                             <label>Offset X</label>
                             {/* number input */}
                             <input type="number"
+                                step={64}
+                                min={-1024}
+                                max={1024}
                                 className="form-control"
                                 value={offsetX}
                                 onChange={onOffsetXChanged}
@@ -226,6 +203,9 @@ export const Uncropper: FC<UncropperProps> = ({ encodedImage, onSave, onCancel }
                             <label>Offset Y</label>
                             {/* number input */}
                             <input type="number"
+                                step={64}
+                                min={-1024}
+                                max={1024}
                                 className="form-control"
                                 value={offsetY}
                                 onChange={onOffsetYChanged}
