@@ -153,18 +153,42 @@ export interface CreateImageInput {
      * @type {number}
      * @memberof CreateImageInput
      */
-    size?: CreateImageInputSizeEnum;
+    height?: CreateImageInputHeightEnum;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    width?: CreateImageInputWidthEnum;
 }
 
 /**
     * @export
     * @enum {string}
     */
-export enum CreateImageInputSizeEnum {
+export enum CreateImageInputHeightEnum {
     NUMBER_128 = 128,
     NUMBER_256 = 256,
     NUMBER_384 = 384,
-    NUMBER_512 = 512
+    NUMBER_512 = 512,
+    NUMBER_640 = 640,
+    NUMBER_768 = 768,
+    NUMBER_896 = 896,
+    NUMBER_1024 = 1024
+}
+/**
+    * @export
+    * @enum {string}
+    */
+export enum CreateImageInputWidthEnum {
+    NUMBER_128 = 128,
+    NUMBER_256 = 256,
+    NUMBER_384 = 384,
+    NUMBER_512 = 512,
+    NUMBER_640 = 640,
+    NUMBER_768 = 768,
+    NUMBER_896 = 896,
+    NUMBER_1024 = 1024
 }
 
 /**
@@ -381,7 +405,13 @@ export interface Image {
      * @type {number}
      * @memberof Image
      */
-    size: ImageSizeEnum;
+    width?: ImageWidthEnum;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    height?: ImageHeightEnum;
 }
 
 /**
@@ -399,11 +429,29 @@ export enum ImageStatusEnum {
     * @export
     * @enum {string}
     */
-export enum ImageSizeEnum {
+export enum ImageWidthEnum {
     NUMBER_128 = 128,
     NUMBER_256 = 256,
     NUMBER_384 = 384,
-    NUMBER_512 = 512
+    NUMBER_512 = 512,
+    NUMBER_640 = 640,
+    NUMBER_768 = 768,
+    NUMBER_896 = 896,
+    NUMBER_1024 = 1024
+}
+/**
+    * @export
+    * @enum {string}
+    */
+export enum ImageHeightEnum {
+    NUMBER_128 = 128,
+    NUMBER_256 = 256,
+    NUMBER_384 = 384,
+    NUMBER_512 = 512,
+    NUMBER_640 = 640,
+    NUMBER_768 = 768,
+    NUMBER_896 = 896,
+    NUMBER_1024 = 1024
 }
 
 /**

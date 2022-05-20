@@ -1,7 +1,7 @@
 import React, { FC, useState, useEffect, useRef } from 'react';
 import { useHistory } from "react-router-dom"
 import { AxiosResponse } from "axios";
-import { AIBrushApi, CreateImageInput, CreateImageInputSizeEnum } from "../client/api"
+import { AIBrushApi, CreateImageInput, CreateImageInputHeightEnum, CreateImageInputWidthEnum } from "../client/api"
 import loadImage from "blueimp-load-image"
 import qs from "qs";
 import { MaskEditor } from "../components/MaskEditor";
@@ -33,7 +33,8 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         glid_3_xl_clip_guidance: false,
         glid_3_xl_clip_guidance_scale: 150,
         glid_3_xl_skip_iterations: 0,
-        size: 256,
+        width: 256,
+        height: 256,
     });
     const [editingMask, seteditingMask] = useState<string | null>(null);
     const [count, setCount] = useState(1)
@@ -114,7 +115,34 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         }))
         seteditingMask(null)
         if (input.encoded_image) {
-            renderInitImage(input.encoded_image, base64, input.size || 256)
+            renderInitImage(input.encoded_image, base64, input.width || 256, input.height || 256)
+        }
+    }
+
+    const onWidthChanged = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const width = parseInt(e.target.value)
+        if (width) {
+            setInput(input => ({
+                ...input,
+                width,
+            }))
+            if (input.encoded_image) {
+                renderInitImage(input.encoded_image, input.encoded_mask, width, input.height || 256)
+            }
+        }
+    }
+
+    const onHeightChanged = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const height = parseInt(e.target.value)
+        if (height) {
+            setInput(input => ({
+                ...input,
+                height,
+            }))
+            if (input.encoded_image) {
+                console.log("onHeightChanged");
+                renderInitImage(input.encoded_image, input.encoded_mask, input.width || 256, height)
+            }
         }
     }
 
@@ -129,7 +157,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         setInput({ ...newInput, model: model })
     }
 
-    const renderInitImage = (encoded_image: string, encoded_mask: string, size: number) => {
+    const renderInitImage = (encoded_image: string, encoded_mask: string | undefined, width: number, height: number) => {
         if (canvasRef.current && encoded_image) {
             console.log("renderInitImage")
             const ctx = canvasRef.current.getContext("2d")
@@ -138,13 +166,13 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                 image.src = `data:image/jpeg;base64,${encoded_image}`
                 image.onload = () => {
                     ctx.globalAlpha = 1
-                    ctx.drawImage(image, 0, 0, size, size)
+                    ctx.drawImage(image, 0, 0, width, height)
                     if (encoded_mask) {
                         const mask = new Image()
                         mask.src = `data:image/jpeg;base64,${encoded_mask}`
                         mask.onload = () => {
                             ctx.globalAlpha = 0.5
-                            ctx.drawImage(mask, 0, 0, size, size)
+                            ctx.drawImage(mask, 0, 0, width, height)
                         }
                     }
                 }
@@ -205,9 +233,10 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                 glid_3_xl_clip_guidance: !!image.data.glid_3_xl_clip_guidance,
                 glid_3_xl_clip_guidance_scale: image.data.glid_3_xl_clip_guidance_scale || 150,
                 glid_3_xl_skip_iterations: image.data.glid_3_xl_skip_iterations || 0,
-                size: image.data.size as any as CreateImageInputSizeEnum || 256,
+                width: image.data.width as any as CreateImageInputWidthEnum || 256,
+                height: image.data.height as any as CreateImageInputHeightEnum || 256,
             }))
-            renderInitImage(base64ImageData, base64NpyData, image.data.size as any as CreateImageInputSizeEnum || 256)
+            renderInitImage(base64ImageData, base64NpyData, image.data.width as any as CreateImageInputWidthEnum || 256, image.data.height as any as CreateImageInputHeightEnum || 256)
         }
 
         if (searchParams.parent) {
@@ -279,18 +308,38 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                 onChange={(e) => setInput({ ...input, label: e.target.value })}
                                 placeholder="Label" />
                         </div>
-                        {/* size - dropdown with 128, 256, 384 and 512 */}
                         <div className="form-group">
-                            <label>Size</label>
+                            <label>Width</label>
                             <select
                                 className="form-control"
-                                value={input.size}
-                                onChange={(e) => setInput({ ...input, size: parseInt(e.target.value) })}
+                                value={input.width}
+                                onChange={onWidthChanged}
                             >
-                                <option value="128">128x128</option>
-                                <option value="256">256x256</option>
-                                <option value="384">384x384</option>
-                                <option value="512">512x512</option>
+                                <option value="128">128</option>
+                                <option value="256">256</option>
+                                <option value="384">384</option>
+                                <option value="512">512</option>
+                                <option value="640">640</option>
+                                <option value="768">768</option>
+                                <option value="896">896</option>
+                                <option value="1024">1024</option>
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Height</label>
+                            <select
+                                className="form-control"
+                                value={input.height}
+                                onChange={onHeightChanged}
+                            >
+                                <option value="128">128</option>
+                                <option value="256">256</option>
+                                <option value="384">384</option>
+                                <option value="512">512</option>
+                                <option value="640">640</option>
+                                <option value="768">768</option>
+                                <option value="896">896</option>
+                                <option value="1024">1024</option>
                             </select>
                         </div>
                         <div className="form-group">
@@ -370,7 +419,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         {input.encoded_image && <div className="form-group">
                             <h5>Initial Image</h5>
                             {/* <img alt="" src={`data:image/jpeg;base64,${input.encoded_image}`} style={{ maxWidth: "100%" }} /> */}
-                            <canvas ref={canvasRef} style={{ maxWidth: "100%" }} width={input.size} height={input.size} />
+                            <canvas ref={canvasRef} style={{ maxWidth: "100%" }} width={input.width} height={input.height} />
                         </div>}
                         {/* If encoded_image is set, display edit button */}
                         <div className="form-group">

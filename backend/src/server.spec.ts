@@ -266,7 +266,8 @@ describe("server", () => {
                     phrases: ["test"],
                     negative_phrases: ["foobar"],
                     label: "test",
-                    size: 512,
+                    width: 512,
+                    height: 512,
                     iterations: 1,
                     parent: "",
                 })
@@ -478,7 +479,8 @@ describe("server", () => {
                             parent: image.id,
                             phrases: ["test2"],
                             label: "test2",
-                            size: 512,
+                            width: 512,
+                            height: 512,
                             iterations: 1,
                         })
                         childImage = response.data
@@ -750,7 +752,8 @@ describe("server", () => {
                     enable_video: true,
                     phrases: ["test"],
                     label: "test",
-                    size: 512,
+                    width: 512,
+                    height: 512,
                     iterations: 1,
                 })
                 image = response.data
@@ -837,7 +840,8 @@ describe("server", () => {
                     enable_video: true,
                     phrases: ["test"],
                     label: "test",
-                    size: 512,
+                    width: 512,
+                    height: 512,
                     iterations: 1,
                     enable_zoom: true,
                 })
@@ -945,7 +949,8 @@ describe("server", () => {
                     enable_video: true,
                     phrases: ["test"],
                     label: "test",
-                    size: 512,
+                    width: 512,
+                    height: 512,
                     iterations: 1,
                     enable_zoom: true,
                     zoom_frequency: 20,
@@ -1012,7 +1017,8 @@ describe("server", () => {
                     encoded_image: base64Image,
                     phrases: ["test"],
                     label: "test",
-                    size: 512,
+                    width: 512,
+                    height: 512,
                     iterations: 1
                 })
                 image = response.data
@@ -1043,7 +1049,8 @@ describe("server", () => {
                     encoded_mask: base64Image,
                     phrases: ["test"],
                     label: "test",
-                    size: 512,
+                    width: 512,
+                    height: 512,
                     iterations: 1
                 })
                 image = response.data
@@ -1065,7 +1072,8 @@ describe("server", () => {
                 const response = await client.createImage({
                     phrases: ["test"],
                     label: "test",
-                    size: 256,
+                    width: 256,
+                    height: 256,
                     iterations: 2,
                     parent: "",
                     model: "glid_3_xl",
@@ -1113,7 +1121,8 @@ describe("server", () => {
                     const resp = await client.createImage({
                         phrases: ["test"],
                         label: "test",
-                        size: 512,
+                        width: 512,
+                        height: 512,
                         iterations: 1
                     })
                     images.push(resp.data)
@@ -1643,7 +1652,8 @@ describe("server", () => {
                     createResponse = await client.createImage({
                         phrases: ["test"],
                         label: "test",
-                        size: 512,
+                        width: 512,
+                        height: 512,
                         iterations: 1,
                         parent: "",
                     })
@@ -1671,7 +1681,8 @@ describe("server", () => {
                     createResponse = await client.createImage({
                         phrases: ["test"],
                         label: "test",
-                        size: 512,
+                        width: 512,
+                        height: 512,
                         iterations: 1,
                         parent: "",
                     })
@@ -1708,7 +1719,8 @@ describe("server", () => {
                     createResponse = await client.createImage({
                         phrases: ["test"],
                         label: "test",
-                        size: 512,
+                        width: 512,
+                        height: 512,
                         iterations: 1,
                         parent: "",
                     })
@@ -1736,7 +1748,8 @@ describe("server", () => {
                     createResponse = await client.createImage({
                         phrases: ["test"],
                         label: "test",
-                        size: 512,
+                        width: 512,
+                        height: 512,
                         iterations: 1,
                         parent: "",
                     })
@@ -1770,7 +1783,8 @@ describe("server", () => {
                 createImageResponse = await client.createImage({
                     phrases: ["test"],
                     label: "test",
-                    size: 512,
+                    width: 512,
+                    height: 512,
                     iterations: 1,
                     parent: "",
                 })
@@ -2054,8 +2068,8 @@ describe("server", () => {
                     // });
                     createServiceAccountResponse = await backendService.createServiceAccountCreds(
                         "test@test.test",
-                        { 
-                           type: CreateServiceAccountInputTypeEnum.Private
+                        {
+                            type: CreateServiceAccountInputTypeEnum.Private
                         },
                     );
                 })

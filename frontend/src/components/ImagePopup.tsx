@@ -35,12 +35,13 @@ export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, assetsUrl, image, onCl
                 <Modal.Title>{image.label}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <img ref={img} style={{ width: "100%" }} id={`image-popup-${image.id}`} src={src} alt={image.label} />
+                <img ref={img} style={{ maxWidth: "100%", maxHeight: "1024px", display: "block", marginLeft: "auto", marginRight: "auto" }} id={`image-popup-${image.id}`} src={src} alt={image.label} />
                 {/* List these fields: status, iterations, phrases */}
                 <div className="row">
                     <div className="col-lg-12">
                         <p>Status: {image.status}</p>
-                        <p>Size: {image.size}</p>
+                        <p>Width: {image.width}</p>
+                        <p>Height: {image.height}</p>
                         <p>Iterations: {image.iterations}</p>
                         <p>Phrases: {image.phrases.join(", ")}</p>
                         {/* show negative phrases if model is glid_3_xl */}

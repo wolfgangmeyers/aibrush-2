@@ -698,9 +698,12 @@ components:
           type: boolean
         glid_3_xl_clip_guidance_scale:
           type: number
-        size:
+        height:
           type: integer
-          enum: [128, 256, 384, 512]
+          enum: [128, 256, 384, 512, 640, 768, 896, 1024]
+        width:
+          type: integer
+          enum: [128, 256, 384, 512, 640, 768, 896, 1024]
 
     UpdateImageInput:
       type: object
@@ -771,9 +774,12 @@ components:
           type: boolean
         glid_3_xl_clip_guidance_scale:
           type: number
-        size:
+        width:
           type: integer
-          enum: [128, 256, 384, 512]
+          enum: [128, 256, 384, 512, 640, 768, 896, 1024]
+        height:
+          type: integer
+          enum: [128, 256, 384, 512, 640, 768, 896, 1024]
       required:
         - id
         - created_at

@@ -78,7 +78,7 @@ def _vqgan_args(image_data, image):
     if args.max_iterations < args.display_freq:
         args.display_freq = args.max_iterations
     # args.on_save_callback = lambda i: update_image(i, "processing")
-    args.size = [image.size, image.size]
+    args.size = [image.width, image.height]
 
     # total laziness, I didn't want to refactor this after switching to invoking over cli.
     arg_mapping = {
@@ -180,8 +180,8 @@ parser.add_argument('--clip_guidance_scale', type = float, default = 150, requir
     args.skip_timesteps = image.glid_3_xl_skip_iterations
     args.clip_guidance = image.glid_3_xl_clip_guidance
     args.clip_guidance_scale = image.glid_3_xl_clip_guidance_scale
-    args.width = image.size
-    args.height = image.size
+    args.width = image.width
+    args.height = image.height
     args.steps = image.iterations
     return _to_args_list(args)
 
