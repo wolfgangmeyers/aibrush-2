@@ -86,11 +86,13 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                 ...input,
                 encoded_image: base64,
                 encoded_npy: undefined,
+                width: img.width,
+                height: img.height,
             })
+            renderInitImage(base64, undefined, img.width, img.height)
         }, {
-            maxWidth: 512,
-            maxHeight: 512,
-            crop: true,
+            maxWidth: 1024,
+            maxHeight: 1024,
             canvas: true,
         })
     }
@@ -457,7 +459,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                 />
                             </label>
                             {input.encoded_image && input.model == "glid_3_xl" && !input.encoded_mask && <button type="button" style={{marginRight: "8px"}} className="btn btn-sm btn-primary" onClick={onEditMask}>Edit Mask</button>}
-                            {input.encoded_image && input.model == "glid_3_xl" && !input.encoded_mask && <button type="button" className="btn btn-sm btn-primary" onClick={onUncropImage}>Uncrop Image</button>}
+                            {input.encoded_image && input.model == "glid_3_xl" && !input.encoded_mask && input.encoded_npy && <button type="button" className="btn btn-sm btn-primary" onClick={onUncropImage}>Uncrop Image</button>}
                         </div>
 
                         <div className="form-group">

@@ -91,7 +91,7 @@ export const Uncropper: FC<UncropperProps> = ({ encodedImage, onSave, onCancel }
         }
     }
 
-    const onOffsetXChanged = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const onOffsetXChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newOffsetX = parseInt(e.target.value);
         setOffsetX(newOffsetX);
         if (maskCanvas && imageCanvas) {
@@ -99,7 +99,7 @@ export const Uncropper: FC<UncropperProps> = ({ encodedImage, onSave, onCancel }
         }
     }
 
-    const onOffsetYChanged = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const onOffsetYChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newOffsetY = parseInt(e.target.value);
         setOffsetY(newOffsetY);
         if (maskCanvas && imageCanvas) {
@@ -214,52 +214,22 @@ export const Uncropper: FC<UncropperProps> = ({ encodedImage, onSave, onCancel }
                         {/* offsetX */}
                         <div className="form-group">
                             <label>Offset X</label>
-                            <select
+                            {/* number input */}
+                            <input type="number"
                                 className="form-control"
                                 value={offsetX}
                                 onChange={onOffsetXChanged}
-                            >
-                                <option value="-896">-896</option>
-                                <option value="-768">-768</option>
-                                <option value="-640">-640</option>
-                                <option value="-512">-512</option>
-                                <option value="-384">-384</option>
-                                <option value="-256">-256</option>
-                                <option value="-128">-128</option>
-                                <option value="0">0</option>
-                                <option value="128">128</option>
-                                <option value="256">256</option>
-                                <option value="384">384</option>
-                                <option value="512">512</option>
-                                <option value="640">640</option>
-                                <option value="768">768</option>
-                                <option value="896">896</option>
-                            </select>
+                            />
                         </div>
                         {/* offsetY */}
                         <div className="form-group">
                             <label>Offset Y</label>
-                            <select
+                            {/* number input */}
+                            <input type="number"
                                 className="form-control"
                                 value={offsetY}
                                 onChange={onOffsetYChanged}
-                            >
-                                <option value="-896">-896</option>
-                                <option value="-768">-768</option>
-                                <option value="-640">-640</option>
-                                <option value="-512">-512</option>
-                                <option value="-384">-384</option>
-                                <option value="-256">-256</option>
-                                <option value="-128">-128</option>
-                                <option value="0">0</option>
-                                <option value="128">128</option>
-                                <option value="256">256</option>
-                                <option value="384">384</option>
-                                <option value="512">512</option>
-                                <option value="640">640</option>
-                                <option value="768">768</option>
-                                <option value="896">896</option>
-                            </select>
+                            />
                         </div>
                     </div>
                 </div>
