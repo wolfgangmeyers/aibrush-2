@@ -174,14 +174,14 @@ export const MaskEditor: FC<MaskEditorProps> = ({ encodedImage, onSave, onCancel
     return (
         <Modal show={true} onHide={handleCancel} size="lg">
             <Modal.Header closeButton>
-                <Modal.Title>Image Editor</Modal.Title>
+                <Modal.Title>Mask Editor</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <p>
                     Areas in black will be repainted, areas in white will be preserved.
                 </p>
                 {image && <canvas
-                    style={{ width: "100%" }}
+                    style={{ maxWidth: "100%", maxHeight: "1024px", display: "block", marginLeft: "auto", marginRight: "auto"  }}
                     id="maskEditorCanvas"
                     width={image.width}
                     height={image.height}

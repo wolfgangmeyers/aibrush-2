@@ -5,6 +5,7 @@ import { AIBrushApi, CreateImageInput, CreateImageInputHeightEnum, CreateImageIn
 import loadImage from "blueimp-load-image"
 import qs from "qs";
 import { MaskEditor } from "../components/MaskEditor";
+import { Uncropper } from "../components/Uncropper";
 
 interface CreateImageProps {
     api: AIBrushApi
@@ -37,6 +38,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         height: 256,
     });
     const [editingMask, seteditingMask] = useState<string | null>(null);
+    const [uncroppingImage, setUncroppingImage] = useState<string | null>(null);
     const [count, setCount] = useState(1)
     const [creating, setCreating] = useState(false)
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -94,22 +96,8 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
     }
 
     const onEditMask = () => {
-        let img = input.encoded_image;
-        if (!img) {
-            // blank 512 x 512 image with white background
-            // create a new canvas
-            const canvas = document.createElement("canvas")
-            canvas.width = 512
-            canvas.height = 512
-            const ctx = canvas.getContext("2d")
-            if (ctx) {
-                ctx.fillStyle = "white"
-                ctx.fillRect(0, 0, 512, 512)
-                img = canvas.toDataURL("image/jpeg").split(",")[1]
-            }
-        }
-        if (img) {
-            seteditingMask(`data:image/jpeg;base64,${img}`)
+        if (input.encoded_image) {
+            seteditingMask(`data:image/jpeg;base64,${input.encoded_image}`)
         }
     }
 
@@ -119,11 +107,36 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         setInput(input => ({
             ...input,
             encoded_mask: base64,
+            glid_3_xl_skip_iterations: 0,
         }))
         seteditingMask(null)
         if (input.encoded_image) {
             renderInitImage(input.encoded_image, base64, input.width || 256, input.height || 256)
         }
+    }
+
+    const onUncropImage = () => {
+        if (input.encoded_image) {
+            setUncroppingImage(`data:image/jpeg;base64,${input.encoded_image}`)
+        }
+    }
+
+    const onImageUncropped = (imageUri: string, maskUri: string, width: number, height: number, offsetX: number, offsetY: number) => {
+        const imageBase64 = imageUri.split(",")[1]
+        const maskBase64 = maskUri.split(",")[1]
+        setInput(input => ({
+            ...input,
+            encoded_image: imageBase64,
+            encoded_mask: maskBase64,
+            // encoded_npy: undefined,
+            glid_3_xl_skip_iterations: 0,
+            width,
+            height,
+            uncrop_offset_x: offsetX,
+            uncrop_offset_y: offsetY,
+        }))
+        setUncroppingImage(null)
+        renderInitImage(imageBase64, maskBase64, width, height)
     }
 
     const onWidthChanged = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -403,7 +416,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         </div>}
 
                         {/* glid_3_xl_skip_iterations number input*/}
-                        {input.model == "glid_3_xl" && <div className="form-group">
+                        {input.model == "glid_3_xl" && !input.encoded_mask && <div className="form-group">
                             <label>Skip iterations</label>
                             <input min={0} max={10000} className="form-control" type="number" value={input.glid_3_xl_skip_iterations} onChange={(e) => setInput({ ...input, glid_3_xl_skip_iterations: parseInt(e.target.value) })} />
                         </div>}
@@ -443,7 +456,8 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                     onChange={e => onImageSelected(e)}
                                 />
                             </label>
-                            {input.encoded_image && input.model == "glid_3_xl" && <button type="button" className="btn btn-sm btn-primary" onClick={onEditMask}>Edit Mask</button>}
+                            {input.encoded_image && input.model == "glid_3_xl" && !input.encoded_mask && <button type="button" className="btn btn-sm btn-primary" onClick={onEditMask}>Edit Mask</button>}
+                            {input.encoded_image && input.model == "glid_3_xl" && !input.encoded_mask && <button type="button" className="btn btn-sm btn-primary" onClick={onUncropImage}>Uncrop Image</button>}
                         </div>
 
                         <div className="form-group">
@@ -464,6 +478,13 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                     encodedImage={editingMask}
                     onCancel={() => seteditingMask(null)}
                     onSave={onMaskEdited}
+                />
+            )}
+            {uncroppingImage && (
+                <Uncropper
+                    encodedImage={uncroppingImage}
+                    onCancel={() => setUncroppingImage(null)}
+                    onSave={onImageUncropped}
                 />
             )}
         </>

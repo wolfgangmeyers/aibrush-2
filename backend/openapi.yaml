@@ -704,6 +704,10 @@ components:
         width:
           type: integer
           enum: [128, 256, 384, 512, 640, 768, 896, 1024]
+        uncrop_offset_x:
+          type: integer
+        uncrop_offset_y:
+          type: integer
 
     UpdateImageInput:
       type: object
@@ -780,6 +784,12 @@ components:
         height:
           type: integer
           enum: [128, 256, 384, 512, 640, 768, 896, 1024]
+        uncrop_offset_x:
+          type: integer
+          enum: [-896, -768, -640, -512, -384, -256, -128, 0, 128, 256, 384, 512, 640, 768, 896]
+        uncrop_offset_y:
+          type: integer
+          enum: [-896, -768, -640, -512, -384, -256, -128, 0, 128, 256, 384, 512, 640, 768, 896]
       required:
         - id
         - created_at

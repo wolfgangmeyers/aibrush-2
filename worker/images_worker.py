@@ -177,6 +177,10 @@ parser.add_argument('--clip_guidance_scale', type = float, default = 150, requir
         args.text = "|".join(image.phrases)
     if len(image.negative_phrases) > 0:
         args.negative = "|".join(image.negative_phrases)
+    if (image.uncrop_offset_x):
+        args.edit_x = image.uncrop_offset_x
+    if (image.uncrop_offset_y):
+        args.edit_y = image.uncrop_offset_y
     args.skip_timesteps = image.glid_3_xl_skip_iterations
     args.clip_guidance = image.glid_3_xl_clip_guidance
     args.clip_guidance_scale = image.glid_3_xl_clip_guidance_scale

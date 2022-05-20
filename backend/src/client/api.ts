@@ -160,6 +160,18 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     width?: CreateImageInputWidthEnum;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    uncrop_offset_x?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    uncrop_offset_y?: number;
 }
 
 /**
@@ -412,6 +424,18 @@ export interface Image {
      * @memberof Image
      */
     height?: ImageHeightEnum;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    uncrop_offset_x?: ImageUncropOffsetXEnum;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    uncrop_offset_y?: ImageUncropOffsetYEnum;
 }
 
 /**
@@ -452,6 +476,48 @@ export enum ImageHeightEnum {
     NUMBER_768 = 768,
     NUMBER_896 = 896,
     NUMBER_1024 = 1024
+}
+/**
+    * @export
+    * @enum {string}
+    */
+export enum ImageUncropOffsetXEnum {
+    NUMBER_MINUS_896 = -896,
+    NUMBER_MINUS_768 = -768,
+    NUMBER_MINUS_640 = -640,
+    NUMBER_MINUS_512 = -512,
+    NUMBER_MINUS_384 = -384,
+    NUMBER_MINUS_256 = -256,
+    NUMBER_MINUS_128 = -128,
+    NUMBER_0 = 0,
+    NUMBER_128 = 128,
+    NUMBER_256 = 256,
+    NUMBER_384 = 384,
+    NUMBER_512 = 512,
+    NUMBER_640 = 640,
+    NUMBER_768 = 768,
+    NUMBER_896 = 896
+}
+/**
+    * @export
+    * @enum {string}
+    */
+export enum ImageUncropOffsetYEnum {
+    NUMBER_MINUS_896 = -896,
+    NUMBER_MINUS_768 = -768,
+    NUMBER_MINUS_640 = -640,
+    NUMBER_MINUS_512 = -512,
+    NUMBER_MINUS_384 = -384,
+    NUMBER_MINUS_256 = -256,
+    NUMBER_MINUS_128 = -128,
+    NUMBER_0 = 0,
+    NUMBER_128 = 128,
+    NUMBER_256 = 256,
+    NUMBER_384 = 384,
+    NUMBER_512 = 512,
+    NUMBER_640 = 640,
+    NUMBER_768 = 768,
+    NUMBER_896 = 896
 }
 
 /**
