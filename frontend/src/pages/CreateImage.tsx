@@ -456,7 +456,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                     onChange={e => onImageSelected(e)}
                                 />
                             </label>
-                            {input.encoded_image && input.model == "glid_3_xl" && !input.encoded_mask && <button type="button" className="btn btn-sm btn-primary" onClick={onEditMask}>Edit Mask</button>}
+                            {input.encoded_image && input.model == "glid_3_xl" && !input.encoded_mask && <button type="button" style={{marginRight: "8px"}} className="btn btn-sm btn-primary" onClick={onEditMask}>Edit Mask</button>}
                             {input.encoded_image && input.model == "glid_3_xl" && !input.encoded_mask && <button type="button" className="btn btn-sm btn-primary" onClick={onUncropImage}>Uncrop Image</button>}
                         </div>
 
