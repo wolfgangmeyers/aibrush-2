@@ -38,13 +38,20 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
     });
     const [editingMask, seteditingMask] = useState<string | null>(null);
     const [count, setCount] = useState(1)
+    const [creating, setCreating] = useState(false)
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        for (let i = 0; i < count; i++) {
-            await props.api.createImage(input);
+        setCreating(true)
+        try {
+            for (let i = 0; i < count; i++) {
+                await props.api.createImage(input);
+            }
+        } finally {
+            setCreating(false)
         }
+        
 
         // redirect to images page
         history.push("/images")
@@ -443,7 +450,10 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             {/* Cancel button "/" */}
                             <button onClick={onCancel} type="button" className="btn btn-secondary">Cancel</button>
                             &nbsp;
-                            <button type="submit" className="btn btn-primary">Create</button>
+                            <button type="submit" className="btn btn-primary" disabled={creating}>
+                                {creating && <i className="fa fa-spinner fa-spin" />}
+                                {creating ? "Creating..." : "Create"}
+                            </button>
                         </div>
 
                     </form>
