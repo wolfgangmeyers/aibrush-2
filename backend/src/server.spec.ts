@@ -28,7 +28,7 @@ import {
 
 // import { Mailcatcher, MailcatcherMessage } from './mailcatcher'
 import { Config } from './config'
-import { Authentication } from './auth'
+import { Authentication, hash } from './auth'
 import { sleep } from './sleep'
 
 jest.setTimeout(60000);
@@ -310,7 +310,7 @@ describe("server", () => {
                 })
             })
 
-            describe.only("when getting the image by id", () => {
+            describe("when getting the image by id", () => {
                 let img: Image;
 
                 beforeEach(async () => {
@@ -330,7 +330,7 @@ describe("server", () => {
                 })
             })
 
-            describe.only("when getting the image with a service account", () => {
+            describe("when getting the image with a service account", () => {
                 let img: Image;
 
                 beforeEach(async () => {
@@ -1406,7 +1406,7 @@ describe("server", () => {
                 expect(createResponse.data.seed_id).toBe(createSeedResponse.data.id)
                 // created_at, created_by, updated_at
                 expect(createResponse.data.created_at).toBeDefined()
-                expect(createResponse.data.created_by).toEqual("test@test.test")
+                expect(createResponse.data.created_by).toEqual(hash("test@test.test"))
                 expect(createResponse.data.updated_at).toBeDefined()
                 expect(createResponse.data.result).toEqual([])
             })
@@ -1423,7 +1423,7 @@ describe("server", () => {
                     expect(listResponse.data.suggestionsJobs[0].id).toBe(createResponse.data.id)
                     expect(listResponse.data.suggestionsJobs[0].seed_id).toBe(createSeedResponse.data.id)
                     expect(listResponse.data.suggestionsJobs[0].created_at).toBeDefined()
-                    expect(listResponse.data.suggestionsJobs[0].created_by).toEqual("test@test.test")
+                    expect(listResponse.data.suggestionsJobs[0].created_by).toEqual(hash("test@test.test"))
                     expect(listResponse.data.suggestionsJobs[0].updated_at).toBeDefined()
                     expect(listResponse.data.suggestionsJobs[0].result).toEqual([])
                 })
@@ -1440,7 +1440,7 @@ describe("server", () => {
                     expect(getResponse.data.id).toBe(createResponse.data.id)
                     expect(getResponse.data.seed_id).toBe(createSeedResponse.data.id)
                     expect(getResponse.data.created_at).toBeDefined()
-                    expect(getResponse.data.created_by).toEqual("test@test.test")
+                    expect(getResponse.data.created_by).toEqual(hash("test@test.test"))
                     expect(getResponse.data.updated_at).toBeDefined()
                     expect(getResponse.data.result).toEqual([])
                 })
@@ -1473,7 +1473,7 @@ describe("server", () => {
                     expect(getResponse.data.id).toBe(createResponse.data.id)
                     expect(getResponse.data.seed_id).toBe(createSeedResponse.data.id)
                     expect(getResponse.data.created_at).toBeDefined()
-                    expect(getResponse.data.created_by).toEqual("test@test.test")
+                    expect(getResponse.data.created_by).toEqual(hash("test@test.test"))
                     expect(getResponse.data.updated_at).toBeDefined()
                     expect(getResponse.data.result).toEqual([])
                 })
@@ -1496,7 +1496,7 @@ describe("server", () => {
                     // other fields should be unchanged
                     expect(updateResponse.data.seed_id).toBe(createSeedResponse.data.id)
                     expect(updateResponse.data.created_at).toBeDefined()
-                    expect(updateResponse.data.created_by).toEqual("test@test.test")
+                    expect(updateResponse.data.created_by).toEqual(hash("test@test.test"))
                     expect(updateResponse.data.updated_at).toBeDefined()
                 })
             })
@@ -1523,7 +1523,7 @@ describe("server", () => {
                     // other fields should be unchanged
                     expect(updateResponse.data.seed_id).toBe(createSeedResponse.data.id)
                     expect(updateResponse.data.created_at).toBeDefined()
-                    expect(updateResponse.data.created_by).toEqual("test@test.test")
+                    expect(updateResponse.data.created_by).toEqual(hash("test@test.test"))
                     expect(updateResponse.data.updated_at).toBeDefined()
                 })
 
@@ -1541,7 +1541,7 @@ describe("server", () => {
                         // other fields should be unchanged
                         expect(getResponse.data.seed_id).toBe(createSeedResponse.data.id)
                         expect(getResponse.data.created_at).toBeDefined()
-                        expect(getResponse.data.created_by).toEqual("test@test.test")
+                        expect(getResponse.data.created_by).toEqual(hash("test@test.test"))
                         expect(getResponse.data.updated_at).toBeDefined()
                     })
                 })
@@ -1598,7 +1598,7 @@ describe("server", () => {
                     // other fields should be unchanged
                     expect(processResponse.data.seed_id).toBe(createSeedResponse.data.id)
                     expect(processResponse.data.created_at).toBeDefined()
-                    expect(processResponse.data.created_by).toEqual("test@test.test")
+                    expect(processResponse.data.created_by).toEqual(hash("test@test.test"))
                     expect(processResponse.data.updated_at).toBeDefined()
                 })
 
@@ -1817,7 +1817,7 @@ describe("server", () => {
                 expect(createSvgResponse.data.updated_at).toBeDefined();
                 expect(createSvgResponse.data.status).toEqual(SvgJobStatusEnum.Pending);
                 expect(createSvgResponse.data.image_id).toEqual(createImageResponse.data.id);
-                expect(createSvgResponse.data.created_by).toEqual("test@test.test");
+                expect(createSvgResponse.data.created_by).toEqual(hash("test@test.test"));
             })
 
             describe("when getting the svg job by id", () => {
@@ -1835,7 +1835,7 @@ describe("server", () => {
                     expect(response.data.updated_at).toBeDefined();
                     expect(response.data.status).toEqual(SvgJobStatusEnum.Pending);
                     expect(response.data.image_id).toEqual(createImageResponse.data.id);
-                    expect(response.data.created_by).toEqual("test@test.test")
+                    expect(response.data.created_by).toEqual(hash("test@test.test"))
                 })
             })
 
@@ -1874,7 +1874,7 @@ describe("server", () => {
                     expect(response.data.updated_at).toBeDefined();
                     expect(response.data.status).toEqual(SvgJobStatusEnum.Pending);
                     expect(response.data.image_id).toEqual(createImageResponse.data.id);
-                    expect(response.data.created_by).toEqual("test@test.test")
+                    expect(response.data.created_by).toEqual(hash("test@test.test"))
                 })
             })
 
@@ -1908,7 +1908,7 @@ describe("server", () => {
                     expect(response.data.updated_at).toBeDefined();
                     expect(response.data.status).toEqual(SvgJobStatusEnum.Processing);
                     expect(response.data.image_id).toEqual(createImageResponse.data.id);
-                    expect(response.data.created_by).toEqual("test@test.test");
+                    expect(response.data.created_by).toEqual(hash("test@test.test"));
                 })
 
                 describe("when updating the svg job to completed with result as a service account", () => {
@@ -1928,7 +1928,7 @@ describe("server", () => {
                         expect(response.data.updated_at).toBeDefined();
                         expect(response.data.status).toEqual(SvgJobStatusEnum.Completed);
                         expect(response.data.image_id).toEqual(createImageResponse.data.id);
-                        expect(response.data.created_by).toEqual("test@test.test")
+                        expect(response.data.created_by).toEqual(hash("test@test.test"))
                     })
 
                     describe("when updating the svg job after it is completed as a service account", () => {
@@ -1987,7 +1987,7 @@ describe("server", () => {
                     expect(response.data.updated_at).toBeDefined();
                     expect(response.data.status).toEqual(SvgJobStatusEnum.Processing);
                     expect(response.data.image_id).toEqual(createImageResponse.data.id);
-                    expect(response.data.created_by).toEqual("test@test.test");
+                    expect(response.data.created_by).toEqual(hash("test@test.test"));
                 })
             })
 
