@@ -310,7 +310,7 @@ describe("server", () => {
                 })
             })
 
-            describe("when getting the image by id", () => {
+            describe.only("when getting the image by id", () => {
                 let img: Image;
 
                 beforeEach(async () => {
@@ -330,7 +330,7 @@ describe("server", () => {
                 })
             })
 
-            describe("when getting the image with a service account", () => {
+            describe.only("when getting the image with a service account", () => {
                 let img: Image;
 
                 beforeEach(async () => {
