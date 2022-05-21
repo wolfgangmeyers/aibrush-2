@@ -7,7 +7,7 @@ import { createHttpTerminator, HttpTerminator } from "http-terminator"
 
 import { BackendService } from "./backend";
 import { Config } from "./config"
-import { AuthHelper, AuthJWTPayload, authMiddleware, ServiceAccountConfig } from "./auth"
+import { AuthHelper, AuthJWTPayload, authMiddleware, ServiceAccountConfig, hash } from "./auth"
 import { ImageStatusEnum } from "./client"
 
 export class Server {
@@ -16,14 +16,18 @@ export class Server {
     private terminator: HttpTerminator;
     private authHelper: AuthHelper;
     cleanupHandle: NodeJS.Timer
+    private hashedServiceAccounts: { [key: string]: boolean } = {}
 
     constructor(private config: Config, private backendService: BackendService, private port: string | number) {
         this.app = express()
         this.authHelper = new AuthHelper(config)
+        for (let serviceAccount of this.config.serviceAccounts || []) {
+            this.hashedServiceAccounts[hash(serviceAccount)] = true
+        }
     }
 
     private isServiceAccount(jwt: AuthJWTPayload): boolean {
-        return this.config.serviceAccounts.indexOf(jwt.userId) != -1 || !!jwt.serviceAccountConfig
+        return this.hashedServiceAccounts[jwt.userId] || !!jwt.serviceAccountConfig
     }
 
     async init() {

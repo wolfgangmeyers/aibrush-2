@@ -96,6 +96,8 @@ export class BackendService {
             connectionString: this.config.databaseUrl,
             ssl: this.config.databaseSsl && { rejectUnauthorized: false },
         })
+
+        this.anonymizeSuggestionSeedCreatedBy()
     }
 
     async destroy() {
@@ -1037,6 +1039,27 @@ export class BackendService {
             )
         } finally {
             await client.end()
+        }
+    }
+
+    // TODO: remove after running
+    async anonymizeSuggestionSeedCreatedBy(): Promise<void> {
+        const client = await this.pool.connect()
+        try {
+            // get all suggestion seeds
+            const result = await client.query(
+                `SELECT * FROM suggestion_seeds`
+            )
+            // for each seed, anonymize the created_by field by hashing it
+            for (const seed of result.rows) {
+                const hashed = hash(seed.created_by)
+                await client.query(
+                    `UPDATE suggestion_seeds SET created_by=$1 WHERE id=$2`,
+                    [hashed, seed.id]
+                )
+            }
+        } finally {
+            client.release()
         }
     }
 }
