@@ -988,4 +988,11 @@ components:
         type:
           type: string
           enum: [public, private]
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        active:
+          type: boolean
 

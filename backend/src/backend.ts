@@ -26,6 +26,7 @@ import {
     SvgJob,
     SvgJobStatusEnum,
     UpdateSvgJobInput,
+    User,
 } from "./client/api"
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
@@ -888,15 +889,41 @@ export class BackendService {
         }
     }
 
-    isUserAllowed(email: string): boolean {
-        if (!this.config.userWhitelist || this.config.userWhitelist.length === 0) {
+    async isUserAllowed(email: string): Promise<boolean> {
+        if (this.config.adminUsers && this.config.adminUsers.includes(email)) {
             return true
         }
-        return this.config.userWhitelist.includes(email.toLowerCase())
+        const user: User = await this.getUser(hash(email))
+        if (!user || !user.active) {
+            return false
+        }
+        return true
+    }
+
+    /*
+    CREATE TABLE users(
+        id VARCHAR(255) NOT NULL PRIMARY KEY,
+        active BOOLEAN NOT NULL
+    );
+    */
+    async getUser(id: string): Promise<User> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM users WHERE id=$1`,
+                [id]
+            )
+            if (result.rowCount === 0) {
+                return null
+            }
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
     }
 
     async login(email: string, sendEmail=true): Promise<string> {
-        if (!this.isUserAllowed(email)) {
+        if (!await this.isUserAllowed(email)) {
             throw new Error("User not allowed")
         }
         // generate crypto random 6 digit code

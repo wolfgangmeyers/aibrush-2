@@ -18,7 +18,7 @@ export interface Config {
     userAccessTokenExpirationSeconds: number;
     serviceAccountAccessTokenExpirationSeconds: number;
     serviceAccounts: string[];
-    userWhitelist: string[];
+    adminUsers: string[];
     assetsBaseUrl: string;
 }
 
@@ -40,7 +40,7 @@ export const loadConfig = (): Config => {
         userAccessTokenExpirationSeconds: parseInt(process.env.USER_ACCESS_TOKEN_EXPIRATION_SECONDS, 10),
         serviceAccountAccessTokenExpirationSeconds: parseInt(process.env.SERVICE_ACCOUNT_ACCESS_TOKEN_EXPIRATION_SECONDS, 10),
         serviceAccounts: process.env.SERVICE_ACCOUNTS ? process.env.SERVICE_ACCOUNTS.split(",") : [],
-        userWhitelist: process.env.USER_WHITELIST ? process.env.USER_WHITELIST.split(",").map(u => u.toLowerCase().trim()) : [],
+        adminUsers: process.env.ADMIN_USERS ? process.env.ADMIN_USERS.split(",").map(u => u.toLowerCase().trim()) : [],
         assetsBaseUrl: process.env.ASSETS_BASE_URL || "/api/images",
     };
     return config;

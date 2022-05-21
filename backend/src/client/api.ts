@@ -896,6 +896,25 @@ export interface UpdateSvgJobInput {
 /**
  * 
  * @export
+ * @interface User
+ */
+export interface User {
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    id?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof User
+     */
+    active?: boolean;
+}
+/**
+ * 
+ * @export
  * @interface VerifyLoginInput
  */
 export interface VerifyLoginInput {
