@@ -1,7 +1,11 @@
-
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { Config } from "./config";
+
+export function hash(username: string): string {
+    return crypto.createHash("sha256").update(username).digest("base64")
+}
 
 export interface Authentication {
     accessToken: string;
@@ -48,6 +52,9 @@ export class AuthHelper {
 
     // create token with expiration
     private createToken(userId: string, type: "access" | "refresh", expiration: number, serviceAccountConfig?: ServiceAccountConfig): string {
+        if (userId.indexOf("@") > -1) {
+            userId = hash(userId);
+        }
         let payload: AuthJWTPayload = {
             userId,
             type,

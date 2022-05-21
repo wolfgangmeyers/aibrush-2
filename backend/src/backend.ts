@@ -5,6 +5,7 @@ import * as uuid from "uuid"
 import moment from "moment"
 import nodemailer from "nodemailer";
 import sharp from "sharp";
+import { hash } from "./auth";
 
 import {
     ImageList,
@@ -85,6 +86,9 @@ export class BackendService {
             await migrate({ client }, "./src/migrations")
             await client.end()
             await sleep(100)
+
+            // this will run in the background. Fun!
+            this.anonymizeUsers();
         } catch (error) {
             console.error(error)
             throw error
@@ -148,6 +152,45 @@ export class BackendService {
         } finally {
             client.release()
         }
+    }
+
+
+    private async listAllImages(): Promise<ImageList> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                "SELECT * FROM images ORDER BY updated_at DESC"
+            )
+            return {
+                images: result.rows.map(i => this.hydrateImage(i))
+            }
+        } finally {
+            client.release()
+        }
+    }
+
+    private async anonymizeUsers(): Promise<void> {
+        await sleep(1000 * 10);
+        if (this.pool) {
+            console.log("anonymizing users")
+            const images = await this.listAllImages()
+            const client = await this.pool.connect()
+            try {
+                for (let image of images.images) {
+                    const createdBy = image.created_by
+                    if (createdBy.indexOf("@") > 0) {
+                        image.created_by = hash(createdBy)
+                        await client.query(
+                            "UPDATE images SET created_by=$1 WHERE id=$2",
+                            [image.created_by, image.id]
+                        )
+                    }
+                }
+            } finally {
+                client.release()
+            }
+        }
+        
     }
 
     // get image by id

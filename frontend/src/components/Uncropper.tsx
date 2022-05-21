@@ -163,6 +163,9 @@ export const Uncropper: FC<UncropperProps> = ({ encodedImage, onSave, onCancel }
                 <Modal.Title>Uncrop Image</Modal.Title>
             </Modal.Header>
             <Modal.Body>
+                <p>
+                    <b>Note:</b> Uncropping may not work well with images larger than 256x256.
+                </p>
                 {image && <canvas
                     style={{ maxWidth: "100%", maxHeight: "1024px", display: "block", marginLeft: "auto", marginRight: "auto" }}
                     id="uncropperCanvas"
