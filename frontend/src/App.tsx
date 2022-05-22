@@ -13,6 +13,7 @@ import { TokenRefresher } from "./components/TokenRefresher";
 import { Healthchecker } from './components/Healthchecker';
 import { SuggestionsPage } from "./pages/Suggestions";
 import { WorkerConfigPage } from "./pages/WorkerConfig";
+import { Admin } from "./pages/Admin";
 
 const config = getConfig()
 const httpClient = axios.default;
@@ -28,6 +29,13 @@ function App() {
 
   const [credentials, setCredentials] = useState<LoginResult | null>(null);
   const [assetsUrl, setAssetsUrl] = useState<string>("/api/images");
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+
+  const onLogout = () => {
+    setCredentials(null);
+    localStorage.removeItem("credentials");
+    httpClient.defaults.headers.common['Authorization'] = undefined;
+  }
 
   const init = async () => {
     console.log("App.init")
@@ -44,6 +52,8 @@ function App() {
         // save to storage
         localStorage.setItem("credentials", JSON.stringify(result.data));
         updateHttpClient(result.data);
+        const isAdmin = await client.isAdmin();
+        setIsAdmin(!!isAdmin.data.is_admin);
       } catch (e) {
         console.log(e);
       }
@@ -73,7 +83,7 @@ function App() {
               {!credentials && <Login httpClient={httpClient} client={client} onLogin={onLogin} />}
               {/* if credentials are set, show a bootstrap logout button a the far top right corner div */}
               {credentials && <>
-                <button className="btn btn-primary top-button" onClick={() => setCredentials(null)}>
+                <button className="btn btn-primary top-button" onClick={() => onLogout()}>
                   {/* font awesome logout icon */}
                   <i className="fas fa-sign-out-alt"></i>&nbsp;
                   Logout
@@ -96,7 +106,7 @@ function App() {
           {/* if credentials are set, show the rest of the app */}
           {credentials && <Switch>
             <Route path="/" exact={true}>
-              <MainMenu />
+              <MainMenu isAdmin={isAdmin} />
             </Route>
             <Route path="/create-image">
               <CreateImage api={client} apiUrl={config.apiUrl} />
@@ -111,6 +121,12 @@ function App() {
             <Route path="/worker-config">
               <WorkerConfigPage api={client} />
             </Route>
+            {
+              isAdmin &&
+              <Route path="/admin">
+                <Admin api={client} />
+              </Route>
+            }
           </Switch>}
         </div>
       </BrowserRouter>

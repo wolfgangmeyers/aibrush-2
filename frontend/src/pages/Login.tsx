@@ -1,6 +1,7 @@
 // Login react component with hooks
 import React, { useState, FC } from 'react';
 import * as axios from "axios";
+import qs from "qs";
 import { AIBrushApi, LoginResult } from "../client/api";
 
 interface LoginProps {
@@ -24,9 +25,15 @@ export const Login: FC<LoginProps> = props => {
             setErr("Invalid email address");
             return;
         }
+        // check query string for invite_code
+        const query = window.location.search;
+        const queryParams = qs.parse(query.substring(1));
+        const inviteCode = queryParams["invite_code"];
+        console.log("inviteCode", inviteCode);
         try {
             await props.client.login({
-                email
+                email: email,
+                invite_code: inviteCode as string,
             })
             setEmailSubmitted(true);
         } catch (err) {

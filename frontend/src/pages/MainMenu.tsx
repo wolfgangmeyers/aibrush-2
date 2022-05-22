@@ -5,7 +5,11 @@
 import React, { FC } from 'react';
 import { Link } from "react-router-dom"
 
-export const MainMenu: FC = () => {
+interface Props {
+    isAdmin: boolean
+}
+
+export const MainMenu: FC<Props> = ({isAdmin}) => {
     return (
         <>
             {/* Header: Welcome to AIBrush! */}
@@ -45,6 +49,14 @@ export const MainMenu: FC = () => {
                             <i className="fas fa-wrench" />&nbsp;
                             Worker Config
                         </Link>
+                        {
+                            isAdmin &&
+                            <Link to="/admin" className="btn btn-primary">
+                                {/* font awesome wrench icon */}
+                                <i className="fas fa-wrench" />&nbsp;
+                                Admin
+                            </Link>
+                        }
                     </div>
                 </div>
             </div>
