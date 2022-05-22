@@ -50,7 +50,7 @@ export class Server {
 
         this.app.post("/api/auth/login", async (req, res) => {
             try {
-                const token = await this.backendService.login(req.body.email)
+                const token = await this.backendService.login(req.body.email, true, req.body.invite_code)
                 res.sendStatus(204)
             } catch (err) {
                 // if "User not allowed" then return 403
@@ -788,6 +788,38 @@ export class Server {
                 const serviceAccountConfig = req.body as ServiceAccountConfig
                 const result = await this.backendService.createServiceAccountCreds(jwt.userId, serviceAccountConfig)
                 res.json(result)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        this.app.post("/api/invite-codes", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // service accounts can't create invite codes
+                if (this.isServiceAccount(jwt)) {
+                    res.sendStatus(403)
+                    return
+                }
+                if (!await this.backendService.isUserAdmin(jwt.userId)) {
+                    console.log(`user ${jwt.userId} tried to create invite code but is not an admin`)
+                    res.sendStatus(404)
+                    return
+                }
+                const inviteCode = await this.backendService.createInviteCode()
+                res.status(201).json(inviteCode)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        this.app.get("/api/is-admin", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                const isAdmin = await this.backendService.isUserAdmin(jwt.userId)
+                res.json({ is_admin: isAdmin })
             } catch (err) {
                 console.error(err)
                 res.sendStatus(500)

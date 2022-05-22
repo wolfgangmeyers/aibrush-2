@@ -536,6 +536,44 @@ export interface ImageList {
 /**
  * 
  * @export
+ * @interface InviteCode
+ */
+export interface InviteCode {
+    /**
+     * 
+     * @type {string}
+     * @memberof InviteCode
+     */
+    id?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof InviteCode
+     */
+    created_at?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof InviteCode
+     */
+    created_by?: string;
+}
+/**
+ * 
+ * @export
+ * @interface IsAdminResponse
+ */
+export interface IsAdminResponse {
+    /**
+     * 
+     * @type {boolean}
+     * @memberof IsAdminResponse
+     */
+    is_admin?: boolean;
+}
+/**
+ * 
+ * @export
  * @interface LoginInput
  */
 export interface LoginInput {
@@ -545,6 +583,12 @@ export interface LoginInput {
      * @memberof LoginInput
      */
     email?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof LoginInput
+     */
+    invite_code?: string;
 }
 /**
  * 
@@ -965,6 +1009,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(createImageInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a new invite code
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createInviteCode: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/invite-codes`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1624,6 +1697,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Check if the user is admin
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        isAdmin: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/is-admin`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {number} [limit] 
@@ -2121,6 +2223,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a new invite code
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createInviteCode(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InviteCode>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createInviteCode(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Create a service account
          * @param {CreateServiceAccountInput} [createServiceAccountInput] 
          * @param {*} [options] Override http request option.
@@ -2319,6 +2430,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Check if the user is admin
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async isAdmin(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<IsAdminResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.isAdmin(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {number} [limit] 
@@ -2479,6 +2599,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         createImage(createImageInput?: CreateImageInput, options?: any): AxiosPromise<Image> {
             return localVarFp.createImage(createImageInput, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Create a new invite code
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createInviteCode(options?: any): AxiosPromise<InviteCode> {
+            return localVarFp.createInviteCode(options).then((request) => request(axios, basePath));
         },
         /**
          * Create a service account
@@ -2659,6 +2787,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.healthcheck(options).then((request) => request(axios, basePath));
         },
         /**
+         * Check if the user is admin
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        isAdmin(options?: any): AxiosPromise<IsAdminResponse> {
+            return localVarFp.isAdmin(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {number} [limit] 
@@ -2806,6 +2942,16 @@ export class AIBrushApi extends BaseAPI {
      */
     public createImage(createImageInput?: CreateImageInput, options?: any) {
         return AIBrushApiFp(this.configuration).createImage(createImageInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a new invite code
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createInviteCode(options?: any) {
+        return AIBrushApiFp(this.configuration).createInviteCode(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3024,6 +3170,16 @@ export class AIBrushApi extends BaseAPI {
      */
     public healthcheck(options?: any) {
         return AIBrushApiFp(this.configuration).healthcheck(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Check if the user is admin
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public isAdmin(options?: any) {
+        return AIBrushApiFp(this.configuration).isAdmin(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

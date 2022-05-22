@@ -553,6 +553,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SvgJob"
+  /api/invite-codes:
+    post:
+      description: Create a new invite code
+      operationId: createInviteCode
+      tags:
+        - AIBrush
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteCode"
+  /api/is-admin:
+    get:
+      description: Check if the user is admin
+      operationId: isAdmin
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IsAdminResponse"
   /api/assets-url:
     get:
       description: Get the assets url
@@ -823,6 +849,8 @@ components:
       properties:
         email:
           type: string
+        invite_code:
+          type: string
     VerifyLoginInput:
       type: object
       properties:
@@ -994,5 +1022,19 @@ components:
         id:
           type: string
         active:
+          type: boolean
+    InviteCode:
+      type: object
+      properties:
+        id:
+          type: string
+        created_at:
+          type: integer
+        created_by:
+          type: string
+    IsAdminResponse:
+      type: object
+      properties:
+        is_admin:
           type: boolean
 

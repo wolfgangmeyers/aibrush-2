@@ -13,6 +13,7 @@ import {
     CreateImageInput,
     UpdateImageInput,
     ImageStatusEnum,
+    InviteCode,
     SuggestionSeed,
     SuggestionSeedInput,
     SuggestionSeedList,
@@ -859,20 +860,6 @@ export class BackendService {
         }
     }
 
-    /*
-     // clean up old suggestion jobs
-    async cleanupSuggestionsJobs(): Promise<void> {
-        const client = await this.pool.connect()
-        try {
-            const result = await client.query(
-                `DELETE FROM suggestions_jobs WHERE updated_at < $1`,
-                [moment().subtract(1, "hours").valueOf()]
-            )
-        } finally {
-            client.release()
-        }
-    }
-    */
     async cleanupSvgJobs(): Promise<void> {
         // clean up any svj jobs that are older than 1 hours
         const client = await this.pool.connect()
@@ -891,8 +878,14 @@ export class BackendService {
         }
     }
 
+    async isUserAdmin(user: string): Promise<boolean> {
+        const adminUsers = (this.config.adminUsers || []).map(u => hash(u))
+        return adminUsers.includes(user)
+    }
+
+
     async isUserAllowed(email: string): Promise<boolean> {
-        if (this.config.adminUsers && this.config.adminUsers.includes(email)) {
+        if (this.isUserAdmin(email)) {
             return true
         }
         const user: User = await this.getUser(hash(email))
@@ -902,12 +895,6 @@ export class BackendService {
         return true
     }
 
-    /*
-    CREATE TABLE users(
-        id VARCHAR(255) NOT NULL PRIMARY KEY,
-        active BOOLEAN NOT NULL
-    );
-    */
     async getUser(id: string): Promise<User> {
         const client = await this.pool.connect()
         try {
@@ -924,7 +911,65 @@ export class BackendService {
         }
     }
 
-    async login(email: string, sendEmail=true): Promise<string> {
+    async createInviteCode(): Promise<InviteCode> {
+        const client = await this.pool.connect()
+        try {
+            const id = (uuid.v4() + uuid.v4()).replace(/-/g, "")
+            await client.query(
+                `INSERT INTO invite_codes(id, created_at) VALUES($1, $2)`,
+                [id, moment().valueOf()]
+            )
+            return {
+                id,
+            }
+        } finally {
+            client.release()
+        }
+    }
+
+    async deleteExpiredInviteCodes(): Promise<void> {
+        // lifespan is 7 days
+        const client = await this.pool.connect()
+        try {
+            await client.query(
+                `DELETE FROM invite_codes WHERE created_at < $1`,
+                [moment().subtract(7, "days").valueOf()]
+            )
+        } finally {
+            client.release()
+        }
+    }
+
+    async activateUser(email: string, inviteCode: string) : Promise<boolean> {
+        await this.deleteExpiredInviteCodes()
+        const existingUser = await this.getUser(hash(email))
+        if (existingUser) {
+            return false
+        }
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `DELETE FROM invite_codes WHERE id=$1`,
+                [inviteCode]
+            )
+            if (result.rowCount === 0) {
+                return false
+            }
+            // create the new user and then delete the invite code
+            await client.query(
+                `INSERT INTO users (id, active) VALUES ($1, true)`,
+                [hash(email)]
+            )
+            return true
+        } finally {
+            client.release()
+        }
+    }
+
+    async login(email: string, sendEmail=true, inviteCode: string=undefined): Promise<string> {
+        if (inviteCode && !await this.activateUser(email, inviteCode)) {
+            throw new Error("User not allowed")
+        }
         if (!await this.isUserAllowed(email)) {
             throw new Error("User not allowed")
         }
