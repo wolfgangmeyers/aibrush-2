@@ -206,9 +206,14 @@ def _swinir_args(image_data, image):
     buf = BytesIO(image_data)
     img = Image.open(buf)
     basewidth = 256
-    wpercent = (basewidth/float(img.size[0]))
-    hsize = int((float(img.size[1])*float(wpercent)))
-    img = img.resize((basewidth,hsize), Image.ANTIALIAS)
+    if img.width <= img.height:
+        wpercent = (basewidth/float(img.size[0]))
+        hsize = int((float(img.size[1])*float(wpercent)))
+        img = img.resize((basewidth,hsize), Image.ANTIALIAS)
+    else:
+        hpercent = (basewidth/float(img.size[1]))
+        wsize = int((float(img.size[0])*float(hpercent)))
+        img = img.resize((wsize,basewidth), Image.ANTIALIAS)
     img.save(os.path.join("images", image.id + "-init.jpg"))
     return _to_args_list(args)
 
