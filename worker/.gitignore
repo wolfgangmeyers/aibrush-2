@@ -2,11 +2,15 @@ CLIP
 taming-transformers/
 taming
 vqgan_clip
+SwinIR
 checkpoints
 credentials.json
 *.jpg
+*.png
 __pycache__
 glid-3-xl
 output*
 *.pt
+*.pth
 latent-diffusion
+nlpcloud.json

@@ -45,6 +45,10 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (input.model == "swinir" && !input.encoded_image) {
+            alert("Init image is required for SwinIR upscaling")
+            return
+        }
         setCreating(true)
         try {
             for (let i = 0; i < count; i++) {
@@ -300,7 +304,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
             <div className="row">
                 <div className="offset-lg-3 col-lg-6 col-sm-12">
                     <form onSubmit={onSubmit}>
-                        <div className="form-group">
+                        {input.model !== "swinir" && <div className="form-group">
                             <label>Phrases</label>
                             <input
                                 className="form-control"
@@ -308,7 +312,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                 value={input.phrases?.join("|")}
                                 onChange={(e) => setInput({ ...input, phrases: e.target.value.split("|") })}
                                 placeholder="Separate | phrases | like this" />
-                        </div>
+                        </div>}
                         {/* negative phrases for glid 3 xl */}
                         {   input.model === "glid_3_xl" && (
                             <div className="form-group">
@@ -338,21 +342,22 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             <label>Height</label>
                             <input type="number" className="form-control" min={128} max={1024} step={64} value={input.height} onChange={onHeightChanged} />
                         </div>
-                        <div className="form-group">
+                        {input.model !== "swinir" && <div className="form-group">
                             <label>Iterations</label>
                             <input min={1} max={10000} className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
-                        </div>
+                        </div>}
                         {/* count */}
-                        <div className="form-group">
+                        {input.model !== "swinir" && <div className="form-group">
                             <label>Count</label>
                             <input className="form-control" type="number" max={10} min={1} value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
-                        </div>
+                        </div>}
                         {/* model dropdown */}
                         <div className="form-group">
                             <label>Model</label>
                             <select className="form-control" value={input.model} onChange={(e) => onChangeModel(e.target.value)}>
                                 <option value="vqgan_imagenet_f16_16384">VQGAN ImageNet</option>
                                 <option value="glid_3_xl">Glid-3 XL</option>
+                                <option value="swinir">SwinIR</option>
                             </select>
                         </div>
                         {/* boolean enable_video (bootstrap styled checkbox) */}

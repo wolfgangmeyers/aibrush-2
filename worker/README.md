@@ -32,10 +32,18 @@ pip install -e git+https://github.com/CompVis/taming-transformers.git@master#egg
 pip install -e git+https://github.com/openai/CLIP.git@main#egg=clip
 ```
 
+### SwinIR dependencies
+
+Download [the pretrained model](https://github.com/JingyunLiang/SwinIR/releases/download/v0.0/003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth) and place it in the `worker/` folder.
+
+```sh
+pip install timm
+```
+
 ### Install other required Python packages:
 
 ```sh
-pip install ftfy regex tqdm omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests 
+pip install ftfy regex tqdm omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests
 ```
 
 ### Clone additional dependencies
@@ -45,6 +53,7 @@ git clone 'https://github.com/wolfgangmeyers/VQGAN-CLIP' vqgan_clip
 git clone 'https://github.com/openai/CLIP'
 git clone 'https://github.com/CompVis/taming-transformers'
 git clone 'https://github.com/CompVis/latent-diffusion.git'
+git clone 'https://github.com/JingyunLiang/SwinIR'
 
 pip install -e ./latent-diffusion
 ```

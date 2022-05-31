@@ -1,4 +1,3 @@
-from transformers import pipeline
 from typing import List
 import random
 import sys
@@ -6,6 +5,26 @@ import json
 import traceback
 import time
 from transformers import GPT2TokenizerFast
+import requests
+
+# Refactor to use NLPCloud API
+with open("nlpcloud.json") as infile:
+    nlpcloud_config = json.load(infile)
+
+def generate_suggestions(text: str, max_length: int):
+    try:
+        resp = requests.post(
+            "https://api.nlpcloud.io/v1/gpu/gpt-j/generation",
+            headers={
+                "Authorization": f"Token {nlpcloud_config['token']}",
+                "Content-Type": "application/json",
+            },
+            data=json.dumps({"text": text, "max_length": max_length, "min_length": max_length}),
+        )
+        return resp.json()["generated_text"]
+    except Exception as e:
+        print(f"Error generating suggestions: {e}")
+        traceback.print_exc()
 
 tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
@@ -21,8 +40,6 @@ with open('credentials.json') as f:
     access_token = json.load(f)["accessToken"]
 
 client = AIBrushAPI(api_url, access_token)
-
-generator = pipeline('text-generation', model='EleutherAI/gpt-neo-2.7B', device=0)
 
 def process_suggestions_job():
     try:
@@ -44,13 +61,7 @@ def process_suggestions_job():
         print(f"Generating suggestions for seed {seed.id}")
         print(f"Prompt: {prompt}")
         prompt_token_count = len(tokenizer(prompt)['input_ids'])
-        result = generator(
-            prompt,
-            do_sample=True,
-            min_length=round(prompt_token_count * 4),
-            max_length=round(prompt_token_count * 4),
-        )
-        generated_text = result[0]["generated_text"]
+        generated_text = generate_suggestions(prompt, prompt_token_count * 4)
         # skip the seed and discard the last suggestion, it might be garbage
         suggestions = generated_text.split("\n---\n")[len(seed_items):-1]
         
