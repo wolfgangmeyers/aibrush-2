@@ -622,7 +622,6 @@ export class BackendService {
         const client = await this.pool.connect()
         try {
             let query = `UPDATE suggestions_jobs SET status=$1, updated_at=$2, result=$3 WHERE id=$4 RETURNING *`
-            console.log(`body result: ${body.result}`)
             let args = [body.status || job.status, moment().valueOf(), body.result || job.result, id]
             if (userId) {
                 query = `UPDATE suggestions_jobs SET status=$1, updated_at=$2, result=$3 WHERE id=$4 AND created_by=$5 RETURNING *`
@@ -684,7 +683,6 @@ export class BackendService {
     // process suggestions job
     async processSuggestionsJob(): Promise<SuggestionsJob> {
         const users = await this.getUesrsWithPendingSuggestions()
-        console.log("users", users)
         // get random user
         const user = users[Math.floor(Math.random() * users.length)]
         const client = await this.pool.connect()
@@ -878,13 +876,16 @@ export class BackendService {
     }
 
     async isUserAdmin(user: string): Promise<boolean> {
+        if (user.indexOf("@") !== -1) {
+            user = hash(user)
+        }
         const adminUsers = (this.config.adminUsers || []).map(u => hash(u))
         return adminUsers.includes(user)
     }
 
 
     async isUserAllowed(email: string): Promise<boolean> {
-        if (this.isUserAdmin(email)) {
+        if (await this.isUserAdmin(email)) {
             return true
         }
         const user: User = await this.getUser(hash(email))

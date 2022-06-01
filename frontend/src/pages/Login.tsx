@@ -73,7 +73,7 @@ export const Login: FC<LoginProps> = props => {
                             {/* Display error if one is set */}
                             {/* Use <p class="text-danger" */}
                             {err && <p className="text-danger">{err}</p>}
-
+                            {err && <p className="text-info">If you don't have an account yet, request one by sending an email to <a href="mailto:admin@aibrush.art">admin@aibrush.art</a></p>}
                             {/* If email submitted, show verify code form*/}
                             {emailSubmitted && <div>
                                     <div className="form-group">
