@@ -17,6 +17,11 @@ export const Login: FC<LoginProps> = props => {
     const [code, setCode] = useState("");
     const [err, setErr] = useState("");
 
+    // check query string for invite_code
+    const query = window.location.search;
+    const queryParams = qs.parse(query.substring(1));
+    const inviteCode = queryParams["invite_code"];
+
     const onLogin = async () => {
         // clear error
         setErr("");
@@ -25,11 +30,7 @@ export const Login: FC<LoginProps> = props => {
             setErr("Invalid email address");
             return;
         }
-        // check query string for invite_code
-        const query = window.location.search;
-        const queryParams = qs.parse(query.substring(1));
-        const inviteCode = queryParams["invite_code"];
-        console.log("inviteCode", inviteCode);
+        
         try {
             await props.client.login({
                 email: email,
@@ -62,7 +63,10 @@ export const Login: FC<LoginProps> = props => {
     return (
         <>
             <div className="row">
-                <div className="col-md-6 offset-md-3">
+                <div className="col-md-6 offset-md-3" style={{marginTop: "50px"}}>
+                    <p className="text-info">
+                        Log in below using your email. After submitting, you will be prompted for a login code. Check your email inbox for the code and enter it to log in.
+                    </p>
                     <div className="card">
                         <div className="card-body">
                             <h5 className="card-title">Login</h5>
