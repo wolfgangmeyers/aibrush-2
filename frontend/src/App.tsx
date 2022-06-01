@@ -3,7 +3,7 @@ import * as axios from "axios";
 import { BrowserRouter, Switch, Route, Link } from "react-router-dom"
 import './App.css';
 import "./bootstrap.min.css";
-import { AIBrushApi, LoginResult } from "./client/api";
+import { AIBrushApi, LoginResult, FeatureList } from "./client/api";
 import { getConfig } from './config';
 import { Login } from "./pages/Login"
 import { MainMenu } from './pages/MainMenu';
@@ -30,6 +30,7 @@ function App() {
   const [credentials, setCredentials] = useState<LoginResult | null>(null);
   const [assetsUrl, setAssetsUrl] = useState<string>("/api/images");
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [features, setFeatures] = useState<FeatureList | null>(null);
 
   const onLogout = () => {
     setCredentials(null);
@@ -40,6 +41,7 @@ function App() {
   const init = async () => {
     console.log("App.init")
     client.getAssetsUrl().then(result => setAssetsUrl(result.data.assets_url));
+    client.getFeatures().then(result => setFeatures(result.data));
     const storedCredentials = localStorage.getItem("credentials");
     if (storedCredentials) {
       // attempt to refresh token
@@ -128,6 +130,17 @@ function App() {
               </Route>
             }
           </Switch>}
+          <div className="row" style={{marginTop: "100px", padding: "50px"}}>
+            <div className="col-lg-12">
+              {/* show external popout pages to terms and privacy policy, if they are present in the features */}
+              {features && features.privacy_uri && <a href={features.privacy_uri} target="_blank">
+                Privacy Policy
+              </a>}
+              {features && features.terms_uri && <a href={features.terms_uri} target="_blank" style={{marginLeft: "20px"}}>
+                Terms of Service
+              </a>}
+            </div>
+          </div>
         </div>
       </BrowserRouter>
     </div>

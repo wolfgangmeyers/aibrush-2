@@ -8,6 +8,7 @@ import { Server } from "./server"
 import { BackendService } from "./backend"
 import {
     AIBrushApi,
+    FeatureList,
     ImageList,
     Image,
     InviteCode,
@@ -170,6 +171,36 @@ describe("server", () => {
                 }
                 expect(error).toBeDefined();
                 expect(error.response.status).toBe(401)
+            })
+        })
+
+        describe.only("when getting the features (unset)", () => {
+            let response: AxiosResponse<FeatureList>;
+
+            beforeEach(async () => {
+                response = await client.getFeatures();
+            })
+
+            it("should return the features", () => {
+                expect(response.status).toBe(200);
+                expect(response.data.privacy_uri).toBeFalsy();
+                expect(response.data.terms_uri).toBeFalsy();
+            })
+        })
+
+        describe.only("when getting the features (set)", () => {
+            let response: AxiosResponse<FeatureList>;
+
+            beforeEach(async () => {
+                process.env.PRIVACY_URI = "https://privacy.com";
+                process.env.TERMS_URI = "https://terms.com";
+                response = await client.getFeatures();
+            })
+
+            it("should return the features", () => {
+                expect(response.status).toBe(200);
+                expect(response.data.privacy_uri).toBe("https://privacy.com");
+                expect(response.data.terms_uri).toBe("https://terms.com");
             })
         })
     })
@@ -2158,4 +2189,6 @@ describe("server", () => {
         })
 
     }) // end authenticated tests
+
+    
 })

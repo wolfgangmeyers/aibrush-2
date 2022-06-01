@@ -233,6 +233,16 @@ export class Server {
             })
         }
 
+        this.app.get("/api/features", async (req, res) => {
+            try {
+                const features = await this.backendService.getFeatures()
+                res.json(features)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
         // authenticated routes only past this point
         this.app.use(authMiddleware(this.config))
 

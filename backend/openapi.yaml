@@ -663,6 +663,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginResult"
+  /api/features:
+    get:
+      description: Get the features
+      operationId: getFeatures
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureList"
+
   # healthcheck
   /api/healthcheck:
     get:
@@ -1037,4 +1051,10 @@ components:
       properties:
         is_admin:
           type: boolean
-
+    FeatureList:
+      type: object
+      properties:
+        terms_uri:
+          type: string
+        privacy_uri:
+          type: string

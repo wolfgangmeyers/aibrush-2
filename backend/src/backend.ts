@@ -8,6 +8,7 @@ import sharp from "sharp";
 import { hash } from "./auth";
 
 import {
+    FeatureList,
     ImageList,
     Image,
     CreateImageInput,
@@ -1082,6 +1083,13 @@ export class BackendService {
             )
         } finally {
             await client.end()
+        }
+    }
+
+    async getFeatures(): Promise<FeatureList> {
+        return {
+            privacy_uri: process.env.PRIVACY_URI,
+            terms_uri: process.env.TERMS_URI,
         }
     }
 }

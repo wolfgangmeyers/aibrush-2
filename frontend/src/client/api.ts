@@ -255,6 +255,25 @@ export interface CreateSvgJobInput {
 /**
  * 
  * @export
+ * @interface FeatureList
+ */
+export interface FeatureList {
+    /**
+     * 
+     * @type {string}
+     * @memberof FeatureList
+     */
+    terms_uri?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FeatureList
+     */
+    privacy_uri?: string;
+}
+/**
+ * 
+ * @export
  * @interface Healthcheck
  */
 export interface Healthcheck {
@@ -1338,6 +1357,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Get the features
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getFeatures: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/features`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Get a saved image by id
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2321,6 +2369,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Get the features
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getFeatures(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<FeatureList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getFeatures(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Get a saved image by id
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2689,6 +2746,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getAssetsUrl(options).then((request) => request(axios, basePath));
         },
         /**
+         * Get the features
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getFeatures(options?: any): AxiosPromise<FeatureList> {
+            return localVarFp.getFeatures(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get a saved image by id
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -3050,6 +3115,16 @@ export class AIBrushApi extends BaseAPI {
      */
     public getAssetsUrl(options?: any) {
         return AIBrushApiFp(this.configuration).getAssetsUrl(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get the features
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getFeatures(options?: any) {
+        return AIBrushApiFp(this.configuration).getFeatures(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
