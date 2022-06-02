@@ -31,6 +31,11 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, ima
         img.onerror = () => {
             img.src = "/images/default.jpg";
         }
+        // this seems wasteful, but it helps deal with S3 eventual consistency
+        const t = setTimeout(() => {
+            img.src = `${src}&retry`
+        }, 3000);
+        return () => clearTimeout(t);
     })
 
     return (
