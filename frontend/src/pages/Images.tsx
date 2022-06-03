@@ -123,7 +123,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
     const sortImages = (a: Image, b: Image) => {
         // if the parent is the same, sort by score descending
         // otherwise, sort by updated_at
-        if (a.parent && a.parent === b.parent) {
+        if (a.parent === b.parent && a.phrases.join("|") == b.phrases.join("|")) {
             // if the score is the same, sort by updated_at
             if (a.score === b.score) {
                 return b.updated_at - a.updated_at
