@@ -12,6 +12,7 @@ import {
     ImageList,
     Image,
     CreateImageInput,
+    CreateWorkflowInput,
     UpdateImageInput,
     ImageStatusEnum,
     InviteCode,
@@ -29,6 +30,8 @@ import {
     SvgJobStatusEnum,
     UpdateSvgJobInput,
     User,
+    Workflow,
+    WorkflowList,
 } from "./client/api"
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
@@ -874,6 +877,243 @@ export class BackendService {
             client.release()
         }
     }
+
+   
+    async getWorkflows(userId: string): Promise<WorkflowList> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM workflows WHERE created_by=$1`,
+                [userId],
+            )
+            return {
+                workflows: result.rows
+            }
+        } finally {
+            client.release()
+        }
+    }
+
+    // Workflow:
+    //   type: object
+    //   properties:
+    //     id:
+    //       type: string
+    //     created_by:
+    //       type: string
+    //     workflow_type:
+    //       type: string
+    //     state:
+    //       type: string
+    //     config_json:
+    //       type: string
+    //     data_json:
+    //       type: string
+    //     is_active:
+    //       type: boolean
+    //     execution_delay:
+    //       type: integer
+    //     next_execution:
+    //       type: integer
+    async createWorkflow(body: CreateWorkflowInput, created_by: string): Promise<Workflow> {
+        const id = uuid.v4()
+        const nextExecution = moment().valueOf()
+        const client = await this.pool.connect()
+        try {
+            await client.query(
+                `INSERT INTO workflows (id, created_by, workflow_type, state, config_json, data_json, is_active, execution_delay, next_execution) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                [id, created_by, body.workflow_type, body.state, body.config_json, body.data_json, body.is_active, body.execution_delay, nextExecution]
+            )
+            return {
+                id,
+                created_by: created_by,
+                workflow_type: body.workflow_type,
+                state: body.state,
+                config_json: body.config_json,
+                data_json: body.data_json,
+                is_active: body.is_active,
+                execution_delay: body.execution_delay,
+                next_execution: nextExecution,
+            }
+        } finally {
+            client.release()
+        }
+    }
+
+
+    //   /api/workflows/{workflow_id}:
+    //     get:
+    //       description: Get the workflow
+    //       operationId: getWorkflow
+    //       tags:
+    //         - AIBrush
+    //       parameters:
+    //         - name: workflow_id
+    //           in: path
+    //           required: true
+    //           schema:
+    //             type: string
+    //       responses:
+    //         "200":
+    //           description: Success
+    //           content:
+    //             application/json:
+    //               schema:
+    //                 $ref: "#/components/schemas/Workflow"
+    //     put:
+    //       description: Update the workflow
+    //       operationId: updateWorkflow
+    //       tags:
+    //         - AIBrush
+    //       parameters:
+    //         - name: workflow_id
+    //           in: path
+    //           required: true
+    //           schema:
+    //             type: string
+    //       requestBody:
+    //         content:
+    //           application/json:
+    //             schema:
+    //               $ref: "#/components/schemas/UpdateWorkflowInput"
+    //       responses:
+    //         "200":
+    //           description: Success
+    //           content:
+    //             application/json:
+    //               schema:
+    //                 $ref: "#/components/schemas/Workflow"
+    //     delete:
+    //       description: Delete the workflow
+    //       operationId: deleteWorkflow
+    //       tags:
+    //         - AIBrush
+    //       parameters:
+    //         - name: workflow_id
+    //           in: path
+    //           required: true
+    //           schema:
+    //             type: string
+    //       responses:
+    //         "204":
+    //           description: Success
+    //   /api/workflows/{workflow_id}/events:
+    //     get:
+    //       description: Get the workflow events
+    //       operationId: getWorkflowEvents
+    //       tags:
+    //         - AIBrush
+    //       parameters:
+    //         - name: workflow_id
+    //           in: path
+    //           required: true
+    //           schema:
+    //             type: string
+    //       responses:
+    //         "200":
+    //           description: Success
+    //           content:
+    //             application/json:
+    //               schema:
+    //                 $ref: "#/components/schemas/WorkflowEventList"
+    //     post:
+    //       description: Create a new workflow event
+    //       operationId: createWorkflowEvent
+    //       tags:
+    //         - AIBrush
+    //       parameters:
+    //         - name: workflow_id
+    //           in: path
+    //           required: true
+    //           schema:
+    //             type: string
+    //       requestBody:
+    //         content:
+    //           application/json:
+    //             schema:
+    //               $ref: "#/components/schemas/CreateWorkflowEventInput"
+    //       responses:
+    //         "200":
+    //           description: Success
+    //           content:
+    //             application/json:
+    //               schema:
+    //                 $ref: "#/components/schemas/WorkflowEvent"
+    //   /api/process-workflow:
+    //     put:
+    //       description: Get the next pending workflow and set its status to processing.
+    //       operationId: processWorkflow
+    //       tags:
+    //         - AIBrush
+    //       responses:
+    //         "200":
+    //           description: Success
+    //           content:
+    //             application/json:
+    //               schema:
+    //                 $ref: "#/components/schemas/Workflow"
+
+    // WorkflowList:
+    //   properties:
+    //     workflows:
+    //       type: array
+    //       items:
+    //         $ref: "#/components/schemas/Workflow"
+    //   required:
+    //     - workflows
+    // UpdateWorkflowInput:
+    //   type: object
+    //   properties:
+    //     data_json:
+    //       type: string
+    //     config_json:
+    //       type: string
+    //     is_active:
+    //       type: boolean
+    //     state:
+    //       type: string
+    //     execution_delay:
+    //       type: integer
+    // CreateWorkflowInput:
+    //   type: object
+    //   properties:
+    //     workflow_type:
+    //       type: string
+    //     config_json:
+    //       type: string
+    //     data_json:
+    //       type: string
+    //     is_active:
+    //       type: boolean
+    //     execution_delay:
+    //       type: integer
+    // WorkflowEvent:
+    //   type: object
+    //   properties:
+    //     id:
+    //       type: string
+    //     workflow_id:
+    //       type: string
+    //     created_at:
+    //       type: integer
+    //     message:
+    //       type: string
+    // WorkflowEventList:
+    //   properties:
+    //     workflowEvents:
+    //       type: array
+    //       items:
+    //         $ref: "#/components/schemas/WorkflowEvent"
+    //   required:
+    //     - workflowEvents
+    // CreateWorkflowEventInput:
+    //   type: object
+    //   properties:
+    //     workflow_id:
+    //       type: string
+    //     message:
+    //       type: string
+    
 
     async isUserAdmin(user: string): Promise<boolean> {
         if (user.indexOf("@") !== -1) {

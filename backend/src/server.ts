@@ -766,6 +766,32 @@ export class Server {
                 res.sendStatus(500)
             }
         })
+
+        // workflows
+        // /api/workflows:
+        // get:
+        //   description: Get the workflows
+        //   operationId: getWorkflows
+        //   tags:
+        //     - AIBrush
+        //   responses:
+        //     "200":
+        //       description: Success
+        //       content:
+        //         application/json:
+        //           schema:
+        //             $ref: "#/components/schemas/WorkflowList"
+        this.app.get("/api/workflows", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                const workflows = await this.backendService.getWorkflows(jwt.userId)
+                res.json(workflows)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+        // end workflows
     }
 
     start() {

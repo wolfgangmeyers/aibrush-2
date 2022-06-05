@@ -676,7 +676,147 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FeatureList"
-
+  /api/workflows:
+    get:
+      description: Get the workflows
+      operationId: getWorkflows
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowList"
+    post:
+      description: Create a new workflow
+      operationId: createWorkflow
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkflowInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+  /api/workflows/{workflow_id}:
+    get:
+      description: Get the workflow
+      operationId: getWorkflow
+      tags:
+        - AIBrush
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+    put:
+      description: Update the workflow
+      operationId: updateWorkflow
+      tags:
+        - AIBrush
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWorkflowInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+    delete:
+      description: Delete the workflow
+      operationId: deleteWorkflow
+      tags:
+        - AIBrush
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+  /api/workflows/{workflow_id}/events:
+    get:
+      description: Get the workflow events
+      operationId: getWorkflowEvents
+      tags:
+        - AIBrush
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowEventList"
+    post:
+      description: Create a new workflow event
+      operationId: createWorkflowEvent
+      tags:
+        - AIBrush
+      parameters:
+        - name: workflow_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkflowEventInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowEvent"
+  /api/process-workflow:
+    put:
+      description: Get the next pending workflow and set its status to processing.
+      operationId: processWorkflow
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
   # healthcheck
   /api/healthcheck:
     get:
@@ -691,7 +831,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Healthcheck"
-
 components:
   schemas:
     CreateImageInput:
@@ -1057,4 +1196,87 @@ components:
         terms_uri:
           type: string
         privacy_uri:
+          type: string
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: string
+        created_by:
+          type: string
+        workflow_type:
+          type: string
+        state:
+          type: string
+        config_json:
+          type: string
+        data_json:
+          type: string
+        is_active:
+          type: boolean
+        execution_delay:
+          type: integer
+        next_execution:
+          type: integer
+    WorkflowList:
+      properties:
+        workflows:
+          type: array
+          items:
+            $ref: "#/components/schemas/Workflow"
+      required:
+        - workflows
+    UpdateWorkflowInput:
+      type: object
+      properties:
+        data_json:
+          type: string
+        config_json:
+          type: string
+        is_active:
+          type: boolean
+        state:
+          type: string
+        execution_delay:
+          type: integer
+    CreateWorkflowInput:
+      type: object
+      properties:
+        workflow_type:
+          type: string
+        config_json:
+          type: string
+        data_json:
+          type: string
+        is_active:
+          type: boolean
+        state:
+          type: string
+        execution_delay:
+          type: integer
+    WorkflowEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        workflow_id:
+          type: string
+        created_at:
+          type: integer
+        message:
+          type: string
+    WorkflowEventList:
+      properties:
+        workflowEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowEvent"
+      required:
+        - workflowEvents
+    CreateWorkflowEventInput:
+      type: object
+      properties:
+        workflow_id:
+          type: string
+        message:
           type: string

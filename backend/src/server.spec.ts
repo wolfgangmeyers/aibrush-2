@@ -1,4 +1,3 @@
-import * as uuid from 'uuid'
 import moment from 'moment'
 import axios, { Axios, AxiosInstance, AxiosResponse } from "axios"
 import fs from "fs"
@@ -55,7 +54,7 @@ async function refreshUser(client: AIBrushApi, httpClient: AxiosInstance, refres
     httpClient.defaults.headers['Authorization'] = `Bearer ${refreshResult.accessToken}`
 }
 
-describe("server", () => {
+describe.skip("server", () => {
     let backendService: BackendService;
     let server: Server
     let client: AIBrushApi
@@ -88,9 +87,6 @@ describe("server", () => {
                 await backendService.dropDatabase(db)
             }
         }
-        databaseName = `aibrush_test_${moment().valueOf()}`
-        await backendService.createDatabase(databaseName)
-        await sleep(1000)
     })
 
     beforeEach(async () => {

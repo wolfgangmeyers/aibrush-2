@@ -255,6 +255,68 @@ export interface CreateSvgJobInput {
 /**
  * 
  * @export
+ * @interface CreateWorkflowEventInput
+ */
+export interface CreateWorkflowEventInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateWorkflowEventInput
+     */
+    workflow_id?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateWorkflowEventInput
+     */
+    message?: string;
+}
+/**
+ * 
+ * @export
+ * @interface CreateWorkflowInput
+ */
+export interface CreateWorkflowInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateWorkflowInput
+     */
+    workflow_type?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateWorkflowInput
+     */
+    config_json?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateWorkflowInput
+     */
+    data_json?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof CreateWorkflowInput
+     */
+    is_active?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateWorkflowInput
+     */
+    state?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateWorkflowInput
+     */
+    execution_delay?: number;
+}
+/**
+ * 
+ * @export
  * @interface FeatureList
  */
 export interface FeatureList {
@@ -959,6 +1021,43 @@ export interface UpdateSvgJobInput {
 /**
  * 
  * @export
+ * @interface UpdateWorkflowInput
+ */
+export interface UpdateWorkflowInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateWorkflowInput
+     */
+    data_json?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateWorkflowInput
+     */
+    config_json?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof UpdateWorkflowInput
+     */
+    is_active?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateWorkflowInput
+     */
+    state?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateWorkflowInput
+     */
+    execution_delay?: number;
+}
+/**
+ * 
+ * @export
  * @interface User
  */
 export interface User {
@@ -993,6 +1092,124 @@ export interface VerifyLoginInput {
      * @memberof VerifyLoginInput
      */
     code?: string;
+}
+/**
+ * 
+ * @export
+ * @interface Workflow
+ */
+export interface Workflow {
+    /**
+     * 
+     * @type {string}
+     * @memberof Workflow
+     */
+    id?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Workflow
+     */
+    created_by?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Workflow
+     */
+    workflow_type?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Workflow
+     */
+    state?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Workflow
+     */
+    config_json?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Workflow
+     */
+    data_json?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Workflow
+     */
+    is_active?: boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof Workflow
+     */
+    execution_delay?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Workflow
+     */
+    next_execution?: number;
+}
+/**
+ * 
+ * @export
+ * @interface WorkflowEvent
+ */
+export interface WorkflowEvent {
+    /**
+     * 
+     * @type {string}
+     * @memberof WorkflowEvent
+     */
+    id?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof WorkflowEvent
+     */
+    workflow_id?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof WorkflowEvent
+     */
+    created_at?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof WorkflowEvent
+     */
+    message?: string;
+}
+/**
+ * 
+ * @export
+ * @interface WorkflowEventList
+ */
+export interface WorkflowEventList {
+    /**
+     * 
+     * @type {Array<WorkflowEvent>}
+     * @memberof WorkflowEventList
+     */
+    workflowEvents: Array<WorkflowEvent>;
+}
+/**
+ * 
+ * @export
+ * @interface WorkflowList
+ */
+export interface WorkflowList {
+    /**
+     * 
+     * @type {Array<Workflow>}
+     * @memberof WorkflowList
+     */
+    workflows: Array<Workflow>;
 }
 
 /**
@@ -1196,6 +1413,76 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Create a new workflow
+         * @param {CreateWorkflowInput} [createWorkflowInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createWorkflow: async (createWorkflowInput?: CreateWorkflowInput, options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/workflows`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createWorkflowInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a new workflow event
+         * @param {string} workflowId 
+         * @param {CreateWorkflowEventInput} [createWorkflowEventInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createWorkflowEvent: async (workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('createWorkflowEvent', 'workflowId', workflowId)
+            const localVarPath = `/api/workflows/{workflow_id}/events`
+                .replace(`{${"workflow_id"}}`, encodeURIComponent(String(workflowId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createWorkflowEventInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1305,6 +1592,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             assertParamExists('deleteSvgJob', 'id', id)
             const localVarPath = `/api/svg-jobs/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Delete the workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteWorkflow: async (workflowId: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('deleteWorkflow', 'workflowId', workflowId)
+            const localVarPath = `/api/workflows/{workflow_id}`
+                .replace(`{${"workflow_id"}}`, encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1716,6 +2036,101 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Get the workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkflow: async (workflowId: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('getWorkflow', 'workflowId', workflowId)
+            const localVarPath = `/api/workflows/{workflow_id}`
+                .replace(`{${"workflow_id"}}`, encodeURIComponent(String(workflowId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get the workflow events
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkflowEvents: async (workflowId: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('getWorkflowEvents', 'workflowId', workflowId)
+            const localVarPath = `/api/workflows/{workflow_id}/events`
+                .replace(`{${"workflow_id"}}`, encodeURIComponent(String(workflowId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get the workflows
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkflows: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/workflows`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Healthcheck
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2000,6 +2415,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Get the next pending workflow and set its status to processing.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        processWorkflow: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/process-workflow`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2218,6 +2662,43 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Update the workflow
+         * @param {string} workflowId 
+         * @param {UpdateWorkflowInput} [updateWorkflowInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateWorkflow: async (workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('updateWorkflow', 'workflowId', workflowId)
+            const localVarPath = `/api/workflows/{workflow_id}`
+                .replace(`{${"workflow_id"}}`, encodeURIComponent(String(workflowId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateWorkflowInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Verify Login code
          * @param {VerifyLoginInput} [verifyLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2320,6 +2801,27 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a new workflow
+         * @param {CreateWorkflowInput} [createWorkflowInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createWorkflow(createWorkflowInput?: CreateWorkflowInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createWorkflow(createWorkflowInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Create a new workflow event
+         * @param {string} workflowId 
+         * @param {CreateWorkflowEventInput} [createWorkflowEventInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createWorkflowEvent(workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowEvent>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createWorkflowEvent(workflowId, createWorkflowEventInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2357,6 +2859,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async deleteSvgJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.deleteSvgJob(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Delete the workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteWorkflow(workflowId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteWorkflow(workflowId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2478,6 +2990,35 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Get the workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getWorkflow(workflowId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkflow(workflowId, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get the workflow events
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getWorkflowEvents(workflowId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowEventList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkflowEvents(workflowId, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get the workflows
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getWorkflows(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkflows(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Healthcheck
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2564,6 +3105,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Get the next pending workflow and set its status to processing.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async processWorkflow(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.processWorkflow(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2626,6 +3176,17 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async updateVideoData(id: string, body?: any, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateVideoData(id, body, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Update the workflow
+         * @param {string} workflowId 
+         * @param {UpdateWorkflowInput} [updateWorkflowInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateWorkflow(workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateWorkflow(workflowId, updateWorkflowInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2702,6 +3263,25 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createSvgJob(createSvgJobInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Create a new workflow
+         * @param {CreateWorkflowInput} [createWorkflowInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createWorkflow(createWorkflowInput?: CreateWorkflowInput, options?: any): AxiosPromise<Workflow> {
+            return localVarFp.createWorkflow(createWorkflowInput, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Create a new workflow event
+         * @param {string} workflowId 
+         * @param {CreateWorkflowEventInput} [createWorkflowEventInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createWorkflowEvent(workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options?: any): AxiosPromise<WorkflowEvent> {
+            return localVarFp.createWorkflowEvent(workflowId, createWorkflowEventInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2736,6 +3316,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         deleteSvgJob(id: string, options?: any): AxiosPromise<void> {
             return localVarFp.deleteSvgJob(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Delete the workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteWorkflow(workflowId: string, options?: any): AxiosPromise<void> {
+            return localVarFp.deleteWorkflow(workflowId, options).then((request) => request(axios, basePath));
         },
         /**
          * Get the assets url
@@ -2844,6 +3433,32 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getVideoData(id, options).then((request) => request(axios, basePath));
         },
         /**
+         * Get the workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkflow(workflowId: string, options?: any): AxiosPromise<Workflow> {
+            return localVarFp.getWorkflow(workflowId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get the workflow events
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkflowEvents(workflowId: string, options?: any): AxiosPromise<WorkflowEventList> {
+            return localVarFp.getWorkflowEvents(workflowId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get the workflows
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkflows(options?: any): AxiosPromise<WorkflowList> {
+            return localVarFp.getWorkflows(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Healthcheck
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2921,6 +3536,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.processSvgJob(options).then((request) => request(axios, basePath));
         },
         /**
+         * Get the next pending workflow and set its status to processing.
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        processWorkflow(options?: any): AxiosPromise<Workflow> {
+            return localVarFp.processWorkflow(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2978,6 +3601,16 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         updateVideoData(id: string, body?: any, options?: any): AxiosPromise<void> {
             return localVarFp.updateVideoData(id, body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Update the workflow
+         * @param {string} workflowId 
+         * @param {UpdateWorkflowInput} [updateWorkflowInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateWorkflow(workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options?: any): AxiosPromise<Workflow> {
+            return localVarFp.updateWorkflow(workflowId, updateWorkflowInput, options).then((request) => request(axios, basePath));
         },
         /**
          * Verify Login code
@@ -3064,6 +3697,29 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Create a new workflow
+     * @param {CreateWorkflowInput} [createWorkflowInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createWorkflow(createWorkflowInput?: CreateWorkflowInput, options?: any) {
+        return AIBrushApiFp(this.configuration).createWorkflow(createWorkflowInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a new workflow event
+     * @param {string} workflowId 
+     * @param {CreateWorkflowEventInput} [createWorkflowEventInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createWorkflowEvent(workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options?: any) {
+        return AIBrushApiFp(this.configuration).createWorkflowEvent(workflowId, createWorkflowEventInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Delete a saved image
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -3105,6 +3761,17 @@ export class AIBrushApi extends BaseAPI {
      */
     public deleteSvgJob(id: string, options?: any) {
         return AIBrushApiFp(this.configuration).deleteSvgJob(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Delete the workflow
+     * @param {string} workflowId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public deleteWorkflow(workflowId: string, options?: any) {
+        return AIBrushApiFp(this.configuration).deleteWorkflow(workflowId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3238,6 +3905,38 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Get the workflow
+     * @param {string} workflowId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getWorkflow(workflowId: string, options?: any) {
+        return AIBrushApiFp(this.configuration).getWorkflow(workflowId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get the workflow events
+     * @param {string} workflowId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getWorkflowEvents(workflowId: string, options?: any) {
+        return AIBrushApiFp(this.configuration).getWorkflowEvents(workflowId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get the workflows
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getWorkflows(options?: any) {
+        return AIBrushApiFp(this.configuration).getWorkflows(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Healthcheck
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -3333,6 +4032,16 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Get the next pending workflow and set its status to processing.
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public processWorkflow(options?: any) {
+        return AIBrushApiFp(this.configuration).processWorkflow(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Refresh Login code
      * @param {RefreshLoginInput} [refreshLoginInput] 
      * @param {*} [options] Override http request option.
@@ -3401,6 +4110,18 @@ export class AIBrushApi extends BaseAPI {
      */
     public updateVideoData(id: string, body?: any, options?: any) {
         return AIBrushApiFp(this.configuration).updateVideoData(id, body, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update the workflow
+     * @param {string} workflowId 
+     * @param {UpdateWorkflowInput} [updateWorkflowInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public updateWorkflow(workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options?: any) {
+        return AIBrushApiFp(this.configuration).updateWorkflow(workflowId, updateWorkflowInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
