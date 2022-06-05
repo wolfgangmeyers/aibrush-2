@@ -644,25 +644,6 @@ describe("server", () => {
                 })
             })
 
-            describe("when updating a pending image with a service account", () => {
-
-                let updatedImage: Image;
-
-                beforeEach(async () => {
-                    // authenticate service account
-                    await authenticateUser(backendService, httpClient2, "service-account@test.test")
-                })
-
-                it("should fail with 404", async () => {
-                    await expect(client2.updateImage(image.id, {
-                        label: "test2",
-                        current_iterations: 1,
-                        status: UpdateImageInputStatusEnum.Processing
-                    })).rejects.toThrow(/Request failed with status code 404/)
-                })
-
-            })
-
             describe("when processing an image as a service account", () => {
                 let processingImage: Image;
 
@@ -1127,22 +1108,6 @@ describe("server", () => {
                 expect(image.glid_3_xl_clip_guidance).toBe(true)
                 expect(image.glid_3_xl_clip_guidance_scale).toBe(300)
                 expect(image.glid_3_xl_skip_iterations).toBe(1)
-            })
-        })
-
-        describe("when creating an image with a service account", () => {
-
-            beforeEach(async () => {
-                // authenticate as service account
-                await authenticateUser(backendService, httpClient, "service-account@test.test")
-            })
-
-            it("should fail with 403", async () => {
-                await expect(client.createImage({
-                    phrases: ["test"],
-                    label: "test",
-                    iterations: 1
-                })).rejects.toThrow(/Request failed with status code 403/)
             })
         })
 
@@ -1889,14 +1854,6 @@ describe("server", () => {
                 })
             })
 
-            describe("when updating the svg job with a service account while it's in pending", () => {
-                it("should fail with 403", async () => {
-                    await expect(client2.updateSvgJob(createSvgResponse.data.id, {
-                        result: "<svg></svg>",
-                    })).rejects.toThrow(/403/);
-                })
-            })
-
             describe("when getting the svg job by id as a service account", () => {
                 let response: AxiosResponse<SvgJob>;
 
@@ -1967,14 +1924,6 @@ describe("server", () => {
                         expect(response.data.status).toEqual(SvgJobStatusEnum.Completed);
                         expect(response.data.image_id).toEqual(createImageResponse.data.id);
                         expect(response.data.created_by).toEqual(hash("test@test.test"))
-                    })
-
-                    describe("when updating the svg job after it is completed as a service account", () => {
-                        it("should fail with 403", async () => {
-                            await expect(client2.updateSvgJob(createSvgResponse.data.id, {
-                                result: "<svg></svg>",
-                            })).rejects.toThrow(/403/);
-                        })
                     })
                 })
 
@@ -2092,33 +2041,6 @@ describe("server", () => {
 
                 it("should fail with 404", async () => {
                     await expect(client2.deleteSvgJob(createSvgResponse.data.id)).rejects.toThrow(/Request failed with status code 404/);
-                })
-            })
-
-            describe("when deleting the svg job as a service account", () => {
-
-                let createServiceAccountResponse: Authentication;
-
-                beforeEach(async () => {
-                    // create a private service account for the user
-                    // createServiceAccountResponse = await client.createServiceAccount({
-                    //     type: CreateServiceAccountInputTypeEnum.Private,
-                    // });
-                    createServiceAccountResponse = await backendService.createServiceAccountCreds(
-                        "test@test.test",
-                        {
-                            type: CreateServiceAccountInputTypeEnum.Private
-                        },
-                    );
-                })
-
-                beforeEach(async () => {
-                    // set credentials for the service account
-                    httpClient2.defaults.headers["Authorization"] = `Bearer ${createServiceAccountResponse.accessToken}`;
-                })
-
-                it("should fail with 403", async () => {
-                    await expect(client2.deleteSvgJob(createSvgResponse.data.id)).rejects.toThrow(/Request failed with status code 403/);
                 })
             })
         })

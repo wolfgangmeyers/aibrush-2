@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
 import { saveAs } from "file-saver";
 
 import { AIBrushApi, CreateServiceAccountInputTypeEnum } from "../client/api";
@@ -10,6 +10,7 @@ interface Props {
 export const WorkerConfigPage: FC<Props> = ({ api }) => {
 
     const [type, setType] = useState<CreateServiceAccountInputTypeEnum>(CreateServiceAccountInputTypeEnum.Private);
+    const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
     // show some information about what a worker is and does
     // * a worker processes requests to create images with AIBrush
@@ -67,13 +68,13 @@ export const WorkerConfigPage: FC<Props> = ({ api }) => {
                 {/* lg-6 with lg-3 offset */}
                 <div className="col-lg-6 offset-lg-3">
                     <form>
-                        <div className="form-group">
+                        {isAdmin && <div className="form-group">
                             <label htmlFor="type">Type</label>
                             <select className="form-control" id="type" value={type} onChange={(e) => setType(e.target.value as CreateServiceAccountInputTypeEnum)}>
                                 <option value="public">Public</option>
                                 <option value="private">Private</option>
                             </select>
-                        </div>
+                        </div>}
                         <button type="submit" className="btn btn-primary" onClick={() => download()}>Download</button>
                     </form>
                 </div>
@@ -81,6 +82,10 @@ export const WorkerConfigPage: FC<Props> = ({ api }) => {
             </div>
         )
     }
+
+    useEffect(() => {
+        api.isAdmin().then(isAdmin => setIsAdmin(!!isAdmin.data.is_admin));
+    }, [])
 
     return (
         <>

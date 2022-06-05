@@ -26,8 +26,18 @@ export class Server {
         }
     }
 
-    private isServiceAccount(jwt: AuthJWTPayload): boolean {
-        return this.hashedServiceAccounts[jwt.userId] || !!jwt.serviceAccountConfig
+    private serviceAccountType(jwt: AuthJWTPayload): "public" | "private" | undefined {
+        if (this.hashedServiceAccounts[jwt.userId]) {
+            return "public"
+        }
+        if (jwt.serviceAccountConfig) {
+            return jwt.serviceAccountConfig.type
+        }
+        return undefined;
+    }
+
+    private isPublicServiceAccount(jwt: AuthJWTPayload): boolean {
+        return this.serviceAccountType(jwt) === "public"
     }
 
     async init() {
@@ -251,13 +261,6 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // service accounts can't list images
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to list images`)
-                    res.json({
-                        images: []
-                    })
-                    return
-                }
                 let cursor: number | undefined;
                 try {
                     cursor = parseInt(req.query.cursor as string)
@@ -289,11 +292,6 @@ export class Server {
         this.app.post("/api/images", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to create image`)
-                    res.sendStatus(403)
-                    return
-                }
                 const image = await this.backendService.createImage(jwt.userId, req.body)
                 res.json(image)
             } catch (err) {
@@ -314,7 +312,7 @@ export class Server {
                     return;
                 }
 
-                if (!this.isServiceAccount(jwt) && image.created_by != jwt.userId) {
+                if (!this.isPublicServiceAccount(jwt) && image.created_by != jwt.userId) {
                     console.log(`user ${jwt.userId} tried to get image ${req.params.id} but not authorized`)
                     res.status(404).send("not found")
                     return
@@ -337,14 +335,8 @@ export class Server {
                     res.status(404).send("not found")
                     return;
                 }
-                if (!this.isServiceAccount(jwt) && image.created_by !== jwt.userId) {
+                if (!this.isPublicServiceAccount(jwt) && image.created_by !== jwt.userId) {
                     console.log(`user ${jwt.userId} tried to update image ${req.params.id} but not authorized`)
-                    res.status(404).send("not found")
-                    return;
-                }
-                // this protects images from malicious use of service accounts
-                if (this.isServiceAccount(jwt) && image.status != ImageStatusEnum.Processing) {
-                    console.log(`service account ${jwt.userId} tried to update image ${req.params.id} in status ${image.status}`)
                     res.status(404).send("not found")
                     return;
                 }
@@ -390,7 +382,7 @@ export class Server {
                 }
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // only service account can update video data
-                if (!this.isServiceAccount(jwt)) {
+                if (!this.serviceAccountType(jwt)) {
                     console.log(`${jwt.userId} attempted to update video data but is not a service acct`)
                     res.sendStatus(404)
                     return;
@@ -408,7 +400,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req)
 
                 // only service accounts can process images
-                if (!this.isServiceAccount(jwt)) {
+                if (!this.serviceAccountType(jwt)) {
                     console.log(`${jwt.userId} attempted to process image but is not a service acct`)
                     res.sendStatus(403)
                     return
@@ -428,12 +420,6 @@ export class Server {
         this.app.get("/api/suggestion-seeds", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                // workers don't need to list suggestion seeds
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to list suggestion seeds`)
-                    res.sendStatus(403)
-                    return
-                }
                 const seeds = await this.backendService.listSuggestionSeeds(jwt.userId)
                 res.json(seeds)
             } catch (err) {
@@ -445,11 +431,6 @@ export class Server {
         this.app.post("/api/suggestion-seeds", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to create suggestion seed`)
-                    res.sendStatus(403)
-                    return
-                }
                 const seed = await this.backendService.createSuggestionSeed(jwt.userId, req.body)
                 res.json(seed)
             } catch (err) {
@@ -463,7 +444,7 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 let user = jwt.userId
-                if (this.isServiceAccount(jwt)) {
+                if (this.serviceAccountType(jwt) == "public") {
                     user = undefined
                 }
                 const seed = await this.backendService.getSuggestionSeed(req.params.id, user)
@@ -483,11 +464,6 @@ export class Server {
         this.app.patch("/api/suggestion-seeds/:id", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to update suggestion seed ${req.params.id}`)
-                    res.sendStatus(403)
-                    return
-                }
                 const updatedSeed = await this.backendService.updateSuggestionSeed(req.params.id, jwt.userId, req.body)
                 if (!updatedSeed) {
                     console.log(`user ${jwt.userId} tried to update suggestion seed ${req.params.id} not found`)
@@ -505,11 +481,6 @@ export class Server {
         this.app.delete("/api/suggestion-seeds/:id", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to delete suggestion seed ${req.params.id}`)
-                    res.sendStatus(403)
-                    return
-                }
                 const success = await this.backendService.deleteSuggestionSeed(req.params.id, jwt.userId)
                 if (!success) {
                     console.log(`user ${jwt.userId} tried to delete suggestion seed ${req.params.id} not found`)
@@ -527,12 +498,6 @@ export class Server {
         this.app.get("/api/suggestions-jobs", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                // worker doesn't need to list suggestions jobs
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to list suggestions jobs`)
-                    res.sendStatus(403)
-                    return
-                }
                 const jobs = await this.backendService.listSuggestionsJobs(jwt.userId)
                 res.json(jobs)
             } catch (err) {
@@ -545,12 +510,6 @@ export class Server {
         this.app.post("/api/suggestions-jobs", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                // workers don't need to create suggestions jobs
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to create suggestions job`)
-                    res.sendStatus(403)
-                    return
-                }
                 // get suggestion seed
                 const seed = await this.backendService.getSuggestionSeed(req.body.seed_id, jwt.userId)
                 if (!seed) {
@@ -571,7 +530,7 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 let user = jwt.userId
-                if (this.isServiceAccount(jwt)) {
+                if (this.serviceAccountType(jwt) == "public") {
                     user = undefined
                 }
                 const job = await this.backendService.getSuggestionsJob(req.params.id, user)
@@ -592,7 +551,7 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 let user = jwt.userId
-                if (this.isServiceAccount(jwt)) {
+                if (this.serviceAccountType(jwt) == "public") {
                     user = undefined
                 }
                 const updatedJob = await this.backendService.updateSuggestionsJob(req.params.id, user, req.body)
@@ -612,12 +571,6 @@ export class Server {
         this.app.delete("/api/suggestions-jobs/:id", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                // workers don't need to delete suggestions jobs
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to delete suggestions job ${req.params.id}`)
-                    res.sendStatus(403)
-                    return
-                }
                 const success = await this.backendService.deleteSuggestionsJob(req.params.id, jwt.userId)
                 if (!success) {
                     console.log(`user ${jwt.userId} tried to delete suggestions job ${req.params.id} not found`)
@@ -635,11 +588,12 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // make sure user is a service acct
-                if (!this.isServiceAccount(jwt)) {
+                if (!this.serviceAccountType(jwt)) {
                     console.log(`user ${jwt.userId} tried to process suggestions job`)
                     res.sendStatus(403)
                     return
                 }
+                // TODO: privatize suggestions jobs
                 const job = await this.backendService.processSuggestionsJob()
                 res.json(job)
             } catch (err) {
@@ -651,12 +605,6 @@ export class Server {
         this.app.post("/api/svg-jobs", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                // service accounts can't create svg jobs
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to create svg job`)
-                    res.sendStatus(403)
-                    return
-                }
                 const job = await this.backendService.createSvgJob(jwt.userId, req.body)
                 res.json(job)
             } catch (err) {
@@ -669,11 +617,8 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 let user = jwt.userId
-                if (this.isServiceAccount(jwt)) {
-                    if (!jwt.serviceAccountConfig || jwt.serviceAccountConfig.type == "public"){
-                        user = undefined
-                    }
-
+                if (this.serviceAccountType(jwt) == "public") {
+                    user = undefined
                 }
                 const job = await this.backendService.getSvgJob(req.params.id, user)
                 if (!job) {
@@ -692,7 +637,7 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // make sure user is a service acct
-                if (!this.isServiceAccount(jwt)) {
+                if (!this.serviceAccountType(jwt)) {
                     console.log(`user ${jwt.userId} tried to process svg job but is not a service account`)
                     res.sendStatus(403)
                     return
@@ -712,12 +657,6 @@ export class Server {
         this.app.get("/api/svg-jobs/:id/result.svg", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                // service accounts can't get svg job results
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to get svg job result ${req.params.id}`)
-                    res.sendStatus(403)
-                    return
-                }
                 const result = await this.backendService.getSvgJobResult(req.params.id)
                 res.status(200).send(result)
             } catch (err) {
@@ -735,14 +674,8 @@ export class Server {
                     return
                 }
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                // service accounts can only update jobs in processing state
-                if (this.isServiceAccount(jwt) && job.status != "processing") {
-                    console.log(`service account ${jwt.userId} tried to update svg job ${req.params.id} but job is not in processing state`)
-                    res.sendStatus(403)
-                    return
-                }
                 // if this isn't a service account, make sure the job is owned by the user
-                if (!this.isServiceAccount(jwt) && job.created_by != jwt.userId) {
+                if (!this.serviceAccountType(jwt) && job.created_by != jwt.userId) {
                     console.log(`user ${jwt.userId} tried to update svg job ${req.params.id} but job is not owned by user`)
                     res.sendStatus(404)
                     return
@@ -758,12 +691,6 @@ export class Server {
         this.app.delete("/api/svg-jobs/:id", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                // service accounts can't delete svg jobs
-                if (this.isServiceAccount(jwt)) {
-                    console.log(`service account ${jwt.userId} tried to delete svg job ${req.params.id}`)
-                    res.sendStatus(403)
-                    return
-                }
 
                 const job = await this.backendService.getSvgJob(req.params.id)
                 if (!job) {
@@ -791,11 +718,15 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // service accounts can't create new service accounts
-                if (this.isServiceAccount(jwt)) {
+                if (this.serviceAccountType(jwt)) {
                     res.sendStatus(403)
                     return
                 }
                 const serviceAccountConfig = req.body as ServiceAccountConfig
+                // only admins can create public service accounts
+                if (!await this.backendService.isUserAdmin(jwt.userId)) {
+                    serviceAccountConfig.type = "private"
+                }
                 const result = await this.backendService.createServiceAccountCreds(jwt.userId, serviceAccountConfig)
                 res.json(result)
             } catch (err) {
@@ -808,7 +739,7 @@ export class Server {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // service accounts can't create invite codes
-                if (this.isServiceAccount(jwt)) {
+                if (this.serviceAccountType(jwt)) {
                     res.sendStatus(403)
                     return
                 }
