@@ -174,10 +174,12 @@ describe("server", () => {
             })
         })
 
-        describe.only("when getting the features (unset)", () => {
+        describe("when getting the features (unset)", () => {
             let response: AxiosResponse<FeatureList>;
 
             beforeEach(async () => {
+                process.env.PRIVACY_URI = "";
+                process.env.TERMS_URI = "";
                 response = await client.getFeatures();
             })
 
@@ -188,7 +190,7 @@ describe("server", () => {
             })
         })
 
-        describe.only("when getting the features (set)", () => {
+        describe("when getting the features (set)", () => {
             let response: AxiosResponse<FeatureList>;
 
             beforeEach(async () => {
