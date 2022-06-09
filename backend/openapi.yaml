@@ -1204,6 +1204,8 @@ components:
           type: string
         created_by:
           type: string
+        label:
+          type: string
         workflow_type:
           type: string
         state:
@@ -1218,6 +1220,17 @@ components:
           type: integer
         next_execution:
           type: integer
+      required:
+        - id
+        - created_by
+        - label
+        - workflow_type
+        - state
+        - config_json
+        - data_json
+        - is_active
+        - execution_delay
+        - next_execution
     WorkflowList:
       properties:
         workflows:
@@ -1229,6 +1242,8 @@ components:
     UpdateWorkflowInput:
       type: object
       properties:
+        label:
+          type: string
         data_json:
           type: string
         config_json:
@@ -1244,6 +1259,8 @@ components:
       properties:
         workflow_type:
           type: string
+        label:
+          type: string
         config_json:
           type: string
         data_json:
@@ -1254,6 +1271,14 @@ components:
           type: string
         execution_delay:
           type: integer
+      required:
+        - workflow_type
+        - label
+        - config_json
+        - data_json
+        - is_active
+        - state
+        - execution_delay
     WorkflowEvent:
       type: object
       properties:

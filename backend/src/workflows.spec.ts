@@ -53,237 +53,13 @@ describe("workflows", () => {
         await sleep(100);
     })
 
-    describe.only("workflows", () => {
+    describe("workflows", () => {
         let authenticationResult: Authentication;
 
         beforeEach(async () => {
             authenticationResult = await testHelper.authenticateUser(backendService, session.httpClient, "test@test.test")
         })
 
-    //     /api/workflows:
-    //     get:
-    //       description: Get the workflows
-    //       operationId: getWorkflows
-    //       tags:
-    //         - AIBrush
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/WorkflowList"
-    //     post:
-    //       description: Create a new workflow
-    //       operationId: createWorkflow
-    //       tags:
-    //         - AIBrush
-    //       requestBody:
-    //         content:
-    //           application/json:
-    //             schema:
-    //               $ref: "#/components/schemas/CreateWorkflowInput"
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/Workflow"
-    //   /api/workflows/{workflow_id}:
-    //     get:
-    //       description: Get the workflow
-    //       operationId: getWorkflow
-    //       tags:
-    //         - AIBrush
-    //       parameters:
-    //         - name: workflow_id
-    //           in: path
-    //           required: true
-    //           schema:
-    //             type: string
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/Workflow"
-    //     put:
-    //       description: Update the workflow
-    //       operationId: updateWorkflow
-    //       tags:
-    //         - AIBrush
-    //       parameters:
-    //         - name: workflow_id
-    //           in: path
-    //           required: true
-    //           schema:
-    //             type: string
-    //       requestBody:
-    //         content:
-    //           application/json:
-    //             schema:
-    //               $ref: "#/components/schemas/UpdateWorkflowInput"
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/Workflow"
-    //     delete:
-    //       description: Delete the workflow
-    //       operationId: deleteWorkflow
-    //       tags:
-    //         - AIBrush
-    //       parameters:
-    //         - name: workflow_id
-    //           in: path
-    //           required: true
-    //           schema:
-    //             type: string
-    //       responses:
-    //         "204":
-    //           description: Success
-    //   /api/workflows/{workflow_id}/events:
-    //     get:
-    //       description: Get the workflow events
-    //       operationId: getWorkflowEvents
-    //       tags:
-    //         - AIBrush
-    //       parameters:
-    //         - name: workflow_id
-    //           in: path
-    //           required: true
-    //           schema:
-    //             type: string
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/WorkflowEventList"
-    //     post:
-    //       description: Create a new workflow event
-    //       operationId: createWorkflowEvent
-    //       tags:
-    //         - AIBrush
-    //       parameters:
-    //         - name: workflow_id
-    //           in: path
-    //           required: true
-    //           schema:
-    //             type: string
-    //       requestBody:
-    //         content:
-    //           application/json:
-    //             schema:
-    //               $ref: "#/components/schemas/CreateWorkflowEventInput"
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/WorkflowEvent"
-    //   /api/process-workflow:
-    //     put:
-    //       description: Get the next pending workflow and set its status to processing.
-    //       operationId: processWorkflow
-    //       tags:
-    //         - AIBrush
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/Workflow"
-    // Workflow:
-    //   type: object
-    //   properties:
-    //     id:
-    //       type: string
-    //     created_by:
-    //       type: string
-    //     workflow_type:
-    //       type: string
-    //     state:
-    //       type: string
-    //     config_json:
-    //       type: string
-    //     data_json:
-    //       type: string
-    //     is_active:
-    //       type: boolean
-    //     execution_delay:
-    //       type: integer
-    //     next_execution:
-    //       type: integer
-    // WorkflowList:
-    //   properties:
-    //     workflows:
-    //       type: array
-    //       items:
-    //         $ref: "#/components/schemas/Workflow"
-    //   required:
-    //     - workflows
-    // UpdateWorkflowInput:
-    //   type: object
-    //   properties:
-    //     data_json:
-    //       type: string
-    //     config_json:
-    //       type: string
-    //     is_active:
-    //       type: boolean
-    //     state:
-    //       type: string
-    //     execution_delay:
-    //       type: integer
-    // CreateWorkflowInput:
-    //   type: object
-    //   properties:
-    //     workflow_type:
-    //       type: string
-    //     config_json:
-    //       type: string
-    //     data_json:
-    //       type: string
-    //     is_active:
-    //       type: boolean
-    //     execution_delay:
-    //       type: integer
-    // WorkflowEvent:
-    //   type: object
-    //   properties:
-    //     id:
-    //       type: string
-    //     workflow_id:
-    //       type: string
-    //     created_at:
-    //       type: integer
-    //     message:
-    //       type: string
-    // WorkflowEventList:
-    //   properties:
-    //     workflowEvents:
-    //       type: array
-    //       items:
-    //         $ref: "#/components/schemas/WorkflowEvent"
-    //   required:
-    //     - workflowEvents
-    // CreateWorkflowEventInput:
-    //   type: object
-    //   properties:
-    //     workflow_id:
-    //       type: string
-    //     message:
-    //       type: string
-
-    // test cases
         // when listing workflows in an empty database
         describe('when listing workflows in an empty database', () => {
 
@@ -297,7 +73,209 @@ describe("workflows", () => {
                 expect(workflows.data.workflows).toHaveLength(0);
             });
         });
+
         // when creating a new workflow
+        describe('when creating a new workflow', () => {
+            
+            let createResponse: AxiosResponse<Workflow>;
+
+            beforeEach(async () => {
+                createResponse = await session.client.createWorkflow(
+                    {
+                        workflow_type: 'test',
+                        label: 'test',
+                        config_json: '{}',
+                        data_json: '{}',
+                        is_active: true,
+                        execution_delay: 60,
+                        state: 'created',
+                    }
+                );
+            });
+
+            it('should return the created workflow', () => {
+                expect(createResponse.data.workflow_type).toEqual('test');
+                expect(createResponse.data.label).toEqual('test');
+                expect(createResponse.data.config_json).toEqual('{}');
+                expect(createResponse.data.data_json).toEqual('{}');
+                expect(createResponse.data.is_active).toEqual(true);
+                expect(createResponse.data.execution_delay).toEqual(60);
+            });
+
+            describe("when listing workflows", () => {
+                    
+                let workflows: AxiosResponse<WorkflowList>;
+
+                beforeEach(async () => {
+                    workflows = await session.client.getWorkflows();
+                });
+
+                it('should return the created workflow', () => {
+                    expect(workflows.data.workflows).toHaveLength(1);
+                    expect(workflows.data.workflows[0].workflow_type).toEqual('test');
+                    expect(workflows.data.workflows[0].label).toEqual('test');
+                    expect(workflows.data.workflows[0].config_json).toEqual('{}');
+                    expect(workflows.data.workflows[0].data_json).toEqual('{}');
+                    expect(workflows.data.workflows[0].is_active).toEqual(true);
+                    expect(workflows.data.workflows[0].execution_delay).toEqual(60);
+                });
+            });
+
+            describe("when listing workflows as different user", () => {
+
+                let authResult: Authentication;
+
+                beforeEach(async () => {
+                    authResult = await testHelper.authenticateUser(backendService, session2.httpClient, "test2@test.test")
+                });
+
+                let workflows: AxiosResponse<WorkflowList>;
+
+                beforeEach(async () => {
+                    workflows = await session2.client.getWorkflows();
+                });
+
+                it('should return an empty list', () => {
+                    expect(workflows.data.workflows).toHaveLength(0);
+                });
+            });
+
+            describe("when getting the created workflow", () => {
+                        
+                let getResponse: AxiosResponse<Workflow>;
+
+                beforeEach(async () => {
+                    getResponse = await session.client.getWorkflow(createResponse.data.id);
+                });
+
+                it('should return the created workflow', () => {
+                    expect(getResponse.data.workflow_type).toEqual('test');
+                    expect(getResponse.data.label).toEqual('test');
+                    expect(getResponse.data.config_json).toEqual('{}');
+                    expect(getResponse.data.data_json).toEqual('{}');
+                    expect(getResponse.data.is_active).toEqual(true);
+                    expect(getResponse.data.execution_delay).toEqual(60);
+                });
+            });
+
+            describe.only("when getting the created workflow as different user", () => {
+                let authResult: Authentication;
+
+                beforeEach(async () => {
+                    authResult = await testHelper.authenticateUser(backendService, session2.httpClient, "test2@test.test")
+                });
+
+                it("should return fail with status 404", async () => {
+                    await expect(session2.client.getWorkflow(createResponse.data.id)).rejects.toThrow(/404/);
+                });
+            });
+
+
+            describe("when deleting the created workflow", () => {
+
+                it("should return a normal response", async () => {
+                    const response = await session.client.deleteWorkflow(createResponse.data.id);
+                    expect(response.status).toEqual(204);
+                });
+            })
+
+            describe("when deleting the created workflow as different user", () => {
+                let authResult: Authentication;
+
+                beforeEach(async () => {
+                    authResult = await testHelper.authenticateUser(backendService, session2.httpClient, "test2@test.test")
+                });
+
+                it("should return fail with status 404", async () => {
+                    await expect(session2.client.deleteWorkflow(createResponse.data.id)).rejects.toThrow(/404/);
+                });
+            });
+
+            describe("when updating the created workflow", () => {
+                            
+                let updateResponse: AxiosResponse<Workflow>;
+
+                beforeEach(async () => {
+                    updateResponse = await session.client.updateWorkflow(
+                        createResponse.data.id,
+                        {
+                            data_json: '{}',
+                            config_json: '{}',
+                            is_active: false,
+                            state: 'processing',
+                            execution_delay: 60
+                        }
+                    );
+                });
+
+                it('should return the updated workflow', () => {
+                    expect(updateResponse.data.workflow_type).toEqual('test');
+                    expect(updateResponse.data.label).toEqual('test');
+                    expect(updateResponse.data.config_json).toEqual('{}');
+                    expect(updateResponse.data.data_json).toEqual('{}');
+                    expect(updateResponse.data.is_active).toEqual(false);
+                    expect(updateResponse.data.execution_delay).toEqual(60);
+                });
+
+                describe("when listing workflows", () => {
+                    
+                    let workflows: AxiosResponse<WorkflowList>;
+
+                    beforeEach(async () => {
+                        workflows = await session.client.getWorkflows();
+                    });
+
+                    it('should return the updated workflow', () => {
+                        expect(workflows.data.workflows).toHaveLength(1);
+                        expect(workflows.data.workflows[0].workflow_type).toEqual('test');
+                        expect(workflows.data.workflows[0].label).toEqual('test');
+                        expect(workflows.data.workflows[0].config_json).toEqual('{}');
+                        expect(workflows.data.workflows[0].data_json).toEqual('{}');
+                        expect(workflows.data.workflows[0].is_active).toEqual(false);
+                        expect(workflows.data.workflows[0].execution_delay).toEqual(60);
+                    });
+                });
+
+                describe("when getting the updated workflow", () => {
+                    
+                    let getResponse: AxiosResponse<Workflow>;
+
+                    beforeEach(async () => {
+                        getResponse = await session.client.getWorkflow(createResponse.data.id);
+                    });
+
+                    it('should return the updated workflow', () => {
+                        expect(getResponse.data.workflow_type).toEqual('test');
+                        expect(getResponse.data.label).toEqual('test');
+                        expect(getResponse.data.config_json).toEqual('{}');
+                        expect(getResponse.data.data_json).toEqual('{}');
+                        expect(getResponse.data.is_active).toEqual(false);
+                        expect(getResponse.data.execution_delay).toEqual(60);
+                    })
+                });
+            })
+
+            describe("when updating the created workflow as different user", () => {
+                let authResult: Authentication;
+
+                beforeEach(async () => {
+                    authResult = await testHelper.authenticateUser(backendService, session2.httpClient, "test2@test.test")
+                });
+
+                it("should return fail with status 404", async () => {
+                    await expect(session2.client.updateWorkflow(createResponse.data.id, {})).rejects.toThrow(/404/);
+                });
+            });
+
+            // TODO: first, add some test helper methods to create public and private service
+            // accounts (Session is returned). Then use those accounts to test below cases.
+
+            // TODO: process as public service account
+            
+            // TODO: process as private service account (authorized)
+
+            // TODO: process as private service account (unauthorized)
+        });
         
     })
 })

@@ -29,6 +29,7 @@ import {
     SvgJob,
     SvgJobStatusEnum,
     UpdateSvgJobInput,
+    UpdateWorkflowInput,
     User,
     Workflow,
     WorkflowList,
@@ -894,35 +895,15 @@ export class BackendService {
         }
     }
 
-    // Workflow:
-    //   type: object
-    //   properties:
-    //     id:
-    //       type: string
-    //     created_by:
-    //       type: string
-    //     workflow_type:
-    //       type: string
-    //     state:
-    //       type: string
-    //     config_json:
-    //       type: string
-    //     data_json:
-    //       type: string
-    //     is_active:
-    //       type: boolean
-    //     execution_delay:
-    //       type: integer
-    //     next_execution:
-    //       type: integer
     async createWorkflow(body: CreateWorkflowInput, created_by: string): Promise<Workflow> {
         const id = uuid.v4()
         const nextExecution = moment().valueOf()
+        const now = moment().valueOf()
         const client = await this.pool.connect()
         try {
             await client.query(
-                `INSERT INTO workflows (id, created_by, workflow_type, state, config_json, data_json, is_active, execution_delay, next_execution) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-                [id, created_by, body.workflow_type, body.state, body.config_json, body.data_json, body.is_active, body.execution_delay, nextExecution]
+                `INSERT INTO workflows (id, created_by, workflow_type, state, config_json, data_json, is_active, execution_delay, next_execution, label, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+                [id, created_by, body.workflow_type, body.state, body.config_json, body.data_json, body.is_active, body.execution_delay, nextExecution, body.label, now]
             )
             return {
                 id,
@@ -934,186 +915,83 @@ export class BackendService {
                 is_active: body.is_active,
                 execution_delay: body.execution_delay,
                 next_execution: nextExecution,
+                label: body.label
             }
         } finally {
             client.release()
         }
     }
 
+    // take in optional user id. If present, add it as a filter
+    async getWorkflow(id: string, userId?: string): Promise<Workflow> {
+        let filter = ""
+        let args = [id]
+        if (userId) {
+            filter = ` AND created_by=$2`
+            args.push(userId)
+        }
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM workflows WHERE id=$1${filter}`,
+                args
+            )
+            if (result.rowCount === 0) {
+                return null
+            }
+            const workflow = result.rows[0]
+            return workflow
+        } finally {
+            client.release()
+        }
+    }
 
-    //   /api/workflows/{workflow_id}:
-    //     get:
-    //       description: Get the workflow
-    //       operationId: getWorkflow
-    //       tags:
-    //         - AIBrush
-    //       parameters:
-    //         - name: workflow_id
-    //           in: path
-    //           required: true
-    //           schema:
-    //             type: string
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/Workflow"
-    //     put:
-    //       description: Update the workflow
-    //       operationId: updateWorkflow
-    //       tags:
-    //         - AIBrush
-    //       parameters:
-    //         - name: workflow_id
-    //           in: path
-    //           required: true
-    //           schema:
-    //             type: string
-    //       requestBody:
-    //         content:
-    //           application/json:
-    //             schema:
-    //               $ref: "#/components/schemas/UpdateWorkflowInput"
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/Workflow"
-    //     delete:
-    //       description: Delete the workflow
-    //       operationId: deleteWorkflow
-    //       tags:
-    //         - AIBrush
-    //       parameters:
-    //         - name: workflow_id
-    //           in: path
-    //           required: true
-    //           schema:
-    //             type: string
-    //       responses:
-    //         "204":
-    //           description: Success
-    //   /api/workflows/{workflow_id}/events:
-    //     get:
-    //       description: Get the workflow events
-    //       operationId: getWorkflowEvents
-    //       tags:
-    //         - AIBrush
-    //       parameters:
-    //         - name: workflow_id
-    //           in: path
-    //           required: true
-    //           schema:
-    //             type: string
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/WorkflowEventList"
-    //     post:
-    //       description: Create a new workflow event
-    //       operationId: createWorkflowEvent
-    //       tags:
-    //         - AIBrush
-    //       parameters:
-    //         - name: workflow_id
-    //           in: path
-    //           required: true
-    //           schema:
-    //             type: string
-    //       requestBody:
-    //         content:
-    //           application/json:
-    //             schema:
-    //               $ref: "#/components/schemas/CreateWorkflowEventInput"
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/WorkflowEvent"
-    //   /api/process-workflow:
-    //     put:
-    //       description: Get the next pending workflow and set its status to processing.
-    //       operationId: processWorkflow
-    //       tags:
-    //         - AIBrush
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/Workflow"
+    async updateWorkflow(id: string, body: UpdateWorkflowInput, userId?: string): Promise<Workflow> {
+        const existingWorkflow = await this.getWorkflow(id)
+        if (!existingWorkflow) {
+            console.log("Workflow not found")
+            return null
+        }
+        Object.keys(body).forEach(key => {
+            existingWorkflow[key] = body[key]
+        })
+        const client = await this.pool.connect()
+        let args = [existingWorkflow.data_json, existingWorkflow.config_json, existingWorkflow.is_active, existingWorkflow.state, existingWorkflow.execution_delay, existingWorkflow.label, id]
+        let filter = "WHERE id=$7"
+        
+        if (userId) {
+            args.push(userId)
+            filter = filter + ` AND created_by=$8`
+        }
 
-    // WorkflowList:
-    //   properties:
-    //     workflows:
-    //       type: array
-    //       items:
-    //         $ref: "#/components/schemas/Workflow"
-    //   required:
-    //     - workflows
-    // UpdateWorkflowInput:
-    //   type: object
-    //   properties:
-    //     data_json:
-    //       type: string
-    //     config_json:
-    //       type: string
-    //     is_active:
-    //       type: boolean
-    //     state:
-    //       type: string
-    //     execution_delay:
-    //       type: integer
-    // CreateWorkflowInput:
-    //   type: object
-    //   properties:
-    //     workflow_type:
-    //       type: string
-    //     config_json:
-    //       type: string
-    //     data_json:
-    //       type: string
-    //     is_active:
-    //       type: boolean
-    //     execution_delay:
-    //       type: integer
-    // WorkflowEvent:
-    //   type: object
-    //   properties:
-    //     id:
-    //       type: string
-    //     workflow_id:
-    //       type: string
-    //     created_at:
-    //       type: integer
-    //     message:
-    //       type: string
-    // WorkflowEventList:
-    //   properties:
-    //     workflowEvents:
-    //       type: array
-    //       items:
-    //         $ref: "#/components/schemas/WorkflowEvent"
-    //   required:
-    //     - workflowEvents
-    // CreateWorkflowEventInput:
-    //   type: object
-    //   properties:
-    //     workflow_id:
-    //       type: string
-    //     message:
-    //       type: string
-    
+        try {
+            await client.query(
+                `UPDATE workflows SET data_json=$1, config_json=$2, is_active=$3, state=$4, execution_delay=$5, label=$6 ${filter}`,
+                args
+            )
+            return await this.getWorkflow(id)
+        } finally {
+            client.release()
+        }
+    }
+
+    async deleteWorkflow(id: string, userId?: string): Promise<void> {
+        const client = await this.pool.connect()
+        let args = [id]
+        let filter = "WHERE id=$1"
+        if (userId) {
+            args.push(userId)
+            filter = filter + ` AND created_by=$2`
+        }
+        try {
+            await client.query(
+                `DELETE FROM workflows ${filter}`,
+                args,
+            )
+        } finally {
+            client.release()
+        }
+    }
 
     async isUserAdmin(user: string): Promise<boolean> {
         if (user.indexOf("@") !== -1) {

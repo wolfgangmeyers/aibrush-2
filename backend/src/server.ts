@@ -791,6 +791,144 @@ export class Server {
                 res.sendStatus(500)
             }
         })
+
+        this.app.post("/api/workflows", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                const workflow = await this.backendService.createWorkflow(req.body, jwt.userId)
+                res.status(201).json(workflow)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // get by id
+        // /api/workflows/{workflow_id}:
+        // get:
+        //   description: Get the workflow
+        //   operationId: getWorkflow
+        //   tags:
+        //     - AIBrush
+        //   parameters:
+        //     - name: workflow_id
+        //       in: path
+        //       required: true
+        //       schema:
+        //         type: string
+        //   responses:
+        //     "200":
+        //       description: Success
+        //       content:
+        //         application/json:
+        //           schema:
+        //             $ref: "#/components/schemas/Workflow"
+
+        this.app.get("/api/workflows/:id", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                let userId = jwt.userId
+                if (this.isPublicServiceAccount(jwt)) {
+                    userId = undefined
+                }
+                const workflow = await this.backendService.getWorkflow(req.params.id, userId)
+                if (!workflow) {
+                    console.log(`user ${jwt.userId} tried to get workflow ${req.params.id} but it does not exist`)
+                    res.sendStatus(404)
+                    return
+                }
+                res.json(workflow)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // put:
+        //   description: Update the workflow
+        //   operationId: updateWorkflow
+        //   tags:
+        //     - AIBrush
+        //   parameters:
+        //     - name: workflow_id
+        //       in: path
+        //       required: true
+        //       schema:
+        //         type: string
+        //   requestBody:
+        //     content:
+        //       application/json:
+        //         schema:
+        //           $ref: "#/components/schemas/UpdateWorkflowInput"
+        //   responses:
+        //     "200":
+        //       description: Success
+        //       content:
+        //         application/json:
+        //           schema:
+        //             $ref: "#/components/schemas/Workflow"
+
+        this.app.put("/api/workflows/:id", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                
+                let userId = jwt.userId
+                if (this.serviceAccountType(jwt) == "public") {
+                    userId = undefined
+                }
+                if (!await this.backendService.getWorkflow(req.params.id, userId)) {
+                    console.log(`user ${jwt.userId} tried to update workflow ${req.params.id} but it does not exist`)
+                    res.sendStatus(404)
+                    return
+                }
+                const workflow = await this.backendService.updateWorkflow(req.params.id, req.body, userId)
+                if (!workflow) {
+                    console.log(`user ${jwt.userId} tried to update workflow ${req.params.id} but it does not exist`)
+                    res.sendStatus(404)
+                    return
+                }
+                res.json(workflow)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        // delete:
+        //   description: Delete the workflow
+        //   operationId: deleteWorkflow
+        //   tags:
+        //     - AIBrush
+        //   parameters:
+        //     - name: workflow_id
+        //       in: path
+        //       required: true
+        //       schema:
+        //         type: string
+        //   responses:
+        //     "204":
+        //       description: Success
+
+        this.app.delete("/api/workflows/:id", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                let userId = jwt.userId
+                if (this.serviceAccountType(jwt) == "public") {
+                    userId = undefined
+                }
+                if (!await this.backendService.getWorkflow(req.params.id, userId)) {
+                    console.log(`user ${jwt.userId} tried to delete workflow ${req.params.id} but it does not exist`)
+                    res.sendStatus(404)
+                    return
+                }
+                await this.backendService.deleteWorkflow(req.params.id, userId)
+                res.sendStatus(204)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
         // end workflows
     }
 

@@ -282,37 +282,43 @@ export interface CreateWorkflowInput {
      * @type {string}
      * @memberof CreateWorkflowInput
      */
-    workflow_type?: string;
+    workflow_type: string;
     /**
      * 
      * @type {string}
      * @memberof CreateWorkflowInput
      */
-    config_json?: string;
+    label: string;
     /**
      * 
      * @type {string}
      * @memberof CreateWorkflowInput
      */
-    data_json?: string;
+    config_json: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateWorkflowInput
+     */
+    data_json: string;
     /**
      * 
      * @type {boolean}
      * @memberof CreateWorkflowInput
      */
-    is_active?: boolean;
+    is_active: boolean;
     /**
      * 
      * @type {string}
      * @memberof CreateWorkflowInput
      */
-    state?: string;
+    state: string;
     /**
      * 
      * @type {number}
      * @memberof CreateWorkflowInput
      */
-    execution_delay?: number;
+    execution_delay: number;
 }
 /**
  * 
@@ -1029,6 +1035,12 @@ export interface UpdateWorkflowInput {
      * @type {string}
      * @memberof UpdateWorkflowInput
      */
+    label?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateWorkflowInput
+     */
     data_json?: string;
     /**
      * 
@@ -1104,55 +1116,61 @@ export interface Workflow {
      * @type {string}
      * @memberof Workflow
      */
-    id?: string;
+    id: string;
     /**
      * 
      * @type {string}
      * @memberof Workflow
      */
-    created_by?: string;
+    created_by: string;
     /**
      * 
      * @type {string}
      * @memberof Workflow
      */
-    workflow_type?: string;
+    label: string;
     /**
      * 
      * @type {string}
      * @memberof Workflow
      */
-    state?: string;
+    workflow_type: string;
     /**
      * 
      * @type {string}
      * @memberof Workflow
      */
-    config_json?: string;
+    state: string;
     /**
      * 
      * @type {string}
      * @memberof Workflow
      */
-    data_json?: string;
+    config_json: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Workflow
+     */
+    data_json: string;
     /**
      * 
      * @type {boolean}
      * @memberof Workflow
      */
-    is_active?: boolean;
+    is_active: boolean;
     /**
      * 
      * @type {number}
      * @memberof Workflow
      */
-    execution_delay?: number;
+    execution_delay: number;
     /**
      * 
      * @type {number}
      * @memberof Workflow
      */
-    next_execution?: number;
+    next_execution: number;
 }
 /**
  * 
