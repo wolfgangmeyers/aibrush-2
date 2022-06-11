@@ -27,6 +27,11 @@ describe("workflows", () => {
     let session: Session
     // second user
     let session2: Session;
+    let adminSession: Session;
+    let privateServiceAccount: Session;
+    let privateServiceAccount2: Session;
+    let publicServiceAccount: Session;
+
     let databaseName: string;
 
     let testHelper: TestHelper;
@@ -46,6 +51,7 @@ describe("workflows", () => {
         await server.start()
         session = testHelper.createSession()
         session2 = testHelper.createSession()
+        adminSession = testHelper.createSession()
     })
 
     afterEach(async () => {
@@ -54,10 +60,13 @@ describe("workflows", () => {
     })
 
     describe("workflows", () => {
-        let authenticationResult: Authentication;
-
         beforeEach(async () => {
-            authenticationResult = await testHelper.authenticateUser(backendService, session.httpClient, "test@test.test")
+            await testHelper.authenticateUser(backendService, session.httpClient, "test@test.test")
+            await testHelper.authenticateUser(backendService, session2.httpClient, "test2@test.test")
+            await testHelper.authenticateUser(backendService, adminSession.httpClient, "admin@test.test")
+            privateServiceAccount = await testHelper.createServiceAccount(session, "private")
+            privateServiceAccount2 = await testHelper.createServiceAccount(session2, "private")
+            publicServiceAccount = await testHelper.createServiceAccount(adminSession, "public")
         })
 
         // when listing workflows in an empty database
@@ -123,12 +132,6 @@ describe("workflows", () => {
 
             describe("when listing workflows as different user", () => {
 
-                let authResult: Authentication;
-
-                beforeEach(async () => {
-                    authResult = await testHelper.authenticateUser(backendService, session2.httpClient, "test2@test.test")
-                });
-
                 let workflows: AxiosResponse<WorkflowList>;
 
                 beforeEach(async () => {
@@ -158,12 +161,7 @@ describe("workflows", () => {
                 });
             });
 
-            describe.only("when getting the created workflow as different user", () => {
-                let authResult: Authentication;
-
-                beforeEach(async () => {
-                    authResult = await testHelper.authenticateUser(backendService, session2.httpClient, "test2@test.test")
-                });
+            describe("when getting the created workflow as different user", () => {
 
                 it("should return fail with status 404", async () => {
                     await expect(session2.client.getWorkflow(createResponse.data.id)).rejects.toThrow(/404/);
@@ -180,11 +178,6 @@ describe("workflows", () => {
             })
 
             describe("when deleting the created workflow as different user", () => {
-                let authResult: Authentication;
-
-                beforeEach(async () => {
-                    authResult = await testHelper.authenticateUser(backendService, session2.httpClient, "test2@test.test")
-                });
 
                 it("should return fail with status 404", async () => {
                     await expect(session2.client.deleteWorkflow(createResponse.data.id)).rejects.toThrow(/404/);
@@ -256,25 +249,59 @@ describe("workflows", () => {
             })
 
             describe("when updating the created workflow as different user", () => {
-                let authResult: Authentication;
-
-                beforeEach(async () => {
-                    authResult = await testHelper.authenticateUser(backendService, session2.httpClient, "test2@test.test")
-                });
 
                 it("should return fail with status 404", async () => {
                     await expect(session2.client.updateWorkflow(createResponse.data.id, {})).rejects.toThrow(/404/);
                 });
             });
 
-            // TODO: first, add some test helper methods to create public and private service
-            // accounts (Session is returned). Then use those accounts to test below cases.
+            describe("when processing the created workflow as a public service account", () => {
 
-            // TODO: process as public service account
-            
-            // TODO: process as private service account (authorized)
+                let processResponse: AxiosResponse<Workflow>;
 
-            // TODO: process as private service account (unauthorized)
+                beforeEach(async () => {
+                    processResponse = await publicServiceAccount.client.processWorkflow(createResponse.data.id);
+                })
+
+                it("should return the processed workflow", () => {
+                    expect(processResponse.data.workflow_type).toEqual('test');
+                    expect(processResponse.data.label).toEqual('test');
+                    expect(processResponse.data.config_json).toEqual('{}');
+                    expect(processResponse.data.data_json).toEqual('{}');
+                    expect(processResponse.data.is_active).toEqual(true);
+                    expect(processResponse.data.execution_delay).toEqual(60);
+                })
+
+            })
+
+            describe("when processing the created workflow as a private service account", () => {
+                let processResponse: AxiosResponse<Workflow>;
+
+                beforeEach(async () => {
+                    processResponse = await privateServiceAccount.client.processWorkflow(createResponse.data.id);
+                })
+
+                it("should return the processed workflow", () => {
+                    expect(processResponse.data.workflow_type).toEqual('test');
+                    expect(processResponse.data.label).toEqual('test');
+                    expect(processResponse.data.config_json).toEqual('{}');
+                    expect(processResponse.data.data_json).toEqual('{}');
+                    expect(processResponse.data.is_active).toEqual(true);
+                    expect(processResponse.data.execution_delay).toEqual(60);
+                })
+            })
+
+            describe("when processing the created workflow as a private service account of a different user", () => {
+                let processResponse: AxiosResponse<Workflow>;
+
+                beforeEach(async () => {
+                    processResponse = await privateServiceAccount2.client.processWorkflow(createResponse.data.id);
+                })
+
+                it("should return null", () => {
+                    expect(processResponse.data).toBeNull();
+                })
+            });
         });
         
     })

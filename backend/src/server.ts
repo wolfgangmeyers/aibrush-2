@@ -713,7 +713,6 @@ export class Server {
             }
         })
 
-
         this.app.post("/api/auth/service-accounts", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
@@ -767,20 +766,6 @@ export class Server {
             }
         })
 
-        // workflows
-        // /api/workflows:
-        // get:
-        //   description: Get the workflows
-        //   operationId: getWorkflows
-        //   tags:
-        //     - AIBrush
-        //   responses:
-        //     "200":
-        //       description: Success
-        //       content:
-        //         application/json:
-        //           schema:
-        //             $ref: "#/components/schemas/WorkflowList"
         this.app.get("/api/workflows", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
@@ -803,27 +788,6 @@ export class Server {
             }
         })
 
-        // get by id
-        // /api/workflows/{workflow_id}:
-        // get:
-        //   description: Get the workflow
-        //   operationId: getWorkflow
-        //   tags:
-        //     - AIBrush
-        //   parameters:
-        //     - name: workflow_id
-        //       in: path
-        //       required: true
-        //       schema:
-        //         type: string
-        //   responses:
-        //     "200":
-        //       description: Success
-        //       content:
-        //         application/json:
-        //           schema:
-        //             $ref: "#/components/schemas/Workflow"
-
         this.app.get("/api/workflows/:id", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
@@ -843,30 +807,6 @@ export class Server {
                 res.sendStatus(500)
             }
         })
-
-        // put:
-        //   description: Update the workflow
-        //   operationId: updateWorkflow
-        //   tags:
-        //     - AIBrush
-        //   parameters:
-        //     - name: workflow_id
-        //       in: path
-        //       required: true
-        //       schema:
-        //         type: string
-        //   requestBody:
-        //     content:
-        //       application/json:
-        //         schema:
-        //           $ref: "#/components/schemas/UpdateWorkflowInput"
-        //   responses:
-        //     "200":
-        //       description: Success
-        //       content:
-        //         application/json:
-        //           schema:
-        //             $ref: "#/components/schemas/Workflow"
 
         this.app.put("/api/workflows/:id", async (req, res) => {
             try {
@@ -894,21 +834,6 @@ export class Server {
             }
         })
 
-        // delete:
-        //   description: Delete the workflow
-        //   operationId: deleteWorkflow
-        //   tags:
-        //     - AIBrush
-        //   parameters:
-        //     - name: workflow_id
-        //       in: path
-        //       required: true
-        //       schema:
-        //         type: string
-        //   responses:
-        //     "204":
-        //       description: Success
-
         this.app.delete("/api/workflows/:id", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
@@ -929,6 +854,20 @@ export class Server {
             }
         })
 
+        this.app.put("/api/process-workflow", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                let user = jwt.userId
+                if (this.serviceAccountType(jwt) == "public") {
+                    user = undefined
+                }
+                const workflow = await this.backendService.processWorkflow(user)
+                res.json(workflow)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
         // end workflows
     }
 

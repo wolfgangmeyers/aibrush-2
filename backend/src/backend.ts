@@ -687,6 +687,9 @@ export class BackendService {
     // process suggestions job
     async processSuggestionsJob(): Promise<SuggestionsJob> {
         const users = await this.getUesrsWithPendingSuggestions()
+        if (users.length === 0) {
+            return null
+        }
         // get random user
         const user = users[Math.floor(Math.random() * users.length)]
         const client = await this.pool.connect()
@@ -710,6 +713,75 @@ export class BackendService {
                 ...job,
                 status: SuggestionsJobStatusEnum.Processing,
             }
+        } catch (err) {
+            // rollback transaction
+            await client.query("ROLLBACK")
+            console.error("Rolling back transaction", err)
+        } finally {
+            client.release()
+        }
+        return null
+    }
+
+    // CREATE TABLE IF NOT EXISTS "workflows" (
+    //     "id" varchar(36) NOT NULL,
+    //     "created_by" varchar(255) NOT NULL,
+    //     "label" varchar(255) NOT NULL,
+    //     "workflow_type" varchar(36) NOT NULL,
+    //     "state" varchar(36) NOT NULL,
+    //     "config_json" text NOT NULL,
+    //     "data_json" text NOT NULL,
+    //     "is_active" boolean NOT NULL,
+    //     "execution_delay" integer NOT NULL,
+    //     "next_execution" BIGINT NOT NULL,
+    //     "created_at" BIGINT NOT NULL,
+    //     CONSTRAINT "pk_workflow" PRIMARY KEY ("id")
+    // );
+
+    // get users that have workflows with next execution time in the past
+    async getUsersWithActiveWorkflows(): Promise<string[]> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT DISTINCT created_by FROM workflows WHERE is_active=true AND next_execution < $1`,
+                [moment().valueOf()]
+            )
+            return result.rows.map(row => row.created_by)
+        } finally {
+            client.release()
+        }
+    }
+
+    // process workflow
+    async processWorkflow(user?: string): Promise<Workflow> {
+        // get users that have workflows with next execution time in the past
+        const users = await this.getUsersWithActiveWorkflows()
+        if (users.length === 0) {
+            return null
+        }
+        if (!user) {
+            // get random user
+            user = users[Math.floor(Math.random() * users.length)]
+        }
+
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM workflows WHERE is_active=true AND created_by=$1 AND next_execution < $2 ORDER BY next_execution ASC LIMIT 1`,
+                [user, moment().valueOf()]
+            )
+            if (result.rowCount === 0) {
+                return null
+            }
+            const workflow = result.rows[0]
+            // update workflow next execution time
+            await client.query(
+                `UPDATE workflows SET next_execution=$1 WHERE id=$2`,
+                [moment().add(workflow.execution_delay, "seconds").valueOf(), workflow.id]
+            )
+            // commit transaction
+            await client.query("COMMIT")
+            return workflow
         } catch (err) {
             // rollback transaction
             await client.query("ROLLBACK")
