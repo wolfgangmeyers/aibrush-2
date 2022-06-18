@@ -7,7 +7,7 @@ interface ImageThumbnailProps {
     apiUrl: string;
     assetsUrl: string;
     image: Image;
-    onClick: (image: Image) => void;
+    onClick?: (image: Image) => void;
     onDelete?: (image: Image) => void;
     onFork?: (image: Image) => void;
     onSvg?: (image: Image) => void;
@@ -45,7 +45,7 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, ima
                 id={`image-${image.id}`}
                 className="card-img-top"
                 src={src}
-                alt={image.label} onClick={() => onClick(image)} />
+                alt={image.label} onClick={() => onClick && onClick(image)} />
             <div className="card-body">
                 <div>
                     {/* label */}

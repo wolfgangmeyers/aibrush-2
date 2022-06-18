@@ -9,7 +9,7 @@ interface Props {
     isAdmin: boolean
 }
 
-export const MainMenu: FC<Props> = ({isAdmin}) => {
+export const MainMenu: FC<Props> = ({ isAdmin }) => {
     return (
         <>
             {/* Header: Welcome to AIBrush! */}
@@ -43,6 +43,11 @@ export const MainMenu: FC<Props> = ({isAdmin}) => {
                             <i className="fas fa-comments" />&nbsp;
                             Suggestions
                         </Link>
+                        <Link to="/workflows" className="btn btn-primary">
+                            {/* font awesome icon for workflows */}
+                            <i className="fas fa-cogs" />&nbsp;
+                            Workflows
+                        </Link>
                         {/* /worker-config */}
                         <Link to="/worker-config" className="btn btn-primary">
                             {/* font awesome wrench icon */}
@@ -51,11 +56,14 @@ export const MainMenu: FC<Props> = ({isAdmin}) => {
                         </Link>
                         {
                             isAdmin &&
-                            <Link to="/admin" className="btn btn-primary">
-                                {/* font awesome wrench icon */}
-                                <i className="fas fa-wrench" />&nbsp;
-                                Admin
-                            </Link>
+                            <>
+                                <Link to="/admin" className="btn btn-primary">
+                                    {/* font awesome wrench icon */}
+                                    <i className="fas fa-wrench" />&nbsp;
+                                    Admin
+                                </Link>
+
+                            </>
                         }
                     </div>
                 </div>

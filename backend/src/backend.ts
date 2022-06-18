@@ -102,6 +102,14 @@ export class BackendService {
             connectionString: this.config.databaseUrl,
             ssl: this.config.databaseSsl && { rejectUnauthorized: false },
         })
+
+        // const images = await this.listImages({limit: 100000});
+        // for (let image of images.images) {
+        //     if (image.label == "cyborg harry potter") {
+        //         console.log(`deleting ${image.id}`)
+        //         await this.deleteImage(image.id)
+        //     }
+        // }
     }
 
     async destroy() {
@@ -1027,18 +1035,19 @@ export class BackendService {
         Object.keys(body).forEach(key => {
             existingWorkflow[key] = body[key]
         })
+        const nextExecution = moment().valueOf() + existingWorkflow.execution_delay * 1000
         const client = await this.pool.connect()
-        let args = [existingWorkflow.data_json, existingWorkflow.config_json, existingWorkflow.is_active, existingWorkflow.state, existingWorkflow.execution_delay, existingWorkflow.label, id]
-        let filter = "WHERE id=$7"
+        let args = [existingWorkflow.data_json, existingWorkflow.config_json, existingWorkflow.is_active, existingWorkflow.state, existingWorkflow.execution_delay, existingWorkflow.label, nextExecution, id]
+        let filter = "WHERE id=$8"
         
         if (userId) {
             args.push(userId)
-            filter = filter + ` AND created_by=$8`
+            filter = filter + ` AND created_by=$9`
         }
 
         try {
             await client.query(
-                `UPDATE workflows SET data_json=$1, config_json=$2, is_active=$3, state=$4, execution_delay=$5, label=$6 ${filter}`,
+                `UPDATE workflows SET data_json=$1, config_json=$2, is_active=$3, state=$4, execution_delay=$5, label=$6, next_execution=$7 ${filter}`,
                 args
             )
             return await this.getWorkflow(id)

@@ -14,6 +14,9 @@ import { Healthchecker } from './components/Healthchecker';
 import { SuggestionsPage } from "./pages/Suggestions";
 import { WorkerConfigPage } from "./pages/WorkerConfig";
 import { Admin } from "./pages/Admin";
+import { CreateWorkflow } from "./pages/CreateWorkflow";
+import { Workflows } from "./pages/Workflows";
+import { WorkflowDetail } from "./pages/WorkflowDetail"
 
 const config = getConfig()
 const httpClient = axios.default;
@@ -123,20 +126,33 @@ function App() {
             <Route path="/worker-config">
               <WorkerConfigPage api={client} />
             </Route>
+
+            <Route path="/create-workflow">
+              <CreateWorkflow api={client} />
+            </Route>
+            <Route path="/workflows" exact={true}>
+              <Workflows api={client} />
+            </Route>
+            <Route path="/workflows/:id">
+              <WorkflowDetail api={client} apiUrl={config.apiUrl} assetsUrl={assetsUrl} />
+            </Route>
             {
               isAdmin &&
-              <Route path="/admin">
-                <Admin api={client} />
-              </Route>
+              <>
+                <Route path="/admin">
+                  <Admin api={client} />
+                </Route>
+
+              </>
             }
           </Switch>}
-          <div className="row" style={{marginTop: "100px", padding: "50px"}}>
+          <div className="row" style={{ marginTop: "100px", padding: "50px" }}>
             <div className="col-lg-12">
               {/* show external popout pages to terms and privacy policy, if they are present in the features */}
               {features && features.privacy_uri && <a href={features.privacy_uri} target="_blank">
                 Privacy Policy
               </a>}
-              {features && features.terms_uri && <a href={features.terms_uri} target="_blank" style={{marginLeft: "20px"}}>
+              {features && features.terms_uri && <a href={features.terms_uri} target="_blank" style={{ marginLeft: "20px" }}>
                 Terms of Service
               </a>}
             </div>

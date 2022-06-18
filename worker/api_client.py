@@ -130,3 +130,134 @@ class AIBrushAPI(object):
         }
         resp = self.http_request(f"/svg-jobs/{job_id}", "PATCH", body)
         return self.parse_json(resp.text)
+
+    # Make all args default to None
+    def create_image(
+        self, phrases: List[str] = None,
+        negative_phrases: List[str] = None,
+        label: str = None,
+        iterations: int = None,
+        parent: str = None,
+        encoded_image: str = None,
+        encoded_mask: str = None,
+        encoded_npy: str = None,
+        enable_video: bool = None,
+        enable_zoom: bool = None,
+        zoom_frequency: int = None,
+        zoom_scale: float = None,
+        zoom_shift_x: float = None,
+        zoom_shift_y: float = None,
+        model: str = None,
+        glid_3_xl_skip_iterations: int = None,
+        glid_3_xl_clip_guidance: bool = None,
+        glid_3_xl_clip_guidance_scale: float = None,
+        height: int = None,
+        width: int = None,
+        uncrop_offset_x: int = None,
+        uncrop_offset_y: int = None
+    ) -> SimpleNamespace:
+        body = {
+            "phrases": [],
+            "negative_phrases": [],
+            "label": "",
+            "iterations": 50,
+            "encoded_image": "",
+            "encoded_npy": "",
+            "encoded_mask": "",
+            "enable_video": False,
+            "enable_zoom": False,
+            "zoom_frequency": 10,
+            "zoom_scale": 0.99,
+            "zoom_shift_x": 0,
+            "zoom_shift_y": 0,
+            "model": "glid_3_xl",
+            "glid_3_xl_clip_guidance": False,
+            "glid_3_xl_clip_guidance_scale": 150,
+            "glid_3_xl_skip_iterations": 0,
+            "width": 256,
+            "height": 256,
+        }
+        if phrases is not None:
+            body["phrases"] = phrases
+        if negative_phrases is not None:
+            body["negative_phrases"] = negative_phrases
+        if label is not None:
+            body["label"] = label
+        if iterations is not None:
+            body["iterations"] = iterations
+        if parent is not None:
+            body["parent"] = parent
+        if encoded_image is not None:
+            body["encoded_image"] = encoded_image
+        if encoded_mask is not None:
+            body["encoded_mask"] = encoded_mask
+        if encoded_npy is not None:
+            body["encoded_npy"] = encoded_npy
+        if enable_video is not None:
+            body["enable_video"] = enable_video
+        if enable_zoom is not None:
+            body["enable_zoom"] = enable_zoom
+        if zoom_frequency is not None:
+            body["zoom_frequency"] = zoom_frequency
+        if zoom_scale is not None:
+            body["zoom_scale"] = zoom_scale
+        if zoom_shift_x is not None:
+            body["zoom_shift_x"] = zoom_shift_x
+        if zoom_shift_y is not None:
+            body["zoom_shift_y"] = zoom_shift_y
+        if model is not None:
+            body["model"] = model
+        if glid_3_xl_clip_guidance is not None:
+            body["glid_3_xl_clip_guidance"] = glid_3_xl_clip_guidance
+        if glid_3_xl_clip_guidance_scale is not None:
+            body["glid_3_xl_clip_guidance_scale"] = glid_3_xl_clip_guidance_scale
+        if glid_3_xl_skip_iterations is not None:
+            body["glid_3_xl_skip_iterations"] = glid_3_xl_skip_iterations
+        if height is not None:
+            body["height"] = height
+        if width is not None:
+            body["width"] = width
+        if uncrop_offset_x is not None:
+            body["uncrop_offset_x"] = uncrop_offset_x
+        if uncrop_offset_y is not None:
+            body["uncrop_offset_y"] = uncrop_offset_y
+        resp = self.http_request("/images", "POST", body)
+        return self.parse_json(resp.text)
+
+    def delete_image(self, image_id: str) -> bool:
+        resp = self.http_request(f"/images/{image_id}", "DELETE")
+        return resp.status_code == 204
+
+    def get_image(self, image_id: str) -> SimpleNamespace:
+        resp = self.http_request(f"/images/{image_id}", "GET")
+        return self.parse_json(resp.text)
+
+    def process_workflow(self) -> SimpleNamespace:
+        resp = self.http_request("/process-workflow", "PUT")
+        return self.parse_json(resp.text)
+
+    def update_workflow(
+        self, workflow_id: str=None,
+        label: str=None,
+        data_json: str=None,
+        config_json: str=None,
+        is_active: bool=None,
+        state: str=None,
+        execution_delay: int=None,
+    ) -> SimpleNamespace:
+        body = {}
+        if label:
+            body["label"] = label
+        if data_json:
+            body["data_json"] = data_json
+        if config_json:
+            body["config_json"] = config_json
+        if is_active != None:
+            body["is_active"] = is_active
+        if state:
+            body["state"] = state
+        if execution_delay:
+            body["execution_delay"] = execution_delay
+        resp = self.http_request(f"/workflows/{workflow_id}", "PUT", body)
+        return self.parse_json(resp.text)
+
