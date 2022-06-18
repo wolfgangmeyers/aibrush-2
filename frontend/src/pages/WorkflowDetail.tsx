@@ -2,6 +2,7 @@ import React, {FC, useEffect, useState} from 'react';
 import { useParams } from "react-router-dom"
 
 import { AIBrushApi, Workflow, Image } from '../client';
+import { ImagePopup } from '../components/ImagePopup';
 import { ImageThumbnail } from "../components/ImageThumbnail";
 
 interface Props {
@@ -18,6 +19,7 @@ export const WorkflowDetail: FC<Props> = ({api, apiUrl, assetsUrl}) => {
     const [workflow, setWorkflow] = useState<Workflow>();
     const [err, setErr] = useState("");
     const [images, setImages] = useState<Image[]>([]);
+    const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const {id} = useParams<Params>();
 
     const loadWorkflow = async (id: string) => {
@@ -78,7 +80,7 @@ export const WorkflowDetail: FC<Props> = ({api, apiUrl, assetsUrl}) => {
                 <div className="col-md-12">
                     <div className="row">
                         {images.map(image => (
-                            <ImageThumbnail key={image.id} image={image} apiUrl={apiUrl} assetsUrl={assetsUrl} />
+                            <ImageThumbnail key={image.id} image={image} apiUrl={apiUrl} assetsUrl={assetsUrl} onClick={setSelectedImage} />
                         ))}
                         {!images.length && <div className="col-12">
                             <div className="alert alert-info" role="alert">
@@ -88,6 +90,15 @@ export const WorkflowDetail: FC<Props> = ({api, apiUrl, assetsUrl}) => {
                     </div>
                 </div>
             </div>
+             {/* show ImagePopup if selectedImage is set */}
+             {selectedImage && (
+                <ImagePopup
+                    apiUrl={apiUrl}
+                    assetsUrl={assetsUrl}
+                    image={selectedImage as Image}
+                    onClose={() => setSelectedImage(null)}
+                />
+            )}
         </>
     )
 }
