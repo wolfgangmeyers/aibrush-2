@@ -40,6 +40,12 @@ Download [the pretrained model](https://github.com/JingyunLiang/SwinIR/releases/
 pip install timm
 ```
 
+## Dalle Mega dependencies
+
+```sh
+pip install git+https://github.com/huggingface/transformers.git git+https://github.com/patil-suraj/vqgan-jax.git git+https://github.com/borisdayma/dalle-mini.git tqdm flax==0.5.0
+```
+
 ### Install other required Python packages:
 
 ```sh
