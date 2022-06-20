@@ -1,42 +1,35 @@
+## Images Worker Colab Notebook
+
+The following notebook can be used as a worker node for AIBrush:
+https://colab.research.google.com/drive/1cW3vVjdeI19o7a9miMu47J5EDyHfZT20#scrollTo=Ed1iT6_JK0Mo
+
 ## Images worker setup
 
-These instructions are for how to get a worker node running on a local machine running Ubuntu 22.04. Tested with RTX 3090.
+These instructions are for how to get a worker node running on a local machine or VM with an Nvidia GPU.
+At least 12GB of VRAM is needed to run the images worker, but 16GB is recommended (needed for zoom functionality)
 
-### Install venv
+Create a new virtual Python environment for VQGAN-CLIP:
 
 ```sh
-sudo apt install python3.10-venv
+conda create --name vqgan python=3.9
+conda activate vqgan
 ```
 
-### Install python header files
+### Install Pytorch in the new enviroment:
+
+Note: This installs the CUDA version of Pytorch, if you want to use an AMD graphics card, read the [AMD section below](#using-an-amd-graphics-card).
 
 ```sh
-sudo apt-get install python3-dev
+pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html cython
 ```
 
-### Create env
+### Install Glid-3 XL dependencies
 
 ```sh
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### Install Pytorch:
-
-```sh
-pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
-```
-
-### Install Glid-3 XL and dependencies
-
-```sh
-pip install cython
 pip install dalle_pytorch albumentations opencv-python imageio imageio-ffmpeg pytorch-lightning omegaconf test-tube streamlit einops torch-fidelity transformers 
 
 pip install -e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers
 pip install -e git+https://github.com/openai/CLIP.git@main#egg=clip
-pip install -e git+https://github.com/CompVis/latent-diffusion.git@main#egg=latent-diffusion
-pip install -e git+https://github.com/Jack000/glid-3-xl@master#egg=guided-diffusion
 ```
 
 ### SwinIR dependencies
@@ -56,7 +49,7 @@ pip install git+https://github.com/huggingface/transformers.git git+https://gith
 ### Install other required Python packages:
 
 ```sh
-pip install ftfy regex omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests
+pip install ftfy regex tqdm omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests
 ```
 
 ### Clone additional dependencies
@@ -64,6 +57,8 @@ pip install ftfy regex omegaconf pytorch-lightning IPython kornia imageio imagei
 ```bash
 git clone 'https://github.com/wolfgangmeyers/VQGAN-CLIP' vqgan_clip
 git clone 'https://github.com/openai/CLIP'
+git clone 'https://github.com/CompVis/taming-transformers'
+git clone 'https://github.com/CompVis/latent-diffusion.git'
 git clone 'https://github.com/JingyunLiang/SwinIR'
 
 pip install -e ./latent-diffusion

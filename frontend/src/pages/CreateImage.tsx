@@ -334,15 +334,15 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                 onChange={(e) => setInput({ ...input, label: e.target.value })}
                                 placeholder="Label" />
                         </div>
-                        <div className="form-group">
+                        {input.model !== "dalle_mega" && <div className="form-group">
                             <label>Width</label>
                             <input type="number" className="form-control" min={128} max={1024} step={64} value={input.width} onChange={onWidthChanged} />
-                        </div>
-                        <div className="form-group">
+                        </div>}
+                        {input.model !== "dalle_mega" && <div className="form-group">
                             <label>Height</label>
                             <input type="number" className="form-control" min={128} max={1024} step={64} value={input.height} onChange={onHeightChanged} />
-                        </div>
-                        {input.model !== "swinir" && <div className="form-group">
+                        </div>}
+                        {input.model !== "swinir" && input.model !== "dalle_mega" && <div className="form-group">
                             <label>Iterations</label>
                             <input min={1} max={10000} className="form-control" type="number" value={input.iterations} onChange={(e) => setInput({ ...input, iterations: parseInt(e.target.value) })} />
                         </div>}
@@ -355,6 +355,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         <div className="form-group">
                             <label>Model</label>
                             <select className="form-control" value={input.model} onChange={(e) => onChangeModel(e.target.value)}>
+                                <option value="dalle_mega">DALLE Mega</option>
                                 <option value="vqgan_imagenet_f16_16384">VQGAN ImageNet</option>
                                 <option value="glid_3_xl">Glid-3 XL</option>
                                 <option value="swinir">SwinIR</option>
@@ -423,7 +424,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             <canvas ref={canvasRef} style={{ maxWidth: "100%" }} width={input.width} height={input.height} />
                         </div>}
                         {/* If encoded_image is set, display edit button */}
-                        <div className="form-group">
+                        {input.model !== "dalle_mega" && <div className="form-group">
                             <label
                                 id="loadimage-wrapper"
                                 className={`btn btn-sm btn-primary btn-file`}
@@ -439,7 +440,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                             </label>
                             {input.encoded_image && input.model == "glid_3_xl" && !input.encoded_mask && <button type="button" style={{marginRight: "8px"}} className="btn btn-sm btn-primary" onClick={onEditMask}>Edit Mask</button>}
                             {input.encoded_image && input.model == "glid_3_xl" && !input.encoded_mask && input.encoded_npy && <button type="button" className="btn btn-sm btn-primary" onClick={onUncropImage}>Uncrop Image</button>}
-                        </div>
+                        </div>}
 
                         <div className="form-group">
                             {/* Cancel button "/" */}
