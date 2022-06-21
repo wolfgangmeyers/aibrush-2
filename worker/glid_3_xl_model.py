@@ -31,6 +31,7 @@ import os
 from encoders.modules import BERTEmbedder
 
 import clip
+from fileutil import download_file
 
 default_args = dict(
     model_path='finetune.pt',
@@ -118,19 +119,6 @@ print('Using device:', device)
 def set_requires_grad(model, value):
     for param in model.parameters():
         param.requires_grad = value
-
-# download a large file in python:
-def download_file(url, local_filename):
-    print(f"Downloading {url} to {local_filename}")
-    # NOTE the stream=True parameter below
-    with requests.get(url, stream=True) as r:
-        r.raise_for_status()
-        with open(local_filename, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192): 
-                # If you have chunk encoded response uncomment if
-                # and set chunk_size parameter to None.
-                #if chunk: 
-                f.write(chunk)
 
 class Glid3XLModel:
     def __init__(self):

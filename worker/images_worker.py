@@ -16,6 +16,7 @@ from io import BytesIO
 import clip_rank
 from dalle_model import DalleModel
 from glid_3_xl_model import Glid3XLModel
+from swinir_model import SwinIRModel
 # from vqgan_clip.generate import run, default_args
 
 
@@ -119,29 +120,30 @@ def cleanup():
 
 
 
-# def _swinir_args(image_data, image):
-#     # python SwinIR\main_test_swinir.py --task real_sr --model_path 003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth --folder_lq images --scale 4
-#     if not image_data:
-#         raise Exception("Image data is required for SwinIR")
-#     args = SimpleNamespace()
-#     args.task = "real_sr"
-#     args.model_path = "003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth"
-#     args.folder_lq = "images"
-#     args.scale = 4
-#     # downsampling to 256 width yields better results
-#     buf = BytesIO(image_data)
-#     img = Image.open(buf)
-#     basewidth = 256
-#     if img.width <= img.height:
-#         wpercent = (basewidth/float(img.size[0]))
-#         hsize = int((float(img.size[1])*float(wpercent)))
-#         img = img.resize((basewidth,hsize), Image.ANTIALIAS)
-#     else:
-#         hpercent = (basewidth/float(img.size[1]))
-#         wsize = int((float(img.size[0])*float(hpercent)))
-#         img = img.resize((wsize,basewidth), Image.ANTIALIAS)
-#     img.save(os.path.join("images", image.id + "-init.jpg"))
-#     return _to_args_list(args)
+def _swinir_args(image_data, image):
+    # python SwinIR\main_test_swinir.py --task real_sr --model_path 003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth --folder_lq images --scale 4
+    if not image_data:
+        raise Exception("Image data is required for SwinIR")
+    args = SimpleNamespace()
+    args.model_path = "003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth"
+    # downsampling to 256 width yields better results
+    buf = BytesIO(image_data)
+    img = Image.open(buf)
+    basewidth = 256
+    if img.width <= img.height:
+        wpercent = (basewidth/float(img.size[0]))
+        hsize = int((float(img.size[1])*float(wpercent)))
+        img = img.resize((basewidth,hsize), Image.ANTIALIAS)
+    else:
+        hpercent = (basewidth/float(img.size[1]))
+        wsize = int((float(img.size[0])*float(hpercent)))
+        img = img.resize((wsize,basewidth), Image.ANTIALIAS)
+    init_image_path = os.path.join("images", image.id + "-init.jpg")
+    output_image_path = os.path.join("images", image.id + ".jpg")
+    img.save(init_image_path)
+    args.init_image = init_image_path
+    args.output_image = output_image_path
+    return args
 
 def _dalle_mega_args(image):
     return SimpleNamespace(
@@ -201,6 +203,8 @@ def create_model():
         model = DalleModel("mega_full")
     elif model_name == "glid_3_xl":
         model = Glid3XLModel()
+    elif model_name == "swinir":
+        model = SwinIRModel()
 
 def process_image():
     global model_name, model
@@ -222,8 +226,8 @@ def process_image():
             image_path = os.path.join("images", image.id + ".jpg")
             if image.model == "glid_3_xl" and os.path.exists(os.path.join("output", "00000.png")):
                 Image.open(os.path.join("output", "00000.png")).save(image_path)
-            if image.model == "swinir" and os.path.exists(os.path.join("results", "swinir_real_sr_x4", f"{image.id}-init_SwinIR.png")):
-                img = Image.open(os.path.join("results", "swinir_real_sr_x4", f"{image.id}-init_SwinIR.png"))
+            if image.model == "swinir" and os.path.exists(image_path):
+                img = Image.open(image_path)
                 # resize image
                 img = img.resize((image.width, image.height), Image.ANTIALIAS)
                 img.save(image_path)
@@ -271,6 +275,8 @@ def process_image():
             mask_data = client.get_mask_data(image.id)
             npy_data = client.get_npy_data(image.id)
             args = _glid_3_xl_args(image_data, mask_data, npy_data, image)
+        elif image.model == "swinir":
+            args = _swinir_args(image_data, image)
 
         update_image(0, "processing")
 

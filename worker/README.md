@@ -39,12 +39,10 @@ pip install -e git+https://github.com/CompVis/latent-diffusion.git@main#egg=late
 pip install -e git+https://github.com/Jack000/glid-3-xl@master#egg=guided-diffusion
 ```
 
-### SwinIR dependencies
-
-Download [the pretrained model](https://github.com/JingyunLiang/SwinIR/releases/download/v0.0/003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth) and place it in the `worker/` folder.
+### SwinIR
 
 ```sh
-pip install timm
+pip install git+https://github.com/wolfgangmeyers/SwinIR
 ```
 
 ## Dalle Mega dependencies
