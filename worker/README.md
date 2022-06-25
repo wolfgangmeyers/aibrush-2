@@ -1,4 +1,4 @@
-## Images worker setup
+## Worker setup
 
 These instructions are for how to get a worker node running on a local machine running Ubuntu 22.04. Tested with RTX 3090.
 
@@ -57,44 +57,10 @@ pip install git+https://github.com/huggingface/transformers.git git+https://gith
 pip install ftfy regex omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests
 ```
 
-### Clone additional dependencies
-
-```bash
-git clone 'https://github.com/wolfgangmeyers/VQGAN-CLIP' vqgan_clip
-git clone 'https://github.com/openai/CLIP'
-git clone 'https://github.com/JingyunLiang/SwinIR'
-
-pip install -e ./latent-diffusion
-```
-
-### Download pre-trained models
-
-```bash
-mkdir checkpoints
-
-curl -L -o checkpoints/vqgan_imagenet_f16_16384.yaml -C - 'https://heibox.uni-heidelberg.de/d/a7530b09fed84f80a887/files/?p=%2Fconfigs%2Fmodel.yaml&dl=1' #ImageNet 16384
-curl -L -o checkpoints/vqgan_imagenet_f16_16384.ckpt -C - 'https://heibox.uni-heidelberg.de/d/a7530b09fed84f80a887/files/?p=%2Fckpts%2Flast.ckpt&dl=1' #ImageNet 16384
-```
-
 ## Running images worker
 
 Run `python images_worker.py http://<backend ip address or hostname>` or `python images_worker.py https://<backend ip address or hostname>` if using https. Example: if running on the same machine as the backend, you can run the following to connect and start processing images:
 
 ```shell
 python images_worker.py http://localhost:3000
-```
-
-## Suggestions worker setup
-
-Create a new virtual Python environment for the suggestions worker:
-
-```sh
-conda create --name suggestions python=3.9
-conda activate suggestions
-```
-
-Install transformers library:
-
-```sh
-pip install transformers
 ```

@@ -78,29 +78,32 @@ def basic_ga(client: AIBrushAPI, workflow: SimpleNamespace):
                     _ping_if_needed()
                 except:
                     pass # already deleted
-            for i in range(config["generation_size"]):
-                parent = keep_images[i % len(keep_images)].id
-                skip_iterations = random.randint(15, 45)
-                while skip_iterations % 5 != 0:
-                    skip_iterations += 1
-                image = client.create_image(
-                    parent=parent,
-                    label=workflow.label,
-                    height=256,
-                    width=256,
-                    model="glid_3_xl",
-                    phrases=config["phrases"].split("|"),
-                    negative_phrases=config["negative_phrases"].split("|"),
-                    glid_3_xl_skip_iterations=skip_iterations,
-                )
-                new_images.append(image)
-                _ping_if_needed()
-            
-            data["images"] = [img.__dict__ for img in new_images]
             remaining_generations -= 1
             if remaining_generations == 0:
                 is_active = False
                 state = "completed"
+            else:
+                for i in range(config["generation_size"]):
+                    
+                    parent = keep_images[i % len(keep_images)].id
+                    skip_iterations = random.randint(30, 45)
+                    while skip_iterations % 5 != 0:
+                        skip_iterations += 1
+                    image = client.create_image(
+                        parent=parent,
+                        label=workflow.label,
+                        height=256,
+                        width=256,
+                        model="glid_3_xl",
+                        phrases=config["phrases"].split("|"),
+                        negative_phrases=config["negative_phrases"].split("|"),
+                        glid_3_xl_skip_iterations=skip_iterations,
+                    )
+                    new_images.append(image)
+                    _ping_if_needed()
+            
+            data["images"] = [img.__dict__ for img in new_images]
+            
             data["remaining_generations"] = remaining_generations
         else:
             print("generation not completed")

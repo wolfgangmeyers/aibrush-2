@@ -1,3 +1,5 @@
+# adapted from https://github.com/JingyunLiang/SwinIR
+
 import argparse
 from types import SimpleNamespace
 import cv2

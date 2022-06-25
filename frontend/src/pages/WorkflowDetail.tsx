@@ -19,6 +19,7 @@ export const WorkflowDetail: FC<Props> = ({api, apiUrl, assetsUrl}) => {
     const [workflow, setWorkflow] = useState<Workflow>();
     const [err, setErr] = useState("");
     const [images, setImages] = useState<Image[]>([]);
+    const [generationsRemaining, setGenerationsRemaining] = useState(0);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const {id} = useParams<Params>();
 
@@ -33,10 +34,13 @@ export const WorkflowDetail: FC<Props> = ({api, apiUrl, assetsUrl}) => {
         }
     }
 
-    const loadDisplayImages = async (workflow: Workflow) => {
+    const loadDisplayData = async (workflow: Workflow) => {
         const data = JSON.parse(workflow.data_json)
         const displayImages = (data.display_images || []) as Image[];
         setImages(displayImages);
+        const generationsRemaining = data.remaining_generations || undefined;
+        setGenerationsRemaining(generationsRemaining);
+
         // console.log("displayImages", displayImages);
         // const images = data.images || [] as Image[]
         // console.log("images", images);
@@ -48,7 +52,7 @@ export const WorkflowDetail: FC<Props> = ({api, apiUrl, assetsUrl}) => {
 
     useEffect(() => {
         if (workflow) {
-            loadDisplayImages(workflow);
+            loadDisplayData(workflow);
         }
     }, [workflow])
 
@@ -76,6 +80,13 @@ export const WorkflowDetail: FC<Props> = ({api, apiUrl, assetsUrl}) => {
                     </div>
                 </div>
             </div>}
+            {
+                generationsRemaining && <div className="row">
+                    <div className="col-12">
+                            {generationsRemaining} generations remaining
+                    </div>
+                </div>
+            }
             <div className="row">
                 <div className="col-md-12">
                     <div className="row">

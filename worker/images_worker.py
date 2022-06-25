@@ -18,6 +18,7 @@ from dalle_model import DalleModel
 from glid_3_xl_model import Glid3XLModel
 from swinir_model import SwinIRModel
 # from vqgan_clip.generate import run, default_args
+from vqgan_model import VQGANModel
 
 
 
@@ -55,52 +56,31 @@ def cleanup():
         for fname in os.listdir(os.path.join("results", "swinir_real_sr_x4")):
             os.remove(os.path.join("results", "swinir_real_sr_x4", fname))
 
-# def _vqgan_args(image_data, image):
-#     args = SimpleNamespace()
-#     if image_data:
-#         # save image
-#         with open(os.path.join("images", image.id + "-init.jpg"), "wb") as f:
-#             f.write(image_data)
-#         args.init_image = os.path.join("images", image.id + "-init.jpg")
-#     args.max_iterations = image.iterations
-#     args.prompts = " | ".join(image.phrases)
-#     if image.enable_video:
-#         if image.enable_zoom:
-#             args.make_zoom_video = True
-#             args.zoom_frequency = image.zoom_frequency
-#             args.zoom_scale = image.zoom_scale
-#             args.zoom_shift_x = image.zoom_shift_x
-#             args.zoom_shift_y = image.zoom_shift_y
-#         else:
-#             args.make_video = True
-#     args.output = os.path.join("images", image.id + ".jpg")
-#     args.display_freq = 50
-#     if args.max_iterations < args.display_freq:
-#         args.display_freq = args.max_iterations
-#     # args.on_save_callback = lambda i: update_image(i, "processing")
-#     args.size = [image.width, image.height]
-
-#     # total laziness, I didn't want to refactor this after switching to invoking over cli.
-#     arg_mapping = {
-#         "prompts": "prompts",
-#         "max_iterations": "iterations",
-#         "display_freq": "save_every",
-#         "size": "size",
-#         "init_image": "init_image",
-#         "output": "output",
-#         "make_video": "video",
-#         "make_zoom_video": "zoom_video",
-#         "zoom_frequency": "zoom_save_every",
-#         "zoom_scale": "zoom_scale",
-#         "zoom_shift_x": "zoom_shift_x",
-#         "zoom_shift_y": "zoom_shift_y",
-#         "cuda_device": "cuda_device"
-#     }
-    
-
-#     # run vqgan
-#     # build up command line args by reversing the mapping above
-#     return _to_args_list(args, arg_mapping)
+def _vqgan_args(image_data, image):
+    args = SimpleNamespace()
+    if image_data:
+        # save image
+        with open(os.path.join("images", image.id + "-init.jpg"), "wb") as f:
+            f.write(image_data)
+        args.init_image = os.path.join("images", image.id + "-init.jpg")
+    args.max_iterations = image.iterations
+    args.prompts = " | ".join(image.phrases)
+    if image.enable_video:
+        if image.enable_zoom:
+            args.make_zoom_video = True
+            args.zoom_frequency = image.zoom_frequency
+            args.zoom_scale = image.zoom_scale
+            args.zoom_shift_x = image.zoom_shift_x
+            args.zoom_shift_y = image.zoom_shift_y
+        else:
+            args.make_video = True
+    args.output = os.path.join("images", image.id + ".jpg")
+    args.display_freq = 50
+    if args.max_iterations < args.display_freq:
+        args.display_freq = args.max_iterations
+    # args.on_save_callback = lambda i: update_image(i, "processing")
+    args.size = [image.width, image.height]
+    return args
 
 # def _to_args_list(args: SimpleNamespace, arg_mapping=None):
 #     args_list = []
@@ -117,8 +97,6 @@ def cleanup():
 #                 elif v is not True and v is not False:
 #                     args_list.append(str(v))
 #     return args_list
-
-
 
 def _swinir_args(image_data, image):
     # python SwinIR\main_test_swinir.py --task real_sr --model_path 003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth --folder_lq images --scale 4
@@ -196,6 +174,14 @@ def _glid_3_xl_args(image_data, mask_data, npy_data, image):
 
 model_name: str = None
 model = None
+clip_ranker = None
+
+def get_clip_ranker():
+    global clip_ranker
+    if clip_ranker is None:
+        clip_ranker = clip_rank.ClipRanker(SimpleNamespace(cpu=False))
+    return clip_ranker
+
 
 def create_model():
     global model
@@ -205,8 +191,11 @@ def create_model():
         model = Glid3XLModel()
     elif model_name == "swinir":
         model = SwinIRModel()
+    elif model_name == "vqgan_imagenet_f16_16384":
+        model = VQGANModel()
 
 def process_image():
+    global clip_ranker
     global model_name, model
     cleanup()
     try:
@@ -235,8 +224,7 @@ def process_image():
             if os.path.exists(image_path):
                 prompts = "|".join(image.phrases)
                 print(f"Calculating clip ranking for '{prompts}'")
-                score = clip_rank.rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
-                torch.cuda.empty_cache()
+                score = get_clip_ranker().rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
                 with open(image_path, "rb") as f:
                     image_data = f.read()
                 # base64 encode image
@@ -263,14 +251,8 @@ def process_image():
         
         if image.model == "dalle_mega":
             args = _dalle_mega_args(image)
-        
-
-        # if image.model == "vqgan_imagenet_f16_16384":
-        #     args_list = _vqgan_args(image_data, image)
-        #     cmd = "vqgan_clip/generate.py"
-        # elif image.model == "swinir":
-        #     args_list = _swinir_args(image_data, image)
-        #     cmd = "SwinIR/main_test_swinir.py"
+        elif image.model == "vqgan_imagenet_f16_16384":
+            args = _vqgan_args(image_data, image)
         elif image.model == "glid_3_xl":
             mask_data = client.get_mask_data(image.id)
             npy_data = client.get_npy_data(image.id)

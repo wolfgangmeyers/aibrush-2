@@ -123,9 +123,9 @@ def set_requires_grad(model, value):
 class Glid3XLModel:
     def __init__(self):
         self._ensure_model_files()
-        self.model_state_dict = torch.load("finetune.pt", map_location='cpu')
         self.steps = 50
         self.clip_guidance = False
+        self.model_path = "finetune.pt"
         self._init_model()
     
     def _ensure_model_files(self):
@@ -148,6 +148,7 @@ class Glid3XLModel:
     
     def _init_model(self):
         gc.collect()
+        self.model_state_dict = torch.load(self.model_path, map_location='cpu')
         self.model_params = {
             'attention_resolutions': '32,16,8',
             'class_cond': False,
@@ -199,10 +200,11 @@ class Glid3XLModel:
             **default_args,
             **args.__dict__
         })
-        if args.clip_guidance != self.clip_guidance or args.steps != self.steps:
+        if args.clip_guidance != self.clip_guidance or args.steps != self.steps or args.model_path != self.model_path:
             print("Reloading model")
             self.clip_guidance = args.clip_guidance
             self.steps = args.steps
+            self.model_path = args.model_path
             self._init_model()
         if args.seed >= 0:
             torch.manual_seed(args.seed)

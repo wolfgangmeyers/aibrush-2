@@ -349,7 +349,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         {/* count */}
                         {input.model !== "swinir" && <div className="form-group">
                             <label>Count</label>
-                            <input className="form-control" type="number" max={10} min={1} value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
+                            <input className="form-control" type="number" max={30} min={1} value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
                         </div>}
                         {/* model dropdown */}
                         <div className="form-group">
