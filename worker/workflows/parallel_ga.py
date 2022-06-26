@@ -31,8 +31,8 @@ def parallel_ga(client: AIBrushAPI, workflow: SimpleNamespace):
         parent = None
         skip_iterations = 0
         # encoded_image_data = None
-        if "parent" in config:
-            parent = config["parent"]
+        if hasattr(config, "parent"):
+            parent = config.parent
             # skip_iterations random number between 30 and 45
             # round to the nearest 5
             skip_iterations = random.randint(30, 45)
