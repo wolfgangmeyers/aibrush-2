@@ -128,7 +128,7 @@ function App() {
             </Route>
 
             <Route path="/create-workflow">
-              <CreateWorkflow api={client} />
+              <CreateWorkflow api={client} apiUrl={config.apiUrl} assetsUrl={assetsUrl} />
             </Route>
             <Route path="/workflows" exact={true}>
               <Workflows api={client} />

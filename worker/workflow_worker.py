@@ -4,7 +4,8 @@ import time
 import traceback
 
 from api_client import AIBrushAPI
-from workflows import basic_ga
+from workflows.basic_ga import basic_ga
+from workflows.parallel_ga import parallel_ga
 
 api_url = "https://www.aibrush.art"
 if len(sys.argv) > 1:
@@ -18,6 +19,7 @@ client = AIBrushAPI(api_url, access_token)
 
 workflow_handlers = {
     "basic_ga": basic_ga,
+    "parallel_ga": parallel_ga,
 }
 
 def process_workflow() -> bool:

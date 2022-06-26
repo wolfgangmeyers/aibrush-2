@@ -1,13 +1,19 @@
-import React, {FC, useState} from "react";
+import React, {FC, useEffect, useState} from "react";
 import { useHistory } from "react-router-dom"
-import { AIBrushApi } from "../client/api";
+import { AIBrushApi, Image } from "../client/api";
 import { workflowSchemas, WorkflowSchema, WorkflowConfigField, toInputJSX } from "../lib/workflow";
+import qs from "qs";
+
+import { ImageThumbnail } from "../components/ImageThumbnail";
 
 interface Props {
     api: AIBrushApi;
+    apiUrl: string;
+    assetsUrl: string;
 }
 
-export const CreateWorkflow: FC<Props> = ({api}) => {
+export const CreateWorkflow: FC<Props> = ({api, apiUrl, assetsUrl}) => {
+    const searchParams = qs.parse(window.location.search.substring(1)) as any
     const [workflowSchema, setWorkflowSchema] = useState<WorkflowSchema | undefined>(undefined);
 
     const history = useHistory()
@@ -15,6 +21,17 @@ export const CreateWorkflow: FC<Props> = ({api}) => {
     const [executionDelay, setExecutionDelay] = useState(30);
     const [config, setConfig] = useState<any>({})
     const [creating, setCreating] = useState(false);
+    const [parent, setParent] = useState<Image | undefined>();
+
+    useEffect(() => {
+        if (searchParams.parent) {
+            api.getImage(searchParams.parent).then(resp => {
+                setParent(resp.data)
+            }).catch(err => {
+                console.error(err)
+            })
+        }
+    }, [searchParams.parent])
 
     const onChangeWorkflowType = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const workflowType = event.target.value;
@@ -46,6 +63,7 @@ export const CreateWorkflow: FC<Props> = ({api}) => {
             return
         }
         setCreating(true);
+        config.parent = parent?.id;
         try {
             const workflow = await api.createWorkflow({
                 label,
@@ -107,6 +125,13 @@ export const CreateWorkflow: FC<Props> = ({api}) => {
                             </div>
                         ))}
                     </>}
+                    {
+                        parent && <div className="form-group">
+                            {/* show image thumbnail */}
+                            <label>Parent:</label>
+                            <ImageThumbnail image={parent} apiUrl={apiUrl} assetsUrl={assetsUrl} />
+                        </div>
+                    }
                     {/* footer */}
                     <div className="form-group">
                         {/* cancel button */}

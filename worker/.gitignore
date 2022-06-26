@@ -5,6 +5,7 @@ vqgan_clip
 SwinIR
 checkpoints
 credentials.json
+local_credentials.json
 *.jpg
 *.png
 __pycache__

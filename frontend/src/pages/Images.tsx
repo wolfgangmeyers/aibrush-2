@@ -120,6 +120,10 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
         setGeneratingSvg(image);
     }
 
+    const onWorkflow = async (image: Image) => {
+        history.push(`/create-workflow?parent=${image.id}`)
+    }
+
     const sortImages = (a: Image, b: Image) => {
         // if the parent is the same, sort by score descending
         // otherwise, sort by updated_at
@@ -189,6 +193,7 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
                                 onFork={onForkImage}
                                 onClick={setSelectedImage}
                                 onSvg={onSvg}
+                                onWorkflow={onWorkflow}
                                 assetsUrl={assetsUrl}
                                 apiUrl={apiUrl}
                                 key={image.id}

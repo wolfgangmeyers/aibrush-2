@@ -64,3 +64,19 @@ Run `python images_worker.py http://<backend ip address or hostname>` or `python
 ```shell
 python images_worker.py http://localhost:3000
 ```
+
+## SVG Jobs
+
+For the svg jobs worker, you will need to [install the rust sdk](https://www.rust-lang.org/tools/install).
+
+Run the following to install vtracer:
+
+```sh
+cargo install vtracer
+```
+
+### Running
+
+```sh
+python svg_jobs_worker.py http://localhost:3000
+```

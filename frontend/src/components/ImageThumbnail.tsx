@@ -11,9 +11,10 @@ interface ImageThumbnailProps {
     onDelete?: (image: Image) => void;
     onFork?: (image: Image) => void;
     onSvg?: (image: Image) => void;
+    onWorkflow?: (image: Image) => void;
 }
 
-export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, image, onClick, onDelete, onFork, onSvg }) => {
+export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, image, onClick, onDelete, onFork, onSvg, onWorkflow }) => {
 
     const src = `${assetsUrl}/${image.id}.thumbnail.jpg?updated_at=${image.updated_at}`;
     let fontSize = "1.5em";
@@ -79,6 +80,9 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, ima
                 </button>}
                 {onSvg && (image.status === "completed" || image.status === "saved") && <button className="btn btn-secondary btn-sm" onClick={() => onSvg && onSvg(image)} style={{marginRight: "5px", marginTop: "5px"}}>
                     <i className="fas fa-file-code"></i>
+                </button>}
+                {onWorkflow && (image.status === "completed" || image.status === "saved") && <button className="btn btn-secondary btn-sm" onClick={() => onWorkflow && onWorkflow(image)} style={{marginRight: "5px", marginTop: "5px"}}>
+                    <i className="fas fa-cogs"></i>
                 </button>}
             </div>
         </div>

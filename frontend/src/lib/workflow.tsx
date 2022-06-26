@@ -105,4 +105,74 @@ export const workflowSchemas: WorkflowSchema[] = [
             }
         ],
     },
+    {
+        display_name: "Parallel Genetic Algorithm",
+        workflow_type: "parallel_ga",
+        config_fields: [
+            {
+                name: "phrases",
+                type: "string",
+                default: "",
+            },
+            {
+                name: "negative_phrases",
+                type: "string",
+                default: "",
+            },
+            {
+                name: "initial_model",
+                type: "enum",
+                default: "glid_3_xl",
+                enum: [
+                    "glid_3_xl",
+                    "dalle_mega",
+                    "vqgan_imagenet_f16_16384",
+                ],
+            },
+            {
+                name: "parallel_model",
+                type: "enum",
+                default: "glid_3_xl",
+                enum: [
+                    "glid_3_xl",
+                    "vqgan_imagenet_f16_16384",
+                ],
+            },
+            {
+                name: "initial_generation_size",
+                type: "number",
+                max: 1000,
+                min: 1,
+                default: 10,
+            },
+            {
+                name: "initial_keep_count",
+                type: "number",
+                max: 100,
+                min: 1,
+                default: 2,
+            },
+            {
+                name: "parallel_generation_size",
+                type: "number",
+                max: 1000,
+                min: 1,
+                default: 10,
+            },
+            {
+                name: "parallel_keep_count",
+                type: "number",
+                max: 100,
+                min: 1,
+                default: 2,
+            },
+            {
+                name: "generations",
+                type: "number",
+                max: 100,
+                min: 1,
+                default: 10,
+            },
+        ],
+    }
 ];
