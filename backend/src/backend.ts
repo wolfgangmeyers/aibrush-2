@@ -103,6 +103,7 @@ export class BackendService {
             ssl: this.config.databaseSsl && { rejectUnauthorized: false },
         })
 
+        // emergency cleanup logic...
         // const images = await this.listImages({limit: 100000});
         // for (let image of images.images) {
         //     if (image.label == "cyborg harry potter") {
@@ -247,26 +248,22 @@ export class BackendService {
                 `DELETE FROM images WHERE id=$1`,
                 [id]
             )
-            // delete image file, if one exists
-            if (await this.filestore.exists(`${id}.image.jpg`)) {
-                await this.filestore.deleteFile(`${id}.image.jpg`)
+            const filesToCheck = [
+                `${id}.image.jpg`,
+                `${id}.thumbnail.jpg`,
+                `${id}.mask.jpg`,
+                `${id}.mp4`,
+                `${id}.npy`,
+            ]
+            const checkPromises = filesToCheck.map(file => this.filestore.exists(file))
+            const exists = await Promise.all(checkPromises)
+            const deletePromises = []
+            for (let i = 0; i < exists.length; i++) {
+                if (exists[i]) {
+                    deletePromises.push(this.filestore.deleteFile(filesToCheck[i]))
+                }
             }
-            // delete thumbnail file, if one exists
-            if (await this.filestore.exists(`${id}.thumbnail.jpg`)) {
-                await this.filestore.deleteFile(`${id}.thumbnail.jpg`)
-            }
-            // delete mask file, if one exists
-            if (await this.filestore.exists(`${id}.mask.jpg`)) {
-                await this.filestore.deleteFile(`${id}.mask.jpg`)
-            }
-            // delete mp4 file, if one exists
-            if (await this.filestore.exists(`${id}.mp4`)) {
-                await this.filestore.deleteFile(`${id}.mp4`)
-            }
-            // delete npy file, if one exists
-            if (await this.filestore.exists(`${id}.npy`)) {
-                await this.filestore.deleteFile(`${id}.npy`)
-            }
+            await Promise.all(deletePromises)
         } finally {
             client.release()
         }
@@ -301,20 +298,21 @@ export class BackendService {
                     console.error(`error loading parent image data for ${image.id} (parent=${body.parent})`, err)
                 }
             }
+            const promises: Promise<void>[] = []
             // if encoded_image is set, save image
             if (encoded_image) {
                 const binary_image = Buffer.from(encoded_image, "base64")
-                await this.filestore.writeFile(`${image.id}.image.jpg`, binary_image)
+                promises.push(this.filestore.writeFile(`${image.id}.image.jpg`, binary_image))
                 const encoded_thumbnail = await this.createThumbnail(encoded_image)
                 const binary_thumbnail = Buffer.from(encoded_thumbnail, "base64")
-                await this.filestore.writeFile(`${image.id}.thumbnail.jpg`, binary_thumbnail)
+                promises.push(this.filestore.writeFile(`${image.id}.thumbnail.jpg`, binary_thumbnail))
             }
             let encoded_npy = body.encoded_npy;
 
             // if encoded_npy is set, save npy
             if (encoded_npy) {
                 const binary_npy = Buffer.from(encoded_npy, "base64")
-                await this.filestore.writeFile(`${image.id}.npy`, binary_npy)
+                promises.push(this.filestore.writeFile(`${image.id}.npy`, binary_npy))
             }
 
             let encoded_mask = body.encoded_mask;
@@ -322,8 +320,9 @@ export class BackendService {
             // if encoded_mask is set, save mask
             if (encoded_mask) {
                 const binary_mask = Buffer.from(encoded_mask, "base64")
-                await this.filestore.writeFile(`${image.id}.mask.jpg`, binary_mask)
+                promises.push(this.filestore.writeFile(`${image.id}.mask.jpg`, binary_mask))
             }
+            await Promise.all(promises)
             return this.hydrateImage({
                 ...image,
             })
@@ -367,18 +366,20 @@ export class BackendService {
             )
 
             const image = result.rows[0]
+            const promises: Promise<void>[] = []
             // if encoded_image is set, save it
             if (body.encoded_image) {
                 const binaryImage = Buffer.from(body.encoded_image, "base64")
-                await this.filestore.writeFile(`${image.id}.image.jpg`, binaryImage)
+                promises.push(this.filestore.writeFile(`${image.id}.image.jpg`, binaryImage))
                 const encoded_thumbnail = await this.createThumbnail(body.encoded_image)
                 const binaryThumbnail = Buffer.from(encoded_thumbnail, "base64")
-                await this.filestore.writeFile(`${image.id}.thumbnail.jpg`, binaryThumbnail)
+                promises.push(this.filestore.writeFile(`${image.id}.thumbnail.jpg`, binaryThumbnail))
             }
             if (body.encoded_npy) {
                 const binaryNpy = Buffer.from(body.encoded_npy, "base64")
-                await this.filestore.writeFile(`${image.id}.npy`, binaryNpy)
+                promises.push(this.filestore.writeFile(`${image.id}.npy`, binaryNpy))
             }
+            await Promise.all(promises)
             return this.hydrateImage({
                 ...image,
             })
@@ -730,21 +731,6 @@ export class BackendService {
         }
         return null
     }
-
-    // CREATE TABLE IF NOT EXISTS "workflows" (
-    //     "id" varchar(36) NOT NULL,
-    //     "created_by" varchar(255) NOT NULL,
-    //     "label" varchar(255) NOT NULL,
-    //     "workflow_type" varchar(36) NOT NULL,
-    //     "state" varchar(36) NOT NULL,
-    //     "config_json" text NOT NULL,
-    //     "data_json" text NOT NULL,
-    //     "is_active" boolean NOT NULL,
-    //     "execution_delay" integer NOT NULL,
-    //     "next_execution" BIGINT NOT NULL,
-    //     "created_at" BIGINT NOT NULL,
-    //     CONSTRAINT "pk_workflow" PRIMARY KEY ("id")
-    // );
 
     // get users that have workflows with next execution time in the past
     async getUsersWithActiveWorkflows(): Promise<string[]> {

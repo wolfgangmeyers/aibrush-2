@@ -3,7 +3,10 @@ import os
 import random
 from functools import partial
 from types import SimpleNamespace
+import json
 import argparse
+import subprocess
+import traceback
 
 import jax
 import numpy as np
@@ -20,6 +23,8 @@ from flax.training.common_utils import shard_prng_key
 import wandb
 
 from consts import COND_SCALE, DALLE_COMMIT_ID, DALLE_MODEL_MEGA_FULL, DALLE_MODEL_MEGA, DALLE_MODEL_MINI, GEN_TOP_K, GEN_TOP_P, TEMPERATURE, VQGAN_COMMIT_ID, VQGAN_REPO, ModelSize
+from printutil import eprint
+from model_process import child_process
 
 os.environ["XLA_PYTHON_CLIENT_ALLOCATOR"] = "platform" # https://github.com/saharmor/dalle-playground/issues/14#issuecomment-1147849318
 os.environ["WANDB_SILENT"] = "true"
@@ -46,20 +51,11 @@ def p_generate(
 def p_decode(vqgan, indices, params):
     return vqgan.decode_code(indices, params=params)
 
+class LocalDalleModel:
+    def __init__(self, args) -> None:
+        dalle_model = DALLE_MODEL_MEGA_FULL
+        dtype = jnp.float16
 
-class DalleModel:
-    def __init__(self, model_version: ModelSize) -> None:
-        if model_version == ModelSize.MEGA_FULL:
-            dalle_model = DALLE_MODEL_MEGA_FULL
-            dtype = jnp.float16
-        elif model_version == ModelSize.MEGA:
-            dalle_model = DALLE_MODEL_MEGA
-            dtype = jnp.float16
-        else:
-            dalle_model = DALLE_MODEL_MINI
-            dtype = jnp.float32
-            
-            
         # Load dalle-mini
         self.model, params = DalleBart.from_pretrained(
             dalle_model, revision=DALLE_COMMIT_ID, dtype=dtype, _do_init=False
@@ -82,6 +78,7 @@ class DalleModel:
 
 
     def generate(self, args: SimpleNamespace | argparse.Namespace):
+        eprint(f"local model: Generating {args.prompt}")
         prompt = args.prompt
 
         tokenized_prompt = self.tokenize_prompt(prompt)
@@ -115,3 +112,23 @@ class DalleModel:
         for img in decoded_images:
             images.append(Image.fromarray(np.asarray(img * 255, dtype=np.uint8)))
         images[0].save(args.output_image)
+
+# def child_process():
+#     eprint("dalle local model running")
+#     model = LocalDalleModel(ModelSize.MEGA_FULL)
+#     eprint("dalle local model created")
+#     while True:
+#         try:
+#             args_json = input()
+#             args = SimpleNamespace(**json.loads(args_json))
+#             eprint(f"input received: {args}")
+#             model.generate(args)
+#             print("GENERATED")
+#         except Exception as e:
+#             eprint(e)
+#             traceback.print_exc()
+#             print("EXCEPTION")
+#             continue
+
+if __name__ == "__main__":
+    child_process(LocalDalleModel, "dalle")

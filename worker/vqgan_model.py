@@ -13,6 +13,8 @@ import sys
 import os
 from types import SimpleNamespace
 
+from model_process import child_process
+
 from omegaconf import OmegaConf
 from taming.models import cond_transformer, vqgan
 #import taming.modules 
@@ -469,7 +471,7 @@ def resize_image(image, out_size):
     return image.resize(size, Image.LANCZOS)
 
 class VQGANModel:
-    def __init__(self):
+    def __init__(self, args=None):
         self._ensure_model_files()
         args = _default_args
         if not torch.cuda.is_available():
@@ -845,3 +847,6 @@ class VQGANModel:
             except FileNotFoundError:
                 print("ffmpeg command failed - check your installation")
             p.wait()
+
+if __name__ == "__main__":
+    child_process(VQGANModel, "vqgan")

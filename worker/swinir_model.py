@@ -10,6 +10,8 @@ import os
 import torch
 import requests
 
+from model_process import child_process
+
 from swinir.models.network_swinir import SwinIR as net
 from swinir.utils import util_calculate_psnr_ssim as util
 
@@ -31,7 +33,7 @@ model_args = SimpleNamespace(**{
 
 class SwinIRModel:
 
-    def __init__(self):
+    def __init__(self, args=None):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # set up model
         if os.path.exists(model_args.model_path):
@@ -102,3 +104,6 @@ def test(img_lq, model):
     output = model(img_lq)
 
     return output
+
+if __name__ == "__main__":
+    child_process(SwinIRModel, "swinir")

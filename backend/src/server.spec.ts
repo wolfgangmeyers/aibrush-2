@@ -54,7 +54,7 @@ async function refreshUser(client: AIBrushApi, httpClient: AxiosInstance, refres
     httpClient.defaults.headers['Authorization'] = `Bearer ${refreshResult.accessToken}`
 }
 
-describe.skip("server", () => {
+describe("server", () => {
     let backendService: BackendService;
     let server: Server
     let client: AIBrushApi

@@ -3,7 +3,9 @@ import gc
 import io
 import math
 import sys
+import traceback
 from types import SimpleNamespace
+import json
 
 from PIL import Image, ImageOps
 import requests
@@ -32,6 +34,7 @@ from encoders.modules import BERTEmbedder
 
 import clip
 from fileutil import download_file
+from model_process import child_process
 
 default_args = dict(
     model_path='finetune.pt',
@@ -120,12 +123,19 @@ def set_requires_grad(model, value):
     for param in model.parameters():
         param.requires_grad = value
 
+def generate_model_signature(args):
+    """
+    This is used per image generation to determine if the model needs to be reloaded.
+    (if the signature changes between generations, the model should be reloaded)
+    """
+    return f"{args.steps}|{args.clip_guidance}|{args.model_path}"
+
 class Glid3XLModel:
-    def __init__(self):
+    def __init__(self, args):
         self._ensure_model_files()
-        self.steps = 50
-        self.clip_guidance = False
-        self.model_path = "finetune.pt"
+        self.steps = args.steps
+        self.clip_guidance = args.clip_guidance
+        self.model_path = args.model_path
         self._init_model()
     
     def _ensure_model_files(self):
@@ -201,11 +211,7 @@ class Glid3XLModel:
             **args.__dict__
         })
         if args.clip_guidance != self.clip_guidance or args.steps != self.steps or args.model_path != self.model_path:
-            print("Reloading model")
-            self.clip_guidance = args.clip_guidance
-            self.steps = args.steps
-            self.model_path = args.model_path
-            self._init_model()
+            raise Exception("Model signature changed. Reload the model.")
         if args.seed >= 0:
             torch.manual_seed(args.seed)
 
@@ -415,3 +421,6 @@ class Glid3XLModel:
                     save_sample(i, sample)
 
             save_sample(i, sample, args.clip_score)
+
+if __name__ == "__main__":
+    child_process(Glid3XLModel, "glid-3-xl")

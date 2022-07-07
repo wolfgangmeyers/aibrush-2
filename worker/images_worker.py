@@ -1,4 +1,3 @@
-import requests
 import sys
 import os
 from types import SimpleNamespace
@@ -7,19 +6,14 @@ import json
 from api_client import AIBrushAPI
 import base64
 import traceback
-import subprocess
 from PIL import Image
-import torch
 import argparse
 from io import BytesIO
 
-import clip_rank
-from dalle_model import DalleModel
-from glid_3_xl_model import Glid3XLModel
-from swinir_model import SwinIRModel
-# from vqgan_clip.generate import run, default_args
-from vqgan_model import VQGANModel
-
+import clip_process
+from model_process import ModelProcess
+from glid_3_xl_model import generate_model_signature
+from memutil import get_free_memory
 
 
 api_url = "https://www.aibrush.art"
@@ -81,22 +75,6 @@ def _vqgan_args(image_data, image):
     # args.on_save_callback = lambda i: update_image(i, "processing")
     args.size = [image.width, image.height]
     return args
-
-# def _to_args_list(args: SimpleNamespace, arg_mapping=None):
-#     args_list = []
-#     for k, v in vars(args).items():
-#         if v is not None:
-#             key = k
-#             if arg_mapping is not None and k in arg_mapping:
-#                 key = arg_mapping[k]
-#             if v != False:
-#                 args_list.append("--{}".format(key))
-#                 # if v is a list, join with space
-#                 if isinstance(v, list):
-#                     args_list.extend([str(item) for item in v])
-#                 elif v is not True and v is not False:
-#                     args_list.append(str(v))
-#     return args_list
 
 def _swinir_args(image_data, image):
     # python SwinIR\main_test_swinir.py --task real_sr --model_path 003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth --folder_lq images --scale 4
@@ -174,25 +152,33 @@ def _glid_3_xl_args(image_data, mask_data, npy_data, image):
 
 model_name: str = None
 model = None
+model_signature: str = None
 clip_ranker = None
 
 def get_clip_ranker():
     global clip_ranker
     if clip_ranker is None:
-        clip_ranker = clip_rank.ClipRanker(SimpleNamespace(cpu=False))
+        clip_ranker = clip_process.ClipProcess()
     return clip_ranker
 
+def clear_clip_ranker():
+    global clip_ranker
+    clip_ranker = None
 
 def create_model():
     global model
     if model_name == "dalle_mega":
-        model = DalleModel("mega_full")
+        model = ModelProcess("dalle_model.py")
     elif model_name == "glid_3_xl":
-        model = Glid3XLModel()
+        model = ModelProcess("glid_3_xl_model.py")
     elif model_name == "swinir":
-        model = SwinIRModel()
+        model = ModelProcess("swinir_model.py")
     elif model_name == "vqgan_imagenet_f16_16384":
-        model = VQGANModel()
+        model = ModelProcess("vqgan_model.py")
+
+def clear_model():
+    global model
+    model = None
 
 def process_image():
     global clip_ranker
@@ -222,6 +208,12 @@ def process_image():
                 img.save(image_path)
                 
             if os.path.exists(image_path):
+                free_memory = get_free_memory()
+                
+                # during testing, clip ranking needs at most 4.4 GB of memory (2.4 is not enough)
+                if free_memory/1e9 < 4.4 and not clip_ranker:
+                    print("Clearing model to free up memory for clip ranking")
+                    clear_model()
                 prompts = "|".join(image.phrases)
                 print(f"Calculating clip ranking for '{prompts}'")
                 score = get_clip_ranker().rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
@@ -245,29 +237,44 @@ def process_image():
                 video_data = f.read()
             client.update_video_data(image.id, video_data)
 
-        if image.model != model_name:
-            model_name = image.model
-            create_model()
-        
         if image.model == "dalle_mega":
             args = _dalle_mega_args(image)
         elif image.model == "vqgan_imagenet_f16_16384":
             args = _vqgan_args(image_data, image)
         elif image.model == "glid_3_xl":
+            # if image.glid_3_xl_clip_guidance:
+            #     clear_clip_ranker()
             mask_data = client.get_mask_data(image.id)
             npy_data = client.get_npy_data(image.id)
             args = _glid_3_xl_args(image_data, mask_data, npy_data, image)
         elif image.model == "swinir":
             args = _swinir_args(image_data, image)
 
+        if image.model != model_name:
+            clear_model()
+            model_name = image.model
+            create_model()
+        else:
+            # special case for glid_3_xl
+            if image.model == "glid_3_xl":
+                global model_signature
+                # check model signature
+                if model_signature != generate_model_signature(args):
+                    clear_model()
+                    create_model()
+                    model_signature = generate_model_signature(args)
+
         update_image(0, "processing")
 
+        # detect memory overflow and clear clip ranker
+        if image.model == "glid_3_xl":
+            if image.width * image.height > 540672:
+                print("Clearing clip ranker to free up memory for model generation")
+                clear_clip_ranker()
+        if not model:
+            create_model()
         model.generate(args)
-        # processor_cmd = ["python", cmd] + args_list
-        # print(f"Running {' '.join(processor_cmd)}")
-        # result = subprocess.run(processor_cmd)
-        # if result.returncode != 0:
-        #     raise Exception("Error running generator")
+
         #  only update video if vqgan
         if image.model == "vqgan_imagenet_f16_16384" and image.enable_video:
             update_video_data()
