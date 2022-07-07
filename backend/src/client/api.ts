@@ -14,7 +14,7 @@
 
 
 import { Configuration } from './configuration';
-import globalAxios, { AxiosPromise, AxiosInstance } from 'axios';
+import globalAxios, { AxiosPromise, AxiosInstance, AxiosRequestConfig } from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
 import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from './common';
@@ -32,7 +32,7 @@ export interface AssetsUrl {
      * @type {string}
      * @memberof AssetsUrl
      */
-    assets_url: string;
+    'assets_url': string;
 }
 /**
  * 
@@ -45,163 +45,159 @@ export interface CreateImageInput {
      * @type {Array<string>}
      * @memberof CreateImageInput
      */
-    phrases?: Array<string>;
+    'phrases'?: Array<string>;
     /**
      * 
      * @type {Array<string>}
      * @memberof CreateImageInput
      */
-    negative_phrases?: Array<string>;
+    'negative_phrases'?: Array<string>;
     /**
      * 
      * @type {string}
      * @memberof CreateImageInput
      */
-    label?: string;
+    'label'?: string;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    iterations?: number;
+    'iterations'?: number;
     /**
      * 
      * @type {string}
      * @memberof CreateImageInput
      */
-    parent?: string;
+    'parent'?: string;
     /**
      * 
      * @type {string}
      * @memberof CreateImageInput
      */
-    encoded_image?: string;
+    'encoded_image'?: string;
     /**
      * 
      * @type {string}
      * @memberof CreateImageInput
      */
-    encoded_mask?: string;
+    'encoded_mask'?: string;
     /**
      * 
      * @type {string}
      * @memberof CreateImageInput
      */
-    encoded_npy?: string;
+    'encoded_npy'?: string;
     /**
      * 
      * @type {boolean}
      * @memberof CreateImageInput
      */
-    enable_video?: boolean;
+    'enable_video'?: boolean;
     /**
      * 
      * @type {boolean}
      * @memberof CreateImageInput
      */
-    enable_zoom?: boolean;
+    'enable_zoom'?: boolean;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    zoom_frequency?: number;
+    'zoom_frequency'?: number;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    zoom_scale?: number;
+    'zoom_scale'?: number;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    zoom_shift_x?: number;
+    'zoom_shift_x'?: number;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    zoom_shift_y?: number;
+    'zoom_shift_y'?: number;
     /**
      * 
      * @type {string}
      * @memberof CreateImageInput
      */
-    model?: string;
+    'model'?: string;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    glid_3_xl_skip_iterations?: number;
+    'glid_3_xl_skip_iterations'?: number;
     /**
      * 
      * @type {boolean}
      * @memberof CreateImageInput
      */
-    glid_3_xl_clip_guidance?: boolean;
+    'glid_3_xl_clip_guidance'?: boolean;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    glid_3_xl_clip_guidance_scale?: number;
+    'glid_3_xl_clip_guidance_scale'?: number;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    height?: CreateImageInputHeightEnum;
+    'height'?: CreateImageInputHeightEnum;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    width?: CreateImageInputWidthEnum;
+    'width'?: CreateImageInputWidthEnum;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    uncrop_offset_x?: number;
+    'uncrop_offset_x'?: number;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    uncrop_offset_y?: number;
+    'uncrop_offset_y'?: number;
 }
 
-/**
-    * @export
-    * @enum {string}
-    */
-export enum CreateImageInputHeightEnum {
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896,
-    NUMBER_1024 = 1024
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum CreateImageInputWidthEnum {
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896,
-    NUMBER_1024 = 1024
-}
+export const CreateImageInputHeightEnum = {
+    NUMBER_128: 128,
+    NUMBER_256: 256,
+    NUMBER_384: 384,
+    NUMBER_512: 512,
+    NUMBER_640: 640,
+    NUMBER_768: 768,
+    NUMBER_896: 896,
+    NUMBER_1024: 1024
+} as const;
+
+export type CreateImageInputHeightEnum = typeof CreateImageInputHeightEnum[keyof typeof CreateImageInputHeightEnum];
+export const CreateImageInputWidthEnum = {
+    NUMBER_128: 128,
+    NUMBER_256: 256,
+    NUMBER_384: 384,
+    NUMBER_512: 512,
+    NUMBER_640: 640,
+    NUMBER_768: 768,
+    NUMBER_896: 896,
+    NUMBER_1024: 1024
+} as const;
+
+export type CreateImageInputWidthEnum = typeof CreateImageInputWidthEnum[keyof typeof CreateImageInputWidthEnum];
 
 /**
  * 
@@ -214,17 +210,15 @@ export interface CreateServiceAccountInput {
      * @type {string}
      * @memberof CreateServiceAccountInput
      */
-    type?: CreateServiceAccountInputTypeEnum;
+    'type'?: CreateServiceAccountInputTypeEnum;
 }
 
-/**
-    * @export
-    * @enum {string}
-    */
-export enum CreateServiceAccountInputTypeEnum {
-    Public = 'public',
-    Private = 'private'
-}
+export const CreateServiceAccountInputTypeEnum = {
+    Public: 'public',
+    Private: 'private'
+} as const;
+
+export type CreateServiceAccountInputTypeEnum = typeof CreateServiceAccountInputTypeEnum[keyof typeof CreateServiceAccountInputTypeEnum];
 
 /**
  * 
@@ -237,7 +231,7 @@ export interface CreateSuggestionsJobInput {
      * @type {string}
      * @memberof CreateSuggestionsJobInput
      */
-    seed_id?: string;
+    'seed_id'?: string;
 }
 /**
  * 
@@ -250,7 +244,7 @@ export interface CreateSvgJobInput {
      * @type {string}
      * @memberof CreateSvgJobInput
      */
-    image_id?: string;
+    'image_id'?: string;
 }
 /**
  * 
@@ -263,13 +257,13 @@ export interface CreateWorkflowEventInput {
      * @type {string}
      * @memberof CreateWorkflowEventInput
      */
-    workflow_id?: string;
+    'workflow_id'?: string;
     /**
      * 
      * @type {string}
      * @memberof CreateWorkflowEventInput
      */
-    message?: string;
+    'message'?: string;
 }
 /**
  * 
@@ -282,43 +276,43 @@ export interface CreateWorkflowInput {
      * @type {string}
      * @memberof CreateWorkflowInput
      */
-    workflow_type: string;
+    'workflow_type': string;
     /**
      * 
      * @type {string}
      * @memberof CreateWorkflowInput
      */
-    label: string;
+    'label': string;
     /**
      * 
      * @type {string}
      * @memberof CreateWorkflowInput
      */
-    config_json: string;
+    'config_json': string;
     /**
      * 
      * @type {string}
      * @memberof CreateWorkflowInput
      */
-    data_json: string;
+    'data_json': string;
     /**
      * 
      * @type {boolean}
      * @memberof CreateWorkflowInput
      */
-    is_active: boolean;
+    'is_active': boolean;
     /**
      * 
      * @type {string}
      * @memberof CreateWorkflowInput
      */
-    state: string;
+    'state': string;
     /**
      * 
      * @type {number}
      * @memberof CreateWorkflowInput
      */
-    execution_delay: number;
+    'execution_delay': number;
 }
 /**
  * 
@@ -331,13 +325,13 @@ export interface FeatureList {
      * @type {string}
      * @memberof FeatureList
      */
-    terms_uri?: string;
+    'terms_uri'?: string;
     /**
      * 
      * @type {string}
      * @memberof FeatureList
      */
-    privacy_uri?: string;
+    'privacy_uri'?: string;
 }
 /**
  * 
@@ -350,16 +344,14 @@ export interface Healthcheck {
      * @type {string}
      * @memberof Healthcheck
      */
-    status?: HealthcheckStatusEnum;
+    'status'?: HealthcheckStatusEnum;
 }
 
-/**
-    * @export
-    * @enum {string}
-    */
-export enum HealthcheckStatusEnum {
-    Ok = 'ok'
-}
+export const HealthcheckStatusEnum = {
+    Ok: 'ok'
+} as const;
+
+export type HealthcheckStatusEnum = typeof HealthcheckStatusEnum[keyof typeof HealthcheckStatusEnum];
 
 /**
  * 
@@ -372,240 +364,236 @@ export interface Image {
      * @type {string}
      * @memberof Image
      */
-    id: string;
+    'id': string;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    created_at: number;
+    'created_at': number;
     /**
      * 
      * @type {string}
      * @memberof Image
      */
-    created_by: string;
+    'created_by': string;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    updated_at: number;
+    'updated_at': number;
     /**
      * 
      * @type {Array<string>}
      * @memberof Image
      */
-    phrases: Array<string>;
+    'phrases': Array<string>;
     /**
      * 
      * @type {Array<string>}
      * @memberof Image
      */
-    negative_phrases: Array<string>;
+    'negative_phrases': Array<string>;
     /**
      * 
      * @type {string}
      * @memberof Image
      */
-    label: string;
+    'label': string;
     /**
      * 
      * @type {string}
      * @memberof Image
      */
-    parent: string;
+    'parent': string;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    iterations: number;
+    'iterations': number;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    current_iterations: number;
+    'current_iterations': number;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    score: number;
+    'score': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    'negative_score'?: number;
     /**
      * 
      * @type {string}
      * @memberof Image
      */
-    status: ImageStatusEnum;
+    'status': ImageStatusEnum;
     /**
      * 
      * @type {boolean}
      * @memberof Image
      */
-    enable_video: boolean;
+    'enable_video': boolean;
     /**
      * 
      * @type {boolean}
      * @memberof Image
      */
-    enable_zoom?: boolean;
+    'enable_zoom'?: boolean;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    zoom_frequency?: number;
+    'zoom_frequency'?: number;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    zoom_scale?: number;
+    'zoom_scale'?: number;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    zoom_shift_x?: number;
+    'zoom_shift_x'?: number;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    zoom_shift_y?: number;
+    'zoom_shift_y'?: number;
     /**
      * 
      * @type {string}
      * @memberof Image
      */
-    model: string;
+    'model': string;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    glid_3_xl_skip_iterations?: number;
+    'glid_3_xl_skip_iterations'?: number;
     /**
      * 
      * @type {boolean}
      * @memberof Image
      */
-    glid_3_xl_clip_guidance?: boolean;
+    'glid_3_xl_clip_guidance'?: boolean;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    glid_3_xl_clip_guidance_scale?: number;
+    'glid_3_xl_clip_guidance_scale'?: number;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    width?: ImageWidthEnum;
+    'width'?: ImageWidthEnum;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    height?: ImageHeightEnum;
+    'height'?: ImageHeightEnum;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    uncrop_offset_x?: ImageUncropOffsetXEnum;
+    'uncrop_offset_x'?: ImageUncropOffsetXEnum;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    uncrop_offset_y?: ImageUncropOffsetYEnum;
+    'uncrop_offset_y'?: ImageUncropOffsetYEnum;
 }
 
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageStatusEnum {
-    Pending = 'pending',
-    Processing = 'processing',
-    Completed = 'completed',
-    Saved = 'saved',
-    Error = 'error'
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageWidthEnum {
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896,
-    NUMBER_1024 = 1024
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageHeightEnum {
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896,
-    NUMBER_1024 = 1024
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageUncropOffsetXEnum {
-    NUMBER_MINUS_896 = -896,
-    NUMBER_MINUS_768 = -768,
-    NUMBER_MINUS_640 = -640,
-    NUMBER_MINUS_512 = -512,
-    NUMBER_MINUS_384 = -384,
-    NUMBER_MINUS_256 = -256,
-    NUMBER_MINUS_128 = -128,
-    NUMBER_0 = 0,
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageUncropOffsetYEnum {
-    NUMBER_MINUS_896 = -896,
-    NUMBER_MINUS_768 = -768,
-    NUMBER_MINUS_640 = -640,
-    NUMBER_MINUS_512 = -512,
-    NUMBER_MINUS_384 = -384,
-    NUMBER_MINUS_256 = -256,
-    NUMBER_MINUS_128 = -128,
-    NUMBER_0 = 0,
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896
-}
+export const ImageStatusEnum = {
+    Pending: 'pending',
+    Processing: 'processing',
+    Completed: 'completed',
+    Saved: 'saved',
+    Error: 'error'
+} as const;
+
+export type ImageStatusEnum = typeof ImageStatusEnum[keyof typeof ImageStatusEnum];
+export const ImageWidthEnum = {
+    NUMBER_128: 128,
+    NUMBER_256: 256,
+    NUMBER_384: 384,
+    NUMBER_512: 512,
+    NUMBER_640: 640,
+    NUMBER_768: 768,
+    NUMBER_896: 896,
+    NUMBER_1024: 1024
+} as const;
+
+export type ImageWidthEnum = typeof ImageWidthEnum[keyof typeof ImageWidthEnum];
+export const ImageHeightEnum = {
+    NUMBER_128: 128,
+    NUMBER_256: 256,
+    NUMBER_384: 384,
+    NUMBER_512: 512,
+    NUMBER_640: 640,
+    NUMBER_768: 768,
+    NUMBER_896: 896,
+    NUMBER_1024: 1024
+} as const;
+
+export type ImageHeightEnum = typeof ImageHeightEnum[keyof typeof ImageHeightEnum];
+export const ImageUncropOffsetXEnum = {
+    NUMBER_MINUS_896: -896,
+    NUMBER_MINUS_768: -768,
+    NUMBER_MINUS_640: -640,
+    NUMBER_MINUS_512: -512,
+    NUMBER_MINUS_384: -384,
+    NUMBER_MINUS_256: -256,
+    NUMBER_MINUS_128: -128,
+    NUMBER_0: 0,
+    NUMBER_128: 128,
+    NUMBER_256: 256,
+    NUMBER_384: 384,
+    NUMBER_512: 512,
+    NUMBER_640: 640,
+    NUMBER_768: 768,
+    NUMBER_896: 896
+} as const;
+
+export type ImageUncropOffsetXEnum = typeof ImageUncropOffsetXEnum[keyof typeof ImageUncropOffsetXEnum];
+export const ImageUncropOffsetYEnum = {
+    NUMBER_MINUS_896: -896,
+    NUMBER_MINUS_768: -768,
+    NUMBER_MINUS_640: -640,
+    NUMBER_MINUS_512: -512,
+    NUMBER_MINUS_384: -384,
+    NUMBER_MINUS_256: -256,
+    NUMBER_MINUS_128: -128,
+    NUMBER_0: 0,
+    NUMBER_128: 128,
+    NUMBER_256: 256,
+    NUMBER_384: 384,
+    NUMBER_512: 512,
+    NUMBER_640: 640,
+    NUMBER_768: 768,
+    NUMBER_896: 896
+} as const;
+
+export type ImageUncropOffsetYEnum = typeof ImageUncropOffsetYEnum[keyof typeof ImageUncropOffsetYEnum];
 
 /**
  * 
@@ -618,7 +606,7 @@ export interface ImageList {
      * @type {Array<Image>}
      * @memberof ImageList
      */
-    images?: Array<Image>;
+    'images'?: Array<Image>;
 }
 /**
  * 
@@ -631,19 +619,19 @@ export interface InviteCode {
      * @type {string}
      * @memberof InviteCode
      */
-    id?: string;
+    'id'?: string;
     /**
      * 
      * @type {number}
      * @memberof InviteCode
      */
-    created_at?: number;
+    'created_at'?: number;
     /**
      * 
      * @type {string}
      * @memberof InviteCode
      */
-    created_by?: string;
+    'created_by'?: string;
 }
 /**
  * 
@@ -656,7 +644,7 @@ export interface IsAdminResponse {
      * @type {boolean}
      * @memberof IsAdminResponse
      */
-    is_admin?: boolean;
+    'is_admin'?: boolean;
 }
 /**
  * 
@@ -669,13 +657,13 @@ export interface LoginInput {
      * @type {string}
      * @memberof LoginInput
      */
-    email?: string;
+    'email'?: string;
     /**
      * 
      * @type {string}
      * @memberof LoginInput
      */
-    invite_code?: string;
+    'invite_code'?: string;
 }
 /**
  * 
@@ -688,13 +676,13 @@ export interface LoginResult {
      * @type {string}
      * @memberof LoginResult
      */
-    accessToken?: string;
+    'accessToken'?: string;
     /**
      * 
      * @type {string}
      * @memberof LoginResult
      */
-    refreshToken?: string;
+    'refreshToken'?: string;
 }
 /**
  * 
@@ -707,7 +695,7 @@ export interface ProcessImageInput {
      * @type {boolean}
      * @memberof ProcessImageInput
      */
-    zoom_supported: boolean;
+    'zoom_supported': boolean;
 }
 /**
  * 
@@ -720,7 +708,7 @@ export interface RefreshLoginInput {
      * @type {string}
      * @memberof RefreshLoginInput
      */
-    refreshToken?: string;
+    'refreshToken'?: string;
 }
 /**
  * 
@@ -733,31 +721,31 @@ export interface SuggestionSeed {
      * @type {string}
      * @memberof SuggestionSeed
      */
-    id: string;
+    'id': string;
     /**
      * 
      * @type {string}
      * @memberof SuggestionSeed
      */
-    name: string;
+    'name': string;
     /**
      * 
      * @type {string}
      * @memberof SuggestionSeed
      */
-    description: string;
+    'description': string;
     /**
      * 
      * @type {Array<string>}
      * @memberof SuggestionSeed
      */
-    items: Array<string>;
+    'items': Array<string>;
     /**
      * 
      * @type {string}
      * @memberof SuggestionSeed
      */
-    created_by: string;
+    'created_by': string;
 }
 /**
  * 
@@ -770,19 +758,19 @@ export interface SuggestionSeedInput {
      * @type {string}
      * @memberof SuggestionSeedInput
      */
-    name: string;
+    'name': string;
     /**
      * 
      * @type {string}
      * @memberof SuggestionSeedInput
      */
-    description?: string;
+    'description'?: string;
     /**
      * 
      * @type {Array<string>}
      * @memberof SuggestionSeedInput
      */
-    items: Array<string>;
+    'items': Array<string>;
 }
 /**
  * 
@@ -795,7 +783,7 @@ export interface SuggestionSeedList {
      * @type {Array<SuggestionSeed>}
      * @memberof SuggestionSeedList
      */
-    suggestionSeeds: Array<SuggestionSeed>;
+    'suggestionSeeds': Array<SuggestionSeed>;
 }
 /**
  * 
@@ -808,55 +796,53 @@ export interface SuggestionsJob {
      * @type {string}
      * @memberof SuggestionsJob
      */
-    id: string;
+    'id': string;
     /**
      * 
      * @type {string}
      * @memberof SuggestionsJob
      */
-    created_by: string;
+    'created_by': string;
     /**
      * 
      * @type {number}
      * @memberof SuggestionsJob
      */
-    created_at: number;
+    'created_at': number;
     /**
      * 
      * @type {number}
      * @memberof SuggestionsJob
      */
-    updated_at: number;
+    'updated_at': number;
     /**
      * 
      * @type {string}
      * @memberof SuggestionsJob
      */
-    seed_id: string;
+    'seed_id': string;
     /**
      * 
      * @type {string}
      * @memberof SuggestionsJob
      */
-    status: SuggestionsJobStatusEnum;
+    'status': SuggestionsJobStatusEnum;
     /**
      * 
      * @type {Array<string>}
      * @memberof SuggestionsJob
      */
-    result: Array<string>;
+    'result': Array<string>;
 }
 
-/**
-    * @export
-    * @enum {string}
-    */
-export enum SuggestionsJobStatusEnum {
-    Pending = 'pending',
-    Processing = 'processing',
-    Completed = 'completed',
-    Saved = 'saved'
-}
+export const SuggestionsJobStatusEnum = {
+    Pending: 'pending',
+    Processing: 'processing',
+    Completed: 'completed',
+    Saved: 'saved'
+} as const;
+
+export type SuggestionsJobStatusEnum = typeof SuggestionsJobStatusEnum[keyof typeof SuggestionsJobStatusEnum];
 
 /**
  * 
@@ -869,7 +855,7 @@ export interface SuggestionsJobList {
      * @type {Array<SuggestionsJob>}
      * @memberof SuggestionsJobList
      */
-    suggestionsJobs?: Array<SuggestionsJob>;
+    'suggestionsJobs'?: Array<SuggestionsJob>;
 }
 /**
  * 
@@ -882,48 +868,46 @@ export interface SvgJob {
      * @type {string}
      * @memberof SvgJob
      */
-    id: string;
+    'id': string;
     /**
      * 
      * @type {string}
      * @memberof SvgJob
      */
-    created_by: string;
+    'created_by': string;
     /**
      * 
      * @type {number}
      * @memberof SvgJob
      */
-    created_at: number;
+    'created_at': number;
     /**
      * 
      * @type {number}
      * @memberof SvgJob
      */
-    updated_at: number;
+    'updated_at': number;
     /**
      * 
      * @type {string}
      * @memberof SvgJob
      */
-    image_id: string;
+    'image_id': string;
     /**
      * 
      * @type {string}
      * @memberof SvgJob
      */
-    status: SvgJobStatusEnum;
+    'status': SvgJobStatusEnum;
 }
 
-/**
-    * @export
-    * @enum {string}
-    */
-export enum SvgJobStatusEnum {
-    Pending = 'pending',
-    Processing = 'processing',
-    Completed = 'completed'
-}
+export const SvgJobStatusEnum = {
+    Pending: 'pending',
+    Processing: 'processing',
+    Completed: 'completed'
+} as const;
+
+export type SvgJobStatusEnum = typeof SvgJobStatusEnum[keyof typeof SvgJobStatusEnum];
 
 /**
  * 
@@ -936,49 +920,53 @@ export interface UpdateImageInput {
      * @type {string}
      * @memberof UpdateImageInput
      */
-    label?: string;
+    'label'?: string;
     /**
      * 
      * @type {number}
      * @memberof UpdateImageInput
      */
-    current_iterations?: number;
+    'current_iterations'?: number;
     /**
      * 
      * @type {string}
      * @memberof UpdateImageInput
      */
-    status?: UpdateImageInputStatusEnum;
+    'status'?: UpdateImageInputStatusEnum;
     /**
      * 
      * @type {string}
      * @memberof UpdateImageInput
      */
-    encoded_image?: string;
+    'encoded_image'?: string;
     /**
      * 
      * @type {string}
      * @memberof UpdateImageInput
      */
-    encoded_npy?: string;
+    'encoded_npy'?: string;
     /**
      * 
      * @type {number}
      * @memberof UpdateImageInput
      */
-    score?: number;
+    'score'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateImageInput
+     */
+    'negative_score'?: number;
 }
 
-/**
-    * @export
-    * @enum {string}
-    */
-export enum UpdateImageInputStatusEnum {
-    Pending = 'pending',
-    Processing = 'processing',
-    Completed = 'completed',
-    Saved = 'saved'
-}
+export const UpdateImageInputStatusEnum = {
+    Pending: 'pending',
+    Processing: 'processing',
+    Completed: 'completed',
+    Saved: 'saved'
+} as const;
+
+export type UpdateImageInputStatusEnum = typeof UpdateImageInputStatusEnum[keyof typeof UpdateImageInputStatusEnum];
 
 /**
  * 
@@ -991,25 +979,23 @@ export interface UpdateSuggestionsJobInput {
      * @type {string}
      * @memberof UpdateSuggestionsJobInput
      */
-    status?: UpdateSuggestionsJobInputStatusEnum;
+    'status'?: UpdateSuggestionsJobInputStatusEnum;
     /**
      * 
      * @type {Array<string>}
      * @memberof UpdateSuggestionsJobInput
      */
-    result?: Array<string>;
+    'result'?: Array<string>;
 }
 
-/**
-    * @export
-    * @enum {string}
-    */
-export enum UpdateSuggestionsJobInputStatusEnum {
-    Pending = 'pending',
-    Processing = 'processing',
-    Completed = 'completed',
-    Saved = 'saved'
-}
+export const UpdateSuggestionsJobInputStatusEnum = {
+    Pending: 'pending',
+    Processing: 'processing',
+    Completed: 'completed',
+    Saved: 'saved'
+} as const;
+
+export type UpdateSuggestionsJobInputStatusEnum = typeof UpdateSuggestionsJobInputStatusEnum[keyof typeof UpdateSuggestionsJobInputStatusEnum];
 
 /**
  * 
@@ -1022,7 +1008,7 @@ export interface UpdateSvgJobInput {
      * @type {string}
      * @memberof UpdateSvgJobInput
      */
-    result?: string;
+    'result'?: string;
 }
 /**
  * 
@@ -1035,37 +1021,37 @@ export interface UpdateWorkflowInput {
      * @type {string}
      * @memberof UpdateWorkflowInput
      */
-    label?: string;
+    'label'?: string;
     /**
      * 
      * @type {string}
      * @memberof UpdateWorkflowInput
      */
-    data_json?: string;
+    'data_json'?: string;
     /**
      * 
      * @type {string}
      * @memberof UpdateWorkflowInput
      */
-    config_json?: string;
+    'config_json'?: string;
     /**
      * 
      * @type {boolean}
      * @memberof UpdateWorkflowInput
      */
-    is_active?: boolean;
+    'is_active'?: boolean;
     /**
      * 
      * @type {string}
      * @memberof UpdateWorkflowInput
      */
-    state?: string;
+    'state'?: string;
     /**
      * 
      * @type {number}
      * @memberof UpdateWorkflowInput
      */
-    execution_delay?: number;
+    'execution_delay'?: number;
 }
 /**
  * 
@@ -1078,13 +1064,13 @@ export interface User {
      * @type {string}
      * @memberof User
      */
-    id?: string;
+    'id'?: string;
     /**
      * 
      * @type {boolean}
      * @memberof User
      */
-    active?: boolean;
+    'active'?: boolean;
 }
 /**
  * 
@@ -1097,13 +1083,13 @@ export interface VerifyLoginInput {
      * @type {string}
      * @memberof VerifyLoginInput
      */
-    email?: string;
+    'email'?: string;
     /**
      * 
      * @type {string}
      * @memberof VerifyLoginInput
      */
-    code?: string;
+    'code'?: string;
 }
 /**
  * 
@@ -1116,61 +1102,61 @@ export interface Workflow {
      * @type {string}
      * @memberof Workflow
      */
-    id: string;
+    'id': string;
     /**
      * 
      * @type {string}
      * @memberof Workflow
      */
-    created_by: string;
+    'created_by': string;
     /**
      * 
      * @type {string}
      * @memberof Workflow
      */
-    label: string;
+    'label': string;
     /**
      * 
      * @type {string}
      * @memberof Workflow
      */
-    workflow_type: string;
+    'workflow_type': string;
     /**
      * 
      * @type {string}
      * @memberof Workflow
      */
-    state: string;
+    'state': string;
     /**
      * 
      * @type {string}
      * @memberof Workflow
      */
-    config_json: string;
+    'config_json': string;
     /**
      * 
      * @type {string}
      * @memberof Workflow
      */
-    data_json: string;
+    'data_json': string;
     /**
      * 
      * @type {boolean}
      * @memberof Workflow
      */
-    is_active: boolean;
+    'is_active': boolean;
     /**
      * 
      * @type {number}
      * @memberof Workflow
      */
-    execution_delay: number;
+    'execution_delay': number;
     /**
      * 
      * @type {number}
      * @memberof Workflow
      */
-    next_execution: number;
+    'next_execution': number;
 }
 /**
  * 
@@ -1183,25 +1169,25 @@ export interface WorkflowEvent {
      * @type {string}
      * @memberof WorkflowEvent
      */
-    id?: string;
+    'id'?: string;
     /**
      * 
      * @type {string}
      * @memberof WorkflowEvent
      */
-    workflow_id?: string;
+    'workflow_id'?: string;
     /**
      * 
      * @type {number}
      * @memberof WorkflowEvent
      */
-    created_at?: number;
+    'created_at'?: number;
     /**
      * 
      * @type {string}
      * @memberof WorkflowEvent
      */
-    message?: string;
+    'message'?: string;
 }
 /**
  * 
@@ -1214,7 +1200,7 @@ export interface WorkflowEventList {
      * @type {Array<WorkflowEvent>}
      * @memberof WorkflowEventList
      */
-    workflowEvents: Array<WorkflowEvent>;
+    'workflowEvents': Array<WorkflowEvent>;
 }
 /**
  * 
@@ -1227,7 +1213,7 @@ export interface WorkflowList {
      * @type {Array<Workflow>}
      * @memberof WorkflowList
      */
-    workflows: Array<Workflow>;
+    'workflows': Array<Workflow>;
 }
 
 /**
@@ -1242,7 +1228,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createImage: async (createImageInput?: CreateImageInput, options: any = {}): Promise<RequestArgs> => {
+        createImage: async (createImageInput?: CreateImageInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/images`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1259,7 +1245,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(createImageInput, localVarRequestOptions, configuration)
@@ -1274,7 +1260,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createInviteCode: async (options: any = {}): Promise<RequestArgs> => {
+        createInviteCode: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/invite-codes`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1289,7 +1275,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1304,7 +1290,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createServiceAccount: async (createServiceAccountInput?: CreateServiceAccountInput, options: any = {}): Promise<RequestArgs> => {
+        createServiceAccount: async (createServiceAccountInput?: CreateServiceAccountInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/auth/service-accounts`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1321,7 +1307,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(createServiceAccountInput, localVarRequestOptions, configuration)
@@ -1337,7 +1323,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createSuggestionSeed: async (suggestionSeedInput?: SuggestionSeedInput, options: any = {}): Promise<RequestArgs> => {
+        createSuggestionSeed: async (suggestionSeedInput?: SuggestionSeedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/suggestion-seeds`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1354,7 +1340,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(suggestionSeedInput, localVarRequestOptions, configuration)
@@ -1370,7 +1356,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createSuggestionsJob: async (createSuggestionsJobInput?: CreateSuggestionsJobInput, options: any = {}): Promise<RequestArgs> => {
+        createSuggestionsJob: async (createSuggestionsJobInput?: CreateSuggestionsJobInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/suggestions-jobs`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1387,7 +1373,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(createSuggestionsJobInput, localVarRequestOptions, configuration)
@@ -1403,7 +1389,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createSvgJob: async (createSvgJobInput?: CreateSvgJobInput, options: any = {}): Promise<RequestArgs> => {
+        createSvgJob: async (createSvgJobInput?: CreateSvgJobInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/svg-jobs`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1420,7 +1406,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(createSvgJobInput, localVarRequestOptions, configuration)
@@ -1436,7 +1422,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createWorkflow: async (createWorkflowInput?: CreateWorkflowInput, options: any = {}): Promise<RequestArgs> => {
+        createWorkflow: async (createWorkflowInput?: CreateWorkflowInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/workflows`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1453,7 +1439,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(createWorkflowInput, localVarRequestOptions, configuration)
@@ -1470,7 +1456,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createWorkflowEvent: async (workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options: any = {}): Promise<RequestArgs> => {
+        createWorkflowEvent: async (workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'workflowId' is not null or undefined
             assertParamExists('createWorkflowEvent', 'workflowId', workflowId)
             const localVarPath = `/api/workflows/{workflow_id}/events`
@@ -1490,7 +1476,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(createWorkflowEventInput, localVarRequestOptions, configuration)
@@ -1506,7 +1492,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        deleteImage: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        deleteImage: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('deleteImage', 'id', id)
             const localVarPath = `/api/images/{id}`
@@ -1524,7 +1510,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1539,7 +1525,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        deleteSuggestionSeed: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        deleteSuggestionSeed: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('deleteSuggestionSeed', 'id', id)
             const localVarPath = `/api/suggestion-seeds/{id}`
@@ -1557,7 +1543,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1572,7 +1558,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        deleteSuggestionsJob: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        deleteSuggestionsJob: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('deleteSuggestionsJob', 'id', id)
             const localVarPath = `/api/suggestions-jobs/{id}`
@@ -1590,7 +1576,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1605,7 +1591,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        deleteSvgJob: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        deleteSvgJob: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('deleteSvgJob', 'id', id)
             const localVarPath = `/api/svg-jobs/{id}`
@@ -1623,7 +1609,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1638,7 +1624,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        deleteWorkflow: async (workflowId: string, options: any = {}): Promise<RequestArgs> => {
+        deleteWorkflow: async (workflowId: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'workflowId' is not null or undefined
             assertParamExists('deleteWorkflow', 'workflowId', workflowId)
             const localVarPath = `/api/workflows/{workflow_id}`
@@ -1656,7 +1642,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1670,7 +1656,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getAssetsUrl: async (options: any = {}): Promise<RequestArgs> => {
+        getAssetsUrl: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/assets-url`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1685,7 +1671,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1699,7 +1685,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getFeatures: async (options: any = {}): Promise<RequestArgs> => {
+        getFeatures: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/features`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1714,7 +1700,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1729,7 +1715,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getImage: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        getImage: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getImage', 'id', id)
             const localVarPath = `/api/images/{id}`
@@ -1747,7 +1733,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1762,7 +1748,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getImageData: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        getImageData: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getImageData', 'id', id)
             const localVarPath = `/api/images/{id}.image.jpg`
@@ -1780,7 +1766,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1795,7 +1781,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getMaskData: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        getMaskData: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getMaskData', 'id', id)
             const localVarPath = `/api/images/{id}.mask.jpg`
@@ -1813,7 +1799,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1828,7 +1814,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getNpyData: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        getNpyData: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getNpyData', 'id', id)
             const localVarPath = `/api/images/{id}.npy`
@@ -1846,7 +1832,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1861,7 +1847,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getSuggestionSeed: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        getSuggestionSeed: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getSuggestionSeed', 'id', id)
             const localVarPath = `/api/suggestion-seeds/{id}`
@@ -1879,7 +1865,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1894,7 +1880,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getSuggestionsJob: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        getSuggestionsJob: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getSuggestionsJob', 'id', id)
             const localVarPath = `/api/suggestions-jobs/{id}`
@@ -1912,7 +1898,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1927,7 +1913,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getSvgJob: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        getSvgJob: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getSvgJob', 'id', id)
             const localVarPath = `/api/svg-jobs/{id}`
@@ -1945,7 +1931,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1960,7 +1946,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getSvgJobResult: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        getSvgJobResult: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getSvgJobResult', 'id', id)
             const localVarPath = `/api/svg-jobs/{id}/result.svg`
@@ -1978,7 +1964,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -1993,7 +1979,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getThumbnailData: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        getThumbnailData: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getThumbnailData', 'id', id)
             const localVarPath = `/api/images/{id}.thumbnail.jpg`
@@ -2011,7 +1997,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2026,7 +2012,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getVideoData: async (id: string, options: any = {}): Promise<RequestArgs> => {
+        getVideoData: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getVideoData', 'id', id)
             const localVarPath = `/api/images/{id}.mp4`
@@ -2044,7 +2030,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2059,7 +2045,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getWorkflow: async (workflowId: string, options: any = {}): Promise<RequestArgs> => {
+        getWorkflow: async (workflowId: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'workflowId' is not null or undefined
             assertParamExists('getWorkflow', 'workflowId', workflowId)
             const localVarPath = `/api/workflows/{workflow_id}`
@@ -2077,7 +2063,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2092,7 +2078,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getWorkflowEvents: async (workflowId: string, options: any = {}): Promise<RequestArgs> => {
+        getWorkflowEvents: async (workflowId: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'workflowId' is not null or undefined
             assertParamExists('getWorkflowEvents', 'workflowId', workflowId)
             const localVarPath = `/api/workflows/{workflow_id}/events`
@@ -2110,7 +2096,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2124,7 +2110,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getWorkflows: async (options: any = {}): Promise<RequestArgs> => {
+        getWorkflows: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/workflows`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2139,7 +2125,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2153,7 +2139,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        healthcheck: async (options: any = {}): Promise<RequestArgs> => {
+        healthcheck: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/healthcheck`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2168,7 +2154,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2182,7 +2168,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        isAdmin: async (options: any = {}): Promise<RequestArgs> => {
+        isAdmin: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/is-admin`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2197,7 +2183,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2214,7 +2200,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listImages: async (cursor?: number, limit?: number, direction?: 'asc' | 'desc', options: any = {}): Promise<RequestArgs> => {
+        listImages: async (cursor?: number, limit?: number, direction?: 'asc' | 'desc', options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/images`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2241,7 +2227,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2255,7 +2241,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listSuggestionSeeds: async (options: any = {}): Promise<RequestArgs> => {
+        listSuggestionSeeds: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/suggestion-seeds`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2270,7 +2256,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2284,7 +2270,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listSuggestionsJobs: async (options: any = {}): Promise<RequestArgs> => {
+        listSuggestionsJobs: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/suggestions-jobs`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2299,7 +2285,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2314,7 +2300,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        login: async (loginInput?: LoginInput, options: any = {}): Promise<RequestArgs> => {
+        login: async (loginInput?: LoginInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/auth/login`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2331,7 +2317,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(loginInput, localVarRequestOptions, configuration)
@@ -2347,7 +2333,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        processImage: async (processImageInput?: ProcessImageInput, options: any = {}): Promise<RequestArgs> => {
+        processImage: async (processImageInput?: ProcessImageInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/process-image`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2364,7 +2350,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(processImageInput, localVarRequestOptions, configuration)
@@ -2379,7 +2365,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        processSuggestionsJob: async (options: any = {}): Promise<RequestArgs> => {
+        processSuggestionsJob: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/process-suggestion-job`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2394,7 +2380,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2408,7 +2394,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        processSvgJob: async (options: any = {}): Promise<RequestArgs> => {
+        processSvgJob: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/process-svg-job`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2423,7 +2409,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2437,7 +2423,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        processWorkflow: async (options: any = {}): Promise<RequestArgs> => {
+        processWorkflow: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/process-workflow`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2452,7 +2438,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
@@ -2467,7 +2453,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        refresh: async (refreshLoginInput?: RefreshLoginInput, options: any = {}): Promise<RequestArgs> => {
+        refresh: async (refreshLoginInput?: RefreshLoginInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/auth/refresh`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2484,7 +2470,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(refreshLoginInput, localVarRequestOptions, configuration)
@@ -2501,7 +2487,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateImage: async (id: string, updateImageInput?: UpdateImageInput, options: any = {}): Promise<RequestArgs> => {
+        updateImage: async (id: string, updateImageInput?: UpdateImageInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateImage', 'id', id)
             const localVarPath = `/api/images/{id}`
@@ -2521,7 +2507,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(updateImageInput, localVarRequestOptions, configuration)
@@ -2538,7 +2524,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateSuggestionSeed: async (id: string, suggestionSeedInput?: SuggestionSeedInput, options: any = {}): Promise<RequestArgs> => {
+        updateSuggestionSeed: async (id: string, suggestionSeedInput?: SuggestionSeedInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateSuggestionSeed', 'id', id)
             const localVarPath = `/api/suggestion-seeds/{id}`
@@ -2558,7 +2544,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(suggestionSeedInput, localVarRequestOptions, configuration)
@@ -2575,7 +2561,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateSuggestionsJob: async (id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options: any = {}): Promise<RequestArgs> => {
+        updateSuggestionsJob: async (id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateSuggestionsJob', 'id', id)
             const localVarPath = `/api/suggestions-jobs/{id}`
@@ -2595,7 +2581,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(updateSuggestionsJobInput, localVarRequestOptions, configuration)
@@ -2612,7 +2598,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateSvgJob: async (id: string, updateSvgJobInput?: UpdateSvgJobInput, options: any = {}): Promise<RequestArgs> => {
+        updateSvgJob: async (id: string, updateSvgJobInput?: UpdateSvgJobInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateSvgJob', 'id', id)
             const localVarPath = `/api/svg-jobs/{id}`
@@ -2632,7 +2618,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(updateSvgJobInput, localVarRequestOptions, configuration)
@@ -2649,7 +2635,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateVideoData: async (id: string, body?: any, options: any = {}): Promise<RequestArgs> => {
+        updateVideoData: async (id: string, body?: any, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateVideoData', 'id', id)
             const localVarPath = `/api/images/{id}.mp4`
@@ -2669,7 +2655,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'video/mp4';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
@@ -2686,7 +2672,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateWorkflow: async (workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options: any = {}): Promise<RequestArgs> => {
+        updateWorkflow: async (workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'workflowId' is not null or undefined
             assertParamExists('updateWorkflow', 'workflowId', workflowId)
             const localVarPath = `/api/workflows/{workflow_id}`
@@ -2706,7 +2692,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(updateWorkflowInput, localVarRequestOptions, configuration)
@@ -2722,7 +2708,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        verify: async (verifyLoginInput?: VerifyLoginInput, options: any = {}): Promise<RequestArgs> => {
+        verify: async (verifyLoginInput?: VerifyLoginInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/auth/verify`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2739,7 +2725,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
     
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(verifyLoginInput, localVarRequestOptions, configuration)
@@ -2765,7 +2751,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createImage(createImageInput?: CreateImageInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
+        async createImage(createImageInput?: CreateImageInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createImage(createImageInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2774,7 +2760,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createInviteCode(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InviteCode>> {
+        async createInviteCode(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InviteCode>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createInviteCode(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2784,7 +2770,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
+        async createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createServiceAccount(createServiceAccountInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2794,7 +2780,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createSuggestionSeed(suggestionSeedInput?: SuggestionSeedInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeed>> {
+        async createSuggestionSeed(suggestionSeedInput?: SuggestionSeedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeed>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createSuggestionSeed(suggestionSeedInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2804,7 +2790,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createSuggestionsJob(createSuggestionsJobInput?: CreateSuggestionsJobInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
+        async createSuggestionsJob(createSuggestionsJobInput?: CreateSuggestionsJobInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createSuggestionsJob(createSuggestionsJobInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2814,7 +2800,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createSvgJob(createSvgJobInput?: CreateSvgJobInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
+        async createSvgJob(createSvgJobInput?: CreateSvgJobInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createSvgJob(createSvgJobInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2824,7 +2810,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createWorkflow(createWorkflowInput?: CreateWorkflowInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
+        async createWorkflow(createWorkflowInput?: CreateWorkflowInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createWorkflow(createWorkflowInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2835,7 +2821,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createWorkflowEvent(workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowEvent>> {
+        async createWorkflowEvent(workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowEvent>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createWorkflowEvent(workflowId, createWorkflowEventInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2845,7 +2831,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async deleteImage(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async deleteImage(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.deleteImage(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2855,7 +2841,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async deleteSuggestionSeed(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async deleteSuggestionSeed(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.deleteSuggestionSeed(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2865,7 +2851,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async deleteSuggestionsJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async deleteSuggestionsJob(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.deleteSuggestionsJob(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2875,7 +2861,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async deleteSvgJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async deleteSvgJob(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.deleteSvgJob(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2885,7 +2871,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async deleteWorkflow(workflowId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async deleteWorkflow(workflowId: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.deleteWorkflow(workflowId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2894,7 +2880,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getAssetsUrl(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AssetsUrl>> {
+        async getAssetsUrl(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AssetsUrl>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getAssetsUrl(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2903,7 +2889,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getFeatures(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<FeatureList>> {
+        async getFeatures(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<FeatureList>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getFeatures(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2913,7 +2899,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getImage(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
+        async getImage(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getImage(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2923,7 +2909,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getImageData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+        async getImageData(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getImageData(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2933,7 +2919,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getMaskData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+        async getMaskData(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getMaskData(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2943,7 +2929,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getNpyData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+        async getNpyData(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getNpyData(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2953,7 +2939,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getSuggestionSeed(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeed>> {
+        async getSuggestionSeed(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeed>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getSuggestionSeed(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2963,7 +2949,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getSuggestionsJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
+        async getSuggestionsJob(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getSuggestionsJob(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2973,7 +2959,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getSvgJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
+        async getSvgJob(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getSvgJob(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2983,7 +2969,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getSvgJobResult(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<string>> {
+        async getSvgJobResult(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<string>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getSvgJobResult(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2993,7 +2979,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getThumbnailData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+        async getThumbnailData(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getThumbnailData(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3003,7 +2989,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getVideoData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
+        async getVideoData(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getVideoData(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3013,7 +2999,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getWorkflow(workflowId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
+        async getWorkflow(workflowId: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkflow(workflowId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3023,7 +3009,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getWorkflowEvents(workflowId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowEventList>> {
+        async getWorkflowEvents(workflowId: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowEventList>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkflowEvents(workflowId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3032,7 +3018,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getWorkflows(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowList>> {
+        async getWorkflows(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowList>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkflows(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3041,7 +3027,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async healthcheck(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Healthcheck>> {
+        async healthcheck(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Healthcheck>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.healthcheck(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3050,7 +3036,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async isAdmin(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<IsAdminResponse>> {
+        async isAdmin(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<IsAdminResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.isAdmin(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3062,7 +3048,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async listImages(cursor?: number, limit?: number, direction?: 'asc' | 'desc', options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageList>> {
+        async listImages(cursor?: number, limit?: number, direction?: 'asc' | 'desc', options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageList>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.listImages(cursor, limit, direction, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3071,7 +3057,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async listSuggestionSeeds(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeedList>> {
+        async listSuggestionSeeds(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeedList>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.listSuggestionSeeds(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3080,7 +3066,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async listSuggestionsJobs(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJobList>> {
+        async listSuggestionsJobs(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJobList>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.listSuggestionsJobs(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3090,7 +3076,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async login(loginInput?: LoginInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async login(loginInput?: LoginInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.login(loginInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3100,7 +3086,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async processImage(processImageInput?: ProcessImageInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
+        async processImage(processImageInput?: ProcessImageInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.processImage(processImageInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3109,7 +3095,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async processSuggestionsJob(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
+        async processSuggestionsJob(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.processSuggestionsJob(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3118,7 +3104,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async processSvgJob(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
+        async processSvgJob(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.processSvgJob(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3127,7 +3113,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async processWorkflow(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
+        async processWorkflow(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.processWorkflow(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3137,7 +3123,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async refresh(refreshLoginInput?: RefreshLoginInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
+        async refresh(refreshLoginInput?: RefreshLoginInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.refresh(refreshLoginInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3148,7 +3134,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateImage(id: string, updateImageInput?: UpdateImageInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
+        async updateImage(id: string, updateImageInput?: UpdateImageInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateImage(id, updateImageInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3159,7 +3145,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateSuggestionSeed(id: string, suggestionSeedInput?: SuggestionSeedInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeed>> {
+        async updateSuggestionSeed(id: string, suggestionSeedInput?: SuggestionSeedInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeed>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateSuggestionSeed(id, suggestionSeedInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3170,7 +3156,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateSuggestionsJob(id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
+        async updateSuggestionsJob(id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateSuggestionsJob(id, updateSuggestionsJobInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3181,7 +3167,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateSvgJob(id: string, updateSvgJobInput?: UpdateSvgJobInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
+        async updateSvgJob(id: string, updateSvgJobInput?: UpdateSvgJobInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateSvgJob(id, updateSvgJobInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3192,7 +3178,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateVideoData(id: string, body?: any, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async updateVideoData(id: string, body?: any, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateVideoData(id, body, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3203,7 +3189,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateWorkflow(workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
+        async updateWorkflow(workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateWorkflow(workflowId, updateWorkflowInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3213,7 +3199,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async verify(verifyLoginInput?: VerifyLoginInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
+        async verify(verifyLoginInput?: VerifyLoginInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.verify(verifyLoginInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3656,7 +3642,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public createImage(createImageInput?: CreateImageInput, options?: any) {
+    public createImage(createImageInput?: CreateImageInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).createImage(createImageInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3666,7 +3652,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public createInviteCode(options?: any) {
+    public createInviteCode(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).createInviteCode(options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3677,7 +3663,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: any) {
+    public createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).createServiceAccount(createServiceAccountInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3688,7 +3674,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public createSuggestionSeed(suggestionSeedInput?: SuggestionSeedInput, options?: any) {
+    public createSuggestionSeed(suggestionSeedInput?: SuggestionSeedInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).createSuggestionSeed(suggestionSeedInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3699,7 +3685,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public createSuggestionsJob(createSuggestionsJobInput?: CreateSuggestionsJobInput, options?: any) {
+    public createSuggestionsJob(createSuggestionsJobInput?: CreateSuggestionsJobInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).createSuggestionsJob(createSuggestionsJobInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3710,7 +3696,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public createSvgJob(createSvgJobInput?: CreateSvgJobInput, options?: any) {
+    public createSvgJob(createSvgJobInput?: CreateSvgJobInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).createSvgJob(createSvgJobInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3721,7 +3707,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public createWorkflow(createWorkflowInput?: CreateWorkflowInput, options?: any) {
+    public createWorkflow(createWorkflowInput?: CreateWorkflowInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).createWorkflow(createWorkflowInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3733,7 +3719,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public createWorkflowEvent(workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options?: any) {
+    public createWorkflowEvent(workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).createWorkflowEvent(workflowId, createWorkflowEventInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3744,7 +3730,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public deleteImage(id: string, options?: any) {
+    public deleteImage(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).deleteImage(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3755,7 +3741,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public deleteSuggestionSeed(id: string, options?: any) {
+    public deleteSuggestionSeed(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).deleteSuggestionSeed(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3766,7 +3752,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public deleteSuggestionsJob(id: string, options?: any) {
+    public deleteSuggestionsJob(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).deleteSuggestionsJob(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3777,7 +3763,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public deleteSvgJob(id: string, options?: any) {
+    public deleteSvgJob(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).deleteSvgJob(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3788,7 +3774,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public deleteWorkflow(workflowId: string, options?: any) {
+    public deleteWorkflow(workflowId: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).deleteWorkflow(workflowId, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3798,7 +3784,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getAssetsUrl(options?: any) {
+    public getAssetsUrl(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getAssetsUrl(options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3808,7 +3794,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getFeatures(options?: any) {
+    public getFeatures(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getFeatures(options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3819,7 +3805,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getImage(id: string, options?: any) {
+    public getImage(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getImage(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3830,7 +3816,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getImageData(id: string, options?: any) {
+    public getImageData(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getImageData(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3841,7 +3827,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getMaskData(id: string, options?: any) {
+    public getMaskData(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getMaskData(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3852,7 +3838,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getNpyData(id: string, options?: any) {
+    public getNpyData(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getNpyData(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3863,7 +3849,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getSuggestionSeed(id: string, options?: any) {
+    public getSuggestionSeed(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getSuggestionSeed(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3874,7 +3860,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getSuggestionsJob(id: string, options?: any) {
+    public getSuggestionsJob(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getSuggestionsJob(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3885,7 +3871,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getSvgJob(id: string, options?: any) {
+    public getSvgJob(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getSvgJob(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3896,7 +3882,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getSvgJobResult(id: string, options?: any) {
+    public getSvgJobResult(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getSvgJobResult(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3907,7 +3893,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getThumbnailData(id: string, options?: any) {
+    public getThumbnailData(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getThumbnailData(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3918,7 +3904,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getVideoData(id: string, options?: any) {
+    public getVideoData(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getVideoData(id, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3929,7 +3915,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getWorkflow(workflowId: string, options?: any) {
+    public getWorkflow(workflowId: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getWorkflow(workflowId, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3940,7 +3926,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getWorkflowEvents(workflowId: string, options?: any) {
+    public getWorkflowEvents(workflowId: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getWorkflowEvents(workflowId, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3950,7 +3936,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getWorkflows(options?: any) {
+    public getWorkflows(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getWorkflows(options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3960,7 +3946,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public healthcheck(options?: any) {
+    public healthcheck(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).healthcheck(options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3970,7 +3956,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public isAdmin(options?: any) {
+    public isAdmin(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).isAdmin(options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3983,7 +3969,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public listImages(cursor?: number, limit?: number, direction?: 'asc' | 'desc', options?: any) {
+    public listImages(cursor?: number, limit?: number, direction?: 'asc' | 'desc', options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).listImages(cursor, limit, direction, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -3993,7 +3979,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public listSuggestionSeeds(options?: any) {
+    public listSuggestionSeeds(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).listSuggestionSeeds(options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4003,7 +3989,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public listSuggestionsJobs(options?: any) {
+    public listSuggestionsJobs(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).listSuggestionsJobs(options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4014,7 +4000,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public login(loginInput?: LoginInput, options?: any) {
+    public login(loginInput?: LoginInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).login(loginInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4025,7 +4011,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public processImage(processImageInput?: ProcessImageInput, options?: any) {
+    public processImage(processImageInput?: ProcessImageInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).processImage(processImageInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4035,7 +4021,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public processSuggestionsJob(options?: any) {
+    public processSuggestionsJob(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).processSuggestionsJob(options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4045,7 +4031,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public processSvgJob(options?: any) {
+    public processSvgJob(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).processSvgJob(options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4055,7 +4041,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public processWorkflow(options?: any) {
+    public processWorkflow(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).processWorkflow(options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4066,7 +4052,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public refresh(refreshLoginInput?: RefreshLoginInput, options?: any) {
+    public refresh(refreshLoginInput?: RefreshLoginInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).refresh(refreshLoginInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4078,7 +4064,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public updateImage(id: string, updateImageInput?: UpdateImageInput, options?: any) {
+    public updateImage(id: string, updateImageInput?: UpdateImageInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).updateImage(id, updateImageInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4090,7 +4076,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public updateSuggestionSeed(id: string, suggestionSeedInput?: SuggestionSeedInput, options?: any) {
+    public updateSuggestionSeed(id: string, suggestionSeedInput?: SuggestionSeedInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).updateSuggestionSeed(id, suggestionSeedInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4102,7 +4088,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public updateSuggestionsJob(id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options?: any) {
+    public updateSuggestionsJob(id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).updateSuggestionsJob(id, updateSuggestionsJobInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4114,7 +4100,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public updateSvgJob(id: string, updateSvgJobInput?: UpdateSvgJobInput, options?: any) {
+    public updateSvgJob(id: string, updateSvgJobInput?: UpdateSvgJobInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).updateSvgJob(id, updateSvgJobInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4126,7 +4112,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public updateVideoData(id: string, body?: any, options?: any) {
+    public updateVideoData(id: string, body?: any, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).updateVideoData(id, body, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4138,7 +4124,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public updateWorkflow(workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options?: any) {
+    public updateWorkflow(workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).updateWorkflow(workflowId, updateWorkflowInput, options).then((request) => request(this.axios, this.basePath));
     }
 
@@ -4149,7 +4135,7 @@ export class AIBrushApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public verify(verifyLoginInput?: VerifyLoginInput, options?: any) {
+    public verify(verifyLoginInput?: VerifyLoginInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).verify(verifyLoginInput, options).then((request) => request(this.axios, this.basePath));
     }
 }

@@ -1,0 +1,1 @@
+ALTER TABLE images ADD COLUMN negative_score FLOAT NOT NULL DEFAULT 0;

@@ -904,6 +904,8 @@ components:
           type: string
         score:
           type: number
+        negative_score:
+          type: number
 
     Image:
       properties:
@@ -932,7 +934,9 @@ components:
         current_iterations:
           type: integer
         score:
-          type: integer
+          type: number
+        negative_score:
+          type: number
         status:
           type: string
           enum: [pending, processing, completed, saved, error]

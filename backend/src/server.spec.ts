@@ -1888,7 +1888,7 @@ describe("server", () => {
 
                 beforeEach(async () => {
                     // process job as service acct
-                    response = await client2.processSvgJob(createSvgResponse.data.id);
+                    response = await client2.processSvgJob();
                 })
 
                 it("should return the svg job", () => {
@@ -1927,7 +1927,7 @@ describe("server", () => {
                     let response: AxiosResponse<SvgJob>;
 
                     beforeEach(async () => {
-                        response = await client2.processSvgJob(createSvgResponse.data.id);
+                        response = await client2.processSvgJob();
                     })
 
                     it("should return the svg job", () => {
@@ -1959,7 +1959,7 @@ describe("server", () => {
 
                 beforeEach(async () => {
                     // process job as service acct
-                    response = await client2.processSvgJob(createSvgResponse.data.id);
+                    response = await client2.processSvgJob();
                 })
 
                 it("should return the svg job", () => {
@@ -2000,7 +2000,7 @@ describe("server", () => {
 
                 beforeEach(async () => {
                     // process job as service acct
-                    response = await client2.processSvgJob(createSvgResponse.data.id);
+                    response = await client2.processSvgJob();
                 })
 
                 it("should return null", () => {

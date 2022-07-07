@@ -260,7 +260,7 @@ describe("workflows", () => {
                 let processResponse: AxiosResponse<Workflow>;
 
                 beforeEach(async () => {
-                    processResponse = await publicServiceAccount.client.processWorkflow(createResponse.data.id);
+                    processResponse = await publicServiceAccount.client.processWorkflow();
                 })
 
                 it("should return the processed workflow", () => {
@@ -278,7 +278,7 @@ describe("workflows", () => {
                 let processResponse: AxiosResponse<Workflow>;
 
                 beforeEach(async () => {
-                    processResponse = await privateServiceAccount.client.processWorkflow(createResponse.data.id);
+                    processResponse = await privateServiceAccount.client.processWorkflow();
                 })
 
                 it("should return the processed workflow", () => {
@@ -295,7 +295,7 @@ describe("workflows", () => {
                 let processResponse: AxiosResponse<Workflow>;
 
                 beforeEach(async () => {
-                    processResponse = await privateServiceAccount2.client.processWorkflow(createResponse.data.id);
+                    processResponse = await privateServiceAccount2.client.processWorkflow();
                 })
 
                 it("should return null", () => {
