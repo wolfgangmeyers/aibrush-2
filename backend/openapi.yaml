@@ -985,6 +985,7 @@ components:
         - iterations
         - current_iterations
         - score
+        - negative_score
         - status
         - enable_video
         - model

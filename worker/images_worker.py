@@ -195,6 +195,7 @@ def process_image():
 
         def update_image(iterations: int, status: str):
             score = 0
+            negative_score = 0
             image_data = None
             npy_data = None
             # get output image
@@ -215,8 +216,10 @@ def process_image():
                     print("Clearing model to free up memory for clip ranking")
                     clear_model()
                 prompts = "|".join(image.phrases)
+                negative_prompts = "|".join(image.negative_phrases)
                 print(f"Calculating clip ranking for '{prompts}'")
                 score = get_clip_ranker().rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
+                negative_score = get_clip_ranker().rank(argparse.Namespace(text=negative_prompts, image=image_path, cpu=False))
                 with open(image_path, "rb") as f:
                     image_data = f.read()
                 # base64 encode image
@@ -228,7 +231,7 @@ def process_image():
                         npy_data = f.read()
                         npy_data = base64.encodebytes(npy_data).decode("utf-8")
             # update image
-            client.update_image(image.id, image_data, npy_data, iterations, status, score)
+            client.update_image(image.id, image_data, npy_data, iterations, status, score, negative_score)
         
         def update_video_data():
             print("Updating video data")

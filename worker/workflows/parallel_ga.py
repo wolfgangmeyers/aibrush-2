@@ -18,8 +18,8 @@ def parallel_ga(client: AIBrushAPI, workflow: SimpleNamespace):
         return dict(
             parent=parent.id,
             label=parent.label,
-            height=256,
-            width=256,
+            height=parent.width,
+            width=parent.height,
             model=config.parallel_model,
             phrases=parent.phrases,
             negative_phrases=parent.negative_phrases,
@@ -30,6 +30,8 @@ def parallel_ga(client: AIBrushAPI, workflow: SimpleNamespace):
         generation = Generation(client, workflow, data_key="images")
         parent = None
         skip_iterations = 0
+        width = 256
+        height = 256
         # encoded_image_data = None
         if hasattr(config, "parent"):
             parent = config.parent
@@ -38,12 +40,16 @@ def parallel_ga(client: AIBrushAPI, workflow: SimpleNamespace):
             skip_iterations = random.randint(30, 45)
             while skip_iterations % 5 != 0:
                 skip_iterations += 1
+            parent_data = client.get_image(parent)
+            width = parent_data.width
+            height = parent_data.height
+        
         generation.initialize_generation(config.generations, config.initial_generation_size, dict(
             parent=parent,
             iterations=50,
             label=workflow.label,
-            height=256,
-            width=256,
+            height=height,
+            width=width,
             model=config.initial_model,
             phrases=config.phrases.split("|"),
             negative_phrases=config.negative_phrases.split("|"),

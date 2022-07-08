@@ -48,6 +48,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({ apiUrl, assetsUrl, image, onCl
                         {image.model === "glid_3_xl" && <p>Negative phrases: {image.negative_phrases.join(", ")}</p>}
                         {/* score */}
                         <p>Score: {image.score.toFixed(5)}</p>
+                        <p>Negative Score: {image.negative_score.toFixed(5)}</p>
                         <p>Model: {image.model}</p>
                         {/* enable_video */}
                         {image.model == "vqgan_imagenet_f16_16384" && <p>Enable Video: {image.enable_video ? "Yes" : "No"}</p>}

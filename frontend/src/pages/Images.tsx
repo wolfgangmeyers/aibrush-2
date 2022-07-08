@@ -129,10 +129,12 @@ export const ImagesPage: FC<Props> = ({ api, apiUrl, assetsUrl }) => {
         // otherwise, sort by updated_at
         if (a.parent === b.parent && a.phrases.join("|") == b.phrases.join("|")) {
             // if the score is the same, sort by updated_at
-            if (a.score === b.score) {
+            const aScore = a.score - a.negative_score
+            const bScore = b.score - b.negative_score
+            if (aScore == bScore) {
                 return b.updated_at - a.updated_at
             }
-            return b.score - a.score
+            return bScore - aScore
         }
         return b.updated_at - a.updated_at
     }

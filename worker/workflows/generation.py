@@ -38,16 +38,19 @@ class Generation:
             except Exception as inst:
                 print(f"Error getting image {image.id}: {inst}")
             self.ping_if_needed()
-        self.images.sort(key=lambda image: image.score, reverse=True)
+        self.sort_images()
         data[self.data_key] = [image.__dict__ for image in self.images]
         self.workflow.data_json = json.dumps(data)
         self.client.update_workflow(self.workflow.id, data_json=self.workflow.data_json)
         return all_completed
 
+    def sort_images(self):
+        self.images.sort(key=lambda image: image.score - image.negative_score, reverse=True)
+
     def select_survivors(self, survivors_count):
         data = json.loads(self.workflow.data_json)
         # sort by image.score descending
-        self.images.sort(key=lambda image: image.score, reverse=True)
+        self.sort_images()
         survivors = self.images[:survivors_count]
         non_survivors = self.images[survivors_count:]
         for image in non_survivors:
@@ -84,8 +87,8 @@ class Generation:
         return dict(
             parent=parent.id,
             label=parent.label,
-            height=256,
-            width=256,
+            height=parent.width,
+            width=parent.height,
             model="glid_3_xl",
             phrases=parent.phrases,
             negative_phrases=parent.negative_phrases,

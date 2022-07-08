@@ -435,6 +435,12 @@ export interface Image {
     score: number;
     /**
      * 
+     * @type {number}
+     * @memberof Image
+     */
+    negative_score: number;
+    /**
+     * 
      * @type {string}
      * @memberof Image
      */
@@ -967,6 +973,12 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     score?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateImageInput
+     */
+    negative_score?: number;
 }
 
 /**

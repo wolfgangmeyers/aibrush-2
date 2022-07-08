@@ -20,6 +20,8 @@ def basic_ga(client: AIBrushAPI, workflow: SimpleNamespace):
         parent = None
         skip_iterations = 0
         # encoded_image_data = None
+        width = 256
+        height = 256
         if "parent" in config:
             parent = config["parent"]
             # skip_iterations random number between 30 and 45
@@ -27,6 +29,9 @@ def basic_ga(client: AIBrushAPI, workflow: SimpleNamespace):
             skip_iterations = random.randint(30, 45)
             while skip_iterations % 5 != 0:
                 skip_iterations += 1
+            parent_data = client.get_image(parent)
+            width = parent_data.width
+            height = parent_data.height
         # TODO: use initialize_generation function instead
         for i in range(config["generation_size"]):
             image = client.create_image(
@@ -34,8 +39,8 @@ def basic_ga(client: AIBrushAPI, workflow: SimpleNamespace):
                 parent = parent,
                 iterations=50,
                 label=workflow.label,
-                height=256,
-                width=256,
+                height=height,
+                width=width,
                 model="glid_3_xl",
                 phrases=config["phrases"].split("|"),
                 negative_phrases=config["negative_phrases"].split("|"),
