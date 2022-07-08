@@ -87,8 +87,8 @@ class Generation:
         return dict(
             parent=parent.id,
             label=parent.label,
-            height=parent.width,
-            width=parent.height,
+            height=parent.height,
+            width=parent.width,
             model="glid_3_xl",
             phrases=parent.phrases,
             negative_phrases=parent.negative_phrases,
