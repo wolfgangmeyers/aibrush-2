@@ -1,8 +1,11 @@
+import random
 import sys
 import os
 from types import SimpleNamespace
 import time
 import json
+
+from torch import rand
 from api_client import AIBrushAPI
 import base64
 import traceback
@@ -150,6 +153,41 @@ def _glid_3_xl_args(image_data, mask_data, npy_data, image):
     args.steps = image.iterations
     return args
 
+# default args for stable diffusion
+# _default_args = SimpleNamespace(
+#     prompt="a painting of a virus monster playing guitar",
+#     outdir="outputs/txt2img-samples",
+#     skip_grid=False,
+#     skip_save=False,
+#     ddim_steps=50,
+#     plms=False,
+#     fixed_code=False,
+#     ddim_eta=0.0,
+#     n_iter=2,
+#     H=512,
+#     W=512,
+#     C=4,
+#     f=8,
+#     n_samples=3,
+#     n_rows=0,
+#     scale=7.5,
+#     config="configs/stable-diffusion/v1-inference.yaml",
+#     ckpt="models/ldm/stable-diffusion-v1/model.ckpt",
+#     seed=42,
+#     precision="autocast",
+# )
+
+def _sd_args(image_data, mask_data, npy_data, image):
+    args = SimpleNamespace()
+    args.prompt = ",".join(image.phrases)
+    args.H = image.height
+    args.W = image.width
+    # TODO: support reusing previous seeds
+    args.seed = random.randint(0, 2**32)
+    args.filename = image.id + ".jpg"
+    args.ddim_steps = image.iterations
+    return args
+
 model_name: str = None
 model = None
 model_signature: str = None
@@ -175,6 +213,8 @@ def create_model():
         model = ModelProcess("swinir_model.py")
     elif model_name == "vqgan_imagenet_f16_16384":
         model = ModelProcess("vqgan_model.py")
+    elif model_name == "stable_diffusion_text2im":
+        model = ModelProcess("sd_text2im_model.py")
 
 def clear_model():
     global model
@@ -252,6 +292,8 @@ def process_image():
             args = _glid_3_xl_args(image_data, mask_data, npy_data, image)
         elif image.model == "swinir":
             args = _swinir_args(image_data, image)
+        elif image.model == "stable_diffusion_text2im":
+            args = _sd_args(image_data, None, None, image)
 
         if image.model != model_name:
             clear_model()

@@ -17,9 +17,9 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
 
     const history = useHistory()
     const [input, setInput] = useState<CreateImageInput>({
-        phrases: [],
+        phrases: ["a painting of a happy corgi wearing sunglasses"],
         negative_phrases: [],
-        label: "",
+        label: "a painting of a happy corgi wearing sunglasses",
         iterations: 50,
         encoded_image: "",
         encoded_npy: "",
@@ -30,12 +30,12 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         zoom_scale: 0.99,
         zoom_shift_x: 0,
         zoom_shift_y: 0,
-        model: "glid_3_xl",
+        model: "stable_diffusion_text2im",
         glid_3_xl_clip_guidance: false,
         glid_3_xl_clip_guidance_scale: 150,
         glid_3_xl_skip_iterations: 0,
-        width: 256,
-        height: 256,
+        width: 512,
+        height: 512,
     });
     const [editingMask, seteditingMask] = useState<string | null>(null);
     const [uncroppingImage, setUncroppingImage] = useState<string | null>(null);
@@ -359,6 +359,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                 <option value="vqgan_imagenet_f16_16384">VQGAN ImageNet</option>
                                 <option value="glid_3_xl">Glid-3 XL</option>
                                 <option value="swinir">SwinIR</option>
+                                <option value="stable_diffusion_text2im">Stable Diffusion Text2Image</option>
                             </select>
                         </div>
                         {/* boolean enable_video (bootstrap styled checkbox) */}

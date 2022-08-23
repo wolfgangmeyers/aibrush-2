@@ -17,3 +17,5 @@ output*
 latent-diffusion
 nlpcloud.json
 wandb
+artist_styles
+models

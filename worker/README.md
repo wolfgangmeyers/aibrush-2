@@ -27,6 +27,13 @@ source venv/bin/activate
 pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 ```
 
+### Install Stable Diffusion dependencies
+
+```sh
+pip install transformers==4.19.2 diffusers invisible-watermark
+pip install https://github.com/CompVis/stable-diffusion#egg=latent-diffusion
+```
+
 ### Install Glid-3 XL and dependencies
 
 ```sh
