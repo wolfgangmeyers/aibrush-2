@@ -187,6 +187,7 @@ def _sd_args(image_data, mask_data, npy_data, image):
     args.filename = image.id + ".jpg"
     args.ddim_steps = image.iterations
     args.strength = image.stable_diffusion_strength
+    args.init_img = None
     if image_data:
         # save image
         with open(os.path.join("images", image.id + "-init.jpg"), "wb") as f:
