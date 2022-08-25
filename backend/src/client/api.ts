@@ -969,12 +969,6 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     'negative_score'?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof UpdateImageInput
-     */
-    'stable_diffusion_strength'?: number;
 }
 
 export const UpdateImageInputStatusEnum = {

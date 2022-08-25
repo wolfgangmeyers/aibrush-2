@@ -417,7 +417,6 @@ describe("server", () => {
                         label: "test2",
                         current_iterations: 1,
                         status: UpdateImageInputStatusEnum.Processing,
-                        stable_diffusion_strength: 0.8,
                     })
                     updatedImage = response.data
                 })
@@ -428,7 +427,6 @@ describe("server", () => {
                     expect(updatedImage.iterations).toBe(1)
                     expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Processing)
                     expect(updatedImage.current_iterations).toBe(1)
-                    expect(updatedImage.stable_diffusion_strength).toBe(0.8)
                 })
 
                 describe("when listing images", () => {

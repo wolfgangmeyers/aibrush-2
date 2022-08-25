@@ -908,8 +908,6 @@ components:
           type: number
         negative_score:
           type: number
-        stable_diffusion_strength:
-          type: number
 
     Image:
       properties:
