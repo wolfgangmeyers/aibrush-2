@@ -321,6 +321,7 @@ describe("server", () => {
                 expect(image.glid_3_xl_skip_iterations).toBe(0)
                 expect(image.glid_3_xl_clip_guidance).toBe(false)
                 expect(image.glid_3_xl_clip_guidance_scale).toBe(150)
+                expect(image.stable_diffusion_strength).toBe(0.75)
             })
 
             describe("when listing images", () => {
@@ -415,7 +416,8 @@ describe("server", () => {
                     const response = await client.updateImage(image.id, {
                         label: "test2",
                         current_iterations: 1,
-                        status: UpdateImageInputStatusEnum.Processing
+                        status: UpdateImageInputStatusEnum.Processing,
+                        stable_diffusion_strength: 0.8,
                     })
                     updatedImage = response.data
                 })
@@ -426,6 +428,7 @@ describe("server", () => {
                     expect(updatedImage.iterations).toBe(1)
                     expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Processing)
                     expect(updatedImage.current_iterations).toBe(1)
+                    expect(updatedImage.stable_diffusion_strength).toBe(0.8)
                 })
 
                 describe("when listing images", () => {

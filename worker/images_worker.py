@@ -186,6 +186,12 @@ def _sd_args(image_data, mask_data, npy_data, image):
     args.seed = random.randint(0, 2**32)
     args.filename = image.id + ".jpg"
     args.ddim_steps = image.iterations
+    args.strength = image.stable_diffusion_strength
+    if image_data:
+        # save image
+        with open(os.path.join("images", image.id + "-init.jpg"), "wb") as f:
+            f.write(image_data)
+        args.init_img = os.path.join("images", image.id + "-init.jpg")
     return args
 
 model_name: str = None

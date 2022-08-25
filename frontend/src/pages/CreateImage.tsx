@@ -6,6 +6,7 @@ import loadImage from "blueimp-load-image"
 import qs from "qs";
 import { MaskEditor } from "../components/MaskEditor";
 import { Uncropper } from "../components/Uncropper";
+import Form from 'react-bootstrap/Form'
 
 interface CreateImageProps {
     api: AIBrushApi
@@ -36,6 +37,7 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
         glid_3_xl_skip_iterations: 0,
         width: 512,
         height: 512,
+        stable_diffusion_strength: 0.75,
     });
     const [editingMask, seteditingMask] = useState<string | null>(null);
     const [uncroppingImage, setUncroppingImage] = useState<string | null>(null);
@@ -416,6 +418,12 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                         {input.model == "glid_3_xl" && input.glid_3_xl_clip_guidance && <div className="form-group">
                             <label>Clip guidance scale</label>
                             <input min={10} max={2000} step={1} className="form-control" type="number" value={input.glid_3_xl_clip_guidance_scale} onChange={(e) => setInput({ ...input, glid_3_xl_clip_guidance_scale: parseFloat(e.target.value) })} />
+                        </div>}
+
+                        {input.model == "stable_diffusion_text2im" && <div className="form-group">
+                            <label>Strength</label>
+                            {/* react bootstrap formrange. min=0.1, max=0.9, step=0.05 */}
+                            <input type="range" min={0.1} max={0.95} step={0.05} className="form-control" value={input.stable_diffusion_strength} onChange={(e) => setInput({ ...input, stable_diffusion_strength: parseFloat(e.target.value) })} />
                         </div>}
 
                         {/* If encoded_image (base64 only) is set, show the image using a base64 image url*/}

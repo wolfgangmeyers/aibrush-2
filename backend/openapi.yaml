@@ -887,6 +887,8 @@ components:
           type: integer
         uncrop_offset_y:
           type: integer
+        stable_diffusion_strength:
+          type: number
 
     UpdateImageInput:
       type: object
@@ -905,6 +907,8 @@ components:
         score:
           type: number
         negative_score:
+          type: number
+        stable_diffusion_strength:
           type: number
 
     Image:
@@ -973,6 +977,8 @@ components:
         uncrop_offset_y:
           type: integer
           enum: [-896, -768, -640, -512, -384, -256, -128, 0, 128, 256, 384, 512, 640, 768, 896]
+        stable_diffusion_strength:
+          type: number
       required:
         - id
         - created_at
@@ -990,6 +996,7 @@ components:
         - enable_video
         - model
         - size
+        - stable_diffusion_strength
     ImageList:
       properties:
         images:

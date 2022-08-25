@@ -172,6 +172,12 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     'uncrop_offset_y'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    'stable_diffusion_strength'?: number;
 }
 
 export const CreateImageInputHeightEnum = {
@@ -430,7 +436,7 @@ export interface Image {
      * @type {number}
      * @memberof Image
      */
-    'negative_score'?: number;
+    'negative_score': number;
     /**
      * 
      * @type {string}
@@ -521,6 +527,12 @@ export interface Image {
      * @memberof Image
      */
     'uncrop_offset_y'?: ImageUncropOffsetYEnum;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    'stable_diffusion_strength': number;
 }
 
 export const ImageStatusEnum = {
@@ -957,6 +969,12 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     'negative_score'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateImageInput
+     */
+    'stable_diffusion_strength'?: number;
 }
 
 export const UpdateImageInputStatusEnum = {

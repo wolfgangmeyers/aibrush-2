@@ -172,6 +172,12 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     uncrop_offset_y?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    stable_diffusion_strength?: number;
 }
 
 /**
@@ -529,6 +535,12 @@ export interface Image {
      * @memberof Image
      */
     uncrop_offset_y?: ImageUncropOffsetYEnum;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    stable_diffusion_strength: number;
 }
 
 /**
@@ -979,6 +991,12 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     negative_score?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateImageInput
+     */
+    stable_diffusion_strength?: number;
 }
 
 /**
