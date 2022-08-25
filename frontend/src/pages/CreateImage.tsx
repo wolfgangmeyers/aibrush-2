@@ -315,18 +315,16 @@ export const CreateImage: FC<CreateImageProps> = (props) => {
                                 onChange={(e) => setInput({ ...input, phrases: e.target.value.split("|") })}
                                 placeholder="Separate | phrases | like this" />
                         </div>}
-                        {/* negative phrases for glid 3 xl */}
-                        {   input.model === "glid_3_xl" && (
-                            <div className="form-group">
-                                <label>Negative phrases</label>
-                                <input
-                                    className="form-control"
-                                    type="text"
-                                    value={input.negative_phrases?.join("|")}
-                                    onChange={(e) => setInput({ ...input, negative_phrases: e.target.value.split("|") })}
-                                    placeholder="Separate | phrases | like this" />
-                            </div>
-                        )}
+                        {/* negative phrases */}
+                        <div className="form-group">
+                            <label>Negative phrases</label>
+                            <input
+                                className="form-control"
+                                type="text"
+                                value={input.negative_phrases?.join("|")}
+                                onChange={(e) => setInput({ ...input, negative_phrases: e.target.value.split("|") })}
+                                placeholder="Separate | phrases | like this" />
+                        </div>
                         <div className="form-group">
                             <label>Label</label>
                             <input
