@@ -1,4 +1,5 @@
 import React, { FC, useEffect, useState } from "react";
+import moment from "moment";
 import { Image, ImageStatusEnum } from "../client/api";
 
 interface Props {
@@ -17,13 +18,16 @@ export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, onClick }) => {
     const onMouseLeave = () => setHover(false);
 
     useEffect(() => {
+
         // This is to help deal with eventual consistency from S3.
-        // Some times it is needed, some times it isn't.
-        setRetry("");
-        const t = setTimeout(() => {
-            setRetry("&retry")
-        }, 3000);
-        return () => clearTimeout(t);
+        // if image.updated_at (unix timestamp in milliseconds) is less than a minute ago, try to reload the image
+        if (moment().diff(moment(image.updated_at), "minutes") < 1) {
+            setRetry("");
+            const t = setTimeout(() => {
+                setRetry("&retry")
+            }, 3000);
+            return () => clearTimeout(t);
+        }
     }, [image.id, image.updated_at])
 
     let label = image.label;

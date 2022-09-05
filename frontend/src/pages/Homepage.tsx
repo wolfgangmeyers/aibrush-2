@@ -31,8 +31,14 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         window.scrollTo(0, 0);
         try {
             const newImages = await api.createImage(input);
-            setImages((images) =>
-                [...(newImages.data.images || []), ...images].sort(sortImages)
+            setImages((images) => {
+                    // there is a race condition where poll images can fire before this callback
+                    // so double-check to avoid duplicates
+                    const imagesToAdd = (newImages.data.images || []).filter((image) => {
+                        return !images.find((i) => i.id === image.id);
+                    });
+                    return [...imagesToAdd, ...images].sort(sortImages)
+                }
             );
         } catch (e: any) {
             console.error(e);

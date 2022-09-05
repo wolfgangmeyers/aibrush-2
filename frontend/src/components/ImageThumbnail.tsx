@@ -2,6 +2,7 @@
 import React, { FC, useEffect } from "react";
 import { Image, ImageStatusEnum } from "../client/api";
 import { imageStatusToIconClass } from "../lib/iconhelper";
+import moment from "moment";
 
 interface ImageThumbnailProps {
     apiUrl: string;
@@ -32,11 +33,14 @@ export const ImageThumbnail: FC<ImageThumbnailProps> = ({ assetsUrl, apiUrl, ima
         img.onerror = () => {
             img.src = "/images/default.jpg";
         }
-        // this seems wasteful, but it helps deal with S3 eventual consistency
-        const t = setTimeout(() => {
-            img.src = `${src}&retry`
-        }, 3000);
-        return () => clearTimeout(t);
+        // deal with S3 eventual consistency
+        // if image.updated_at (unix timestamp in milliseconds) is less than a minute ago, try to reload the image
+        if (moment().diff(moment(image.updated_at), "minutes") < 1) {
+            const t = setTimeout(() => {
+                img.src = `${src}&retry`
+            }, 3000);
+            return () => clearTimeout(t);
+        }
     })
 
     return (
