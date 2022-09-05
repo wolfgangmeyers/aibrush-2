@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useState } from "react";
 import { CreateImageInput, Image } from "../client";
 import { aspectRatios, DEFAULT_ASPECT_RATIO } from "../lib/aspecRatios";
-import loadImage from "blueimp-load-image"
+import loadImage from "blueimp-load-image";
 
 interface Props {
     parent: Image | null;
@@ -48,7 +48,8 @@ export const ImagePrompt: FC<Props> = ({
     const [negativePrompt, setNegativePrompt] = useState<string>("");
     const [count, setCount] = useState<number>(4);
     const [variationStrength, setVariationStrength] = useState<number>(0.75);
-    const [aspectRatio, setAspectRatio] = useState<number>(DEFAULT_ASPECT_RATIO);
+    const [aspectRatio, setAspectRatio] =
+        useState<number>(DEFAULT_ASPECT_RATIO);
     const [parentId, setParentId] = useState<string | null>(null);
     const [advancedView, setAdvancedView] = useState<boolean>(false);
     const [encodedImage, setEncodedImage] = useState<string>("");
@@ -84,7 +85,7 @@ export const ImagePrompt: FC<Props> = ({
         if (encodedImage) {
             args.encoded_image = encodedImage;
         }
-        
+
         resetState();
         onSubmit(args);
     };
@@ -95,49 +96,59 @@ export const ImagePrompt: FC<Props> = ({
     };
 
     const onImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files && e.target.files[0]
+        const file = e.target.files && e.target.files[0];
         if (!file) {
-            return
+            return;
         }
-        loadImage(file, (img: Event | HTMLImageElement | HTMLCanvasElement) => {
-            if (!(img instanceof HTMLCanvasElement)) {
-                return
+        loadImage(
+            file,
+            (img: Event | HTMLImageElement | HTMLCanvasElement) => {
+                if (!(img instanceof HTMLCanvasElement)) {
+                    return;
+                }
+                // try to match width and height to a supported aspect ratio
+                const width = img.width;
+                const height = img.height;
+                const aspectRatio = width / height;
+
+                const tests = [...aspectRatios];
+                tests.sort((a, b) => {
+                    const aRatio = a.width / a.height;
+                    const bRatio = b.width / b.height;
+                    return (
+                        Math.abs(aRatio - aspectRatio) -
+                        Math.abs(bRatio - aspectRatio)
+                    );
+                });
+                const bestMatch = tests[0];
+                const canvas = document.createElement("canvas");
+                canvas.width = bestMatch.width;
+                canvas.height = bestMatch.height;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) {
+                    return;
+                }
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                // convert image to base64
+                // const canvas = img as HTMLCanvasElement
+                const dataUrl = canvas.toDataURL("image/jpeg");
+                const base64 = dataUrl.split(",")[1];
+                setEncodedImage(base64);
+                // get the index of the best match
+                setAspectRatio(
+                    aspectRatios.findIndex(
+                        (a) => a.displayName === bestMatch.displayName
+                    )
+                );
+            },
+            {
+                maxWidth: 1024,
+                maxHeight: 1024,
+                canvas: true,
             }
-            // try to match width and height to a supported aspect ratio
-            const width = img.width
-            const height = img.height
-            const aspectRatio = width / height
-
-            const tests = [...aspectRatios];
-            tests.sort((a, b) => {
-                const aRatio = a.width / a.height
-                const bRatio = b.width / b.height
-                return Math.abs(aRatio - aspectRatio) - Math.abs(bRatio - aspectRatio)
-            })
-            const bestMatch = tests[0]
-            const canvas = document.createElement("canvas")
-            canvas.width = bestMatch.width
-            canvas.height = bestMatch.height
-            const ctx = canvas.getContext("2d")
-            if (!ctx) {
-                return
-            }
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-
-
-            // convert image to base64
-            // const canvas = img as HTMLCanvasElement
-            const dataUrl = canvas.toDataURL("image/jpeg")
-            const base64 = dataUrl.split(",")[1]
-            setEncodedImage(base64)
-            // get the index of the best match
-            setAspectRatio(aspectRatios.findIndex(a => a.displayName === bestMatch.displayName))
-        }, {
-            maxWidth: 1024,
-            maxHeight: 1024,
-            canvas: true,
-        })
-    }
+        );
+    };
 
     useEffect(() => {
         if (parent) {
@@ -207,59 +218,111 @@ export const ImagePrompt: FC<Props> = ({
                 </div>
                 {advancedView && (
                     <div className="homepage-prompt-advanced">
-                        {parent && !encodedImage && <div className="form-group">
-                            <label>Parent Image</label>
-                            {/* ${assetsUrl}/${image.id}.image.jpg?updated_at=${image.updated_at} */}
+                        {parent && !encodedImage && (
+                            <div className="form-group">
+                                <label>Parent Image</label>
+                                {/* ${assetsUrl}/${image.id}.image.jpg?updated_at=${image.updated_at} */}
                                 <img
-                                    style={{display: "block", marginLeft: "auto", marginRight: "auto", maxWidth: "100%"}}
-                                    src={`${assetsUrl}/${parentId}.image.jpg?updated_at=${parent.updated_at}`} />
-                        </div>}
-                        {encodedImage && <div className="form-group">
-                            <label>Init Image</label>
-                            <img
-                                style={{display: "block", marginLeft: "auto", marginRight: "auto", maxWidth: "100%"}}
-                                src={`data:image/jpeg;base64,${encodedImage}`} />
-                        </div>}
-                        {!parent && !encodedImage && <div className="form-group">
-                            <div style={{minHeight: "140px", display: "flex", alignItems: "center"}}>
-                            {/* aspect ratio slider, goes from 0 -> aspectRatios.length - 1 */}
-                                <div style={{
-                                    width: aspectRatioDetails.width / 8,
-                                    height: aspectRatioDetails.height / 8,
-                                    // dotted line options: dotted, dashed, solid, double, groove, ridge, inset, outset, none, hidden
-                                    border: "1px dashed white",
-                                    margin: "auto",
-                                }}></div>
-                            </div>
-                            <label>Aspect Ratio: {aspectRatioDetails.displayName}</label>
-                            <input
-                                type="range"
-                                className="form-control-range"
-                                min={0}
-                                max={aspectRatios.length - 1}
-                                value={aspectRatio}
-                                onChange={(e) => {
-                                    setAspectRatio(parseInt(e.target.value));
-                                }}
-                            />
-                        </div>}
-                        <div className="form-group">
-                            <label
-                                id="loadimage-wrapper"
-                                className={`btn btn-primary btn-file`}
-                                style={{ display: "block", maxWidth: "300px", marginTop: "40px", marginRight: "auto", marginLeft: "auto", }}
-                            >
-                                {/* {input.encoded_image ? "Replace Image" : "Upload Image"} */}
-                                {/* upload image */}
-                                <i className="fas fa-upload"></i>&nbsp;
-                                Upload Image
-                                <input
-                                    id="loadimage"
-                                    type="file"
-                                    style={{ display: "none" }}
-                                    onChange={onImageSelected}
+                                    style={{
+                                        display: "block",
+                                        marginLeft: "auto",
+                                        marginRight: "auto",
+                                        maxWidth: "100%",
+                                    }}
+                                    src={`${assetsUrl}/${parentId}.image.jpg?updated_at=${parent.updated_at}`}
                                 />
-                            </label>
+                            </div>
+                        )}
+                        {encodedImage && (
+                            <div className="form-group">
+                                <label>Init Image</label>
+                                <img
+                                    style={{
+                                        display: "block",
+                                        marginLeft: "auto",
+                                        marginRight: "auto",
+                                        maxWidth: "100%",
+                                    }}
+                                    src={`data:image/jpeg;base64,${encodedImage}`}
+                                />
+                            </div>
+                        )}
+                        {!parent && !encodedImage && (
+                            <div className="form-group">
+                                <div
+                                    style={{
+                                        minHeight: "140px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    {/* aspect ratio slider, goes from 0 -> aspectRatios.length - 1 */}
+                                    <div
+                                        style={{
+                                            width: aspectRatioDetails.width / 8,
+                                            height:
+                                                aspectRatioDetails.height / 8,
+                                            // dotted line options: dotted, dashed, solid, double, groove, ridge, inset, outset, none, hidden
+                                            border: "1px dashed white",
+                                            margin: "auto",
+                                        }}
+                                    ></div>
+                                </div>
+                                <label>
+                                    Aspect Ratio:{" "}
+                                    {aspectRatioDetails.displayName}
+                                </label>
+                                <input
+                                    type="range"
+                                    className="form-control-range"
+                                    min={0}
+                                    max={aspectRatios.length - 1}
+                                    value={aspectRatio}
+                                    onChange={(e) => {
+                                        setAspectRatio(
+                                            parseInt(e.target.value)
+                                        );
+                                    }}
+                                />
+                            </div>
+                        )}
+                        <div className="form-group">
+                            <div
+                                style={{
+                                    display: "block",
+                                    maxWidth: encodedImage ? "350px" : "180px",
+                                    marginTop: "40px",
+                                    marginRight: "auto",
+                                    marginLeft: "auto",
+                                }}
+                            >
+                                <label
+                                    id="loadimage-wrapper"
+                                    className={`btn btn-primary `}
+                                    style={{display:"inline"}}
+                                >
+                                    {/* upload image */}
+                                    <i className="fas fa-upload"></i>&nbsp;
+                                    {encodedImage || parent
+                                        ? "Replace Image"
+                                        : "Upload Image"}
+                                    <input
+                                        id="loadimage"
+                                        type="file"
+                                        style={{ display: "none" }}
+                                        onChange={onImageSelected}
+                                    />
+                                </label>
+                                {encodedImage && <label
+                                    className="btn btn-secondary"
+                                    onClick={() => setEncodedImage("")}
+                                    style={{display:"inline"}}
+                                >
+                                    {/* remove image */}
+                                    <i className="fas fa-trash"></i>&nbsp;
+                                    Remove Image
+                                </label>}
+                            </div>
                         </div>
                         <div className="form-group">
                             {/* negative prompt */}
@@ -303,7 +366,8 @@ export const ImagePrompt: FC<Props> = ({
                             <div className="form-group">
                                 {/* variation strength */}
                                 <label htmlFor="variationStrength">
-                                    Variation Strength: {(variationStrength * 100).toFixed(0)}%
+                                    Variation Strength:{" "}
+                                    {(variationStrength * 100).toFixed(0)}%
                                 </label>
                                 <input
                                     type="range"
