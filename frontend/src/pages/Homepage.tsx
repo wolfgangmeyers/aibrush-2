@@ -26,6 +26,9 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
 
     const onSubmit = async (input: CreateImageInput) => {
         setCreating(true);
+        setParentImage(null);
+        setErr(null);
+        window.scrollTo(0, 0);
         try {
             const newImages = await api.createImage(input);
             setImages((images) =>
@@ -194,13 +197,18 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         setSelectedImage(image);
     };
 
+    const handleCancelFork = () => {
+        setParentImage(null);
+        window.scrollTo(0, 0);
+    };
+
     return (
         <>
             <h1 style={{ fontSize: "40px", textAlign: "left" }}>
                 Welcome to AiBrush
             </h1>
             
-            <ImagePrompt creating={creating} onSubmit={onSubmit} parent={parentImage} />
+            <ImagePrompt assetsUrl={assetsUrl} creating={creating} onSubmit={onSubmit} parent={parentImage} onCancel={() => handleCancelFork()} />
             <div className="homepage-images" style={{ marginTop: "48px" }}>
                 <InfiniteScroll
                     dataLength={images.length}

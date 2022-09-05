@@ -103,6 +103,10 @@ hr {
   border-color: #3D3BB5 !important;
 }
 
+.btn-primary:hover:enabled, a.btn-primary:hover {
+  border-color: #ffffff !important;
+}
+
 .container {
   min-height: 100vh;
   background-color: #000;
@@ -136,6 +140,11 @@ hr {
 .light-button {
   color: #3D3BB5 !important;
   background-color: #fff !important;
+}
+
+.light-button:hover:enabled {
+  border-color: #3D3BB5 !important;
+  color: #5c5ab3 !important;
 }
 
 /* Hide login splashscreen on mobile width */
@@ -243,6 +252,14 @@ hr {
   }
 }
 
+@media (max-width: 992px) {
+  .homepage-prompt-advanced {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 16px;
+  }
+}
+
 @media (min-width: 992px) {
   .image-popup-controls {
     margin-left: 80px;
@@ -268,6 +285,12 @@ hr {
   .homepage-images {
     margin-left: 20px;
     margin-right: 20px;
+  }
+
+  .homepage-prompt-advanced {
+    margin-left: 0px;
+    margin-right: 0px;
+    margin-top: 16px;
   }
 
 }
