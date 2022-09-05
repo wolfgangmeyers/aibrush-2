@@ -178,6 +178,12 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     stable_diffusion_strength?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateImageInput
+     */
+    count?: number;
 }
 
 /**
@@ -2789,7 +2795,7 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createImage(createImageInput?: CreateImageInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
+        async createImage(createImageInput?: CreateImageInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageList>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createImage(createImageInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3257,7 +3263,7 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createImage(createImageInput?: CreateImageInput, options?: any): AxiosPromise<Image> {
+        createImage(createImageInput?: CreateImageInput, options?: any): AxiosPromise<ImageList> {
             return localVarFp.createImage(createImageInput, options).then((request) => request(axios, basePath));
         },
         /**

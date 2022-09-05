@@ -263,10 +263,12 @@ def process_image():
                     print("Clearing model to free up memory for clip ranking")
                     clear_model()
                 prompts = "|".join(image.phrases)
-                negative_prompts = "|".join(image.negative_phrases)
+                negative_prompts = "|".join(image.negative_phrases).strip()
                 print(f"Calculating clip ranking for '{prompts}'")
                 score = get_clip_ranker().rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
-                negative_score = get_clip_ranker().rank(argparse.Namespace(text=negative_prompts, image=image_path, cpu=False))
+                if negative_prompts:
+                    print(f"Calculating negative clip ranking for '{prompts}'")
+                    negative_score = get_clip_ranker().rank(argparse.Namespace(text=negative_prompts, image=image_path, cpu=False))
                 with open(image_path, "rb") as f:
                     image_data = f.read()
                 # base64 encode image

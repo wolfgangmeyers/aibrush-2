@@ -277,7 +277,7 @@ export class BackendService {
         return thumbnail
     }
 
-    async createImage(createdBy: string, body: CreateImageInput): Promise<Image> {
+    private async createImage(createdBy: string, body: CreateImageInput): Promise<Image> {
         const client = await this.pool.connect()
         try {
             const result = await client.query(
@@ -329,6 +329,16 @@ export class BackendService {
         } finally {
             client.release()
         }
+    }
+
+    async createImages(createdBy: string, body: CreateImageInput): Promise<Array<Image>> {
+        console.log("createImages", createdBy, body)
+        const promises: Array<Promise<Image>> = [];
+        for (let i = 0; i < (body.count || 1); i++) {
+            promises.push(this.createImage(createdBy, body))
+        }
+        console.log("await...")
+        return Promise.all(promises)
     }
 
     async updateImage(id: string, body: UpdateImageInput): Promise<Image> {

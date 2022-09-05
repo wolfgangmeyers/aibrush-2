@@ -18,6 +18,9 @@ import { CreateWorkflow } from "./pages/CreateWorkflow";
 import { Workflows } from "./pages/Workflows";
 import { WorkflowDetail } from "./pages/WorkflowDetail";
 
+// V2 UI
+import { Homepage } from "./pages/Homepage";
+
 const config = getConfig();
 const httpClient = axios.default;
 const client = new AIBrushApi(
@@ -107,12 +110,12 @@ function App() {
                     onClick={() => onLogout()}
                   >
                     {/* font awesome logout icon */}
-                    <i className="fas fa-sign-out-alt"></i>&nbsp; Logout
+                    <i className="fas fa-sign-out-alt"></i>
                   </button>
                   {/* home button */}
                   <Link className="btn btn-primary top-button" to="/">
                     {/* font awesome home icon */}
-                    <i className="fas fa-home"></i>&nbsp; Home
+                    <i className="fas fa-home"></i>
                   </Link>
                   {/* Link to github project at https://github.com/wolfgangmeyers/aibrush-2 */}
                   <a
@@ -121,7 +124,7 @@ function App() {
                     target="_blank"
                   >
                     {/* font awesome github icon */}
-                    <i className="fab fa-github"></i>&nbsp;
+                    <i className="fab fa-github"></i>
                   </a>
                 </>
               )}
@@ -132,7 +135,8 @@ function App() {
           
           <Switch>
             <Route path="/" exact={true}>
-              <MainMenu isAdmin={isAdmin} />
+              {/* <MainMenu isAdmin={isAdmin} /> */}
+              <Homepage api={client} assetsUrl={assetsUrl} />
             </Route>
             <Route path="/create-image">
               <CreateImage api={client} apiUrl={config.apiUrl} />

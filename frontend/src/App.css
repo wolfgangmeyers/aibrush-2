@@ -52,6 +52,12 @@
 .top-button {
   float: right;
   margin: 10px;
+  font-size: 23px !important;
+  border-radius: 50px;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  padding-top: 3px !important;
+  padding-bottom: 3px !important;
 }
 
 .btn-group-vertical .btn {
@@ -97,10 +103,39 @@ hr {
   border-color: #3D3BB5 !important;
 }
 
+.container {
+  min-height: 100vh;
+  background-color: #000;
+  margin-left: 80px !important;
+  margin-right: 80px !important;
+  max-width: 90% !important;
+}
+
+/* for tablets */
+@media (max-width: 768px) {
+  .container {
+    margin-left: 20px !important;
+    margin-right: 20px !important;
+  }
+}
+
+/* for phones */
+@media (max-width: 480px) {
+  .container {
+    margin-left: 10px !important;
+    margin-right: 10px !important;
+  }
+}
+
 .center-cropped {
   width: 100%;
   height: 100vh;
   object-fit: cover;
+}
+
+.light-button {
+  color: #3D3BB5 !important;
+  background-color: #fff !important;
 }
 
 /* Hide login splashscreen on mobile width */
@@ -114,4 +149,125 @@ hr {
 @font-face {
   font-family: Futura;
   src: url("./fonts/futura\ medium\ bt.woff");
+}
+
+
+
+.image-popup-controls {
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
+.image-popup-delete-button {
+  color: #C62A2A !important;
+  background-color: rgba(0, 0, 0, 0.0) !important;
+  border: 1px solid #C62A2A !important;
+}
+
+.image-popup-delete-button:hover {
+  background-color: rgba(255, 150, 150, 0.1) !important;
+}
+
+.image-popup-button {
+  color: #fff !important;
+  background-color: rgba(0, 0, 0, 0.0) !important;
+  border: 1px solid #fff !important;
+}
+
+.image-popup-button:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.status-badge {
+  border-radius: 20px;
+  color: rgba(0, 0, 0, 0.5) !important;
+  font-size: 10px;
+  padding: 5px;
+  vertical-align: middle;
+}
+
+.status-badge-completed {
+  background-color: #31922F;
+}
+
+.status-badge-pending {
+  background-color: #FFF;
+}
+
+.status-badge-processing {
+  background-color: cyan;
+}
+
+
+.status-badge-saved {
+  background-color: cyan;
+}
+
+.status-badge-error {
+  background-color: #FF0000;
+}
+
+.helptext {
+  font-size: 12px;
+  margin-left: 16px;
+}
+
+.homepage-prompt {
+  margin-left: 120px;
+  margin-right: 120px;
+  margin-top: 88px;
+}
+
+.homepage-prompt-advanced {
+  margin-left: 144px;
+  margin-right: 144px;
+  margin-top: 16px;
+}
+
+.homepage-images {
+  margin-left: 184px;
+  margin-right: 184px;
+}
+
+/* For tablets */
+@media (max-width: 768px) {
+  .homepage-prompt {
+    margin-left: 80px;
+    margin-right: 80px;
+    margin-top: 88px;
+  }
+
+  .homepage-images {
+    margin-left: 144px;
+    margin-right: 144px;
+  }
+}
+
+@media (min-width: 992px) {
+  .image-popup-controls {
+    margin-left: 80px;
+    margin-right: 80px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .image-popup-controls {
+    margin-left: 160px;
+    margin-right: 160px;
+  }
+}
+
+/* For mobile */
+@media (max-width: 480px) {
+  .homepage-prompt {
+    margin-left: 0px;
+    margin-right: 0px;
+    margin-top: 88px;
+  }
+
+  .homepage-images {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
 }

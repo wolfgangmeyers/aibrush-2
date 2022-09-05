@@ -305,7 +305,7 @@ describe("server", () => {
                     iterations: 1,
                     parent: "",
                 })
-                image = response.data
+                image = response.data.images[0]
             })
 
             it("should return the image", () => {
@@ -518,7 +518,7 @@ describe("server", () => {
                             height: 512,
                             iterations: 1,
                         })
-                        childImage = response.data
+                        childImage = response.data.images[0]
                     })
 
                     describe("when getting image data", () => {
@@ -772,7 +772,7 @@ describe("server", () => {
                     height: 512,
                     iterations: 1,
                 })
-                image = response.data
+                image = response.data.images[0]
             })
 
             it("should return the image with enable_video=true", () => {
@@ -861,7 +861,7 @@ describe("server", () => {
                     iterations: 1,
                     enable_zoom: true,
                 })
-                image = response.data
+                image = response.data.images[0]
             })
 
             it("should return the image with enable_video=true and enable_zoom=true and default zoom options", () => {
@@ -974,7 +974,7 @@ describe("server", () => {
                     zoom_shift_x: 1,
                     zoom_shift_y: 2,
                 })
-                image = response.data
+                image = response.data.images[0]
             })
 
             it("should return the image with enable_video=true and enable_zoom=true and non-default zoom options", () => {
@@ -1037,7 +1037,7 @@ describe("server", () => {
                     height: 512,
                     iterations: 1
                 })
-                image = response.data
+                image = response.data.images[0]
             })
 
             it("should save the image data", async () => {
@@ -1069,7 +1069,7 @@ describe("server", () => {
                     height: 512,
                     iterations: 1
                 })
-                image = response.data
+                image = response.data.images[0]
             })
 
             it("should save the mask data", async () => {
@@ -1097,7 +1097,7 @@ describe("server", () => {
                     glid_3_xl_clip_guidance_scale: 300,
                     glid_3_xl_skip_iterations: 1
                 })
-                image = response.data
+                image = response.data.images[0]
             })
 
             it("should return the image", () => {
@@ -1125,7 +1125,7 @@ describe("server", () => {
                         height: 512,
                         iterations: 1
                     })
-                    images.push(resp.data)
+                    images.push(resp.data.images[0])
                     await sleep(100)
                 }
             })
@@ -1644,7 +1644,7 @@ describe("server", () => {
             })
 
             describe("when processing images for the creator's account", () => {
-                let createResponse: AxiosResponse<Image>;
+                let createResponse: AxiosResponse<ImageList>;
                 let response: AxiosResponse<Image>;
 
                 // create a new image
@@ -1666,12 +1666,12 @@ describe("server", () => {
                 it("should return pending images belonging to the creator", () => {
                     expect(response.status).toBe(200);
                     expect(response.data).not.toBeNull();
-                    expect(response.data.id).toEqual(createResponse.data.id);
+                    expect(response.data.id).toEqual(createResponse.data.images[0].id);
                 })
             })
 
             describe("when processing images for a different user's account", () => {
-                let createResponse: AxiosResponse<Image>;
+                let createResponse: AxiosResponse<ImageList>;
                 let response: AxiosResponse<Image>;
 
                 // create a new image
@@ -1711,7 +1711,7 @@ describe("server", () => {
             })
 
             describe("when processing images for the creator's account", () => {
-                let createResponse: AxiosResponse<Image>;
+                let createResponse: AxiosResponse<ImageList>;
                 let response: AxiosResponse<Image>;
 
                 // create a new image
@@ -1733,12 +1733,12 @@ describe("server", () => {
                 it("should return pending images belonging to the creator", () => {
                     expect(response.status).toBe(200);
                     expect(response.data).not.toBeNull();
-                    expect(response.data.id).toEqual(createResponse.data.id);
+                    expect(response.data.id).toEqual(createResponse.data.images[0].id);
                 })
             })
 
             describe("when processing images for a different user's account", () => {
-                let createResponse: AxiosResponse<Image>;
+                let createResponse: AxiosResponse<ImageList>;
                 let response: AxiosResponse<Image>;
 
                 // create a new image
@@ -1762,7 +1762,7 @@ describe("server", () => {
                 it("should return pending images belonging to the creator", () => {
                     expect(response.status).toBe(200);
                     expect(response.data).not.toBeNull();
-                    expect(response.data.id).toEqual(createResponse.data.id);
+                    expect(response.data.id).toEqual(createResponse.data.images[0].id);
                 })
             })
 
@@ -1770,7 +1770,7 @@ describe("server", () => {
 
         // svg jobs tests
         describe("when creating a new svg job", () => {
-            let createImageResponse: AxiosResponse<Image>;
+            let createImageResponse: AxiosResponse<ImageList>;
             let createSvgResponse: AxiosResponse<SvgJob>;
 
             beforeEach(async () => {
@@ -1797,7 +1797,7 @@ describe("server", () => {
 
             beforeEach(async () => {
                 // update image to completed
-                await client2.updateImage(createImageResponse.data.id, {
+                await client2.updateImage(createImageResponse.data.images[0].id, {
                     status: UpdateImageInputStatusEnum.Completed,
                 })
             })
@@ -1805,7 +1805,7 @@ describe("server", () => {
             beforeEach(async () => {
                 // create the svg job
                 createSvgResponse = await client.createSvgJob({
-                    image_id: createImageResponse.data.id,
+                    image_id: createImageResponse.data.images[0].id,
                 })
             })
 
@@ -1816,7 +1816,7 @@ describe("server", () => {
                 expect(createSvgResponse.data.created_at).toBeDefined();
                 expect(createSvgResponse.data.updated_at).toBeDefined();
                 expect(createSvgResponse.data.status).toEqual(SvgJobStatusEnum.Pending);
-                expect(createSvgResponse.data.image_id).toEqual(createImageResponse.data.id);
+                expect(createSvgResponse.data.image_id).toEqual(createImageResponse.data.images[0].id);
                 expect(createSvgResponse.data.created_by).toEqual(hash("test@test.test"));
             })
 
@@ -1834,7 +1834,7 @@ describe("server", () => {
                     expect(response.data.created_at).toBeDefined();
                     expect(response.data.updated_at).toBeDefined();
                     expect(response.data.status).toEqual(SvgJobStatusEnum.Pending);
-                    expect(response.data.image_id).toEqual(createImageResponse.data.id);
+                    expect(response.data.image_id).toEqual(createImageResponse.data.images[0].id);
                     expect(response.data.created_by).toEqual(hash("test@test.test"))
                 })
             })
@@ -1865,7 +1865,7 @@ describe("server", () => {
                     expect(response.data.created_at).toBeDefined();
                     expect(response.data.updated_at).toBeDefined();
                     expect(response.data.status).toEqual(SvgJobStatusEnum.Pending);
-                    expect(response.data.image_id).toEqual(createImageResponse.data.id);
+                    expect(response.data.image_id).toEqual(createImageResponse.data.images[0].id);
                     expect(response.data.created_by).toEqual(hash("test@test.test"))
                 })
             })
@@ -1899,7 +1899,7 @@ describe("server", () => {
                     expect(response.data.created_at).toBeDefined();
                     expect(response.data.updated_at).toBeDefined();
                     expect(response.data.status).toEqual(SvgJobStatusEnum.Processing);
-                    expect(response.data.image_id).toEqual(createImageResponse.data.id);
+                    expect(response.data.image_id).toEqual(createImageResponse.data.images[0].id);
                     expect(response.data.created_by).toEqual(hash("test@test.test"));
                 })
 
@@ -1919,7 +1919,7 @@ describe("server", () => {
                         expect(response.data.created_at).toBeDefined();
                         expect(response.data.updated_at).toBeDefined();
                         expect(response.data.status).toEqual(SvgJobStatusEnum.Completed);
-                        expect(response.data.image_id).toEqual(createImageResponse.data.id);
+                        expect(response.data.image_id).toEqual(createImageResponse.data.images[0].id);
                         expect(response.data.created_by).toEqual(hash("test@test.test"))
                     })
                 })
@@ -1970,7 +1970,7 @@ describe("server", () => {
                     expect(response.data.created_at).toBeDefined();
                     expect(response.data.updated_at).toBeDefined();
                     expect(response.data.status).toEqual(SvgJobStatusEnum.Processing);
-                    expect(response.data.image_id).toEqual(createImageResponse.data.id);
+                    expect(response.data.image_id).toEqual(createImageResponse.data.images[0].id);
                     expect(response.data.created_by).toEqual(hash("test@test.test"));
                 })
             })

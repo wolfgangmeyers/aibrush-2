@@ -292,8 +292,10 @@ export class Server {
         this.app.post("/api/images", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
-                const image = await this.backendService.createImage(jwt.userId, req.body)
-                res.json(image)
+                const images = await this.backendService.createImages(jwt.userId, req.body)
+                res.json({
+                    images
+                })
             } catch (err) {
                 console.error(err)
                 res.sendStatus(500)
