@@ -174,25 +174,24 @@ export const ImagePrompt: FC<Props> = ({
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                     />
-                    {!advancedView && (
-                        <div className="input-group-append">
-                            <button
-                                type="submit"
-                                className="btn btn-secondary light-button"
-                                style={{ marginLeft: "8px" }}
-                                disabled={!prompt || creating}
-                            >
-                                {/* paintbrush button */}
-                                {!creating && (
-                                    <i className="fas fa-paint-brush"></i>
-                                )}
-                                {/* spinner button */}
-                                {creating && (
-                                    <i className="fas fa-spinner fa-spin"></i>
-                                )}
-                            </button>
-                        </div>
-                    )}
+
+                    <div className="input-group-append">
+                        <button
+                            type="submit"
+                            className="btn btn-secondary light-button"
+                            style={{ marginLeft: "8px" }}
+                            disabled={!prompt || creating}
+                        >
+                            {/* paintbrush button */}
+                            {!creating && (
+                                <i className="fas fa-paint-brush"></i>
+                            )}
+                            {/* spinner button */}
+                            {creating && (
+                                <i className="fas fa-spinner fa-spin"></i>
+                            )}
+                        </button>
+                    </div>
                 </div>
                 <div
                     style={{
@@ -299,7 +298,7 @@ export const ImagePrompt: FC<Props> = ({
                                 <label
                                     id="loadimage-wrapper"
                                     className={`btn btn-primary `}
-                                    style={{display:"inline"}}
+                                    style={{ display: "inline" }}
                                 >
                                     {/* upload image */}
                                     <i className="fas fa-upload"></i>&nbsp;
@@ -313,15 +312,17 @@ export const ImagePrompt: FC<Props> = ({
                                         onChange={onImageSelected}
                                     />
                                 </label>
-                                {encodedImage && <label
-                                    className="btn btn-secondary"
-                                    onClick={() => setEncodedImage("")}
-                                    style={{display:"inline"}}
-                                >
-                                    {/* remove image */}
-                                    <i className="fas fa-trash"></i>&nbsp;
-                                    Remove Image
-                                </label>}
+                                {encodedImage && (
+                                    <label
+                                        className="btn btn-secondary"
+                                        onClick={() => setEncodedImage("")}
+                                        style={{ display: "inline" }}
+                                    >
+                                        {/* remove image */}
+                                        <i className="fas fa-trash"></i>&nbsp;
+                                        Remove Image
+                                    </label>
+                                )}
                             </div>
                         </div>
                         <div className="form-group">
