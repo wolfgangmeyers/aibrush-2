@@ -362,11 +362,11 @@ export const ImagePrompt: FC<Props> = ({
                                 This is how many images you want to generate
                             </span>
                         </div>
-                        {parentId && (
+                        {(parentId || encodedImage) && (
                             <div className="form-group">
                                 {/* variation strength */}
                                 <label htmlFor="variationStrength">
-                                    Variation Strength:{" "}
+                                    Variation Strength:&nbsp;
                                     {(variationStrength * 100).toFixed(0)}%
                                 </label>
                                 <input

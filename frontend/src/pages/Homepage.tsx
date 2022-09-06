@@ -32,14 +32,15 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         try {
             const newImages = await api.createImage(input);
             setImages((images) => {
-                    // there is a race condition where poll images can fire before this callback
-                    // so double-check to avoid duplicates
-                    const imagesToAdd = (newImages.data.images || []).filter((image) => {
+                // there is a race condition where poll images can fire before this callback
+                // so double-check to avoid duplicates
+                const imagesToAdd = (newImages.data.images || []).filter(
+                    (image) => {
                         return !images.find((i) => i.id === image.id);
-                    });
-                    return [...imagesToAdd, ...images].sort(sortImages)
-                }
-            );
+                    }
+                );
+                return [...imagesToAdd, ...images].sort(sortImages);
+            });
         } catch (e: any) {
             console.error(e);
             setErr("Error creating image");
@@ -123,6 +124,24 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             clearInterval(timerHandle);
         };
     }, [api, images]);
+
+    useEffect(() => {
+        // de-duplicate images by id
+        // first check if there are any duplicates
+        // I know, I should figure out where the duplicates are coming from,
+        // but I'm lazy.
+        const ids = images.map((image) => image.id);
+        const uniqueIds = new Set(ids);
+        if (ids.length !== uniqueIds.size) {
+            setImages((images) => {
+                // there are duplicates
+                const uniqueImages = images.filter((image, index) => {
+                    return ids.indexOf(image.id) === index;
+                });
+                return uniqueImages.sort(sortImages);
+            });
+        }
+    }, [images]);
 
     const isPendingOrProcessing = (image: Image) => {
         return (
@@ -213,8 +232,14 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             <h1 style={{ fontSize: "40px", textAlign: "left" }}>
                 Welcome to AiBrush
             </h1>
-            
-            <ImagePrompt assetsUrl={assetsUrl} creating={creating} onSubmit={onSubmit} parent={parentImage} onCancel={() => handleCancelFork()} />
+
+            <ImagePrompt
+                assetsUrl={assetsUrl}
+                creating={creating}
+                onSubmit={onSubmit}
+                parent={parentImage}
+                onCancel={() => handleCancelFork()}
+            />
             <div className="homepage-images" style={{ marginTop: "48px" }}>
                 <InfiniteScroll
                     dataLength={images.length}
