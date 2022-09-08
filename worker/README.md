@@ -31,13 +31,11 @@ pip install torch torchvision torchaudio --extra-index-url https://download.pyto
 
 ```sh
 pip install transformers==4.19.2 diffusers invisible-watermark
-pip install https://github.com/CompVis/stable-diffusion#egg=latent-diffusion
+pip install git+https://github.com/CompVis/stable-diffusion#egg=latent-diffusion
 ```
 
 In order to use stable diffusion, you need to download the weights. Navigate
 [here](https://huggingface.co/CompVis/stable-diffusion-v-1-4-original) and agree to terms so you can download the weights (`sd-v1-4.ckpt`).
-
-The config is at https://github.com/CompVis/stable-diffusion/blob/main/configs/stable-diffusion/v1-inference.yaml
 
 In the `worker` folder, move the config to `configs/stable-diffusion/` and
 move the weights to `models/ldm/stable-diffusion-v1` and rename to `model.ckpt`

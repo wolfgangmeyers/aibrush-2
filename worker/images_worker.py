@@ -15,7 +15,7 @@ from io import BytesIO
 
 import clip_process
 from model_process import ModelProcess
-from glid_3_xl_model import generate_model_signature
+# from glid_3_xl_model import generate_model_signature
 from memutil import get_free_memory
 
 
@@ -308,15 +308,15 @@ def process_image():
             clear_model()
             model_name = image.model
             create_model()
-        else:
-            # special case for glid_3_xl
-            if image.model == "glid_3_xl":
-                global model_signature
-                # check model signature
-                if model_signature != generate_model_signature(args):
-                    clear_model()
-                    create_model()
-                    model_signature = generate_model_signature(args)
+        # else:
+        #     # special case for glid_3_xl
+        #     if image.model == "glid_3_xl":
+        #         global model_signature
+        #         # check model signature
+        #         if model_signature != generate_model_signature(args):
+        #             clear_model()
+        #             create_model()
+        #             model_signature = generate_model_signature(args)
 
         update_image(0, "processing")
 
