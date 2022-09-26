@@ -9,6 +9,7 @@ interface ImagePopupProps {
     onClose: () => void;
     onDelete?: (image: Image) => void;
     onFork?: (image: Image) => void;
+    onEdit?: (image: Image) => void;
 }
 
 export const ImagePopup: FC<ImagePopupProps> = ({
@@ -17,6 +18,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     onClose,
     onDelete,
     onFork,
+    onEdit,
 }) => {
     const img = useRef<HTMLImageElement>(null);
     const src = `${assetsUrl}/${image.id}.image.jpg?updated_at=${image.updated_at}`;
@@ -131,6 +133,18 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                     >
                                         <i className="fas fa-trash-alt"></i>
                                         &nbsp;DELETE
+                                    </button>
+                                )}
+                                {onEdit && (
+                                    <button
+                                        className="btn btn-primary btn-sm image-popup-button"
+                                        onClick={() =>
+                                            onEdit && onEdit(image)
+                                        }
+                                        style={{ marginRight: "5px" }}
+                                    >
+                                        <i className="fas fa-edit"></i>
+                                        &nbsp;EDIT
                                     </button>
                                 )}
                             </div>

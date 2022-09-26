@@ -6,17 +6,11 @@ import "./bootstrap.min.css";
 import { AIBrushApi, LoginResult, FeatureList } from "./client/api";
 import { getConfig } from "./config";
 import { Login } from "./pages/Login";
-import { MainMenu } from "./pages/MainMenu";
-import { CreateImage } from "./pages/CreateImage";
-import { ImagesPage } from "./pages/Images";
 import { TokenRefresher } from "./components/TokenRefresher";
 import { Healthchecker } from "./components/Healthchecker";
-import { SuggestionsPage } from "./pages/Suggestions";
 import { WorkerConfigPage } from "./pages/WorkerConfig";
 import { Admin } from "./pages/Admin";
-import { CreateWorkflow } from "./pages/CreateWorkflow";
-import { Workflows } from "./pages/Workflows";
-import { WorkflowDetail } from "./pages/WorkflowDetail";
+import { ImageEditor } from "./pages/image-editor/ImageEditor";
 
 // V2 UI
 import { Homepage } from "./pages/Homepage";
@@ -138,40 +132,14 @@ function App() {
               {/* <MainMenu isAdmin={isAdmin} /> */}
               <Homepage api={client} assetsUrl={assetsUrl} />
             </Route>
-            <Route path="/create-image">
-              <CreateImage api={client} apiUrl={config.apiUrl} />
+            <Route path="/images/:id">
+              <Homepage api={client} assetsUrl={assetsUrl} />
             </Route>
-            <Route path="/images">
-              <ImagesPage
-                apiUrl={config.apiUrl}
-                api={client}
-                assetsUrl={assetsUrl}
-              />
-            </Route>
-            {/* /suggestions route */}
-            <Route path="/suggestions">
-              <SuggestionsPage api={client} apiUrl={config.apiUrl} />
+            <Route path="/image-editor/:id">
+              <ImageEditor api={client} assetsUrl={assetsUrl} />
             </Route>
             <Route path="/worker-config">
               <WorkerConfigPage api={client} />
-            </Route>
-
-            <Route path="/create-workflow">
-              <CreateWorkflow
-                api={client}
-                apiUrl={config.apiUrl}
-                assetsUrl={assetsUrl}
-              />
-            </Route>
-            <Route path="/workflows" exact={true}>
-              <Workflows api={client} />
-            </Route>
-            <Route path="/workflows/:id">
-              <WorkflowDetail
-                api={client}
-                apiUrl={config.apiUrl}
-                assetsUrl={assetsUrl}
-              />
             </Route>
             {isAdmin && (
               <>

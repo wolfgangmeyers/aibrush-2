@@ -1,5 +1,6 @@
 // V2 page
 import React, { FC, useState, useEffect } from "react";
+import { useParams, useHistory } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
@@ -23,6 +24,24 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
     const [images, setImages] = useState<Array<Image>>([]);
     const [err, setErr] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState<boolean>(true);
+    const { id } = useParams<{ id?: string }>();
+    const history = useHistory();
+
+    useEffect(() => {
+        if (id) {
+            // check if the image is already loaded
+            const image = images.find((image) => image.id === id);
+            if (image) {
+                setSelectedImage(image);
+            }
+            // refresh
+            api.getImage(id).then((image) => {
+                setSelectedImage(image.data);
+            });
+        } else {
+            setSelectedImage(null);
+        }
+    }, [id]);
 
     const onSubmit = async (input: CreateImageInput) => {
         setCreating(true);
@@ -214,12 +233,18 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
 
     const onFork = async (image: Image) => {
         setParentImage(image);
-        setSelectedImage(null);
+        // setSelectedImage(null);
+        history.push("/")
         window.scrollTo(0, 0);
     };
 
+    const onEdit = async (image: Image) => {
+        history.push(`/image-editor/${image.id}`);
+    };
+
     const onThumbnailClicked = (image: Image) => {
-        setSelectedImage(image);
+        // setSelectedImage(image);
+        history.push(`/images/${image.id}`)
     };
 
     const handleCancelFork = () => {
@@ -262,15 +287,18 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 <ImagePopup
                     assetsUrl={assetsUrl}
                     image={selectedImage}
-                    onClose={() => setSelectedImage(null)}
+                    onClose={() => history.push("/")}
                     onDelete={(image) => {
                         onDelete(image);
                         setImages(images.filter((i) => i.id !== image.id));
-                        setSelectedImage(null);
+                        history.push("/");
                     }}
                     onFork={(image) => {
                         onFork(image);
-                        setSelectedImage(null);
+                        history.push("/");
+                    }}
+                    onEdit={(image) => {
+                        onEdit(image);
                     }}
                 />
             )}

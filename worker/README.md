@@ -31,7 +31,7 @@ pip install torch torchvision torchaudio --extra-index-url https://download.pyto
 
 ```sh
 pip install transformers==4.19.2 diffusers invisible-watermark
-pip install git+https://github.com/CompVis/stable-diffusion#egg=latent-diffusion
+pip install -e git+https://github.com/CompVis/stable-diffusion#egg=latent-diffusion
 ```
 
 In order to use stable diffusion, you need to download the weights. Navigate

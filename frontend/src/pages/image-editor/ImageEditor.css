@@ -1,0 +1,10 @@
+.image-editor-canvas {
+    width: 80%;
+}
+
+/* extra large screen */
+@media (min-width: 1500px) {
+    .image-editor-canvas {
+        width: 60%;
+    }
+}
