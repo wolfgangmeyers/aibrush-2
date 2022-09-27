@@ -7,7 +7,8 @@ import { getUpscaleLevel } from "../../lib/upscale";
 import "./ImageEditor.css";
 import { createRenderer, Renderer } from "./renderer";
 import { Tool, DummyTool } from "./tool";
-import { SelectionTool } from "./selection-tool";
+import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
+import { EnhanceTool, EnhanceControls } from "./enhance-tool";
 
 interface Props {
     api: AIBrushApi;
@@ -22,33 +23,45 @@ interface ToolConfig {
     defaultArgs: any;
 }
 
-export const ImageEditor: React.FC<Props> = ({ api, assetsUrl }) => {
+export const ImageEditor: React.FC<Props> = ({ api }) => {
+    const [showSelectionControls, setShowSelectionControls] = useState(false);
     const tools: Array<ToolConfig> = [
         {
             name: "select",
             iconClass: "far fa-square",
             constructor: (r: Renderer) => new SelectionTool(r),
             renderControls: (t: Tool, renderer: Renderer) => {
-                const upscaleLevel = getUpscaleLevel(renderer.getWidth(), renderer.getHeight());
-                return <></>;
+                return <SelectionControls tool={t} renderer={renderer} />;
             },
-            defaultArgs: {},
+            defaultArgs: {
+                selectionWidth: 512,
+                selectionHeight: 512,
+            },
         },
         {
             name: "enhance",
             iconClass: "fas fa-magic",
-            constructor: (r: Renderer) => new DummyTool("enhance"),
+            constructor: (r: Renderer) => new EnhanceTool(r),
             defaultArgs: {
                 variationStrength: 0.75,
             },
-            renderControls: (t: Tool, renderer: Renderer) => <></>,
+            renderControls: (t: Tool, renderer: Renderer) => {
+                t.onShowSelectionControls(setShowSelectionControls);
+                return (
+                    <EnhanceControls
+                        tool={t as EnhanceTool}
+                        renderer={renderer}
+                        api={api}
+                        image={image!}
+                    />
+                );
+            },
         },
     ];
 
-    // const [image, setImage] = useState<APIImage | null>(null);
+    const [image, setImage] = useState<APIImage | null>(null);
     const [renderer, setRenderer] = useState<Renderer | null>(null);
     const [tool, setTool] = useState<Tool | null>(null);
-    const [resizing, setResizing] = useState(false);
 
     const { id } = useParams<{ id: string }>();
     const history = useHistory();
@@ -66,7 +79,10 @@ export const ImageEditor: React.FC<Props> = ({ api, assetsUrl }) => {
                 : toolConfig.defaultArgs;
             // check if the renderer width/height is a base aspect ratio. If so, automatically
             // set the selection width and height to the base aspect ratio.
-            const upscaleLevel = getUpscaleLevel(renderer!.getWidth(), renderer!.getHeight());
+            const upscaleLevel = getUpscaleLevel(
+                renderer!.getWidth(),
+                renderer!.getHeight()
+            );
             if (upscaleLevel == 0) {
                 args.selectionWidth = renderer!.getWidth();
                 args.selectionHeight = renderer!.getHeight();
@@ -81,23 +97,36 @@ export const ImageEditor: React.FC<Props> = ({ api, assetsUrl }) => {
             const tool = toolconfig.constructor(renderer);
             tool.configure(loadToolArgs(toolconfig)); // TODO: save and load config for widget
             setTool(tool);
+            tool.onSaveImage((encodedImage) => {
+                console.log("Saving image...")
+                api.updateImage(id, {
+                    encoded_image: encodedImage,
+                });
+            });
         }
     };
 
     useEffect(() => {
         api.getImage(id).then((image) => {
-            const src = `${assetsUrl}/${image.data.id}.image.jpg?updated_at=${image.data.updated_at}`;
-            const imageElement = new Image();
-            imageElement.src = src;
-            imageElement.onload = () => {
-                if (!canvasRef.current) {
-                    console.error("Failed to get canvas");
-                    return;
+            setImage(image.data);
+            api.getImageData(id, {
+                responseType: "arraybuffer"
+            }).then((resp) => {
+                const binaryImageData = Buffer.from(resp.data, "binary");
+                const base64ImageData = binaryImageData.toString("base64");
+                const src = `data:image/jpeg;base64,${base64ImageData}`;
+                const imageElement = new Image();
+                imageElement.src = src;
+                imageElement.onload = () => {
+                    if (!canvasRef.current) {
+                        console.error("Failed to get canvas");
+                        return;
+                    }
+                    const renderer = createRenderer(canvasRef.current);
+                    renderer.setBaseImage(imageElement);
+                    setRenderer(renderer);
                 }
-                const renderer = createRenderer(canvasRef.current);
-                renderer.setBaseImage(imageElement);
-                setRenderer(renderer);
-            };
+            });
         });
     }, [id]);
 
@@ -125,7 +154,8 @@ export const ImageEditor: React.FC<Props> = ({ api, assetsUrl }) => {
     function renderTool(t: ToolConfig) {
         let buttonClass = `btn btn-secondary light-button image-editor-tool-button`;
         console.log(`tool: ${tool && tool.name}, t.name: ${t.name}`);
-        if (tool && tool.name == t.name) {
+        const isSelected = tool && tool.name == t.name;
+        if (isSelected) {
             buttonClass = `btn btn-primary image-editor-tool-button`;
         }
         return (
@@ -137,6 +167,7 @@ export const ImageEditor: React.FC<Props> = ({ api, assetsUrl }) => {
                 <label>
                     {t.name.charAt(0).toUpperCase() + t.name.slice(1)}
                 </label>
+                {isSelected && t.renderControls(tool!, renderer!)}
             </div>
         );
     }
@@ -162,26 +193,65 @@ export const ImageEditor: React.FC<Props> = ({ api, assetsUrl }) => {
                     {renderer && <>{tools.map((tool) => renderTool(tool))}</>}
                 </div>
                 <div className="col-lg-9">
-                    <canvas
-                        ref={canvasRef}
-                        className="image-editor-canvas"
-                        onMouseDown={(e) => tool && tool.onMouseDown(e)}
-                        onMouseMove={(e) => tool && tool.onMouseMove(e)}
-                        onMouseUp={(e) => tool && tool.onMouseUp(e)}
-                        onMouseLeave={(e) => tool && tool.onMouseLeave(e)}
-                        // onWheel={e => tool && tool.onWheel(e)}
-                    />
-                    <br />
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => {
-                            if (renderer) {
-                                renderer.updateZoomAndOffset(1, 0, 0);
-                            }
-                        }}
-                    >
-                        Reset View
-                    </button>
+                    <div style={{ verticalAlign: "middle" }}>
+                        {showSelectionControls && (
+                            <>
+                                <div
+                                    style={{ float: "left", marginTop: "45%" }}
+                                >
+                                    <button
+                                        // center vertically
+
+                                        className="btn btn-secondary"
+                                        onClick={() => tool!.select("left")}
+                                    >
+                                        <i className="fas fa-chevron-left"></i>
+                                    </button>
+                                </div>
+                                <div
+                                    style={{ float: "right", marginTop: "45%" }}
+                                >
+                                    <button
+                                        // center vertically
+
+                                        className="btn btn-secondary"
+                                        onClick={() => tool!.select("right")}
+                                    >
+                                        <i className="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
+                        <canvas
+                            ref={canvasRef}
+                            className="image-editor-canvas"
+                            onMouseDown={(e) => tool && tool.onMouseDown(e)}
+                            onMouseMove={(e) => tool && tool.onMouseMove(e)}
+                            onMouseUp={(e) => tool && tool.onMouseUp(e)}
+                            onMouseLeave={(e) => tool && tool.onMouseLeave(e)}
+                            // onWheel={e => tool && tool.onWheel(e)}
+                        />
+                    </div>
+                    <div className="row">
+                        <button
+                            className="btn btn-primary"
+                            // center horizontally
+                            style={{
+                                position: "absolute",
+                                left: "50%",
+                                transform: "translate(-50%, 0)",
+                            }}
+                            onClick={() => {
+                                if (renderer) {
+                                    renderer.updateZoomAndOffset(1, 0, 0);
+                                }
+                            }}
+                        >
+                            Reset View
+                        </button>
+                    </div>
+                    {/* vertically center button within the div */}
                 </div>
             </div>
         </>

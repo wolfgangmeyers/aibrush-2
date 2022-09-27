@@ -1,22 +1,25 @@
+import React, { useState, useEffect } from "react";
 import { Cursor, Rect, Renderer } from "./renderer";
-import { Tool } from "./tool";
+import { Tool, DummyTool } from "./tool";
+import { AspectRatioSelector } from "../../components/AspectRatioSelector";
+import { getUpscaleLevel } from "../../lib/upscale";
+import {
+    DEFAULT_ASPECT_RATIO,
+    aspectRatios,
+} from "../../lib/aspecRatios";
 
-export class SelectionTool implements Tool {
+export class SelectionTool extends DummyTool implements Tool {
     private renderer: Renderer;
     private selectionOverlay: Rect | undefined;
     private selectionOverlayPreview: Rect | undefined;
 
     private selectionWidth: number = 512;
     private selectionHeight: number = 512;
-    
+
     private panning = false;
 
-    // getter for name
-    get name(): string {
-        return "select";
-    }
-
     constructor(renderer: Renderer) {
+        super("select");
         this.renderer = renderer;
     }
 
@@ -29,7 +32,7 @@ export class SelectionTool implements Tool {
             y: 0,
             width: this.selectionWidth,
             height: this.selectionHeight,
-        }
+        };
         this.sync();
     }
 
@@ -39,7 +42,6 @@ export class SelectionTool implements Tool {
     }
 
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
-        
         if (this.selectionOverlayPreview && event.button === 0) {
             this.selectionOverlay = this.selectionOverlayPreview;
             this.selectionOverlayPreview = undefined;
@@ -53,11 +55,12 @@ export class SelectionTool implements Tool {
         const imageWidth = this.renderer.getWidth();
         const imageHeight = this.renderer.getHeight();
         if (this.panning) {
-
             let movementX = event.movementX;
             let movementY = event.movementY;
             // translate offset to canvas coordinates
-            let rect = (event.target as HTMLCanvasElement).getBoundingClientRect();
+            let rect = (
+                event.target as HTMLCanvasElement
+            ).getBoundingClientRect();
             movementX = (movementX / rect.width) * imageWidth;
             movementY = (movementY / rect.height) * imageHeight;
 
@@ -84,11 +87,11 @@ export class SelectionTool implements Tool {
 
             // translate offset to canvas coordinates
             let rect = event.currentTarget.getBoundingClientRect();
-            
+
             x = (x / rect.width) * imageWidth;
             y = (y / rect.height) * imageHeight;
 
-            x = x - offsetX
+            x = x - offsetX;
             y = y - offsetY;
 
             // round to the nearest 64 pixels
@@ -108,7 +111,7 @@ export class SelectionTool implements Tool {
                 y: y,
                 width: this.selectionWidth,
                 height: this.selectionHeight,
-            }
+            };
             this.sync();
         }
     }
@@ -123,13 +126,13 @@ export class SelectionTool implements Tool {
         this.sync();
     }
 
-    onKeyDown(event: KeyboardEvent) {
-        // TODO
-    }
+    // onKeyDown(event: KeyboardEvent) {
+    //     // TODO
+    // }
 
-    onKeyUp(event: KeyboardEvent) {
-        // TODO
-    }
+    // onKeyUp(event: KeyboardEvent) {
+    //     // TODO
+    // }
 
     onWheel(event: WheelEvent) {
         const originalZoom = this.renderer.getZoom();
@@ -146,8 +149,7 @@ export class SelectionTool implements Tool {
 
         if (event.deltaY < 0) {
             zoom += 0.1;
-        }
-        else {
+        } else {
             zoom -= 0.1;
         }
         zoom = Math.max(0.1, Math.min(zoom, 2.0));
@@ -160,3 +162,33 @@ export class SelectionTool implements Tool {
         this.renderer.setSelectionOverlayPreview(undefined);
     }
 }
+
+interface ControlsProps {
+    renderer: Renderer;
+    tool: Tool;
+}
+
+export const Controls: React.FC<ControlsProps> = ({ renderer, tool }) => {
+    const upscaleLevel = getUpscaleLevel(
+        renderer.getWidth(),
+        renderer.getHeight()
+    );
+    const [aspectRatio, setAspectRatio] = useState(DEFAULT_ASPECT_RATIO);
+    return (
+        <>
+            {upscaleLevel > 0 && (
+                <AspectRatioSelector
+                    aspectRatio={aspectRatio}
+                    onChange={(aspectRatioId) => {
+                        const aspectRatio = aspectRatios[aspectRatioId];
+                        tool.configure({
+                            selectionWidth: aspectRatio.width,
+                            selectionHeight: aspectRatio.height,
+                        });
+                        setAspectRatio(aspectRatioId);
+                    }}
+                />
+            )}
+        </>
+    );
+};

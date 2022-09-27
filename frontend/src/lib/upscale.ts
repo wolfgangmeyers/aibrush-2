@@ -26,5 +26,5 @@ export function getUpscaleLevel(width: number, height: number): number {
             return upscaleLevel;
         }
     }
-    throw new Error("Invalid image size");
+    return -1;
 }

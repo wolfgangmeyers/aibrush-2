@@ -21,6 +21,7 @@ class renderer {
 
     private selectionOverlay: Rect | undefined;
     private selectionOverlayPreview: Rect | undefined;
+    private hasSelection: boolean = false;
     private cursor: Cursor | undefined;
 
     private zoom: number;
@@ -48,7 +49,9 @@ class renderer {
             // context.drawImage(this.backgroundLayer, 0, 0);
             context.drawImage(this.baseImageLayer, 0, 0);
             context.drawImage(this.selectionLayer, 0, 0);
-            context.drawImage(this.overlayLayer, 0, 0);
+            if (!this.hasSelection) {
+                context.drawImage(this.overlayLayer, 0, 0);
+            }
         }
     }
 
@@ -81,11 +84,14 @@ class renderer {
         }
     }
 
-    setSelection(imageData: ImageData ) {
+    setSelection(imageData: ImageData | null) {
+        this.hasSelection = !!imageData;
         const context = this.selectionLayer.getContext('2d');
         if (context && this.selectionOverlay) {
             context.clearRect(0, 0, this.selectionLayer.width, this.selectionLayer.height);
-            context.putImageData(imageData, this.selectionOverlay.x, this.selectionOverlay.y);
+            if (imageData) {
+                context.putImageData(imageData, this.selectionOverlay.x, this.selectionOverlay.y);
+            }
             this.render();
         }
     }
@@ -176,12 +182,58 @@ class renderer {
     getHeight(): number {
         return this.canvas.height;
     }
+
+    getEncodedImage(selection: Rect | null): string | undefined {
+        if (!selection) {
+            selection = {
+                x: 0,
+                y: 0,
+                width: this.canvas.width,
+                height: this.canvas.height,
+            }
+        }
+        // get image data of the selection
+        let context = this.baseImageLayer.getContext('2d');
+        if (context) {
+            const imageData = context.getImageData(
+                selection.x,
+                selection.y,
+                selection.width,
+                selection.height,
+            );
+            // create a canvas and draw the image data on it
+            const canvas = document.createElement('canvas');
+            canvas.width = imageData.width;
+            canvas.height = imageData.height;
+            context = canvas.getContext('2d');
+            if (context) {
+                context.putImageData(imageData, 0, 0);
+                // return the data url of the canvas
+                const result = canvas.toDataURL("image/jpeg");
+                // cleanup the canvas
+                canvas.remove();
+                // extract base64 data from data url
+                return result.split(',')[1];
+            }
+        }
+    }
+
+    commitSelection() {
+        // draw the selection overlay on the base image layer
+        if (this.selectionOverlay) {
+            const context = this.baseImageLayer.getContext('2d');
+            if (context) {
+                context.drawImage(this.selectionLayer, 0, 0);
+                this.setSelection(null);
+            }
+        }
+    }
 }
 
 export interface Renderer {
     render(): void;
     setBaseImage(image: HTMLImageElement): void;
-    setSelection(imageData: ImageData): void;
+    setSelection(imageData: ImageData | null): void;
     setSelectionOverlay(selectionOverlay: Rect | undefined): void;
     setSelectionOverlayPreview(selectionOverlayPreview: Rect | undefined): void;
     setCursor(cursor: Cursor | undefined): void;
@@ -192,6 +244,8 @@ export interface Renderer {
     updateZoomAndOffset(zoom: number, offsetX: number, offsetY: number): void;
     getWidth(): number;
     getHeight(): number;
+    getEncodedImage(selection: Rect | null): string | undefined;
+    commitSelection(): void;
 }
 
 export function createRenderer(canvas: HTMLCanvasElement): Renderer {

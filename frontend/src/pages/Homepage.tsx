@@ -75,6 +75,9 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         try {
             const imageInput = defaultArgs();
             imageInput.parent = image.id;
+            imageInput.label = image.label;
+            imageInput.phrases = image.phrases;
+            imageInput.negative_phrases = image.negative_phrases;
             imageInput.width = image.width! * 2;
             imageInput.height = image.height! * 2;
             imageInput.model = "swinir";
@@ -91,6 +94,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 );
                 return [...imagesToAdd, ...images].sort(sortImages);
             });
+            history.push("/")
         } catch (e: any) {
             console.error(e);
             setErr("Error creating image");

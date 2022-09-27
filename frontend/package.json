@@ -60,5 +60,5 @@
         "@types/react-infinite-scroll-component": "^5.0.0",
         "@types/react-router-dom": "^5.3.1"
     },
-    "proxy": "https://www.aibrush.art"
+    "proxy": "http://localhost:3000"
 }

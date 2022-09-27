@@ -11,6 +11,9 @@ export interface Tool {
     onKeyUp(event: KeyboardEvent): void;
     onWheel(event: WheelEvent): void;
     destroy(): void;
+    onShowSelectionControls(listener: (show: boolean) => void): void;
+    select(direction: "left" | "right"): void;
+    onSaveImage(listener: (encodedImage: string) => void): void;
 }
 
 export class DummyTool implements Tool {
@@ -26,4 +29,7 @@ export class DummyTool implements Tool {
     onKeyUp(event: KeyboardEvent) {}
     onWheel(event: WheelEvent) {}
     destroy() {}
+    onShowSelectionControls(listener: (show: boolean) => void) {}
+    select(direction: "left" | "right") {}
+    onSaveImage(listener: (encodedImage: string) => void) {}
 }

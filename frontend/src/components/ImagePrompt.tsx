@@ -2,6 +2,7 @@ import React, { FC, useEffect, useState } from "react";
 import { CreateImageInput, Image } from "../client";
 import { aspectRatios, DEFAULT_ASPECT_RATIO, getClosestAspectRatio } from "../lib/aspecRatios";
 import loadImage from "blueimp-load-image";
+import { AspectRatioSelector } from "./AspectRatioSelector";
 
 interface Props {
     parent: Image | null;
@@ -237,43 +238,10 @@ export const ImagePrompt: FC<Props> = ({
                             </div>
                         )}
                         {!parent && !encodedImage && (
-                            <div className="form-group">
-                                <div
-                                    style={{
-                                        minHeight: "140px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                    }}
-                                >
-                                    {/* aspect ratio slider, goes from 0 -> aspectRatios.length - 1 */}
-                                    <div
-                                        style={{
-                                            width: aspectRatioDetails.width / 8,
-                                            height:
-                                                aspectRatioDetails.height / 8,
-                                            // dotted line options: dotted, dashed, solid, double, groove, ridge, inset, outset, none, hidden
-                                            border: "1px dashed white",
-                                            margin: "auto",
-                                        }}
-                                    ></div>
-                                </div>
-                                <label>
-                                    Aspect Ratio:{" "}
-                                    {aspectRatioDetails.displayName}
-                                </label>
-                                <input
-                                    type="range"
-                                    className="form-control-range"
-                                    min={0}
-                                    max={aspectRatios.length - 1}
-                                    value={aspectRatio}
-                                    onChange={(e) => {
-                                        setAspectRatio(
-                                            parseInt(e.target.value)
-                                        );
-                                    }}
-                                />
-                            </div>
+                            <AspectRatioSelector
+                                aspectRatio={aspectRatio}
+                                onChange={setAspectRatio}
+                            />
                         )}
                         <div className="form-group">
                             <div
