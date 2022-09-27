@@ -6,7 +6,7 @@ import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
 import { CreateImageInput, Image, ImageStatusEnum } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnailV2";
-import { ImagePrompt } from "../components/ImagePrompt";
+import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ImagePopup } from "../components/ImagePopupV2";
@@ -67,6 +67,37 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             setCreating(false);
         }
     };
+
+    const onUpscale = async (image: Image) => {
+        setCreating(true);
+        setErr(null);
+        window.scrollTo(0, 0);
+        try {
+            const imageInput = defaultArgs();
+            imageInput.parent = image.id;
+            imageInput.width = image.width! * 2;
+            imageInput.height = image.height! * 2;
+            imageInput.model = "swinir";
+            imageInput.count = 1;
+
+            const newImages = await api.createImage(imageInput);
+            setImages((images) => {
+                // there is a race condition where poll images can fire before this callback
+                // so double-check to avoid duplicates
+                const imagesToAdd = (newImages.data.images || []).filter(
+                    (image) => {
+                        return !images.find((i) => i.id === image.id);
+                    }
+                );
+                return [...imagesToAdd, ...images].sort(sortImages);
+            });
+        } catch (e: any) {
+            console.error(e);
+            setErr("Error creating image");
+        } finally {
+            setCreating(false);
+        }
+    }
 
     useEffect(() => {
         if (!api) {
@@ -299,6 +330,9 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                     }}
                     onEdit={(image) => {
                         onEdit(image);
+                    }}
+                    onUpscale={(image) => {
+                        onUpscale(image);
                     }}
                 />
             )}

@@ -63,3 +63,19 @@ export const aspectRatios: AspectRatio[] = [
         height: 1024,
     }
 ];
+
+export function getClosestAspectRatio(width: number, height: number): AspectRatio {
+    const aspectRatio = width / height;
+
+    const tests = [...aspectRatios];
+    tests.sort((a, b) => {
+        const aRatio = a.width / a.height;
+        const bRatio = b.width / b.height;
+        return (
+            Math.abs(aRatio - aspectRatio) -
+            Math.abs(bRatio - aspectRatio)
+        );
+    });
+    const bestMatch = tests[0];
+    return bestMatch;
+}

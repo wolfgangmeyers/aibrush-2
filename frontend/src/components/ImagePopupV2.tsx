@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useRef, useState } from "react";
 import { Modal } from "react-bootstrap";
 import { CreateImageInput, Image, ImageStatusEnum } from "../client/api";
-import { ImagePrompt } from "./ImagePrompt";
+import { getUpscaleLevel } from "../lib/upscale";
 
 interface ImagePopupProps {
     assetsUrl: string;
@@ -10,6 +10,7 @@ interface ImagePopupProps {
     onDelete?: (image: Image) => void;
     onFork?: (image: Image) => void;
     onEdit?: (image: Image) => void;
+    onUpscale?: (image: Image) => void;
 }
 
 export const ImagePopup: FC<ImagePopupProps> = ({
@@ -19,6 +20,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     onDelete,
     onFork,
     onEdit,
+    onUpscale,
 }) => {
     const img = useRef<HTMLImageElement>(null);
     const src = `${assetsUrl}/${image.id}.image.jpg?updated_at=${image.updated_at}`;
@@ -76,6 +78,8 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     if (!title) {
         title = image.phrases[0];
     }
+
+    const upscaleLevel = getUpscaleLevel(image.width!, image.height!);
 
     // if open, show modal with image
     return (
@@ -147,6 +151,18 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         &nbsp;EDIT
                                     </button>
                                 )}
+                                {onUpscale && upscaleLevel < 2 && (
+                                    <button
+                                        className="btn btn-primary btn-sm image-popup-button"
+                                        onClick={() =>
+                                            onUpscale && onUpscale(image)
+                                        }
+                                        style={{ marginRight: "5px" }}
+                                    >
+                                        <i className="fas fa-search-plus"></i>
+                                        &nbsp;UPSCALE
+                                    </button>
+                                )}
                             </div>
                         </div>
                         <div
@@ -155,6 +171,9 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                         >
                             <div>
                                 Similarity to prompt: {(score * 200).toFixed(2)}%
+                            </div>
+                            <div>
+                                Image dimensions: {image.width} x {image.height}
                             </div>
                         </div>
                     </div>

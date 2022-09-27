@@ -5,6 +5,9 @@ export class SelectionTool implements Tool {
     private renderer: Renderer;
     private selectionOverlay: Rect | undefined;
     private selectionOverlayPreview: Rect | undefined;
+
+    private selectionWidth: number = 512;
+    private selectionHeight: number = 512;
     
     private panning = false;
 
@@ -17,12 +20,15 @@ export class SelectionTool implements Tool {
         this.renderer = renderer;
     }
 
-    initialize(args: any) {
+    // TODO: smaller/larger, aspect ratios?
+    configure(args: any) {
+        this.selectionWidth = args.selectionWidth || 512;
+        this.selectionHeight = args.selectionHeight || 512;
         this.selectionOverlay = {
             x: 0,
             y: 0,
-            width: 512,
-            height: 512,
+            width: this.selectionWidth,
+            height: this.selectionHeight,
         }
         this.sync();
     }
@@ -92,18 +98,16 @@ export class SelectionTool implements Tool {
             x -= 256;
             y -= 256;
             // clamp to the canvas
-            x = Math.max(0, Math.min(x, imageWidth - 512));
-            y = Math.max(0, Math.min(y, imageHeight - 512));
-            x = Math.min(x, imageWidth - 512);
-            y = Math.min(y, imageHeight - 512);
-
-            
+            x = Math.max(0, Math.min(x, imageWidth - this.selectionWidth));
+            y = Math.max(0, Math.min(y, imageHeight - this.selectionHeight));
+            x = Math.min(x, imageWidth - this.selectionWidth);
+            y = Math.min(y, imageHeight - this.selectionHeight);
 
             this.selectionOverlayPreview = {
                 x: x,
                 y: y,
-                width: 512,
-                height: 512,
+                width: this.selectionWidth,
+                height: this.selectionHeight,
             }
             this.sync();
         }

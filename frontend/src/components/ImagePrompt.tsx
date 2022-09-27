@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState } from "react";
 import { CreateImageInput, Image } from "../client";
-import { aspectRatios, DEFAULT_ASPECT_RATIO } from "../lib/aspecRatios";
+import { aspectRatios, DEFAULT_ASPECT_RATIO, getClosestAspectRatio } from "../lib/aspecRatios";
 import loadImage from "blueimp-load-image";
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
     onCancel: () => void;
 }
 
-function defaultArgs(): CreateImageInput {
+export function defaultArgs(): CreateImageInput {
     return {
         phrases: ["a painting of a happy corgi wearing sunglasses"],
         negative_phrases: [],
@@ -76,8 +76,9 @@ export const ImagePrompt: FC<Props> = ({
         args.parent = parentId || undefined;
         args.stable_diffusion_strength = variationStrength;
         if (parent) {
-            args.width = parent.width as any;
-            args.height = parent.height as any;
+            const bestMatch = getClosestAspectRatio(parent.width!, parent.height!);
+            args.width = bestMatch.width;
+            args.height = bestMatch.height;
         } else {
             args.width = aspectRatioDetails.width;
             args.height = aspectRatioDetails.height;
@@ -109,18 +110,7 @@ export const ImagePrompt: FC<Props> = ({
                 // try to match width and height to a supported aspect ratio
                 const width = img.width;
                 const height = img.height;
-                const aspectRatio = width / height;
-
-                const tests = [...aspectRatios];
-                tests.sort((a, b) => {
-                    const aRatio = a.width / a.height;
-                    const bRatio = b.width / b.height;
-                    return (
-                        Math.abs(aRatio - aspectRatio) -
-                        Math.abs(bRatio - aspectRatio)
-                    );
-                });
-                const bestMatch = tests[0];
+                const bestMatch = getClosestAspectRatio(width, height);
                 const canvas = document.createElement("canvas");
                 canvas.width = bestMatch.width;
                 canvas.height = bestMatch.height;

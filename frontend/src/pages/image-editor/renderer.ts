@@ -58,15 +58,15 @@ class renderer {
             // set size of all layers
             // this.backgroundLayer.width = image.width;
             // this.backgroundLayer.height = image.height;
-            this.baseImageLayer.width = image.width * 2;
-            this.baseImageLayer.height = image.height * 2;
-            this.selectionLayer.width = image.width * 2;
-            this.selectionLayer.height = image.height * 2;
-            this.overlayLayer.width = image.width * 2;
-            this.overlayLayer.height = image.height * 2;
+            this.baseImageLayer.width = image.width;
+            this.baseImageLayer.height = image.height;
+            this.selectionLayer.width = image.width;
+            this.selectionLayer.height = image.height;
+            this.overlayLayer.width = image.width;
+            this.overlayLayer.height = image.height;
             // set canvas size
-            this.canvas.width = image.width * 2;
-            this.canvas.height = image.height * 2;
+            this.canvas.width = image.width;
+            this.canvas.height = image.height;
             context.drawImage(image, 0, 0);
 
             // set 512x512 selection overlay at the center of the image

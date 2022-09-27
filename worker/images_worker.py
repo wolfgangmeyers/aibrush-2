@@ -88,15 +88,15 @@ def _swinir_args(image_data, image):
     # downsampling to 256 width yields better results
     buf = BytesIO(image_data)
     img = Image.open(buf)
-    basewidth = 256
-    if img.width <= img.height:
-        wpercent = (basewidth/float(img.size[0]))
-        hsize = int((float(img.size[1])*float(wpercent)))
-        img = img.resize((basewidth,hsize), Image.ANTIALIAS)
-    else:
-        hpercent = (basewidth/float(img.size[1]))
-        wsize = int((float(img.size[0])*float(hpercent)))
-        img = img.resize((wsize,basewidth), Image.ANTIALIAS)
+    # basewidth = 256
+    # if img.width <= img.height:
+    #     wpercent = (basewidth/float(img.size[0]))
+    #     hsize = int((float(img.size[1])*float(wpercent)))
+    #     img = img.resize((basewidth,hsize), Image.ANTIALIAS)
+    # else:
+    #     hpercent = (basewidth/float(img.size[1]))
+    #     wsize = int((float(img.size[0])*float(hpercent)))
+    #     img = img.resize((wsize,basewidth), Image.ANTIALIAS)
     init_image_path = os.path.join("images", image.id + "-init.jpg")
     output_image_path = os.path.join("images", image.id + ".jpg")
     img.save(init_image_path)
