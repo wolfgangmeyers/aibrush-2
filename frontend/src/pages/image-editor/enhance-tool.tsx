@@ -3,7 +3,7 @@ import { loadImageAsync } from "../../lib/loadImage";
 
 import { sleep } from "../../lib/sleep";
 import { defaultArgs } from "../../components/ImagePrompt";
-import { Tool, DummyTool } from "./tool";
+import { Tool, BaseTool } from "./tool";
 import { Cursor, Rect, Renderer } from "./renderer";
 import {
     AIBrushApi,
@@ -11,11 +11,13 @@ import {
     Image as APIImage,
     ImageStatusEnum,
 } from "../../client";
+import { ZoomHelper } from "./zoomHelper";
 
 type EnhanceToolState = "default" | "busy" | "confirm";
 
-export class EnhanceTool extends DummyTool implements Tool {
+export class EnhanceTool extends BaseTool implements Tool {
     private renderer: Renderer;
+    private zoomHelper: ZoomHelper;
 
     private prompt: string = "";
     private count: number = 4;
@@ -28,6 +30,7 @@ export class EnhanceTool extends DummyTool implements Tool {
 
     private imageData: Array<ImageData> = [];
     private selectedImageDataIndex: number = -1;
+    private panning = false;
 
     get state(): EnhanceToolState {
         return this._state;
@@ -46,9 +49,30 @@ export class EnhanceTool extends DummyTool implements Tool {
     constructor(renderer: Renderer) {
         super("enhance");
         this.renderer = renderer;
+        this.zoomHelper = new ZoomHelper(renderer);
     }
 
-    configure(args: any) {
+    onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+        if (event.button === 1) {
+            this.panning = true;
+        }
+    }
+
+    onMouseMove(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+        if (this.panning) {
+            this.zoomHelper.onPan(event);
+        }
+    }
+
+    onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+        this.panning = false;
+    }
+
+    onWheel(event: WheelEvent) {
+        this.zoomHelper.onWheel(event);
+    }
+
+    updateArgs(args: any) {
         this.prompt = args.prompt || "";
         this.count = args.count || 4;
         this.variationStrength = args.variationStrength || 0.75;
@@ -67,14 +91,6 @@ export class EnhanceTool extends DummyTool implements Tool {
         const featherRightEdge = selectionOverlay.x + selectionOverlay.width != imageWidth;
         const featherTopEdge = selectionOverlay.y != 0;
         const featherBottomEdge = selectionOverlay.y + selectionOverlay.height != imageHeight;
-
-        console.log("selectionOverlay", selectionOverlay);
-        console.log("imageWidth", imageWidth);
-        console.log("imageHeight", imageHeight);
-        console.log("featherLeftEdge", featherLeftEdge);
-        console.log("featherRightEdge", featherRightEdge);
-        console.log("featherTopEdge", featherTopEdge);
-        console.log("featherBottomEdge", featherBottomEdge);
 
         const baseWidth = Math.min(selectionOverlay.width, selectionOverlay.height);
         const featherWidth = Math.floor(baseWidth / 8);
@@ -371,8 +387,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                 <button
                     className="btn btn-primary"
                     onClick={() => {
-                        console.log("tool is ", typeof(tool))
-                        tool.configure({
+                        tool.updateArgs({
                             count,
                             variationStrength,
                             prompt,

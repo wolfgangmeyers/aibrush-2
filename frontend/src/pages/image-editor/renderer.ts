@@ -10,6 +10,8 @@ export interface Cursor {
     x: number;
     y: number;
     radius: number;
+    color: string;
+    type: "circle" | "circle-fill";
 }
 
 class renderer {
@@ -55,6 +57,10 @@ class renderer {
         }
     }
 
+    getCanvas(): HTMLCanvasElement {
+        return this.canvas;
+    }
+
     setBaseImage(image: HTMLImageElement) {
         const context = this.baseImageLayer.getContext('2d');
         if (context) {
@@ -97,17 +103,17 @@ class renderer {
     }
 
     private drawOverlay() {
+        const lineWidth = Math.max(this.canvas.width / 512, this.canvas.height / 512);
         const context = this.overlayLayer.getContext('2d');
         if (context) {
             context.clearRect(0, 0, this.overlayLayer.width, this.overlayLayer.height);
-            // draw a 1px gray line around the layer
             context.strokeStyle = 'gray';
-            context.lineWidth = 1;
+            context.lineWidth = lineWidth;
             context.strokeRect(0, 0, this.overlayLayer.width, this.overlayLayer.height);
             
             if (this.selectionOverlay) {
                 context.strokeStyle = 'white';
-                context.lineWidth = 2;
+                context.lineWidth = lineWidth;
                 context.strokeRect(
                     this.selectionOverlay.x,
                     this.selectionOverlay.y,
@@ -117,7 +123,7 @@ class renderer {
             }
             if (this.selectionOverlayPreview) {
                 context.strokeStyle = 'cyan';
-                context.lineWidth = 2;
+                context.lineWidth = lineWidth;
                 context.strokeRect(
                     this.selectionOverlayPreview.x,
                     this.selectionOverlayPreview.y,
@@ -126,11 +132,27 @@ class renderer {
                 );
             }
             if (this.cursor) {
-                context.strokeStyle = 'white';
-                context.lineWidth = 1;
-                context.beginPath();
-                context.arc(this.cursor.x, this.cursor.y, this.cursor.radius, 0, 2 * Math.PI);
-                context.stroke();
+                if (this.cursor.type === 'circle') {
+                    context.lineWidth = this.cursor.radius * 0.75;
+                    context.strokeStyle = this.cursor.color;
+                    // context.globalAlpha = 0.5;
+                    context.beginPath();
+                    context.arc(this.cursor.x, this.cursor.y, this.cursor.radius, 0, 2 * Math.PI);
+                    context.stroke();
+                } else if (this.cursor.type === 'circle-fill') {
+                    context.fillStyle = this.cursor.color;
+                    // context.lineWidth = lineWidth;
+                    // context.globalAlpha = 0.5;
+                    context.beginPath();
+                    context.arc(this.cursor.x, this.cursor.y, this.cursor.radius, 0, 2 * Math.PI);
+                    context.fill();
+                }
+                // context.fillStyle = this.cursor.color;
+                // // context.lineWidth = lineWidth;
+                // // context.globalAlpha = 0.5;
+                // context.beginPath();
+                // context.arc(this.cursor.x, this.cursor.y, this.cursor.radius, 0, 2 * Math.PI);
+                // context.fill();
             }
 
             this.render();
@@ -220,18 +242,60 @@ class renderer {
 
     commitSelection() {
         // draw the selection overlay on the base image layer
-        if (this.selectionOverlay) {
-            const context = this.baseImageLayer.getContext('2d');
-            if (context) {
-                context.drawImage(this.selectionLayer, 0, 0);
-                this.setSelection(null);
-            }
+        const context = this.baseImageLayer.getContext('2d');
+        if (context) {
+            context.drawImage(this.selectionLayer, 0, 0);
+            this.setSelection(null);
         }
     }
+
+    drawPoint(x: number, y: number, brushSize: number, color: string): void {
+        // draw on selection layer
+        const context = this.selectionLayer.getContext('2d');
+        if (context) {
+            context.fillStyle = color;
+            context.beginPath();
+            context.arc(x, y, brushSize / 2, 0, 2 * Math.PI);
+            context.fill();
+        }
+        this.render();
+    }
+
+    drawLine(x1: number, y1: number, x2: number, y2: number, brushSize: number, color: string): void {
+        // draw on selection layer
+        const context = this.selectionLayer.getContext('2d');
+        if (context) {
+            context.strokeStyle = color;
+            context.lineWidth = brushSize;
+            context.lineCap = 'round';
+            context.beginPath();
+            context.moveTo(x1, y1);
+            context.lineTo(x2, y2);
+            context.stroke();
+        }
+        this.render();
+    }
+
+    getPixel(x: number, y: number): string {
+        const context = this.baseImageLayer.getContext('2d');
+        // get pixel as hex string
+        if (context) {
+            const pixel = context.getImageData(x, y, 1, 1).data;
+            return "#" + ("000000" + rgbToHex(pixel[0], pixel[1], pixel[2])).slice(-6);
+        }
+        return '#000000';
+    }
+}
+
+function rgbToHex(r: number, g: number, b: number) {
+    if (r > 255 || g > 255 || b > 255)
+        throw "Invalid color component";
+    return ((r << 16) | (g << 8) | b).toString(16);
 }
 
 export interface Renderer {
     render(): void;
+    getCanvas(): HTMLCanvasElement;
     setBaseImage(image: HTMLImageElement): void;
     setSelection(imageData: ImageData | null): void;
     setSelectionOverlay(selectionOverlay: Rect | undefined): void;
@@ -241,11 +305,14 @@ export interface Renderer {
     getZoom(): number;
     getOffsetX(): number;
     getOffsetY(): number;
+    getPixel(x: number, y: number): string;
     updateZoomAndOffset(zoom: number, offsetX: number, offsetY: number): void;
     getWidth(): number;
     getHeight(): number;
     getEncodedImage(selection: Rect | null): string | undefined;
     commitSelection(): void;
+    drawPoint(x: number, y: number, brushSize: number, color: string): void;
+    drawLine(x1: number, y1: number, x2: number, y2: number, brushSize: number, color: string): void;
 }
 
 export function createRenderer(canvas: HTMLCanvasElement): Renderer {

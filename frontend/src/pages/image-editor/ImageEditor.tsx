@@ -6,9 +6,10 @@ import { AIBrushApi, Image as APIImage } from "../../client";
 import { getUpscaleLevel } from "../../lib/upscale";
 import "./ImageEditor.css";
 import { createRenderer, Renderer } from "./renderer";
-import { Tool, DummyTool } from "./tool";
+import { Tool, BaseTool } from "./tool";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { EnhanceTool, EnhanceControls } from "./enhance-tool";
+import { PencilTool, Controls as PencilControls } from "./pencil-tool";
 
 interface Props {
     api: AIBrushApi;
@@ -57,6 +58,15 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                 );
             },
         },
+        {
+            name: "pencil",
+            iconClass: "fas fa-pencil-alt",
+            constructor: (r: Renderer) => new PencilTool(r),
+            defaultArgs: {},
+            renderControls: (t: Tool, renderer: Renderer) => {
+                return <PencilControls tool={t as PencilTool} renderer={renderer} />;
+            }
+        }
     ];
 
     const [image, setImage] = useState<APIImage | null>(null);
@@ -68,36 +78,16 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    const loadToolArgs = (toolconfig: ToolConfig) => {
-        const toolConfig = tools.find((t) => t.name === toolconfig.name);
-        if (toolConfig) {
-            const argsString = localStorage.getItem(
-                `tool-${toolconfig.name}-args`
-            );
-            const args = argsString
-                ? JSON.parse(argsString)
-                : toolConfig.defaultArgs;
-            // check if the renderer width/height is a base aspect ratio. If so, automatically
-            // set the selection width and height to the base aspect ratio.
-            const upscaleLevel = getUpscaleLevel(
-                renderer!.getWidth(),
-                renderer!.getHeight()
-            );
-            if (upscaleLevel == 0) {
-                args.selectionWidth = renderer!.getWidth();
-                args.selectionHeight = renderer!.getHeight();
-            }
-            return args;
-        }
-        return {};
-    };
-
     const onSelectTool = (toolconfig: ToolConfig) => {
         if (renderer) {
-            const tool = toolconfig.constructor(renderer);
-            tool.configure(loadToolArgs(toolconfig)); // TODO: save and load config for widget
-            setTool(tool);
-            tool.onSaveImage((encodedImage) => {
+            if (tool) {
+                if (!tool.destroy()) {
+                    return;
+                }
+            }
+            const newTool = toolconfig.constructor(renderer);
+            setTool(newTool);
+            newTool.onSaveImage((encodedImage) => {
                 console.log("Saving image...")
                 api.updateImage(id, {
                     encoded_image: encodedImage,
@@ -153,7 +143,6 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
 
     function renderTool(t: ToolConfig) {
         let buttonClass = `btn btn-secondary light-button image-editor-tool-button`;
-        console.log(`tool: ${tool && tool.name}, t.name: ${t.name}`);
         const isSelected = tool && tool.name == t.name;
         if (isSelected) {
             buttonClass = `btn btn-primary image-editor-tool-button`;
@@ -224,6 +213,7 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                         )}
 
                         <canvas
+                            style={{cursor: "none"}}
                             ref={canvasRef}
                             className="image-editor-canvas"
                             onMouseDown={(e) => tool && tool.onMouseDown(e)}
