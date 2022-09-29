@@ -48,7 +48,6 @@ export class PencilTool extends BaseTool implements Tool {
     }
 
 
-    private saveListener: (encodedImage: string) => void = () => {};
     private dirtyListener?: (dirty: boolean) => void;
     private colorPickedListener?: (color: string) => void;
 

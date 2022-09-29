@@ -8,6 +8,7 @@ export class SmudgeTool extends BaseTool implements Tool {
     private zoomHelper: ZoomHelper;
 
     private brushSize = 10;
+    private brushOpacity = 0.2;
 
     private lastX = 0;
     private lastY = 0;
@@ -26,7 +27,6 @@ export class SmudgeTool extends BaseTool implements Tool {
         return this._dirty;
     }
 
-    private saveListener: (encodedImage: string) => void = () => {};
     private dirtyListener?: (dirty: boolean) => void;
 
     constructor(renderer: Renderer) {
@@ -49,6 +49,7 @@ export class SmudgeTool extends BaseTool implements Tool {
     updateArgs(args: any) {
         super.updateArgs(args);
         this.brushSize = args.brushSize || 10;
+        this.brushOpacity = args.brushOpacity || 0.2;
         this.sync();
     }
 
@@ -67,7 +68,7 @@ export class SmudgeTool extends BaseTool implements Tool {
                 x,
                 y,
                 this.brushSize,
-                0.2
+                this.brushOpacity,
             );
             this.dirty = true;
         }
@@ -142,6 +143,7 @@ interface Props {
 
 export const SmudgeControls: FC<Props> = ({ renderer, tool }) => {
     const [brushSize, setBrushSize] = useState(10);
+    const [brushOpacity, setBrushOpacity] = useState(0.2);
     const [dirty, setDirty] = useState(false);
 
     tool.onDirty(setDirty);
@@ -149,8 +151,9 @@ export const SmudgeControls: FC<Props> = ({ renderer, tool }) => {
     useEffect(() => {
         tool.updateArgs({
             brushSize,
+            brushOpacity,
         });
-    }, [brushSize]);
+    }, [brushSize, brushOpacity]);
 
     return (
         <div style={{ marginTop: "16px" }}>
@@ -171,6 +174,26 @@ export const SmudgeControls: FC<Props> = ({ renderer, tool }) => {
                     max="100"
                     value={brushSize}
                     onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                />
+            </div>
+            <div className="form-group">
+                <label style={{ width: "100%" }}>
+                    Brush opacity
+                    <small
+                        className="form-text text-muted"
+                        style={{ float: "right" }}
+                    >
+                        {Math.round(brushOpacity * 100)}%
+                    </small>
+                </label>
+                <input
+                    type="range"
+                    className="form-control-range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={brushOpacity}
+                    onChange={(e) => setBrushOpacity(parseFloat(e.target.value))}
                 />
             </div>
             {dirty && (

@@ -327,7 +327,7 @@ class renderer {
                 let totalRed = 0;
                 let totalGreen = 0;
                 let totalBlue = 0;
-                let count = 0;
+                let count = 0.0;
 
                 // average pixel values
                 for (let y = 0; y < imageData.height; y++) {
@@ -369,6 +369,7 @@ class renderer {
                 context.putImageData(imageData, x - brushSize / 2, y - brushSize / 2);
             }
         }
+        this.render();
     }
 
     getPixel(x: number, y: number): string {
@@ -387,6 +388,7 @@ class renderer {
         if (context) {
             context.drawImage(this.baseImageLayer, 0, 0);
         }
+        this.render();
     }
 }
 

@@ -18,6 +18,9 @@ export interface Tool {
 }
 
 export class BaseTool implements Tool {
+
+    saveListener?: (encodedImage: string) => void = () => {};
+
     constructor(readonly name: string) {}
 
     getArgs(): any {
@@ -40,5 +43,7 @@ export class BaseTool implements Tool {
     }
     onShowSelectionControls(listener: (show: boolean) => void) {}
     select(direction: "left" | "right") {}
-    onSaveImage(listener: (encodedImage: string) => void) {}
+    onSaveImage(listener: (encodedImage: string) => void) {
+        this.saveListener = listener;
+    }
 }

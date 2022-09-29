@@ -26,7 +26,6 @@ export class EnhanceTool extends BaseTool implements Tool {
     private _state: EnhanceToolState = "default";
     private stateHandler: (state: EnhanceToolState) => void = () => {};
     private selectionControlsListener: (show: boolean) => void = () => {};
-    private saveListener: (encodedImage: string) => void = () => {};
 
     private imageData: Array<ImageData> = [];
     private selectedImageDataIndex: number = -1;
