@@ -10,6 +10,7 @@ import { Tool, BaseTool } from "./tool";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { EnhanceTool, EnhanceControls } from "./enhance-tool";
 import { PencilTool, Controls as PencilControls } from "./pencil-tool";
+import { SmudgeTool, SmudgeControls } from "./smudge-tool";
 
 interface Props {
     api: AIBrushApi;
@@ -65,6 +66,15 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
             defaultArgs: {},
             renderControls: (t: Tool, renderer: Renderer) => {
                 return <PencilControls tool={t as PencilTool} renderer={renderer} />;
+            }
+        },
+        {
+            name: "smudge",
+            iconClass: "fas fa-smog",
+            constructor: (r: Renderer) => new SmudgeTool(r),
+            defaultArgs: {},
+            renderControls: (t: Tool, renderer: Renderer) => {
+                return <SmudgeControls tool={t as SmudgeTool} renderer={renderer} />;
             }
         }
     ];

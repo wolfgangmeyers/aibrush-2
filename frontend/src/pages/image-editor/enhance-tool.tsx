@@ -178,7 +178,7 @@ export class EnhanceTool extends BaseTool implements Tool {
     cancel() {
         this.state = "default";
         this.imageData = [];
-        this.renderer.setSelection(null);
+        this.renderer.setEditImage(null);
     }
 
     async submit(api: AIBrushApi, image: APIImage) {
@@ -242,7 +242,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         for (let i = 0; i < newImages!.length; i++) {
             await api.deleteImage(newImages![i].id);
         }
-        this.renderer.setSelection(this.imageData[0]);
+        this.renderer.setEditImage(this.imageData[0]);
         this.selectedImageDataIndex = 0;
         this.state = "confirm";
     }
@@ -261,9 +261,9 @@ export class EnhanceTool extends BaseTool implements Tool {
             }
         }
         if (this.selectedImageDataIndex === -1) {
-            this.renderer.setSelection(null);
+            this.renderer.setEditImage(null);
         } else {
-            this.renderer.setSelection(this.imageData[this.selectedImageDataIndex]);
+            this.renderer.setEditImage(this.imageData[this.selectedImageDataIndex]);
         }
     }
 

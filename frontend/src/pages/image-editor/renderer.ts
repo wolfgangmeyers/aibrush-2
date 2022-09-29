@@ -11,14 +11,14 @@ export interface Cursor {
     y: number;
     radius: number;
     color: string;
-    type: "circle" | "circle-fill";
+    type: "circle" | "circle-fill" | "colorpicker";
 }
 
 class renderer {
 
     // private backgroundLayer: HTMLCanvasElement;
     private baseImageLayer: HTMLCanvasElement;
-    private selectionLayer: HTMLCanvasElement;
+    private editLayer: HTMLCanvasElement;
     private overlayLayer: HTMLCanvasElement;
 
     private selectionOverlay: Rect | undefined;
@@ -34,7 +34,7 @@ class renderer {
         // invisible canvas elements
         // this.backgroundLayer = document.createElement('canvas');
         this.baseImageLayer = document.createElement('canvas');
-        this.selectionLayer = document.createElement('canvas');
+        this.editLayer = document.createElement('canvas');
         this.overlayLayer = document.createElement('canvas');
 
         this.zoom = 1;
@@ -50,7 +50,7 @@ class renderer {
             context.setTransform(this.zoom, 0, 0, this.zoom, this.offsetX * this.zoom, this.offsetY * this.zoom);
             // context.drawImage(this.backgroundLayer, 0, 0);
             context.drawImage(this.baseImageLayer, 0, 0);
-            context.drawImage(this.selectionLayer, 0, 0);
+            context.drawImage(this.editLayer, 0, 0);
             if (!this.hasSelection) {
                 context.drawImage(this.overlayLayer, 0, 0);
             }
@@ -69,8 +69,8 @@ class renderer {
             // this.backgroundLayer.height = image.height;
             this.baseImageLayer.width = image.width;
             this.baseImageLayer.height = image.height;
-            this.selectionLayer.width = image.width;
-            this.selectionLayer.height = image.height;
+            this.editLayer.width = image.width;
+            this.editLayer.height = image.height;
             this.overlayLayer.width = image.width;
             this.overlayLayer.height = image.height;
             // set canvas size
@@ -90,11 +90,11 @@ class renderer {
         }
     }
 
-    setSelection(imageData: ImageData | null) {
+    setEditImage(imageData: ImageData | null) {
         this.hasSelection = !!imageData;
-        const context = this.selectionLayer.getContext('2d');
+        const context = this.editLayer.getContext('2d');
         if (context && this.selectionOverlay) {
-            context.clearRect(0, 0, this.selectionLayer.width, this.selectionLayer.height);
+            context.clearRect(0, 0, this.editLayer.width, this.editLayer.height);
             if (imageData) {
                 context.putImageData(imageData, this.selectionOverlay.x, this.selectionOverlay.y);
             }
@@ -133,7 +133,7 @@ class renderer {
             }
             if (this.cursor) {
                 if (this.cursor.type === 'circle') {
-                    context.lineWidth = this.cursor.radius * 0.75;
+                    context.lineWidth = lineWidth;
                     context.strokeStyle = this.cursor.color;
                     // context.globalAlpha = 0.5;
                     context.beginPath();
@@ -146,13 +146,25 @@ class renderer {
                     context.beginPath();
                     context.arc(this.cursor.x, this.cursor.y, this.cursor.radius, 0, 2 * Math.PI);
                     context.fill();
+                } else if (this.cursor.type === 'colorpicker') {
+                    // TODO: add croshairs
+                    context.lineWidth = this.cursor.radius * 0.75;
+                    context.strokeStyle = this.cursor.color;
+                    // context.globalAlpha = 0.5;
+                    context.beginPath();
+                    context.arc(this.cursor.x, this.cursor.y, this.cursor.radius, 0, 2 * Math.PI);
+                    context.stroke();
+
+                    // draw crosshairs (black)
+                    context.lineWidth = lineWidth;
+                    context.strokeStyle = 'black';
+                    context.beginPath();
+                    context.moveTo(this.cursor.x - this.cursor.radius, this.cursor.y);
+                    context.lineTo(this.cursor.x + this.cursor.radius, this.cursor.y);
+                    context.moveTo(this.cursor.x, this.cursor.y - this.cursor.radius);
+                    context.lineTo(this.cursor.x, this.cursor.y + this.cursor.radius);
+                    context.stroke();
                 }
-                // context.fillStyle = this.cursor.color;
-                // // context.lineWidth = lineWidth;
-                // // context.globalAlpha = 0.5;
-                // context.beginPath();
-                // context.arc(this.cursor.x, this.cursor.y, this.cursor.radius, 0, 2 * Math.PI);
-                // context.fill();
             }
 
             this.render();
@@ -205,7 +217,28 @@ class renderer {
         return this.canvas.height;
     }
 
+
     getEncodedImage(selection: Rect | null): string | undefined {
+        const imageData = this.getImageData(selection);
+        if (imageData) {
+            // create a canvas and draw the image data on it
+            const canvas = document.createElement('canvas');
+            canvas.width = imageData.width;
+            canvas.height = imageData.height;
+            const context = canvas.getContext('2d');
+            if (context) {
+                context.putImageData(imageData, 0, 0);
+                // return the data url of the canvas
+                const result = canvas.toDataURL("image/jpeg");
+                // cleanup the canvas
+                canvas.remove();
+                // extract base64 data from data url
+                return result.split(',')[1];
+            }
+        }
+    }
+
+    getImageData(selection: Rect | null): ImageData | undefined {
         if (!selection) {
             selection = {
                 x: 0,
@@ -223,20 +256,7 @@ class renderer {
                 selection.width,
                 selection.height,
             );
-            // create a canvas and draw the image data on it
-            const canvas = document.createElement('canvas');
-            canvas.width = imageData.width;
-            canvas.height = imageData.height;
-            context = canvas.getContext('2d');
-            if (context) {
-                context.putImageData(imageData, 0, 0);
-                // return the data url of the canvas
-                const result = canvas.toDataURL("image/jpeg");
-                // cleanup the canvas
-                canvas.remove();
-                // extract base64 data from data url
-                return result.split(',')[1];
-            }
+            return imageData;
         }
     }
 
@@ -244,14 +264,14 @@ class renderer {
         // draw the selection overlay on the base image layer
         const context = this.baseImageLayer.getContext('2d');
         if (context) {
-            context.drawImage(this.selectionLayer, 0, 0);
-            this.setSelection(null);
+            context.drawImage(this.editLayer, 0, 0);
+            this.setEditImage(null);
         }
     }
 
     drawPoint(x: number, y: number, brushSize: number, color: string): void {
         // draw on selection layer
-        const context = this.selectionLayer.getContext('2d');
+        const context = this.editLayer.getContext('2d');
         if (context) {
             context.fillStyle = color;
             context.beginPath();
@@ -263,7 +283,7 @@ class renderer {
 
     drawLine(x1: number, y1: number, x2: number, y2: number, brushSize: number, color: string): void {
         // draw on selection layer
-        const context = this.selectionLayer.getContext('2d');
+        const context = this.editLayer.getContext('2d');
         if (context) {
             context.strokeStyle = color;
             context.lineWidth = brushSize;
@@ -276,6 +296,81 @@ class renderer {
         this.render();
     }
 
+    smudgeLine(x1: number, y1: number, x2: number, y2: number, brushSize: number, brushOpacity: number): void {
+        const unitVector = {
+            x: x2 - x1,
+            y: y2 - y1,
+        };
+        const length = Math.sqrt(unitVector.x * unitVector.x + unitVector.y * unitVector.y);
+        unitVector.x /= length;
+        unitVector.y /= length;
+
+        // for each point on the line, get image data (brushSize x brushSize) from edit layer
+        // average pixel values that are within the brush circle.
+        // update the image data with the averaged pixel values in the
+        // brush circle, then put the image data back on the edit layer
+        // at the point on the line
+
+        const context = this.editLayer.getContext('2d');
+        if (context) {
+            for (let i = 0; i < length; i++) {
+                const x = x1 + i * unitVector.x;
+                const y = y1 + i * unitVector.y;
+
+                const imageData = context.getImageData(
+                    x - brushSize / 2,
+                    y - brushSize / 2,
+                    brushSize,
+                    brushSize,
+                );
+
+                let totalRed = 0;
+                let totalGreen = 0;
+                let totalBlue = 0;
+                let count = 0;
+
+                // average pixel values
+                for (let y = 0; y < imageData.height; y++) {
+                    for (let x = 0; x < imageData.width; x++) {
+                        const index = (y * imageData.width + x) * 4;
+                        const distance = Math.sqrt((x - brushSize / 2) * (x - brushSize / 2) + (y - brushSize / 2) * (y - brushSize / 2));
+                        if (distance <= brushSize / 2) {
+                            // get the pixel value from the image data
+                            const r = imageData.data[index];
+                            const g = imageData.data[index + 1];
+                            const b = imageData.data[index + 2];
+
+                            totalRed += r;
+                            totalGreen += g;
+                            totalBlue += b;
+                            count++;
+                        }
+                    }
+                }
+
+                // update the image data with the averaged pixel values
+                // these need to be weighted by the brush opacity
+                const averageRed = totalRed / count;
+                const averageGreen = totalGreen / count;
+                const averageBlue = totalBlue / count;
+                for (let y = 0; y < imageData.height; y++) {
+                    for (let x = 0; x < imageData.width; x++) {
+                        const index = (y * imageData.width + x) * 4;
+                        const distance = Math.sqrt((x - brushSize / 2) * (x - brushSize / 2) + (y - brushSize / 2) * (y - brushSize / 2));
+                        if (distance <= brushSize / 2) {
+                            imageData.data[index] = averageRed * brushOpacity + imageData.data[index] * (1 - brushOpacity);
+                            imageData.data[index + 1] = averageGreen * brushOpacity + imageData.data[index + 1] * (1 - brushOpacity);
+                            imageData.data[index + 2] = averageBlue * brushOpacity + imageData.data[index + 2] * (1 - brushOpacity);
+                        }
+                    }
+                }
+
+                // put the image data back on the edit layer
+                context.putImageData(imageData, x - brushSize / 2, y - brushSize / 2);
+            }
+        }
+    }
+
     getPixel(x: number, y: number): string {
         const context = this.baseImageLayer.getContext('2d');
         // get pixel as hex string
@@ -284,6 +379,14 @@ class renderer {
             return "#" + ("000000" + rgbToHex(pixel[0], pixel[1], pixel[2])).slice(-6);
         }
         return '#000000';
+    }
+
+    copyEditImageFromBaseImage(): void {
+        // copy the base image to the edit layer
+        const context = this.editLayer.getContext('2d');
+        if (context) {
+            context.drawImage(this.baseImageLayer, 0, 0);
+        }
     }
 }
 
@@ -297,7 +400,8 @@ export interface Renderer {
     render(): void;
     getCanvas(): HTMLCanvasElement;
     setBaseImage(image: HTMLImageElement): void;
-    setSelection(imageData: ImageData | null): void;
+    setEditImage(imageData: ImageData | null): void;
+    copyEditImageFromBaseImage(): void;
     setSelectionOverlay(selectionOverlay: Rect | undefined): void;
     setSelectionOverlayPreview(selectionOverlayPreview: Rect | undefined): void;
     setCursor(cursor: Cursor | undefined): void;
@@ -310,9 +414,11 @@ export interface Renderer {
     getWidth(): number;
     getHeight(): number;
     getEncodedImage(selection: Rect | null): string | undefined;
+    getImageData(selection: Rect | null): ImageData | undefined;
     commitSelection(): void;
     drawPoint(x: number, y: number, brushSize: number, color: string): void;
     drawLine(x1: number, y1: number, x2: number, y2: number, brushSize: number, color: string): void;
+    smudgeLine(x1: number, y1: number, x2: number, y2: number, brushSize: number, brushOpacity: number): void;
 }
 
 export function createRenderer(canvas: HTMLCanvasElement): Renderer {

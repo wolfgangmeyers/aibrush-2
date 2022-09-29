@@ -63,9 +63,9 @@ export class PencilTool extends BaseTool implements Tool {
             this.renderer.setCursor({
                 x: this.lastX,
                 y: this.lastY,
-                radius: 30,
+                radius: this.renderer.getWidth() / 20,
                 color: this.lastPickedColor,
-                type: "circle",
+                type: "colorpicker",
             })
         } else {
             this.renderer.setCursor({
@@ -161,7 +161,7 @@ export class PencilTool extends BaseTool implements Tool {
 
     cancel() {
         // kind of a hack, clears the selection layer
-        this.renderer.setSelection(null);
+        this.renderer.setEditImage(null);
         this.dirty = false;
     }
 
@@ -185,7 +185,7 @@ export class PencilTool extends BaseTool implements Tool {
     destroy(): boolean {
         if (!this.dirty || window.confirm("Are you sure you want to discard your changes?")) {
             this.renderer.setCursor(undefined);
-            this.renderer.setSelection(null);
+            this.renderer.setEditImage(null);
             return true;
         }
         return false;
