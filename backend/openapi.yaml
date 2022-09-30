@@ -836,6 +836,14 @@ components:
     CreateImageInput:
       type: object
       properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - processing
+            - completed
+            - saved
+            - error
         phrases:
           type: array
           items:
@@ -891,6 +899,8 @@ components:
           type: number
         count:
           type: integer
+        nsfw:
+          type: boolean
 
     UpdateImageInput:
       type: object
@@ -901,7 +911,7 @@ components:
           type: integer
         status:
           type: string
-          enum: [pending, processing, completed, saved]
+          enum: [pending, processing, completed, saved, error]
         encoded_image:
           type: string
         encoded_npy:
@@ -910,6 +920,8 @@ components:
           type: number
         negative_score:
           type: number
+        nsfw:
+          type: boolean
 
     Image:
       properties:
@@ -979,6 +991,8 @@ components:
           enum: [-896, -768, -640, -512, -384, -256, -128, 0, 128, 256, 384, 512, 640, 768, 896]
         stable_diffusion_strength:
           type: number
+        nsfw:
+          type: boolean
       required:
         - id
         - created_at
@@ -995,8 +1009,10 @@ components:
         - status
         - enable_video
         - model
-        - size
+        - width
+        - height
         - stable_diffusion_strength
+        - nsfw
     ImageList:
       properties:
         images:
@@ -1095,7 +1111,7 @@ components:
           type: string
         status:
           type: string
-          enum: [pending, processing, completed, saved]
+          enum: [pending, processing, completed, saved, error]
         result:
           type: array
           items:

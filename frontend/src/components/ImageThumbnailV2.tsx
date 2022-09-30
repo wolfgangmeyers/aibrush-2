@@ -48,6 +48,7 @@ export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, onClick }) => {
                 margin: "8px",
                 float: "left",
                 cursor: "pointer",
+                filter: image.nsfw ? "blur(8px)" : undefined,
             }}
             onClick={() => onClick && onClick(image)}
         >

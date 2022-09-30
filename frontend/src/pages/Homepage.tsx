@@ -68,6 +68,39 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         }
     };
 
+    const onEditNewImage = async (input: CreateImageInput) => {
+        setCreating(true);
+        setParentImage(null);
+        setErr(null);
+        window.scrollTo(0, 0);
+        try {
+            const newImages = await api.createImage(input);
+            if (newImages.data.images) {
+                const image = newImages.data.images![0];
+                history.push(`/image-editor/${image.id}`);
+            }
+        } catch (e: any) {
+            console.error(e);
+            setErr("Error creating image");
+        } finally {
+            setCreating(false);
+        }
+    };
+
+    const onNSFW = (image: Image, nsfw: boolean) => {
+        api.updateImage(image.id, { nsfw }).then((res) => {
+            setImages((images) => {
+                return images.map((i) => {
+                    if (i.id === image.id) {
+                        return res.data;
+                    }
+                    return i;
+                });
+            });
+            setSelectedImage(res.data)
+        });
+    };
+
     const onUpscale = async (image: Image) => {
         setCreating(true);
         setErr(null);
@@ -297,6 +330,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 assetsUrl={assetsUrl}
                 creating={creating}
                 onSubmit={onSubmit}
+                onEdit={onEditNewImage}
                 parent={parentImage}
                 onCancel={() => handleCancelFork()}
             />
@@ -338,6 +372,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                     onUpscale={(image) => {
                         onUpscale(image);
                     }}
+                    onNSFW={onNSFW}
                 />
             )}
             <ScrollToTop />

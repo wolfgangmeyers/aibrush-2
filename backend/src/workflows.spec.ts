@@ -21,7 +21,7 @@ import { Session, TestHelper } from './testHelper'
 
 jest.setTimeout(60000);
 
-describe("workflows", () => {
+describe.skip("workflows", () => {
     let backendService: BackendService;
     let server: Server
     let session: Session

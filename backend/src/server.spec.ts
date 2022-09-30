@@ -317,7 +317,7 @@ describe("server", () => {
                 expect(image.parent).toBe("")
                 expect(image.enable_video).toBe(false)
                 expect(image.enable_zoom).toBe(false)
-                expect(image.model).toBe("vqgan_imagenet_f16_16384")
+                expect(image.model).toBe("stable_diffusion_text2im")
                 expect(image.glid_3_xl_skip_iterations).toBe(0)
                 expect(image.glid_3_xl_clip_guidance).toBe(false)
                 expect(image.glid_3_xl_clip_guidance_scale).toBe(150)

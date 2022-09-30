@@ -11,6 +11,7 @@ interface ImagePopupProps {
     onFork?: (image: Image) => void;
     onEdit?: (image: Image) => void;
     onUpscale?: (image: Image) => void;
+    onNSFW?: (image: Image, nsfw: boolean) => void;
 }
 
 export const ImagePopup: FC<ImagePopupProps> = ({
@@ -21,6 +22,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     onFork,
     onEdit,
     onUpscale,
+    onNSFW,
 }) => {
     const img = useRef<HTMLImageElement>(null);
     const src = `${assetsUrl}/${image.id}.image.jpg?updated_at=${image.updated_at}`;
@@ -31,6 +33,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     ) {
         score -= image.negative_score;
     }
+    const [showNSFW, setShowNSFW] = useState(false);
 
     const statusBadge = (status: string) => {
         const displayStatus = status.charAt(0).toUpperCase() + status.slice(1);
@@ -96,6 +99,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                         display: "block",
                         marginLeft: "auto",
                         marginRight: "auto",
+                        filter: image.nsfw && !showNSFW ? "blur(30px)" : "",
                     }}
                     id={`image-popup-${image.id}`}
                     src={src}
@@ -163,6 +167,16 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         &nbsp;UPSCALE
                                     </button>
                                 )}
+                                {image.nsfw && (
+                                    <button
+                                        className="btn btn-primary btn-sm image-popup-button"
+                                        onClick={() => setShowNSFW(!showNSFW)}
+                                        style={{ marginRight: "5px" }}
+                                    >
+                                        <i className="fas fa-eye"></i>
+                                        &nbsp;{showNSFW ? "HIDE" : "SHOW"}
+                                    </button>
+                                )}
                             </div>
                         </div>
                         <div
@@ -175,6 +189,14 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                             <div>
                                 Image dimensions: {image.width} x {image.height}
                             </div>
+                            {onNSFW && <div>
+                                <input
+                                    type="checkbox"
+                                    checked={image.nsfw}
+                                    onChange={() => onNSFW(image, !image.nsfw)}
+                                />
+                                &nbsp;{image.nsfw ? "Contains NSFW content" : "No NSFW content"}
+                            </div>}
                         </div>
                     </div>
                 </div>

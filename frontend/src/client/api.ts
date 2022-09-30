@@ -42,6 +42,12 @@ export interface AssetsUrl {
 export interface CreateImageInput {
     /**
      * 
+     * @type {string}
+     * @memberof CreateImageInput
+     */
+    status?: CreateImageInputStatusEnum;
+    /**
+     * 
      * @type {Array<string>}
      * @memberof CreateImageInput
      */
@@ -184,8 +190,25 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     count?: number;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof CreateImageInput
+     */
+    nsfw?: boolean;
 }
 
+/**
+    * @export
+    * @enum {string}
+    */
+export enum CreateImageInputStatusEnum {
+    Pending = 'pending',
+    Processing = 'processing',
+    Completed = 'completed',
+    Saved = 'saved',
+    Error = 'error'
+}
 /**
     * @export
     * @enum {string}
@@ -522,13 +545,13 @@ export interface Image {
      * @type {number}
      * @memberof Image
      */
-    width?: ImageWidthEnum;
+    width: ImageWidthEnum;
     /**
      * 
      * @type {number}
      * @memberof Image
      */
-    height?: ImageHeightEnum;
+    height: ImageHeightEnum;
     /**
      * 
      * @type {number}
@@ -547,6 +570,12 @@ export interface Image {
      * @memberof Image
      */
     stable_diffusion_strength: number;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Image
+     */
+    nsfw: boolean;
 }
 
 /**
@@ -879,7 +908,8 @@ export enum SuggestionsJobStatusEnum {
     Pending = 'pending',
     Processing = 'processing',
     Completed = 'completed',
-    Saved = 'saved'
+    Saved = 'saved',
+    Error = 'error'
 }
 
 /**
@@ -997,6 +1027,12 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     negative_score?: number;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof UpdateImageInput
+     */
+    nsfw?: boolean;
 }
 
 /**
@@ -1007,7 +1043,8 @@ export enum UpdateImageInputStatusEnum {
     Pending = 'pending',
     Processing = 'processing',
     Completed = 'completed',
-    Saved = 'saved'
+    Saved = 'saved',
+    Error = 'error'
 }
 
 /**

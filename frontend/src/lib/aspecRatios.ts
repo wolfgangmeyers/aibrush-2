@@ -91,3 +91,27 @@ export function getClosestAspectRatio(width: number, height: number): AspectRati
     const bestMatch = tests[0];
     return bestMatch;
 }
+
+export function compareSize(a: AspectRatio, width: number, height: number): number {
+    const area1 = a.width * a.height;
+    const area2 = width * height;
+    return area1 - area2;
+}
+
+export function upscale(aspectRatio: AspectRatio): AspectRatio {
+    return {
+        displayName: aspectRatio.displayName,
+        width: aspectRatio.width * 2,
+        height: aspectRatio.height * 2,
+        id: aspectRatio.id,
+    }
+}
+
+export function downscale(aspectRatio: AspectRatio): AspectRatio {
+    return {
+        displayName: aspectRatio.displayName,
+        width: aspectRatio.width / 2,
+        height: aspectRatio.height / 2,
+        id: aspectRatio.id,
+    }
+}

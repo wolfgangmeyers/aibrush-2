@@ -282,11 +282,11 @@ export class BackendService {
         try {
             const result = await client.query(
                 `INSERT INTO images
-                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status, enable_video, enable_zoom, zoom_frequency, zoom_scale, zoom_shift_x, zoom_shift_y, model, glid_3_xl_skip_iterations, glid_3_xl_clip_guidance, glid_3_xl_clip_guidance_scale, width, height, uncrop_offset_x, uncrop_offset_y, negative_phrases, negative_score, stable_diffusion_strength)
+                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status, enable_video, enable_zoom, zoom_frequency, zoom_scale, zoom_shift_x, zoom_shift_y, model, glid_3_xl_skip_iterations, glid_3_xl_clip_guidance, glid_3_xl_clip_guidance_scale, width, height, uncrop_offset_x, uncrop_offset_y, negative_phrases, negative_score, stable_diffusion_strength, nsfw)
                 VALUES
-                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
                 RETURNING *`,
-                [uuid.v4(), createdBy, new Date().getTime(), new Date().getTime(), body.label, body.parent, body.phrases, body.iterations, 0, 0, "pending", !!body.enable_video, !!body.enable_zoom, body.zoom_frequency || 10, body.zoom_scale || 0.99, body.zoom_shift_x || 0, body.zoom_shift_y || 0, body.model || "vqgan_imagenet_f16_16384", body.glid_3_xl_skip_iterations || 0, body.glid_3_xl_clip_guidance || false, body.glid_3_xl_clip_guidance_scale || 150, body.width || 256, body.height || 256, body.uncrop_offset_x || 0, body.uncrop_offset_y || 0, body.negative_phrases || [], 0, body.stable_diffusion_strength || 0.75]
+                [uuid.v4(), createdBy, new Date().getTime(), new Date().getTime(), body.label, body.parent, body.phrases, body.iterations, 0, 0, body.status || "pending", !!body.enable_video, !!body.enable_zoom, body.zoom_frequency || 10, body.zoom_scale || 0.99, body.zoom_shift_x || 0, body.zoom_shift_y || 0, body.model || "stable_diffusion_text2im", body.glid_3_xl_skip_iterations || 0, body.glid_3_xl_clip_guidance || false, body.glid_3_xl_clip_guidance_scale || 150, body.width || 256, body.height || 256, body.uncrop_offset_x || 0, body.uncrop_offset_y || 0, body.negative_phrases || [], 0, body.stable_diffusion_strength || 0.75, body.nsfw || false]
             )
             const image = result.rows[0] as Image
             let encoded_image = body.encoded_image;
@@ -363,8 +363,9 @@ export class BackendService {
                     status=$4,
                     updated_at=$5,
                     score=$6,
-                    negative_score=$7
-                WHERE id=$8 RETURNING *`,
+                    negative_score=$7,
+                    nsfw=$8
+                WHERE id=$9 RETURNING *`,
                 [
                     existingImage.label,
                     existingImage.current_iterations,
@@ -373,6 +374,7 @@ export class BackendService {
                     new Date().getTime(),
                     existingImage.score,
                     existingImage.negative_score,
+                    existingImage.nsfw,
                     id
                 ]
             )

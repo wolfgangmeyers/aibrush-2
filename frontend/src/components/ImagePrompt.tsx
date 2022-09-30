@@ -1,14 +1,19 @@
 import React, { FC, useEffect, useState } from "react";
-import { CreateImageInput, Image } from "../client";
-import { aspectRatios, DEFAULT_ASPECT_RATIO, getClosestAspectRatio } from "../lib/aspecRatios";
+import { CreateImageInput, CreateImageInputStatusEnum, Image } from "../client";
+import {
+    aspectRatios, DEFAULT_ASPECT_RATIO, getClosestAspectRatio, upscale, compareSize, AspectRatio
+} from "../lib/aspecRatios";
 import loadImage from "blueimp-load-image";
 import { AspectRatioSelector } from "./AspectRatioSelector";
+import { getUpscaleLevel } from "../lib/upscale";
 
 interface Props {
     parent: Image | null;
     creating: boolean;
     assetsUrl: string;
     onSubmit: (input: CreateImageInput) => void;
+    // go straight to editor without variations
+    onEdit: (input: CreateImageInput) => void;
     onCancel: () => void;
 }
 
@@ -44,6 +49,7 @@ export const ImagePrompt: FC<Props> = ({
     assetsUrl,
     onSubmit,
     onCancel,
+    onEdit,
 }) => {
     const [prompt, setPrompt] = useState<string>("");
     const [negativePrompt, setNegativePrompt] = useState<string>("");
@@ -54,8 +60,11 @@ export const ImagePrompt: FC<Props> = ({
     const [parentId, setParentId] = useState<string | null>(null);
     const [advancedView, setAdvancedView] = useState<boolean>(false);
     const [encodedImage, setEncodedImage] = useState<string>("");
+    const defaultAspectRatio = aspectRatios[DEFAULT_ASPECT_RATIO];
+    
+    const [aspectRatioDetails, setAspectRatioDetails] = useState<AspectRatio>(aspectRatios[DEFAULT_ASPECT_RATIO]);
 
-    const aspectRatioDetails = aspectRatios[aspectRatio];
+    // const aspectRatioDetails = aspectRatios[aspectRatio];
 
     const resetState = () => {
         setPrompt("");
@@ -65,6 +74,7 @@ export const ImagePrompt: FC<Props> = ({
         setParentId(null);
         setVariationStrength(0.75);
         setAspectRatio(DEFAULT_ASPECT_RATIO);
+        setAspectRatioDetails(aspectRatios[DEFAULT_ASPECT_RATIO]);
         setEncodedImage("");
     };
 
@@ -81,8 +91,9 @@ export const ImagePrompt: FC<Props> = ({
             args.width = bestMatch.width;
             args.height = bestMatch.height;
         } else {
-            args.width = aspectRatioDetails.width;
-            args.height = aspectRatioDetails.height;
+            const bestMatch = getClosestAspectRatio(aspectRatioDetails.width, aspectRatioDetails.height);
+            args.width = bestMatch.width;
+            args.height = bestMatch.height;
         }
         if (encodedImage) {
             args.encoded_image = encodedImage;
@@ -91,6 +102,27 @@ export const ImagePrompt: FC<Props> = ({
         resetState();
         onSubmit(args);
     };
+
+    const handleEdit = () => {
+        if (!encodedImage) {
+            console.error("Cannot edit without existing image")
+        }
+        const args = defaultArgs();
+        args.phrases = [prompt || ""];
+        args.negative_phrases = [negativePrompt || ""];
+        args.count = 1;
+        args.parent = parentId || undefined;
+        args.stable_diffusion_strength = variationStrength;
+        args.status = CreateImageInputStatusEnum.Completed;
+        args.width = aspectRatioDetails.width;
+        args.height = aspectRatioDetails.height;
+        if (encodedImage) {
+            args.encoded_image = encodedImage;
+        }
+
+        resetState();
+        onEdit(args);
+    }
 
     const handleCancel = () => {
         resetState();
@@ -111,7 +143,16 @@ export const ImagePrompt: FC<Props> = ({
                 // try to match width and height to a supported aspect ratio
                 const width = img.width;
                 const height = img.height;
-                const bestMatch = getClosestAspectRatio(width, height);
+                let bestMatch = getClosestAspectRatio(width, height);
+                while (compareSize(upscale(bestMatch), width, height) <= 0) {
+                    bestMatch = upscale(bestMatch);
+                    if (getUpscaleLevel(bestMatch.width, bestMatch.height) >= 2) {
+                        break;
+                    }
+                }
+                console.log("best match", bestMatch);
+
+
                 const canvas = document.createElement("canvas");
                 canvas.width = bestMatch.width;
                 canvas.height = bestMatch.height;
@@ -129,13 +170,16 @@ export const ImagePrompt: FC<Props> = ({
                 // get the index of the best match
                 setAspectRatio(
                     aspectRatios.findIndex(
-                        (a) => a.displayName === bestMatch.displayName
+                        (a) => a.id === bestMatch.id
                     )
                 );
+                setAspectRatioDetails(bestMatch);
+                // remove canvas
+                canvas.remove();
             },
             {
-                maxWidth: 1024,
-                maxHeight: 1024,
+                maxWidth: 4096,
+                maxHeight: 4096,
                 canvas: true,
             }
         );
@@ -240,7 +284,12 @@ export const ImagePrompt: FC<Props> = ({
                         {!parent && !encodedImage && (
                             <AspectRatioSelector
                                 aspectRatio={aspectRatio}
-                                onChange={setAspectRatio}
+                                onChange={aspectRatioId => {
+                                    setAspectRatio(aspectRatioId);
+                                    setAspectRatioDetails(
+                                        aspectRatios[aspectRatioId]
+                                    );
+                                }}
                             />
                         )}
                         <div className="form-group">
@@ -380,6 +429,18 @@ export const ImagePrompt: FC<Props> = ({
                                         )}
                                         &nbsp;PAINT
                                     </button>
+                                    {encodedImage && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary light-button"
+                                            onClick={handleEdit}
+                                            style={{ marginLeft: "8px" }}
+                                            disabled={!prompt || creating}
+                                        >
+                                            <i className="fas fa-edit"></i>
+                                            &nbsp;EDIT
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}
