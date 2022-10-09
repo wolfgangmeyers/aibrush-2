@@ -88,15 +88,6 @@ def _swinir_args(image_data, image):
     # downsampling to 256 width yields better results
     buf = BytesIO(image_data)
     img = Image.open(buf)
-    # basewidth = 256
-    # if img.width <= img.height:
-    #     wpercent = (basewidth/float(img.size[0]))
-    #     hsize = int((float(img.size[1])*float(wpercent)))
-    #     img = img.resize((basewidth,hsize), Image.ANTIALIAS)
-    # else:
-    #     hpercent = (basewidth/float(img.size[1]))
-    #     wsize = int((float(img.size[0])*float(hpercent)))
-    #     img = img.resize((wsize,basewidth), Image.ANTIALIAS)
     init_image_path = os.path.join("images", image.id + "-init.jpg")
     output_image_path = os.path.join("images", image.id + ".jpg")
     img.save(init_image_path)
@@ -344,6 +335,22 @@ def process_image():
         return
 
 if __name__ == "__main__":
+    print("Warming up stable diffusion model")
+    # warmup
+    model_name = "stable_diffusion_text2im"
+    create_model()
+    # def _sd_args(image_data, mask_data, npy_data, image):
+    args = _sd_args(None, None, None, SimpleNamespace(
+        phrases=["a cat"],
+        height=512,
+        width=512,
+        id="warmup",
+        iterations=10,
+        stable_diffusion_strength=0.75,
+
+    ))
+    model.generate(args)
+
     backoff = 2
     while True:
         if process_image():
