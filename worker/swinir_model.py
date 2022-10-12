@@ -39,7 +39,9 @@ class SwinIRModel:
         if os.path.exists(model_args.model_path):
             print(f'loading model from {model_args.model_path}')
         else:
-            os.makedirs(os.path.dirname(model_args.model_path), exist_ok=True)
+            model_folder = os.path.dirname(model_args.model_path)
+            if model_folder != "":
+                os.makedirs(os.path.dirname(model_args.model_path), exist_ok=True)
             url = 'https://github.com/JingyunLiang/SwinIR/releases/download/v0.0/{}'.format(os.path.basename(model_args.model_path))
             r = requests.get(url, allow_redirects=True)
             print(f'downloading model {model_args.model_path}')
