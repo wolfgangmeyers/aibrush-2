@@ -13,6 +13,10 @@ import { PencilTool, Controls as PencilControls } from "./pencil-tool";
 import { SmudgeTool, SmudgeControls } from "./smudge-tool";
 import { ImportExportControls } from "./import-export";
 
+interface CanPreventDefault {
+    preventDefault: () => void;
+}
+
 interface Props {
     api: AIBrushApi;
     assetsUrl: string;
@@ -182,7 +186,10 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
         );
     }
 
-    function onResize() {}
+    function preventDefault(e: CanPreventDefault): boolean {
+        e.preventDefault();
+        return true;
+    }
 
     return (
         <>
@@ -237,10 +244,10 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                             style={{cursor: "none"}}
                             ref={canvasRef}
                             className="image-editor-canvas"
-                            onMouseDown={(e) => tool && tool.onMouseDown(e)}
-                            onMouseMove={(e) => tool && tool.onMouseMove(e)}
-                            onMouseUp={(e) => tool && tool.onMouseUp(e)}
-                            onMouseLeave={(e) => tool && tool.onMouseLeave(e)}
+                            onMouseDown={(e) => preventDefault(e) && tool && tool.onMouseDown(e)}
+                            onMouseMove={(e) => preventDefault(e) && tool && tool.onMouseMove(e)}
+                            onMouseUp={(e) => preventDefault(e) && tool && tool.onMouseUp(e)}
+                            onMouseLeave={(e) => preventDefault(e) && tool && tool.onMouseLeave(e)}
                             // onWheel={e => tool && tool.onWheel(e)}
                         />
                     </div>
