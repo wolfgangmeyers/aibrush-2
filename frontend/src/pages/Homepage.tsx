@@ -10,6 +10,7 @@ import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ImagePopup } from "../components/ImagePopupV2";
+import { BusyModal } from "../components/BusyModal";
 
 interface Props {
     api: AIBrushApi;
@@ -376,6 +377,14 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 />
             )}
             <ScrollToTop />
+            <BusyModal
+                show={creating}
+                title="Creating images"
+            >
+                <p>
+                    Please wait while we create your image.
+                </p>
+            </BusyModal>
         </>
     );
 };

@@ -122,13 +122,14 @@ def load_replacement(x):
 
 
 def check_safety(x_image):
-    # safety_checker_input = safety_feature_extractor(numpy_to_pil(x_image), return_tensors="pt")
-    # x_checked_image, has_nsfw_concept = safety_checker(images=x_image, clip_input=safety_checker_input.pixel_values)
+    safety_checker_input = safety_feature_extractor(numpy_to_pil(x_image), return_tensors="pt")
+    _, has_nsfw_concept = safety_checker(images=x_image, clip_input=safety_checker_input.pixel_values)
     # assert x_checked_image.shape[0] == len(has_nsfw_concept)
-    # for i in range(len(has_nsfw_concept)):
-    #     if has_nsfw_concept[i]:
+    for i in range(len(has_nsfw_concept)):
+        if has_nsfw_concept[i]:
+            return x_image, True
     #         x_checked_image[i] = load_replacement(x_checked_image[i])
-    # return x_checked_image, has_nsfw_concept
+    # # return x_checked_image, has_nsfw_concept
     return x_image, False
 
 
@@ -209,12 +210,19 @@ class StableDiffusionText2ImageModel:
                             x_samples = self.model.decode_first_stage(samples)
                             x_samples = torch.clamp((x_samples + 1.0) / 2.0, min=0.0, max=1.0)
 
+                            
+
                             for x_sample in x_samples:
                                 x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
+                                
                                 outfilename = os.path.join(sample_path, args.filename)
                                 Image.fromarray(x_sample.astype(np.uint8)).save(outfilename)
                                 print(f"Saved to {outfilename}")
                                 base_count += 1
+
+                                _, has_nsfw_concept = check_safety(x_sample)
+                                if has_nsfw_concept:
+                                    print("NSFW")
                         else:
                             shape = [args.C, args.H // args.f, args.W // args.f]
                             samples_ddim, _ = self.sampler.sample(S=args.ddim_steps,
@@ -231,12 +239,11 @@ class StableDiffusionText2ImageModel:
                             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                             x_samples_ddim = x_samples_ddim.cpu().permute(0, 2, 3, 1).numpy()
 
-                            # TODO: handle nsfw?
-                            x_checked_image, has_nsfw_concept = check_safety(x_samples_ddim)
+                            
 
-                            x_checked_image_torch = torch.from_numpy(x_checked_image).permute(0, 3, 1, 2)
+                            x_samples_torch = torch.from_numpy(x_samples_ddim).permute(0, 3, 1, 2)
 
-                            for x_sample in x_checked_image_torch:
+                            for x_sample in x_samples_torch:
                                 x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                                 img = Image.fromarray(x_sample.astype(np.uint8))
                                 img = put_watermark(img, self.wm_encoder)
@@ -244,6 +251,9 @@ class StableDiffusionText2ImageModel:
                                 img.save(os.path.join(sample_path, args.filename))
                                 print(f"Saved to {os.path.join(sample_path, args.filename)}")
                                 base_count += 1
+                            _, has_nsfw_concept = check_safety(x_samples_ddim)
+                            if has_nsfw_concept:
+                                print("NSFW")
 
                     # toc = time.time()
 

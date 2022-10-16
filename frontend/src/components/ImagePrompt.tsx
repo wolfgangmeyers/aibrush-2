@@ -90,6 +90,7 @@ export const ImagePrompt: FC<Props> = ({
             const bestMatch = getClosestAspectRatio(parent.width!, parent.height!);
             args.width = bestMatch.width;
             args.height = bestMatch.height;
+            args.nsfw = parent.nsfw;
         } else {
             const bestMatch = getClosestAspectRatio(aspectRatioDetails.width, aspectRatioDetails.height);
             args.width = bestMatch.width;
@@ -116,6 +117,9 @@ export const ImagePrompt: FC<Props> = ({
         args.status = CreateImageInputStatusEnum.Completed;
         args.width = aspectRatioDetails.width;
         args.height = aspectRatioDetails.height;
+        if (parent) {
+            args.nsfw = parent.nsfw;
+        }
         if (encodedImage) {
             args.encoded_image = encodedImage;
         }

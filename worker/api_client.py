@@ -61,12 +61,13 @@ class AIBrushAPI(object):
         resp = self.http_request("/auth/verify", "POST", body)
         return self.parse_json(resp.text)
 
-    def update_image(self, image_id: str, encoded_image: str, encoded_npy: str, current_iterations: int, status: str, score: float, negative_score: float) -> SimpleNamespace:
+    def update_image(self, image_id: str, encoded_image: str, encoded_npy: str, current_iterations: int, status: str, score: float, negative_score: float, nsfw: bool = False) -> SimpleNamespace:
         body = {
             "current_iterations": current_iterations,
             "status": status,
             "score": score,
             "negative_score": negative_score,
+            "nsfw": nsfw,
         }
         if encoded_image:
             body["encoded_image"] = encoded_image

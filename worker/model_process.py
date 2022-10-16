@@ -12,8 +12,9 @@ class ModelProcess:
         print("ModelProcess created")
         self.process = subprocess.Popen(["python", model_file], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
-    def generate(self, args: SimpleNamespace | argparse.Namespace):
+    def generate(self, args: SimpleNamespace | argparse.Namespace) -> bool:
         print("ModelProcess generate called")
+        nsfw = False
         self.process.stdin.write(json.dumps(args.__dict__).encode())
         self.process.stdin.write(b"\n")
         self.process.stdin.flush()
@@ -23,8 +24,11 @@ class ModelProcess:
         while line not in ("GENERATED", "EXCEPTION"):
             line = self.process.stdout.readline().decode().strip()
             print(line)
+            if line.find("NSFW") != -1:
+                nsfw = True
         if line == "EXCEPTION":
             raise Exception("Exception in model process")
+        return nsfw
 
     def __del__(self):
         if self.process:

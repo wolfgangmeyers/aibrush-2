@@ -231,7 +231,7 @@ def process_image():
         # get image data
         image_data = client.get_image_data(image.id)
 
-        def update_image(iterations: int, status: str):
+        def update_image(iterations: int, status: str, nsfw: bool = False):
             score = 0
             negative_score = 0
             image_data = None
@@ -271,7 +271,7 @@ def process_image():
                         npy_data = f.read()
                         npy_data = base64.encodebytes(npy_data).decode("utf-8")
             # update image
-            client.update_image(image.id, image_data, npy_data, iterations, status, score, negative_score)
+            client.update_image(image.id, image_data, npy_data, iterations, status, score, negative_score, nsfw)
         
         def update_video_data():
             print("Updating video data")
@@ -318,12 +318,12 @@ def process_image():
                 clear_clip_ranker()
         if not model:
             create_model()
-        model.generate(args)
+        nsfw = model.generate(args)
 
         #  only update video if vqgan
         if image.model == "vqgan_imagenet_f16_16384" and image.enable_video:
             update_video_data()
-        update_image(image.iterations, "completed")
+        update_image(image.iterations, "completed", nsfw)
         return True
     except Exception as e:
         print(f"Error: {e}")
