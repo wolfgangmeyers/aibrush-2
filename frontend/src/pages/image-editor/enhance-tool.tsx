@@ -21,6 +21,10 @@ type EnhanceToolState = "default" | "busy" | "confirm" | "erase";
 // equal to the what is used on enhanced selections
 const eraserWidthModifier = 1.3;
 
+interface ImageWithData extends APIImage {
+    data?: ImageData;
+}
+
 export class EnhanceTool extends BaseTool implements Tool {
     private renderer: Renderer;
     private zoomHelper: ZoomHelper;
@@ -398,12 +402,13 @@ export class EnhanceTool extends BaseTool implements Tool {
             this.state = "default";
             return;
         }
-        let newImages = resp.images;
+        let newImages: Array<ImageWithData> | undefined = resp.images;
         if (!newImages || newImages.length === 0) {
             this.state = "default";
             throw new Error("No images returned");
         }
         let completed = false;
+
 
         while (!completed) {
             let completeCount = 0;
@@ -419,6 +424,13 @@ export class EnhanceTool extends BaseTool implements Tool {
                     if (imageResp.data.status === ImageStatusEnum.Completed) {
                         newImages![i] = imageResp.data;
                         completeCount++;
+                        const imageData = await this.loadImageData(
+                            api,
+                            newImages![i].id,
+                            image,
+                            selectionOverlay!
+                        )
+                        newImages![i].data = imageData;
                     }
                 } catch (err) {
                     // gracefully leave out the result...
@@ -440,14 +452,22 @@ export class EnhanceTool extends BaseTool implements Tool {
 
         this.imageData = [];
         for (let i = 0; i < newImages!.length; i++) {
-            this.imageData.push(
-                await this.loadImageData(
-                    api,
-                    newImages[i].id,
-                    image,
-                    selectionOverlay!
-                )
-            );
+            if (newImages![i].data) {
+                this.imageData.push(newImages![i].data as ImageData);
+            }
+            // this.imageData.push(
+            //     await this.loadImageData(
+            //         api,
+            //         newImages[i].id,
+            //         image,
+            //         selectionOverlay!
+            //     )
+            // );
+        }
+        if (this.imageData.length === 0) {
+            this.state = "default";
+            this.notifyError("No images returned");
+            return;
         }
         this.renderer.setEditImage(this.imageData[0]);
         this.selectedImageDataIndex = 0;
