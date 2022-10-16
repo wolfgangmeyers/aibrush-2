@@ -17,7 +17,7 @@ export const ImageSearchPopup : FC<Props> = ({ api, onHide, filterOut, onSubmit 
 
     useEffect(() => {
         const loadImages = async () => {
-            const images = await api.listImages(undefined, 1000)
+            const images = await api.listImages(undefined, "", 1000)
             setImages((
                 images.data.images || []
             ).filter(image => !filterOut.includes(image.phrases.join("|"))));

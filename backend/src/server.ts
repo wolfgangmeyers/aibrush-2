@@ -271,13 +271,15 @@ export class Server {
                 try {
                     limit = parseInt(req.query.limit as string)
                 } catch (err) { }
+                let filter: string | undefined = req.query.filter as any;
 
                 let query = {
                     userId: jwt.userId,
                     status: req.query.status as ImageStatusEnum,
                     cursor,
                     direction,
-                    limit
+                    limit,
+                    filter
                 }
 
                 const images = await this.backendService.listImages(query)

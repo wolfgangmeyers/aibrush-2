@@ -130,7 +130,7 @@ export class BackendService {
     }
 
     // list images
-    async listImages(query: { userId?: string, status?: ImageStatusEnum, cursor?: number, direction?: "asc" | "desc", limit?: number }): Promise<ImageList> {
+    async listImages(query: { userId?: string, status?: ImageStatusEnum, cursor?: number, direction?: "asc" | "desc", limit?: number, filter?: string }): Promise<ImageList> {
         const client = await this.pool.connect()
         let whereClauses = ["temporary=false"];
         let args = [];
@@ -150,6 +150,13 @@ export class BackendService {
             whereClauses.push(`updated_at ${query.direction === "asc" ? ">=" : "<="} $` + (args.length + 1))
             args.push(query.cursor)
         }
+        if (query.filter) {
+            // label is a string, phrases is a string list
+            // if the filter is in either, return the image
+            // TODO: refactor phrases to prompt
+            whereClauses.push(`(label ILIKE $` + (args.length + 1) + ` OR prompt ILIKE $` + (args.length + 1) + `)`)
+            args.push(`%${query.filter}%`)
+        }
         let whereClause = "";
         if (whereClauses.length > 0) {
             whereClause = "WHERE " + whereClauses.join(" AND ")
@@ -158,7 +165,7 @@ export class BackendService {
         const orderBy = query.direction === "asc" ? "ASC" : "DESC";
         try {
             const result = await client.query(
-                `SELECT * FROM images ${whereClause} ORDER BY updated_at ${orderBy} LIMIT ${limit}`,
+                `SELECT i.* FROM images i, unnest(phrases) prompt ${whereClause} ORDER BY updated_at ${orderBy} LIMIT ${limit}`,
                 args
             )
             return {

@@ -30,8 +30,20 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
     const [images, setImages] = useState<Array<Image>>([]);
     const [err, setErr] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState<boolean>(true);
+    const [search, setSearch] = useState<string>("");
+    const [searchDebounce, setSearchDebounce] = useState<string>("");
+
     const { id } = useParams<{ id?: string }>();
     const history = useHistory();
+
+    useEffect(() => {
+        let handle = setTimeout(() => {
+            setSearch(searchDebounce);
+        }, 500);
+        return () => {
+            clearTimeout(handle);
+        }
+    }, [searchDebounce]);
 
     useEffect(() => {
         if (id) {
@@ -138,12 +150,14 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             return;
         }
         const loadImages = async () => {
+            console.log("Initial load images")
             // clear error
             setErr(null);
             try {
                 const cursor = moment().add(1, "minutes").valueOf();
-                const resp = await api.listImages(cursor, 100, "desc");
+                const resp = await api.listImages(cursor, search, 100, "desc");
                 if (resp.data.images) {
+                    console.log("Initial load images", resp.data.images.length)
                     setImages(resp.data.images.sort(sortImages));
                     setOptimisticPendingCount(0);
                 }
@@ -154,7 +168,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             }
         };
         loadImages();
-    }, [api]);
+    }, [api, search]);
 
     useEffect(() => {
         if (!api) {
@@ -170,7 +184,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             }, 0);
 
             try {
-                const resp = await api.listImages(cursor + 1, 100, "asc");
+                const resp = await api.listImages(cursor + 1, search, 100, "asc");
                 if (resp.data.images) {
                     // split resp.data.images into "new" and "updated" lists
                     // image is "new" if it's not in images
@@ -208,7 +222,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         return () => {
             clearInterval(timerHandle);
         };
-    }, [api, images]);
+    }, [api, images, search]);
 
     useEffect(() => {
         // de-duplicate images by id
@@ -277,7 +291,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             minUpdatedAt = Math.min(minUpdatedAt, image.updated_at);
         });
         // load images in descending order from updated_at
-        const resp = await api.listImages(minUpdatedAt - 1, 100, "desc");
+        const resp = await api.listImages(minUpdatedAt - 1, search, 100, "desc");
         if (resp.data.images && resp.data.images.length > 0) {
             // combine images with new images and sort by updated_at descending
             setImages((images) =>
@@ -353,7 +367,34 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 parent={parentImage}
                 onCancel={() => handleCancelFork()}
             />
+            <hr />
+
             <div className="homepage-images" style={{ marginTop: "48px" }}>
+                <div style={{textAlign: "left"}}>
+                    
+                    <input
+                        style={{
+                            // marginBottom: "16px",
+                            color: "white",
+                            backgroundColor: "black",
+                            border: "1px solid white",
+                            paddingLeft: "30px"
+                        }}
+                        value={searchDebounce}
+                        type="search"
+                        className="form-control"
+                        placeholder="Search..."
+                        onChange={(e) => setSearchDebounce(e.target.value)}
+                    />
+                    <i
+                        className="fas fa-search"
+                        style={{
+                            position: "relative",
+                            left: "10px",
+                            top: "-30px",
+                        }}
+                    ></i>
+                </div>
                 <InfiniteScroll
                     dataLength={images.length}
                     next={onLoadMore}
@@ -362,7 +403,9 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 >
                     {pendingOrProcessingImages.length > 0 && (
                         <PendingImagesThumbnail
-                            pendingCount={pendingImages.length + optimisticPendingCount}
+                            pendingCount={
+                                pendingImages.length + optimisticPendingCount
+                            }
                             processingCount={processingImages.length}
                             onClick={() => {
                                 setShowPendingImages(true);
