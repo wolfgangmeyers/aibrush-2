@@ -168,8 +168,15 @@ export class BackendService {
                 `SELECT i.* FROM images i, unnest(phrases) prompt ${whereClause} ORDER BY updated_at ${orderBy} LIMIT ${limit}`,
                 args
             )
+            // deduplicate images due to the unnest. Again, temporary until we refactor phrases to prompt
+            const dedupedImages = result.rows.reduce((acc: Image[], image: Image) => {
+                if (acc.find(i => i.id === image.id)) {
+                    return acc
+                }
+                return [...acc, image]
+            }, [])
             return {
-                images: result.rows.map(i => this.hydrateImage(i))
+                images: dedupedImages.map((i: any) => this.hydrateImage(i))
             }
         } finally {
             client.release()
