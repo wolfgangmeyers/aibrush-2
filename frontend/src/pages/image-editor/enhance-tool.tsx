@@ -9,6 +9,7 @@ import {
     AIBrushApi,
     CreateImageInput,
     Image as APIImage,
+    ImageList,
     ImageStatusEnum,
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
@@ -38,6 +39,17 @@ export class EnhanceTool extends BaseTool implements Tool {
     private panning = false;
     private erasing = false;
     private progressListener?: (progress: number) => void;
+    private errorListener?: (error: string | null) => void;
+
+    onError(handler: (error: string | null) => void) {
+        this.errorListener = handler;
+    }
+
+    private notifyError(error: string | null) {
+        if (this.errorListener) {
+            this.errorListener(error);
+        }
+    }
 
     get state(): EnhanceToolState {
         return this._state;
@@ -348,7 +360,6 @@ export class EnhanceTool extends BaseTool implements Tool {
             this.imageData = [];
             this.renderer.setEditImage(null);
         }
-        
     }
 
     erase() {
@@ -356,6 +367,7 @@ export class EnhanceTool extends BaseTool implements Tool {
     }
 
     async submit(api: AIBrushApi, image: APIImage) {
+        this.notifyError(null);
         const selectionOverlay = this.renderer.getSelectionOverlay();
         const encodedImage = this.renderer.getEncodedImage(selectionOverlay!);
         if (!encodedImage) {
@@ -377,8 +389,16 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.temporary = true;
 
         this.state = "busy";
-        let resp = await api.createImage(input);
-        let newImages = resp.data.images;
+        let resp: ImageList | null = null;
+        try {
+            resp = (await api.createImage(input)).data;
+        } catch (err) {
+            console.error("Error creating images", err);
+            this.notifyError("Failed to create image");
+            this.state = "default";
+            return;
+        }
+        let newImages = resp.images;
         if (!newImages || newImages.length === 0) {
             this.state = "default";
             throw new Error("No images returned");
@@ -394,9 +414,15 @@ export class EnhanceTool extends BaseTool implements Tool {
                     completeCount++;
                     continue;
                 }
-                const imageResp = await api.getImage(newImages![i].id);
-                if (imageResp.data.status === ImageStatusEnum.Completed) {
-                    newImages![i] = imageResp.data;
+                try {
+                    const imageResp = await api.getImage(newImages![i].id);
+                    if (imageResp.data.status === ImageStatusEnum.Completed) {
+                        newImages![i] = imageResp.data;
+                        completeCount++;
+                    }
+                } catch (err) {
+                    // gracefully leave out the result...
+                    console.error(err);
                     completeCount++;
                 }
             }
@@ -489,9 +515,11 @@ export const EnhanceControls: FC<ControlsProps> = ({
     const [prompt, setPrompt] = useState(image.phrases[0]);
     const [state, setState] = useState<EnhanceToolState>(tool.state);
     const [progress, setProgress] = useState(0);
+    const [error, setError] = useState<string | null>(null);
 
     tool.onChangeState(setState);
     tool.onProgress(setProgress);
+    tool.onError(setError);
 
     if (state == "busy") {
         return (
@@ -549,6 +577,21 @@ export const EnhanceControls: FC<ControlsProps> = ({
     }
     return (
         <div style={{ marginTop: "16px" }}>
+            {error && (
+                <div className="alert alert-danger" role="alert">
+                    {/* dismiss button */}
+                    <button
+                        type="button"
+                        className="close"
+                        data-dismiss="alert"
+                        aria-label="Close"
+                        onClick={() => setError(null)}
+                    >
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    {error}
+                </div>
+            )}
             {/* prompt */}
             <div className="form-group">
                 <label htmlFor="prompt">Prompt</label>
