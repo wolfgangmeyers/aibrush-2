@@ -153,6 +153,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             console.log("Initial load images")
             // clear error
             setErr(null);
+            setHasMore(true);
             try {
                 const cursor = moment().add(1, "minutes").valueOf();
                 const resp = await api.listImages(cursor, search, 100, "desc");
