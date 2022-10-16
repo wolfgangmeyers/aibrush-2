@@ -196,6 +196,12 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     nsfw?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof CreateImageInput
+     */
+    temporary?: boolean;
 }
 
 /**
@@ -576,6 +582,12 @@ export interface Image {
      * @memberof Image
      */
     nsfw: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Image
+     */
+    temporary: boolean;
 }
 
 /**

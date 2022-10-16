@@ -1,4 +1,4 @@
-import { Client, Pool } from "pg"
+import { Client, Pool, PoolClient } from "pg"
 import os from "os";
 import { createDb, migrate } from "postgres-migrations"
 import * as uuid from "uuid"
@@ -42,6 +42,8 @@ import { LoginCode } from "./model"
 import { Filestore, S3Filestore, LocalFilestore } from "./filestore";
 
 process.env.PGUSER = process.env.PGUSER || "postgres"
+const STUCK_IMAGES_KEY = 1
+const TEMPORARY_IMAGES_KEY = 2
 
 export class BackendService {
 
@@ -130,7 +132,7 @@ export class BackendService {
     // list images
     async listImages(query: { userId?: string, status?: ImageStatusEnum, cursor?: number, direction?: "asc" | "desc", limit?: number }): Promise<ImageList> {
         const client = await this.pool.connect()
-        let whereClauses = [];
+        let whereClauses = ["temporary=false"];
         let args = [];
 
         if (query.userId) {
@@ -282,11 +284,11 @@ export class BackendService {
         try {
             const result = await client.query(
                 `INSERT INTO images
-                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status, enable_video, enable_zoom, zoom_frequency, zoom_scale, zoom_shift_x, zoom_shift_y, model, glid_3_xl_skip_iterations, glid_3_xl_clip_guidance, glid_3_xl_clip_guidance_scale, width, height, uncrop_offset_x, uncrop_offset_y, negative_phrases, negative_score, stable_diffusion_strength, nsfw)
+                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status, enable_video, enable_zoom, zoom_frequency, zoom_scale, zoom_shift_x, zoom_shift_y, model, glid_3_xl_skip_iterations, glid_3_xl_clip_guidance, glid_3_xl_clip_guidance_scale, width, height, uncrop_offset_x, uncrop_offset_y, negative_phrases, negative_score, stable_diffusion_strength, nsfw, temporary)
                 VALUES
-                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
+                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30)
                 RETURNING *`,
-                [uuid.v4(), createdBy, new Date().getTime(), new Date().getTime(), body.label, body.parent, body.phrases, body.iterations, 0, 0, body.status || "pending", !!body.enable_video, !!body.enable_zoom, body.zoom_frequency || 10, body.zoom_scale || 0.99, body.zoom_shift_x || 0, body.zoom_shift_y || 0, body.model || "stable_diffusion_text2im", body.glid_3_xl_skip_iterations || 0, body.glid_3_xl_clip_guidance || false, body.glid_3_xl_clip_guidance_scale || 150, body.width || 256, body.height || 256, body.uncrop_offset_x || 0, body.uncrop_offset_y || 0, body.negative_phrases || [], 0, body.stable_diffusion_strength || 0.75, body.nsfw || false]
+                [uuid.v4(), createdBy, new Date().getTime(), new Date().getTime(), body.label, body.parent, body.phrases, body.iterations, 0, 0, body.status || "pending", !!body.enable_video, !!body.enable_zoom, body.zoom_frequency || 10, body.zoom_scale || 0.99, body.zoom_shift_x || 0, body.zoom_shift_y || 0, body.model || "stable_diffusion_text2im", body.glid_3_xl_skip_iterations || 0, body.glid_3_xl_clip_guidance || false, body.glid_3_xl_clip_guidance_scale || 150, body.width || 256, body.height || 256, body.uncrop_offset_x || 0, body.uncrop_offset_y || 0, body.negative_phrases || [], 0, body.stable_diffusion_strength || 0.75, body.nsfw || false, body.temporary || false]
             )
             const image = result.rows[0] as Image
             let encoded_image = body.encoded_image;
@@ -468,20 +470,79 @@ export class BackendService {
 
     // for all images with status "processing" that have not been updated in more than 5 minutes,
     // update status to "pending"
-    async cleanupStuckImages(): Promise<void> {
+    private async cleanupStuckImages(): Promise<void> {
         const client = await this.pool.connect()
+        let lock = false;
         try {
+            lock = await this.acquireLock(client, STUCK_IMAGES_KEY)
+            if (!lock) {
+                return
+            }
             const result = await client.query(
                 `UPDATE images SET status='pending', updated_at=$2 WHERE status='processing' AND updated_at < $1`,
-                [new Date().getTime() - (60 * 60 * 1000), new Date().getTime()]
+                [new Date().getTime() - (60 * 1000), new Date().getTime()]
             )
             // if any images were updated, log the number
             if (result.rowCount > 0) {
                 console.log(`Cleaning up stuck images: ${result.rowCount} images updated to "pending"`)
             }
         } finally {
+            if (lock) {
+                await this.releaseLock(client, STUCK_IMAGES_KEY)
+            }
             client.release()
         }
+    }
+
+    private async cleanupTemporaryImages(): Promise<void> {
+        // delete images with temporary=true and older than one hour
+        const client = await this.pool.connect()
+        let lock = false
+        try {
+            lock = await this.acquireLock(client, TEMPORARY_IMAGES_KEY)
+            if (!lock) {
+                return
+            }
+            // first list all temporary images, iterate over them and delete them.
+            // they might have files in the filestore too
+            const result = await client.query(
+                `SELECT * FROM images WHERE temporary=true AND created_at < $1`,
+                [new Date().getTime() - (60 * 60 * 1000)]
+            )
+            if (result.rows.length > 0) {
+                const promises: Promise<void>[] = []
+                result.rows.forEach(row => {
+                    promises.push(this.deleteImage(row.id))
+                })
+                await Promise.all(promises)
+                console.log(`cleaned up temporary images: ${result.rowCount} images deleted`)
+            }
+        } finally {
+            if (lock) {
+                await this.releaseLock(client, TEMPORARY_IMAGES_KEY)
+            }
+            client.release()
+        }
+    }
+
+    private async acquireLock(client: PoolClient, key: number): Promise<boolean> {
+        const result = await client.query(
+            `SELECT pg_try_advisory_lock($1)`,
+            [key]
+        )
+        return result.rows[0].pg_try_advisory_lock as boolean
+    }
+
+    private async releaseLock(client: PoolClient, key: number): Promise<void> {
+        await client.query(
+            `SELECT pg_advisory_unlock($1)`,
+            [key]
+        )
+    }
+
+    async cleanup() {
+        await this.cleanupStuckImages()
+        await this.cleanupTemporaryImages()
     }
 
 
@@ -677,19 +738,6 @@ export class BackendService {
                 [id, user]
             )
             return result.rowCount > 0
-        } finally {
-            client.release()
-        }
-    }
-
-    // clean up old suggestion jobs
-    async cleanupSuggestionsJobs(): Promise<void> {
-        const client = await this.pool.connect()
-        try {
-            const result = await client.query(
-                `DELETE FROM suggestions_jobs WHERE updated_at < $1`,
-                [moment().subtract(1, "hours").valueOf()]
-            )
         } finally {
             client.release()
         }
@@ -940,25 +988,6 @@ export class BackendService {
             client.release()
         }
     }
-
-    async cleanupSvgJobs(): Promise<void> {
-        // clean up any svj jobs that are older than 1 hours
-        const client = await this.pool.connect()
-        try {
-            // list jobs
-            const result = await client.query(
-                `SELECT * FROM svg_jobs WHERE created_at < $1`,
-                [moment().subtract(1, "hours").valueOf()]
-            )
-            // delete jobs
-            for (const job of result.rows) {
-                await this.deleteSvgJob(job.id)
-            }
-        } finally {
-            client.release()
-        }
-    }
-
    
     async getWorkflows(userId: string): Promise<WorkflowList> {
         const client = await this.pool.connect()

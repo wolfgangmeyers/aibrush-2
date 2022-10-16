@@ -219,10 +219,6 @@ class StableDiffusionText2ImageModel:
                                 Image.fromarray(x_sample.astype(np.uint8)).save(outfilename)
                                 print(f"Saved to {outfilename}")
                                 base_count += 1
-
-                                _, has_nsfw_concept = check_safety(x_sample)
-                                if has_nsfw_concept:
-                                    print("NSFW")
                         else:
                             shape = [args.C, args.H // args.f, args.W // args.f]
                             samples_ddim, _ = self.sampler.sample(S=args.ddim_steps,

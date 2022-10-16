@@ -319,6 +319,7 @@ def process_image():
         if not model:
             create_model()
         nsfw = model.generate(args)
+        nsfw = nsfw or image.nsfw # inherit nsfw from parent
 
         #  only update video if vqgan
         if image.model == "vqgan_imagenet_f16_16384" and image.enable_video:

@@ -374,6 +374,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         const closestAspectRatio = getClosestAspectRatio(selectionOverlay!.width, selectionOverlay!.height);
         input.width = closestAspectRatio.width;
         input.height = closestAspectRatio.height;
+        input.temporary = true;
 
         this.state = "busy";
         let resp = await api.createImage(input);
@@ -421,10 +422,6 @@ export class EnhanceTool extends BaseTool implements Tool {
                     selectionOverlay!
                 )
             );
-        }
-        // cleanup
-        for (let i = 0; i < newImages!.length; i++) {
-            await api.deleteImage(newImages![i].id);
         }
         this.renderer.setEditImage(this.imageData[0]);
         this.selectedImageDataIndex = 0;

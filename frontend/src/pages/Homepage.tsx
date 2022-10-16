@@ -11,6 +11,8 @@ import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ImagePopup } from "../components/ImagePopupV2";
 import { BusyModal } from "../components/BusyModal";
+import { PendingImagesThumbnail } from "../components/PendingImagesThumbnail";
+import { PendingImages } from "../components/PendingImages";
 
 interface Props {
     api: AIBrushApi;
@@ -21,6 +23,9 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
     const [creating, setCreating] = useState(false);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const [parentImage, setParentImage] = useState<Image | null>(null);
+
+    const [optimisticPendingCount, setOptimisticPendingCount] = useState(0);
+    const [showPendingImages, setShowPendingImages] = useState(false);
 
     const [images, setImages] = useState<Array<Image>>([]);
     const [err, setErr] = useState<string | null>(null);
@@ -51,16 +56,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         window.scrollTo(0, 0);
         try {
             const newImages = await api.createImage(input);
-            setImages((images) => {
-                // there is a race condition where poll images can fire before this callback
-                // so double-check to avoid duplicates
-                const imagesToAdd = (newImages.data.images || []).filter(
-                    (image) => {
-                        return !images.find((i) => i.id === image.id);
-                    }
-                );
-                return [...imagesToAdd, ...images].sort(sortImages);
-            });
+            setOptimisticPendingCount(newImages.data.images?.length || 0);
         } catch (e: any) {
             console.error(e);
             setErr("Error creating image");
@@ -98,7 +94,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                     return i;
                 });
             });
-            setSelectedImage(res.data)
+            setSelectedImage(res.data);
         });
     };
 
@@ -128,14 +124,14 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 );
                 return [...imagesToAdd, ...images].sort(sortImages);
             });
-            history.push("/")
+            history.push("/");
         } catch (e: any) {
             console.error(e);
             setErr("Error creating image");
         } finally {
             setCreating(false);
         }
-    }
+    };
 
     useEffect(() => {
         if (!api) {
@@ -149,6 +145,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 const resp = await api.listImages(cursor, 100, "desc");
                 if (resp.data.images) {
                     setImages(resp.data.images.sort(sortImages));
+                    setOptimisticPendingCount(0);
                 }
                 return 0;
             } catch (err) {
@@ -303,7 +300,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
     const onFork = async (image: Image) => {
         setParentImage(image);
         // setSelectedImage(null);
-        history.push("/")
+        history.push("/");
         window.scrollTo(0, 0);
     };
 
@@ -313,13 +310,34 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
 
     const onThumbnailClicked = (image: Image) => {
         // setSelectedImage(image);
-        history.push(`/images/${image.id}`)
+        history.push(`/images/${image.id}`);
     };
 
     const handleCancelFork = () => {
         setParentImage(null);
         window.scrollTo(0, 0);
     };
+
+    const completedOrSavedImages = images.filter((image) => {
+        return (
+            image.status === ImageStatusEnum.Completed ||
+            image.status === ImageStatusEnum.Saved
+        );
+    });
+
+    const pendingOrProcessingImages = images.filter(
+        (image) =>
+            image.status === ImageStatusEnum.Pending ||
+            image.status === ImageStatusEnum.Processing
+    );
+
+    const pendingImages = pendingOrProcessingImages.filter(
+        (image) => image.status === ImageStatusEnum.Pending
+    );
+
+    const processingImages = pendingOrProcessingImages.filter(
+        (image) => image.status === ImageStatusEnum.Processing
+    );
 
     return (
         <>
@@ -342,7 +360,16 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                     hasMore={hasMore}
                     loader={<h4>Loading...</h4>}
                 >
-                    {images.map((image) => (
+                    {pendingOrProcessingImages.length > 0 && (
+                        <PendingImagesThumbnail
+                            pendingCount={pendingImages.length + optimisticPendingCount}
+                            processingCount={processingImages.length}
+                            onClick={() => {
+                                setShowPendingImages(true);
+                            }}
+                        />
+                    )}
+                    {completedOrSavedImages.map((image) => (
                         <ImageThumbnail
                             key={image.id}
                             image={image}
@@ -377,14 +404,18 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 />
             )}
             <ScrollToTop />
-            <BusyModal
-                show={creating}
-                title="Creating images"
-            >
-                <p>
-                    Please wait while we create your image.
-                </p>
+            <BusyModal show={creating} title="Creating images">
+                <p>Please wait while we create your image.</p>
             </BusyModal>
+            <PendingImages
+                images={pendingOrProcessingImages}
+                onCancel={() => setShowPendingImages(false)}
+                show={showPendingImages}
+                onDeleteImage={(image) => {
+                    onDelete(image);
+                    setImages(images.filter((i) => i.id !== image.id));
+                }}
+            />
         </>
     );
 };

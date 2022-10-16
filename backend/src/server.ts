@@ -5,6 +5,7 @@ import fs from "fs"
 import path from "path"
 import { createHttpTerminator, HttpTerminator } from "http-terminator"
 
+import { sleep } from "./sleep";
 import { BackendService } from "./backend";
 import { Config } from "./config"
 import { AuthHelper, AuthJWTPayload, authMiddleware, ServiceAccountConfig, hash } from "./auth"
@@ -879,12 +880,18 @@ export class Server {
             })
             this.terminator = createHttpTerminator({ server: this.server, gracefulTerminationTimeout: 100 })
 
-            this.cleanupHandle = setInterval(() => {
-                console.log("timer callback")
-                this.backendService.cleanupStuckImages()
-                this.backendService.cleanupSuggestionsJobs()
-                this.backendService.cleanupSvgJobs()
-            }, 1000 * 60)
+            const cleanup = async () => {
+                console.log("cleanup process running")
+                await this.backendService.cleanup()
+                console.log("cleanup complete")
+            }
+            sleep(Math.random() * 1000).then(() => {
+                this.cleanupHandle = setInterval(() => {
+                    cleanup()
+                }, 1000 * 60)
+                cleanup()
+            })
+            
         })
     }
 

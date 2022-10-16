@@ -196,6 +196,12 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     'nsfw'?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof CreateImageInput
+     */
+    'temporary'?: boolean;
 }
 
 export const CreateImageInputStatusEnum = {
@@ -566,6 +572,12 @@ export interface Image {
      * @memberof Image
      */
     'nsfw': boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Image
+     */
+    'temporary': boolean;
 }
 
 export const ImageStatusEnum = {

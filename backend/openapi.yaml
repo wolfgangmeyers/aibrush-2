@@ -901,6 +901,8 @@ components:
           type: integer
         nsfw:
           type: boolean
+        temporary:
+          type: boolean
 
     UpdateImageInput:
       type: object
@@ -993,6 +995,8 @@ components:
           type: number
         nsfw:
           type: boolean
+        temporary:
+          type: boolean
       required:
         - id
         - created_at
@@ -1013,6 +1017,7 @@ components:
         - height
         - stable_diffusion_strength
         - nsfw
+        - temporary
     ImageList:
       properties:
         images:
