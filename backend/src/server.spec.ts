@@ -1132,7 +1132,7 @@ describe("server", () => {
 
             describe("when listing images with limit=2, direction=desc", () => {
                 beforeEach(async () => {
-                    listResponse = await client.listImages(images[0].updated_at, 2, "asc")
+                    listResponse = await client.listImages(images[0].updated_at, "", 2, "asc")
                 })
 
                 it("should return the 2 oldest images", () => {
@@ -1144,7 +1144,7 @@ describe("server", () => {
 
             describe("when listing images with limit=2, direction=asc", () => {
                 beforeEach(async () => {
-                    listResponse = await client.listImages(images[9].updated_at, 2, "desc")
+                    listResponse = await client.listImages(images[9].updated_at, "", 2, "desc")
                 })
 
                 it("should return the 2 newest images", () => {
@@ -1156,7 +1156,7 @@ describe("server", () => {
 
             describe("when listing images starting with the third image, limit=2, direction=asc", () => {
                 beforeEach(async () => {
-                    listResponse = await client.listImages(images[2].updated_at, 2, "asc")
+                    listResponse = await client.listImages(images[2].updated_at, "", 2, "asc")
                 })
 
                 it("should return the third and fourth images", () => {
@@ -1168,7 +1168,7 @@ describe("server", () => {
 
             describe("when listing images starting with the third image, no limit, direction=asc", () => {
                 beforeEach(async () => {
-                    listResponse = await client.listImages(images[2].updated_at, undefined, "asc")
+                    listResponse = await client.listImages(images[2].updated_at, "", undefined, "asc")
                 })
 
                 it("should return the last 8 images", () => {
@@ -1180,7 +1180,7 @@ describe("server", () => {
 
             describe("when listing images starting with the third image, no limit, direction=desc", () => {
                 beforeEach(async () => {
-                    listResponse = await client.listImages(images[2].updated_at, undefined, "desc")
+                    listResponse = await client.listImages(images[2].updated_at, "", undefined, "desc")
                 })
 
                 it("should return the first 3 images", () => {
