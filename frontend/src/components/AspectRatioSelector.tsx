@@ -30,7 +30,12 @@ export const AspectRatioSelector: FC<Props> = ({ aspectRatio, onChange, disabled
                     }}
                 ></div>
             </div>
-            <label>Aspect Ratio: {aspectRatioDetails.displayName}</label>
+            <label style={{width: "100%"}}>
+                Aspect Ratio
+                <small className="form-text text-muted" style={{float: "right"}}>
+                    {aspectRatioDetails.displayName}
+                </small>
+            </label>
             <input
                 type="range"
                 disabled={disabled}

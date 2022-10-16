@@ -12,8 +12,13 @@ import {
     ImageStatusEnum,
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
+import { getClosestAspectRatio } from "../../lib/aspecRatios";
 
-type EnhanceToolState = "default" | "busy" | "confirm";
+type EnhanceToolState = "default" | "busy" | "confirm" | "erase";
+
+// eraser width modifier adds a solid core with a feather edge
+// equal to the what is used on enhanced selections
+const eraserWidthModifier = 1.3;
 
 export class EnhanceTool extends BaseTool implements Tool {
     private renderer: Renderer;
@@ -29,7 +34,10 @@ export class EnhanceTool extends BaseTool implements Tool {
 
     private imageData: Array<ImageData> = [];
     private selectedImageDataIndex: number = -1;
+    private selectedImageData: ImageData | null = null;
     private panning = false;
+    private erasing = false;
+    private progressListener?: (progress: number) => void;
 
     get state(): EnhanceToolState {
         return this._state;
@@ -52,23 +60,135 @@ export class EnhanceTool extends BaseTool implements Tool {
     }
 
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+        let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
+            event.nativeEvent.offsetX,
+            event.nativeEvent.offsetY
+        );
         if (event.button === 1) {
             this.panning = true;
+            return;
+        }
+        if (this.state == "erase" && this.selectedImageData) {
+            this.erasing = true;
+            // clone selected ImageData
+            this.selectedImageData = new ImageData(
+                this.selectedImageData.data.slice(),
+                this.selectedImageData.width,
+                this.selectedImageData.height
+            );
+
+            this.erasePoint(x, y);
         }
     }
 
+    // TODO: on erase cancel and on erase confirm
+    // either restore the image data from the array
+    // or overwrite the array with the new image data
+
+    private erasePoint(x: number, y: number) {
+        const selectionOverlay = this.renderer.getSelectionOverlay()!;
+        const baseWidth = Math.min(
+            selectionOverlay.width,
+            selectionOverlay.height
+        );
+        const eraserRadius = Math.floor(baseWidth / 8 * eraserWidthModifier);
+
+        const relX = x - selectionOverlay.x;
+        const relY = y - selectionOverlay.y;
+        const imageData = this.selectedImageData!;
+
+        const startX = Math.max(0, relX - eraserRadius);
+        const startY = Math.max(0, relY - eraserRadius);
+        const endX = Math.min(imageData.width, relX + eraserRadius);
+        const endY = Math.min(imageData.height, relY + eraserRadius);
+
+        
+        // relX=64.28541697636388, relY=64.24464312259761, startX=0.28541697636387653, startY=0.24464312259760845, endX=128.28541697636388, endY=128.2446431225976
+
+        for (let i = startX; i < endX; i++) {
+            for (let j = startY; j < endY; j++) {
+                const index = (j * imageData.width + i) * 4;
+                const distance = Math.sqrt(
+                    Math.pow(i - relX, 2) + Math.pow(j - relY, 2)
+                );
+                if (distance < eraserRadius) {
+                    // set alpha to a linear gradient from the center,
+                    // 100% in the middle and 0% at the edge
+                    const alphaPct = (distance / eraserRadius) * eraserWidthModifier - (eraserWidthModifier - 1);
+
+                    const alpha = Math.min(Math.floor(
+                        alphaPct * 255
+                    ), imageData.data[index + 3]);
+                    imageData.data[index + 3] = alpha;
+                }
+            }
+        }
+        this.renderer.setEditImage(imageData);
+    }
+
+    private updateCursor(x: number, y: number) {
+        if (this.state == "erase" && this.selectedImageData) {
+            const selectionOverlay = this.renderer.getSelectionOverlay()!;
+            const baseWidth = Math.min(
+                selectionOverlay.width,
+                selectionOverlay.height
+            );
+            const featherWidth = Math.floor(baseWidth / 8);
+            this.renderer.setCursor({
+                color: "white",
+                radius: featherWidth * eraserWidthModifier,
+                type: "circle",
+                x,
+                y,
+            });
+        } else {
+            this.renderer.setCursor({
+                color: "white",
+                radius: 10,
+                type: "crosshairs",
+                x,
+                y,
+            });
+        }
+        
+    }
+
     onMouseMove(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+        let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
+            event.nativeEvent.offsetX,
+            event.nativeEvent.offsetY
+        );
         if (this.panning) {
             this.zoomHelper.onPan(event);
+        }
+        
+        this.updateCursor(x, y);
+        if (this.erasing) {
+            this.erasePoint(x, y);
         }
     }
 
     onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
         this.panning = false;
+        this.erasing = false;
+        let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
+            event.nativeEvent.offsetX,
+            event.nativeEvent.offsetY
+        );
+    }
+
+    onMouseLeave(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>): void {
+        this.panning = false;
+        this.erasing = false;
     }
 
     onWheel(event: WheelEvent) {
         this.zoomHelper.onWheel(event);
+        let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
+            event.offsetX,
+            event.offsetY
+        );
+        this.updateCursor(x, y);
     }
 
     updateArgs(args: any) {
@@ -85,13 +205,27 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.selectionControlsListener = listener;
     }
 
-    private featherEdges(selectionOverlay: Rect, imageWidth: number, imageHeight: number, imageData: ImageData) {
-        const featherLeftEdge = selectionOverlay.x != 0;
-        const featherRightEdge = selectionOverlay.x + selectionOverlay.width != imageWidth;
-        const featherTopEdge = selectionOverlay.y != 0;
-        const featherBottomEdge = selectionOverlay.y + selectionOverlay.height != imageHeight;
+    onProgress(listener: (progress: number) => void): void {
+        this.progressListener = listener;
+    }
 
-        const baseWidth = Math.min(selectionOverlay.width, selectionOverlay.height);
+    private featherEdges(
+        selectionOverlay: Rect,
+        imageWidth: number,
+        imageHeight: number,
+        imageData: ImageData
+    ) {
+        const featherLeftEdge = selectionOverlay.x != 0;
+        const featherRightEdge =
+            selectionOverlay.x + selectionOverlay.width != imageWidth;
+        const featherTopEdge = selectionOverlay.y != 0;
+        const featherBottomEdge =
+            selectionOverlay.y + selectionOverlay.height != imageHeight;
+
+        const baseWidth = Math.min(
+            selectionOverlay.width,
+            selectionOverlay.height
+        );
         const featherWidth = Math.floor(baseWidth / 8);
 
         if (featherTopEdge) {
@@ -100,17 +234,28 @@ export class EnhanceTool extends BaseTool implements Tool {
                     const pixelIndex = (y * selectionOverlay.width + x) * 4;
                     const alpha = (y / featherWidth) * 255;
                     const existingAlpha = imageData.data[pixelIndex + 3];
-                    imageData.data[pixelIndex + 3] = Math.min(alpha, existingAlpha);
+                    imageData.data[pixelIndex + 3] = Math.min(
+                        alpha,
+                        existingAlpha
+                    );
                 }
             }
         }
         if (featherBottomEdge) {
-            for (let y = selectionOverlay.height - featherWidth; y < selectionOverlay.height; y++) {
+            for (
+                let y = selectionOverlay.height - featherWidth;
+                y < selectionOverlay.height;
+                y++
+            ) {
                 for (let x = 0; x < selectionOverlay.width; x++) {
                     const pixelIndex = (y * selectionOverlay.width + x) * 4;
-                    const alpha = ((selectionOverlay.height - y) / featherWidth) * 255;
+                    const alpha =
+                        ((selectionOverlay.height - y) / featherWidth) * 255;
                     const existingAlpha = imageData.data[pixelIndex + 3];
-                    imageData.data[pixelIndex + 3] = Math.min(alpha, existingAlpha);
+                    imageData.data[pixelIndex + 3] = Math.min(
+                        alpha,
+                        existingAlpha
+                    );
                 }
             }
         }
@@ -120,28 +265,42 @@ export class EnhanceTool extends BaseTool implements Tool {
                     const pixelIndex = (y * selectionOverlay.width + x) * 4;
                     const alpha = (x / featherWidth) * 255;
                     const existingAlpha = imageData.data[pixelIndex + 3];
-                    imageData.data[pixelIndex + 3] = Math.min(alpha, existingAlpha);
+                    imageData.data[pixelIndex + 3] = Math.min(
+                        alpha,
+                        existingAlpha
+                    );
                 }
             }
         }
         if (featherRightEdge) {
-            for (let x = selectionOverlay.width - featherWidth; x < selectionOverlay.width; x++) {
+            for (
+                let x = selectionOverlay.width - featherWidth;
+                x < selectionOverlay.width;
+                x++
+            ) {
                 for (let y = 0; y < selectionOverlay.height; y++) {
                     const pixelIndex = (y * selectionOverlay.width + x) * 4;
-                    const alpha = ((selectionOverlay.width - x) / featherWidth) * 255;
+                    const alpha =
+                        ((selectionOverlay.width - x) / featherWidth) * 255;
                     const existingAlpha = imageData.data[pixelIndex + 3];
-                    imageData.data[pixelIndex + 3] = Math.min(alpha, existingAlpha);
+                    imageData.data[pixelIndex + 3] = Math.min(
+                        alpha,
+                        existingAlpha
+                    );
                 }
             }
         }
     }
 
-    // TODO: refactor to use api.getImageData along with image editor :(
-    // avoids "The canvas has been tainted by cross-origin data." error
-    private loadImageData(api: AIBrushApi, imageId: string, baseImage: APIImage, selectionOverlay: Rect): Promise<ImageData> {
+    private loadImageData(
+        api: AIBrushApi,
+        imageId: string,
+        baseImage: APIImage,
+        selectionOverlay: Rect
+    ): Promise<ImageData> {
         return new Promise((resolve, reject) => {
             api.getImageData(imageId, {
-                responseType: "arraybuffer"
+                responseType: "arraybuffer",
             }).then((resp) => {
                 const binaryImageData = Buffer.from(resp.data, "binary");
                 const base64ImageData = binaryImageData.toString("base64");
@@ -150,22 +309,27 @@ export class EnhanceTool extends BaseTool implements Tool {
                 imageElement.src = src;
                 imageElement.onload = () => {
                     const canvas = document.createElement("canvas");
-                    canvas.width = imageElement.width;
-                    canvas.height = imageElement.height;
+                    canvas.width = selectionOverlay.width;
+                    canvas.height = selectionOverlay.height;
                     const ctx = canvas.getContext("2d");
                     if (!ctx) {
                         reject(new Error("Failed to get canvas context"));
                         return;
                     }
-                    ctx.drawImage(imageElement, 0, 0);
+                    ctx.drawImage(imageElement, 0, 0, selectionOverlay.width, selectionOverlay.height);
                     const imageData = ctx.getImageData(
                         0,
                         0,
-                        imageElement.width,
-                        imageElement.height
+                        selectionOverlay.width,
+                        selectionOverlay.height
                     );
-                    this.featherEdges(selectionOverlay, baseImage.width!, baseImage.height!, imageData);
-                    
+                    this.featherEdges(
+                        selectionOverlay,
+                        baseImage.width!,
+                        baseImage.height!,
+                        imageData
+                    );
+
                     resolve(imageData);
                     // remove canvas
                     canvas.remove();
@@ -175,9 +339,20 @@ export class EnhanceTool extends BaseTool implements Tool {
     }
 
     cancel() {
-        this.state = "default";
-        this.imageData = [];
-        this.renderer.setEditImage(null);
+        if (this.state == "erase") {
+            this.state = "confirm";
+            this.selectedImageData = this.imageData[this.selectedImageDataIndex];
+            this.renderer.setEditImage(this.selectedImageData);
+        } else {
+            this.state = "default";
+            this.imageData = [];
+            this.renderer.setEditImage(null);
+        }
+        
+    }
+
+    erase() {
+        this.state = "erase";
     }
 
     async submit(api: AIBrushApi, image: APIImage) {
@@ -195,8 +370,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.negative_phrases = image.negative_phrases;
         input.stable_diffusion_strength = this.variationStrength;
         input.count = this.count;
-        input.width = selectionOverlay!.width;
-        input.height = selectionOverlay!.height;
+
+        const closestAspectRatio = getClosestAspectRatio(selectionOverlay!.width, selectionOverlay!.height);
+        input.width = closestAspectRatio.width;
+        input.height = closestAspectRatio.height;
 
         this.state = "busy";
         let resp = await api.createImage(input);
@@ -225,6 +402,9 @@ export class EnhanceTool extends BaseTool implements Tool {
             if (completeCount === newImages!.length) {
                 completed = true;
             }
+            if (this.progressListener) {
+                this.progressListener(completeCount / newImages!.length);
+            }
         }
         // sort images by score descending
         newImages!.sort((a, b) => {
@@ -234,7 +414,12 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.imageData = [];
         for (let i = 0; i < newImages!.length; i++) {
             this.imageData.push(
-                await this.loadImageData(api, newImages[i].id, image, selectionOverlay!)
+                await this.loadImageData(
+                    api,
+                    newImages[i].id,
+                    image,
+                    selectionOverlay!
+                )
             );
         }
         // cleanup
@@ -243,6 +428,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         }
         this.renderer.setEditImage(this.imageData[0]);
         this.selectedImageDataIndex = 0;
+        this.selectedImageData = this.imageData[0];
         this.state = "confirm";
     }
 
@@ -260,10 +446,12 @@ export class EnhanceTool extends BaseTool implements Tool {
             }
         }
         if (this.selectedImageDataIndex === -1) {
-            this.renderer.setEditImage(null);
+            this.selectedImageData = null;
         } else {
-            this.renderer.setEditImage(this.imageData[this.selectedImageDataIndex]);
+            this.selectedImageData =
+                this.imageData[this.selectedImageDataIndex];
         }
+        this.renderer.setEditImage(this.selectedImageData);
     }
 
     onSaveImage(listener: (encodedImage: string) => void): void {
@@ -278,6 +466,11 @@ export class EnhanceTool extends BaseTool implements Tool {
         if (encodedImage && this.saveListener) {
             this.saveListener(encodedImage);
         }
+    }
+
+    destroy(): boolean {
+        this.renderer.setCursor(undefined);
+        return true;
     }
 }
 
@@ -298,36 +491,67 @@ export const EnhanceControls: FC<ControlsProps> = ({
     const [variationStrength, setVariationStrength] = useState(0.35);
     const [prompt, setPrompt] = useState(image.phrases[0]);
     const [state, setState] = useState<EnhanceToolState>(tool.state);
+    const [progress, setProgress] = useState(0);
 
     tool.onChangeState(setState);
+    tool.onProgress(setProgress);
 
     if (state == "busy") {
-        return <div style={{marginTop: "16px"}}>
-            <i className="fa fa-spinner fa-spin"></i>&nbsp;
-            Enhancing...
-        </div>;
+        return (
+            <div style={{ marginTop: "16px" }}>
+                <i className="fa fa-spinner fa-spin"></i>&nbsp; Enhancing...<br/>
+                {/* bootstrap progress bar */}
+                <div className="progress" style={{ height: "20px", marginTop: "16px" }}>
+                    <div
+                        className="progress-bar"
+                        role="progressbar"
+                        style={{ width: `${progress * 100}%` }}
+                        aria-valuenow={progress * 100}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                    >
+                        {Math.round(progress * 100)}%
+                    </div>
+                </div>
+            </div>
+        );
     }
-    if (state == "confirm") {
-        return <div style={{marginTop: "16px"}}>
-            <button
-                className="btn btn-primary"
-                onClick={() => {
-                    tool.cancel();
-                }}
-            >
-                Revert
-            </button>
-            <button
-                className="btn btn-primary"
-                onClick={() => tool.confirm()}
-                style={{marginLeft: "8px"}}
-            >
-                Save
-            </button>
-        </div>;
+    if (state == "confirm" || state == "erase") {
+        return (
+            <div style={{ marginTop: "16px" }}>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => {
+                        tool.cancel();
+                    }}
+                >
+                    {/* cancel icon */}
+                    <i className="fa fa-times"></i>&nbsp;
+                    Revert
+                </button>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => tool.confirm()}
+                    style={{ marginLeft: "8px" }}
+                >
+                    {/* save icon */}
+                    <i className="fa fa-save"></i>&nbsp;
+                    Save
+                </button>
+                {/* erase button */}
+                {state == "confirm" && <button
+                    className="btn btn-primary"
+                    onClick={() => tool.erase()}
+                    style={{ marginLeft: "8px" }}
+                >
+                    <i className="fa fa-eraser"></i>&nbsp;
+                    Erase
+                </button>}
+            </div>
+        );
     }
     return (
-        <div style={{marginTop: "16px"}}>
+        <div style={{ marginTop: "16px" }}>
             {/* prompt */}
             <div className="form-group">
                 <label htmlFor="prompt">Prompt</label>
@@ -356,15 +580,16 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     value={count}
                     onChange={(e) => {
                         setCount(parseInt(e.target.value));
-                    }
-                }
+                    }}
                 />
                 <small className="form-text text-muted">
                     Number of enhancement options
                 </small>
             </div>
             <div className="form-group">
-                <label htmlFor="variation-strength">Variation Strength: {Math.round(variationStrength * 100)}%</label>
+                <label htmlFor="variation-strength">
+                    Variation Strength: {Math.round(variationStrength * 100)}%
+                </label>
                 <input
                     type="range"
                     className="form-control-range"
@@ -375,8 +600,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     value={variationStrength}
                     onChange={(e) => {
                         setVariationStrength(parseFloat(e.target.value));
-                    }
-                }
+                    }}
                 />
                 <small className="form-text text-muted">
                     How much variation to use
@@ -390,7 +614,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                             count,
                             variationStrength,
                             prompt,
-                        })
+                        });
                         tool.submit(api, image);
                     }}
                 >

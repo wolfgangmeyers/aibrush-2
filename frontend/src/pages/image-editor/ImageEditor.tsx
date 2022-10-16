@@ -97,6 +97,8 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
     const [image, setImage] = useState<APIImage | null>(null);
     const [renderer, setRenderer] = useState<Renderer | null>(null);
     const [tool, setTool] = useState<Tool | null>(null);
+    const [canUndo, setCanUndo] = useState(false);
+    const [canRedo, setCanRedo] = useState(false);
 
     const { id } = useParams<{ id: string }>();
     const history = useHistory();
@@ -148,6 +150,10 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
     useEffect(() => {
         if (renderer) {
             onSelectTool(tools[0]);
+            renderer.onSnapshot(() => {
+                setCanUndo(renderer.canUndo());
+                setCanRedo(renderer.canRedo());
+            });
         }
     }, [renderer]);
 
@@ -254,6 +260,20 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                     <div className="row">
                         <button
                             className="btn btn-primary"
+                            style={{
+                                position: "absolute",
+                                left: "10%",
+                                transform: "translate(10%, 0)"
+                            }}
+                            disabled={!renderer || !canUndo}
+                            onClick={() => renderer && renderer.undo()}
+                        >
+                            {/* undo */}
+                            <i className="fas fa-undo"></i>&nbsp;
+                            Undo
+                        </button>
+                        <button
+                            className="btn btn-primary"
                             // center horizontally
                             style={{
                                 position: "absolute",
@@ -266,7 +286,23 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                                 }
                             }}
                         >
+                            {/* reset zoom */}
+                            <i className="fas fa-search-plus"></i>&nbsp;
                             Reset View
+                        </button>
+                        {/* redo */}
+                        <button
+                            className="btn btn-primary"
+                            style={{
+                                position: "absolute",
+                                right: "10%",
+                                transform: "translate(-10%, 0)"
+                            }}
+                            disabled={!renderer || !canRedo}
+                            onClick={() => renderer && renderer.redo()}
+                        >
+                            <i className="fas fa-redo"></i>&nbsp;
+                            Redo
                         </button>
                     </div>
                     {/* vertically center button within the div */}

@@ -70,8 +70,8 @@ export class ZoomHelper {
         x = (x / rect.width) * this.renderer.getWidth();
         y = (y / rect.height) * this.renderer.getHeight();
 
-        x = x - offsetX;
-        y = y - offsetY;
+        x = Math.round(x - offsetX);
+        y = Math.round(y - offsetY);
 
         return { x: x, y: y };
     }
@@ -87,8 +87,8 @@ export class ZoomHelper {
 
         // translate offset to canvas coordinates
         let rect = this.renderer.getCanvas().getBoundingClientRect();
-        x = (x / this.renderer.getWidth()) * rect.width;
-        y = (y / this.renderer.getHeight()) * rect.height;
+        x = Math.round((x / this.renderer.getWidth()) * rect.width);
+        y = Math.round((y / this.renderer.getHeight()) * rect.height);
 
         return { x: x, y: y };
     }

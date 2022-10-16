@@ -16,10 +16,12 @@ export class SelectionTool extends BaseTool implements Tool {
     private selectionOverlay: Rect | undefined;
     private selectionOverlayPreview: Rect | undefined;
 
-    private selectionWidth: number = 512;
-    private selectionHeight: number = 512;
+    // private selectionWidth: number = 512;
+    // private selectionHeight: number = 512;
 
     private panning = false;
+
+    // TODO: size modifier to make the selection overlay smaller
 
     constructor(renderer: Renderer) {
         super("select");
@@ -30,13 +32,13 @@ export class SelectionTool extends BaseTool implements Tool {
     // TODO: smaller/larger, aspect ratios?
     updateArgs(args: any) {
         super.updateArgs(args);
-        this.selectionWidth = args.selectionWidth || 512;
-        this.selectionHeight = args.selectionHeight || 512;
-        this.selectionOverlay = {
+        // this.selectionWidth = args.selectionWidth || 512;
+        // this.selectionHeight = args.selectionHeight || 512;
+        this.selectionOverlay = args.selectionOverlay || {
             x: 0,
             y: 0,
-            width: this.selectionWidth,
-            height: this.selectionHeight,
+            width: 512,
+            height: 512,
         };
         this.sync();
     }
@@ -51,6 +53,10 @@ export class SelectionTool extends BaseTool implements Tool {
             this.selectionOverlay = this.selectionOverlayPreview;
             this.selectionOverlayPreview = undefined;
             this.sync();
+            this.updateArgs({
+                ...this.getArgs(),
+                selectionOverlay: this.selectionOverlay,
+            });
         } else if (event.button === 1) {
             this.panning = true;
         }
@@ -62,10 +68,10 @@ export class SelectionTool extends BaseTool implements Tool {
         if (this.panning) {
             this.zoomHelper.onPan(event);
         } else {
-            let {x, y} = this.zoomHelper.translateMouseToCanvasCoordinates(
+            let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
                 event.nativeEvent.offsetX,
-                event.nativeEvent.offsetY,
-            )
+                event.nativeEvent.offsetY
+            );
 
             // round to the nearest 64 pixels
             x = Math.round(x / 64) * 64;
@@ -74,16 +80,22 @@ export class SelectionTool extends BaseTool implements Tool {
             x -= 256;
             y -= 256;
             // clamp to the canvas
-            x = Math.max(0, Math.min(x, imageWidth - this.selectionWidth));
-            y = Math.max(0, Math.min(y, imageHeight - this.selectionHeight));
-            x = Math.min(x, imageWidth - this.selectionWidth);
-            y = Math.min(y, imageHeight - this.selectionHeight);
+            x = Math.max(
+                0,
+                Math.min(x, imageWidth - this.selectionOverlay!.width)
+            );
+            y = Math.max(
+                0,
+                Math.min(y, imageHeight - this.selectionOverlay!.height)
+            );
+            x = Math.min(x, imageWidth - this.selectionOverlay!.width);
+            y = Math.min(y, imageHeight - this.selectionOverlay!.height);
 
             this.selectionOverlayPreview = {
                 x: x,
                 y: y,
-                width: this.selectionWidth,
-                height: this.selectionHeight,
+                width: this.selectionOverlay!.width,
+                height: this.selectionOverlay!.height,
             };
             this.sync();
         }
@@ -129,6 +141,8 @@ export const Controls: React.FC<ControlsProps> = ({ renderer, tool }) => {
         renderer.getHeight()
     );
     const [aspectRatio, setAspectRatio] = useState(DEFAULT_ASPECT_RATIO);
+    const [size, setSize] = useState(1);
+
     useEffect(() => {
         const upscaleLevel = getUpscaleLevel(
             renderer.getWidth(),
@@ -142,41 +156,107 @@ export const Controls: React.FC<ControlsProps> = ({ renderer, tool }) => {
             );
             setAspectRatio(aspectRatio.id);
             tool.updateArgs({
-                selectionWidth: aspectRatio.width,
-                selectionHeight: aspectRatio.height,
+                // selectionWidth: aspectRatio.width,
+                // selectionHeight: aspectRatio.height,
+                selectionOverlay: {
+                    x: 0,
+                    y: 0,
+                    width: aspectRatio.width,
+                    height: aspectRatio.height,
+                },
             });
         } else {
             const args = tool.getArgs();
-            if (args.selectionWidth && args.selectionHeight) {
+            if (args.selectionOverlay) {
                 // restore args
                 const aspectRatio = getClosestAspectRatio(
-                    args.selectionWidth,
-                    args.selectionHeight
+                    args.selectionOverlay.width,
+                    args.selectionOverlay.height
                 );
                 setAspectRatio(aspectRatio.id);
-                tool.updateArgs(args)
+                setSize(args.selectionOverlay.width / aspectRatio.width);
+                tool.updateArgs(args);
             } else {
                 // set default args
-                args.selectionWidth = aspectRatios[aspectRatio].width;
-                args.selectionHeight = aspectRatios[aspectRatio].height;
+                args.selectionOverlay = {
+                    x: 0,
+                    y: 0,
+                    width: aspectRatios[aspectRatio].width,
+                    height: aspectRatios[aspectRatio].height,
+                };
                 tool.updateArgs(args);
             }
         }
     }, [tool]);
+
+    function onChange(aspectRatioId: number, size: number) {
+        const args = tool.getArgs();
+        const aspectRatio = aspectRatios[aspectRatioId];
+        if (args.selectionOverlay) {
+            const xDiff = args.selectionOverlay.width - aspectRatio.width * size;
+            const yDiff = args.selectionOverlay.height - aspectRatio.height * size;
+            args.selectionOverlay.width = Math.round(aspectRatio.width * size);
+            args.selectionOverlay.height = Math.round(aspectRatio.height * size);
+            args.selectionOverlay.x += xDiff / 2;
+            args.selectionOverlay.y += yDiff / 2;
+            // clamp to canvas
+            args.selectionOverlay.x = Math.round(Math.max(
+                0,
+                Math.min(
+                    args.selectionOverlay.x,
+                    renderer.getWidth() - args.selectionOverlay.width
+                )
+            ));
+            args.selectionOverlay.y = Math.round(Math.max(
+                0,
+                Math.min(
+                    args.selectionOverlay.y,
+                    renderer.getHeight() - args.selectionOverlay.height
+                )
+            ));
+        }
+        tool.updateArgs({
+            selectionOverlay: args.selectionOverlay,
+        });
+    }
+
     return (
         <>
             {upscaleLevel > 0 && (
                 <AspectRatioSelector
                     aspectRatio={aspectRatio}
                     onChange={(aspectRatioId) => {
-                        const aspectRatio = aspectRatios[aspectRatioId];
-                        tool.updateArgs({
-                            selectionWidth: aspectRatio.width,
-                            selectionHeight: aspectRatio.height,
-                        });
+                        onChange(aspectRatioId, size);
                         setAspectRatio(aspectRatioId);
                     }}
                 />
+            )}
+            {upscaleLevel && (
+                <div className="form-group">
+                    <label htmlFor="size" style={{ width: "100%" }}>
+                        Size
+                        <small
+                            className="form-text text-muted"
+                            style={{ float: "right" }}
+                        >
+                            {Math.round(size * 100)}%
+                        </small>
+                    </label>
+                    {/* range from 0.1 to 1 */}
+                    <input
+                        type="range"
+                        className="form-control-range"
+                        id="size"
+                        min="0.2"
+                        max="1"
+                        step="0.1"
+                        value={size}
+                        onChange={(event) => {
+                            onChange(aspectRatio, parseFloat(event.target.value));
+                            setSize(parseFloat(event.target.value));
+                        }}
+                    />
+                </div>
             )}
         </>
     );

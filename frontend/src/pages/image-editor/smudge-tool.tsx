@@ -33,7 +33,6 @@ export class SmudgeTool extends BaseTool implements Tool {
         super("smudge");
         this.renderer = renderer;
         this.zoomHelper = new ZoomHelper(renderer);
-        this.renderer.copyEditImageFromBaseImage();
     }
 
     private sync() {
@@ -86,6 +85,10 @@ export class SmudgeTool extends BaseTool implements Tool {
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
         if (event.button === 0) {
             this.smudging = true;
+            if (!this.dirty) {
+                this.renderer.copyEditImageFromBaseImage();
+            }
+            this.dirty = true;
         } else if (event.button === 1) {
             this.panning = true;
         }
@@ -110,7 +113,7 @@ export class SmudgeTool extends BaseTool implements Tool {
 
     cancel() {
         // kind of a hack, clears the selection layer
-        this.renderer.copyEditImageFromBaseImage();
+        this.renderer.setEditImage(null);
         this.dirty = false;
     }
 

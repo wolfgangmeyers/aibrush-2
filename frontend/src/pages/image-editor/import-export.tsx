@@ -51,6 +51,7 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
         return (
             <div className="form-group" style={{marginTop: "16px"}}>
                 <button
+                    className="btn btn-primary"
                     onClick={() => {
                         setBackupImage(undefined);
                         const img = new Image();
@@ -62,16 +63,22 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
                         };
                     }}
                 >
+                    {/* cancel icon */}
+                    <i className="fas fa-times"></i>&nbsp;
                     Revert
                 </button>
                 <button
+                    className="btn btn-primary"
                     onClick={() => {
                         setBackupImage(undefined);
                         if (tool.saveListener) {
                             tool.saveListener(backupImage);
                         }
                     }}
+                    style={{marginLeft: "8px"}}
                 >
+                    {/* save icon */}
+                    <i className="fas fa-save"></i>&nbsp;
                     Save
                 </button>
             </div>
