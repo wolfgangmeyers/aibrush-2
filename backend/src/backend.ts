@@ -571,7 +571,7 @@ export class BackendService {
             }
             const result = await client.query(
                 `SELECT * FROM images WHERE deleted_at < $1`,
-                [moment().subtract(7, "days").valueOf()],
+                [moment().subtract(1, "days").valueOf()],
             )
             if (result.rows.length > 0) {
                 const promises: Promise<void>[] = []

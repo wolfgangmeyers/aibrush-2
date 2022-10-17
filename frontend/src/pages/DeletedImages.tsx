@@ -15,8 +15,8 @@ export const DeletedImages: FC<Props> = ({ api, assetsUrl }) => {
     const history = useHistory();
 
     const loadImages = async () => {
-        const cursor = moment().add(1, "minutes").valueOf();
-        const resp = await api.listImages(cursor, "", 100, "desc");
+        const cursor = moment().add(-24, "hours").valueOf();
+        const resp = await api.listImages(cursor, "", 100, "asc");
         setImages(
             resp.data.images?.filter((image) => !!image.deleted_at) || []
         );
