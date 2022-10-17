@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import time
 import json
 from queue import Queue
-import threading
+from threading import Thread
 
 from torch import rand
 from api_client import AIBrushAPI
@@ -38,48 +38,25 @@ for folder in ["images", "output", "output_npy"]:
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-def cleanup():
+def cleanup(image_id: str):
     # delete all files in the current folder ending in .png or .backup
     for fname in os.listdir("images"):
-        if fname.endswith(".jpg") or fname.endswith(".mp4") or fname.endswith(".npy"):
+        if image_id in fname:
             os.remove(os.path.join("images", fname))
     for fname in os.listdir("output"):
-        if fname.endswith(".png"):
+        if image_id in fname:
             os.remove(os.path.join("output", fname))
     for fname in os.listdir("output_npy"):
-        os.remove(os.path.join("output_npy", fname))
-    if os.path.exists("steps"):
-        for fname in os.listdir("steps"):
-            os.remove(os.path.join("steps", fname))
+        if image_id in fname:
+            os.remove(os.path.join("output_npy", fname))
+    # TODO: image-specific paths for video frames
+    # if os.path.exists("steps"):
+    #     for fname in os.listdir("steps"):
+    #         os.remove(os.path.join("steps", fname))
     if os.path.exists("results"):
         for fname in os.listdir(os.path.join("results", "swinir_real_sr_x4")):
-            os.remove(os.path.join("results", "swinir_real_sr_x4", fname))
-
-def _vqgan_args(image_data, image):
-    args = SimpleNamespace()
-    if image_data:
-        # save image
-        with open(os.path.join("images", image.id + "-init.jpg"), "wb") as f:
-            f.write(image_data)
-        args.init_image = os.path.join("images", image.id + "-init.jpg")
-    args.max_iterations = image.iterations
-    args.prompts = " | ".join(image.phrases)
-    if image.enable_video:
-        if image.enable_zoom:
-            args.make_zoom_video = True
-            args.zoom_frequency = image.zoom_frequency
-            args.zoom_scale = image.zoom_scale
-            args.zoom_shift_x = image.zoom_shift_x
-            args.zoom_shift_y = image.zoom_shift_y
-        else:
-            args.make_video = True
-    args.output = os.path.join("images", image.id + ".jpg")
-    args.display_freq = 50
-    if args.max_iterations < args.display_freq:
-        args.display_freq = args.max_iterations
-    # args.on_save_callback = lambda i: update_image(i, "processing")
-    args.size = [image.width, image.height]
-    return args
+            if image_id in fname:
+                os.remove(os.path.join("results", "swinir_real_sr_x4", fname))
 
 def _swinir_args(image_data, image):
     # python SwinIR\main_test_swinir.py --task real_sr --model_path 003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth --folder_lq images --scale 4
@@ -95,55 +72,6 @@ def _swinir_args(image_data, image):
     img.save(init_image_path)
     args.init_image = init_image_path
     args.output_image = output_image_path
-    return args
-
-def _dalle_mega_args(image):
-    return SimpleNamespace(
-        prompt="|".join(image.phrases),
-        output_image=os.path.join("images", image.id + ".jpg"),
-    )
-
-def _glid_3_xl_args(image_data, mask_data, npy_data, image):
-    args = SimpleNamespace()
-    # TODO: attempt to edit using npy if available, otherwise use the init image.
-    if image_data:
-        # save image
-        with open(os.path.join("images", image.id + "-init.jpg"), "wb") as f:
-            f.write(image_data)
-        if not mask_data:
-            args.init_image = os.path.join("images", image.id + "-init.jpg")
-    if mask_data:
-        # save mask
-        with open(os.path.join("images", image.id + "-mask.jpg"), "wb") as f:
-            f.write(mask_data)
-        args.mask = os.path.join("images", image.id + "-mask.jpg")
-
-        if npy_data:
-            # save npy
-            with open(os.path.join("images", image.id + "-npy.npy"), "wb") as f:
-                f.write(npy_data)
-            args.edit = os.path.join("images", image.id + "-npy.npy")
-        else:
-            args.edit = os.path.join("images", image.id + "-init.jpg")
-
-    if mask_data:
-        args.model_path = "inpaint.pt"
-    else:
-        args.model_path = "finetune.pt"
-    if len(image.phrases) > 0:
-        args.text = "|".join(image.phrases)
-    if len(image.negative_phrases) > 0:
-        args.negative = "|".join(image.negative_phrases)
-    if (image.uncrop_offset_x):
-        args.edit_x = image.uncrop_offset_x
-    if (image.uncrop_offset_y):
-        args.edit_y = image.uncrop_offset_y
-    args.skip_timesteps = image.glid_3_xl_skip_iterations
-    args.clip_guidance = image.glid_3_xl_clip_guidance
-    args.clip_guidance_scale = image.glid_3_xl_clip_guidance_scale
-    args.width = image.width
-    args.height = image.height
-    args.steps = image.iterations
     return args
 
 def _sd_args(image_data, mask_data, npy_data, image):
@@ -181,14 +109,8 @@ def clear_clip_ranker():
 
 def create_model():
     global model
-    if model_name == "dalle_mega":
-        model = ModelProcess("dalle_model.py")
-    elif model_name == "glid_3_xl":
-        model = ModelProcess("glid_3_xl_model.py")
-    elif model_name == "swinir":
+    if model_name == "swinir":
         model = ModelProcess("swinir_model.py")
-    elif model_name == "vqgan_imagenet_f16_16384":
-        model = ModelProcess("vqgan_model.py")
     elif model_name == "stable_diffusion_text2im":
         model = ModelProcess("sd_text2im_model.py")
 
@@ -216,8 +138,6 @@ def process_image():
             npy_data = None
             # get output image
             image_path = os.path.join("images", image.id + ".jpg")
-            if image.model == "glid_3_xl" and os.path.exists(os.path.join("output", "00000.png")):
-                Image.open(os.path.join("output", "00000.png")).save(image_path)
             if image.model == "swinir" and os.path.exists(image_path):
                 img = Image.open(image_path)
                 # resize image
@@ -242,33 +162,10 @@ def process_image():
                     image_data = f.read()
                 # base64 encode image
                 image_data = base64.encodebytes(image_data).decode("utf-8")
-            if image.model == "glid_3_xl":
-                npy_path = os.path.join("output_npy", "00000.npy")
-                if os.path.exists(npy_path):
-                    with open(npy_path, "rb") as f:
-                        npy_data = f.read()
-                        npy_data = base64.encodebytes(npy_data).decode("utf-8")
             # update image
             client.update_image(image.id, image_data, npy_data, iterations, status, score, negative_score, nsfw)
-        
-        def update_video_data():
-            print("Updating video data")
-            # get video data
-            with open(os.path.join("images", image.id + ".mp4"), "rb") as f:
-                video_data = f.read()
-            client.update_video_data(image.id, video_data)
 
-        if image.model == "dalle_mega":
-            args = _dalle_mega_args(image)
-        elif image.model == "vqgan_imagenet_f16_16384":
-            args = _vqgan_args(image_data, image)
-        elif image.model == "glid_3_xl":
-            # if image.glid_3_xl_clip_guidance:
-            #     clear_clip_ranker()
-            mask_data = client.get_mask_data(image.id)
-            npy_data = client.get_npy_data(image.id)
-            args = _glid_3_xl_args(image_data, mask_data, npy_data, image)
-        elif image.model == "swinir":
+        if image.model == "swinir":
             args = _swinir_args(image_data, image)
         elif image.model == "stable_diffusion_text2im":
             args = _sd_args(image_data, None, None, image)
@@ -277,31 +174,15 @@ def process_image():
             clear_model()
             model_name = image.model
             create_model()
-        # else:
-        #     # special case for glid_3_xl
-        #     if image.model == "glid_3_xl":
-        #         global model_signature
-        #         # check model signature
-        #         if model_signature != generate_model_signature(args):
-        #             clear_model()
-        #             create_model()
-        #             model_signature = generate_model_signature(args)
 
         update_image(0, "processing")
 
-        # detect memory overflow and clear clip ranker
-        if image.model == "glid_3_xl":
-            if image.width * image.height > 540672:
-                print("Clearing clip ranker to free up memory for model generation")
-                clear_clip_ranker()
+        # TODO: detect memory overflow and clear clip ranker?
         if not model:
             create_model()
         nsfw = model.generate(args)
         nsfw = nsfw or image.nsfw # inherit nsfw from parent
 
-        #  only update video if vqgan
-        if image.model == "vqgan_imagenet_f16_16384" and image.enable_video:
-            update_video_data()
         update_image(image.iterations, "completed", nsfw)
         return True
     except Exception as e:
@@ -312,6 +193,129 @@ def process_image():
         except:
             pass # we did our best to report status
         return
+
+def poll_loop(process_queue: Queue):
+    backoff = 1
+    while True:
+        try:
+            image = client.process_image(zoom_supported)
+            if image:
+                backoff = 1
+                process_queue.put(image)
+            else:
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 10)
+        except Exception as e:
+            print(f"Pool Loop Error: {e}")
+            traceback.print_exc()
+            time.sleep(backoff)
+            backoff = min(backoff * 2, 10)
+            continue
+
+def process_loop(process_queue: Queue, update_queue: Queue):
+    global clip_ranker
+    global model_name, model
+    while True:
+        try:
+            image = process_queue.get()
+            if not image:
+                return
+            image_data = client.get_image_data(image.id)
+
+            def update_image(iterations: int, status: str, nsfw: bool = False):
+                score = 0
+                negative_score = 0
+                image_data = None
+                npy_data = None
+                # get output image
+                image_path = os.path.join("images", image.id + ".jpg")
+                if image.model == "swinir" and os.path.exists(image_path):
+                    img = Image.open(image_path)
+                    # resize image
+                    img = img.resize((image.width, image.height), Image.ANTIALIAS)
+                    img.save(image_path)
+                    
+                if os.path.exists(image_path):
+                    free_memory = get_free_memory()
+                    
+                    # during testing, clip ranking needs at most 4.4 GB of memory (2.4 is not enough)
+                    if free_memory/1e9 < 4.4 and not clip_ranker:
+                        print("Clearing model to free up memory for clip ranking")
+                        clear_model()
+                    prompts = "|".join(image.phrases)
+                    negative_prompts = "|".join(image.negative_phrases).strip()
+                    print(f"Calculating clip ranking for '{prompts}'")
+                    score = get_clip_ranker().rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
+                    if negative_prompts:
+                        print(f"Calculating negative clip ranking for '{prompts}'")
+                        negative_score = get_clip_ranker().rank(argparse.Namespace(text=negative_prompts, image=image_path, cpu=False))
+                    with open(image_path, "rb") as f:
+                        image_data = f.read()
+                    # base64 encode image
+                    image_data = base64.encodebytes(image_data).decode("utf-8")
+                # update image
+                # client.update_image(image.id, image_data, npy_data, iterations, status, score, negative_score, nsfw)
+                update_queue.put(SimpleNamespace(
+                    id=image.id,
+                    image_data=image_data,
+                    npy_data=npy_data,
+                    iterations=iterations,
+                    status=status,
+                    score=score,
+                    negative_score=negative_score,
+                    nsfw=nsfw
+                ))
+
+            if image.model == "swinir":
+                args = _swinir_args(image_data, image)
+            elif image.model == "stable_diffusion_text2im":
+                args = _sd_args(image_data, None, None, image)
+
+            if image.model != model_name:
+                clear_model()
+                model_name = image.model
+                create_model()
+
+            update_image(0, "processing")
+
+            # TODO: detect memory overflow and clear clip ranker?
+            if not model:
+                create_model()
+            nsfw = model.generate(args)
+            nsfw = nsfw or image.nsfw # inherit nsfw from parent
+
+            update_image(image.iterations, "completed", nsfw)
+        except Exception as e:
+            print(f"Process Loop Error: {e}")
+            traceback.print_exc()
+            continue
+
+def update_loop(update_queue: Queue, cleanup_queue: Queue):
+    while True:
+        try:
+            image = update_queue.get()
+            if not image:
+                return
+            client.update_image(image.id, image.image_data, image.npy_data, image.iterations, image.status, image.score, image.negative_score, image.nsfw)
+            # cleanup_queue.put(image.id)
+            if image.status == "completed":
+                cleanup_queue.put(image.id)
+        except Exception as e:
+            print(f"Update Loop Error: {e}")
+            traceback.print_exc()
+            continue
+
+def cleanup_loop(cleanup_queue: Queue):
+    while True:
+        try:
+            image_id = cleanup_queue.get()
+            if not image_id:
+                return
+            cleanup(image_id)
+        except Exception as e:
+            print(f"Cleanup Loop Error: {e}")
+            traceback.print_exc()
+            continue
 
 if __name__ == "__main__":
     print("Warming up stable diffusion model")
@@ -329,13 +333,26 @@ if __name__ == "__main__":
 
     ))
     model.generate(args)
+    get_clip_ranker().rank(argparse.Namespace(text="a cat", image="images/warmup.jpg", cpu=False))
 
-    backoff = 2
-    while True:
-        if process_image():
-            backoff = 1
-            time.sleep(0.1)
-        else:
-            if backoff < 10:
-                backoff *= 2
-            time.sleep(backoff)
+    # create queues
+    process_queue = Queue(maxsize=1)
+    update_queue = Queue(maxsize=1)
+    cleanup_queue = Queue(maxsize=1)
+
+    # start threads
+    poll_thread = Thread(target=poll_loop, args=(process_queue,))
+    poll_thread.start()
+    process_thread = Thread(target=process_loop, args=(process_queue, update_queue))
+    process_thread.start()
+    update_thread = Thread(target=update_loop, args=(update_queue, cleanup_queue))
+    update_thread.start()
+    cleanup_thread = Thread(target=cleanup_loop, args=(cleanup_queue,))
+    cleanup_thread.start()
+
+    # wait for threads to finish
+    poll_thread.join()
+    process_thread.join()
+    update_thread.join()
+    cleanup_thread.join()
+
