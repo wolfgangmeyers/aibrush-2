@@ -929,6 +929,9 @@ components:
           type: number
         nsfw:
           type: boolean
+        deleted_at:
+          type: number
+          nullable: true
 
     Image:
       properties:

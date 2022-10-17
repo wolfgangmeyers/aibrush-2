@@ -234,7 +234,7 @@ export class Server {
         }
 
         // render index.html for frontend routes
-        for (let route of ["/worker-config", "/admin", "/images/:id", "/image-editor/:id"]) {
+        for (let route of ["/worker-config", "/admin", "/images/:id", "/image-editor/:id", "/deleted-images"]) {
             this.app.get(route, (req, res) => {
                 res.sendFile(getIndexHtmlPath())
             })

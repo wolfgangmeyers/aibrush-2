@@ -11,6 +11,7 @@ import { Healthchecker } from "./components/Healthchecker";
 import { WorkerConfigPage } from "./pages/WorkerConfig";
 import { Admin } from "./pages/Admin";
 import { ImageEditor } from "./pages/image-editor/ImageEditor";
+import { DeletedImages } from "./pages/DeletedImages";
 
 // V2 UI
 import { Homepage } from "./pages/Homepage";
@@ -140,6 +141,9 @@ function App() {
             </Route>
             <Route path="/worker-config">
               <WorkerConfigPage api={client} />
+            </Route>
+            <Route path="/deleted-images">
+              <DeletedImages api={client} assetsUrl={assetsUrl} />
             </Route>
             {isAdmin && (
               <>

@@ -211,7 +211,7 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                     </h1>
                 </div>
             </div>
-            <div className="row">
+            <div className="row" style={{marginTop: "32px"}}>
                 <div className="col-lg-3">
                     {renderer && <>{tools.map((tool) => renderTool(tool))}</>}
                 </div>

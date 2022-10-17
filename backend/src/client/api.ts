@@ -1027,6 +1027,12 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     'nsfw'?: boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateImageInput
+     */
+    'deleted_at'?: number | null;
 }
 
 export const UpdateImageInputStatusEnum = {

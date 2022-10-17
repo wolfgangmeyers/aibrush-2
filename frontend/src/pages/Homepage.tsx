@@ -1,6 +1,6 @@
 // V2 page
 import React, { FC, useState, useEffect } from "react";
-import { useParams, useHistory } from "react-router-dom";
+import { useParams, useHistory, Link } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
@@ -42,7 +42,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         }, 500);
         return () => {
             clearTimeout(handle);
-        }
+        };
     }, [searchDebounce]);
 
     useEffect(() => {
@@ -150,7 +150,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             return;
         }
         const loadImages = async () => {
-            console.log("Initial load images")
+            console.log("Initial load images");
             // clear error
             setErr(null);
             setHasMore(true);
@@ -158,8 +158,12 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 const cursor = moment().add(1, "minutes").valueOf();
                 const resp = await api.listImages(cursor, search, 100, "desc");
                 if (resp.data.images) {
-                    console.log("Initial load images", resp.data.images.length)
-                    setImages(resp.data.images.filter(image => !image.deleted_at).sort(sortImages));
+                    console.log("Initial load images", resp.data.images.length);
+                    setImages(
+                        resp.data.images
+                            .filter((image) => !image.deleted_at)
+                            .sort(sortImages)
+                    );
                     setOptimisticPendingCount(0);
                 }
                 return 0;
@@ -185,7 +189,12 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             }, 0);
 
             try {
-                const resp = await api.listImages(cursor + 1, search, 100, "asc");
+                const resp = await api.listImages(
+                    cursor + 1,
+                    search,
+                    100,
+                    "asc"
+                );
                 if (resp.data.images) {
                     // split resp.data.images into "new" and "updated" lists
                     // image is "new" if it's not in images
@@ -196,20 +205,26 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                         return images.findIndex((i) => i.id === image.id) >= 0;
                     });
                     setImages((images) => {
-                        const deletedIds: {[key: string]: boolean} = {};
+                        const deletedIds: { [key: string]: boolean } = {};
                         for (let image of newImages) {
                             if (image.deleted_at) {
                                 deletedIds[image.id] = true;
-                                console.log(`Deleting image ${image.id} from list`)
+                                console.log(
+                                    `Deleting image ${image.id} from list`
+                                );
                             }
                         }
                         for (let image of updatedImages) {
                             if (image.deleted_at) {
                                 deletedIds[image.id] = true;
-                                console.log(`Deleting image ${image.id} from list`)
+                                console.log(
+                                    `Deleting image ${image.id} from list`
+                                );
                             }
                         }
-                        images = images.filter(image => !deletedIds[image.id]);
+                        images = images.filter(
+                            (image) => !deletedIds[image.id]
+                        );
                         return [
                             ...images.map((image) => {
                                 const updatedImage = updatedImages.find(
@@ -220,8 +235,8 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                                 }
                                 return image;
                             }),
-                            ...newImages.filter(image => !image.deleted_at),
-                        ].sort(sortImages)
+                            ...newImages.filter((image) => !image.deleted_at),
+                        ].sort(sortImages);
                     });
                 }
                 return images;
@@ -306,11 +321,18 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             minUpdatedAt = Math.min(minUpdatedAt, image.updated_at);
         });
         // load images in descending order from updated_at
-        const resp = await api.listImages(minUpdatedAt - 1, search, 100, "desc");
+        const resp = await api.listImages(
+            minUpdatedAt - 1,
+            search,
+            100,
+            "desc"
+        );
         if (resp.data.images && resp.data.images.length > 0) {
             // combine images with new images and sort by updated_at descending
             setImages((images) =>
-                [...images, ...(resp.data.images || [])].filter(image => !image.deleted_at).sort(sortImages)
+                [...images, ...(resp.data.images || [])]
+                    .filter((image) => !image.deleted_at)
+                    .sort(sortImages)
             );
         } else {
             setHasMore(false);
@@ -385,30 +407,38 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             <hr />
 
             <div className="homepage-images" style={{ marginTop: "48px" }}>
-                <div style={{textAlign: "left"}}>
-                    
-                    <input
-                        style={{
-                            // marginBottom: "16px",
-                            color: "white",
-                            backgroundColor: "black",
-                            border: "1px solid white",
-                            paddingLeft: "30px"
-                        }}
-                        value={searchDebounce}
-                        type="search"
-                        className="form-control"
-                        placeholder="Search..."
-                        onChange={(e) => setSearchDebounce(e.target.value)}
-                    />
-                    <i
-                        className="fas fa-search"
-                        style={{
-                            position: "relative",
-                            left: "10px",
-                            top: "-30px",
-                        }}
-                    ></i>
+                <div style={{ textAlign: "left" }}>
+                    <div className="input-group">
+                        <input
+                            style={{
+                                // marginBottom: "16px",
+                                color: "white",
+                                backgroundColor: "black",
+                                border: "1px solid white",
+                                // paddingLeft: "30px",
+                                width: "80%",
+                                marginRight: "16px",
+                            }}
+                            value={searchDebounce}
+                            type="search"
+                            className="form-control"
+                            placeholder="Search..."
+                            onChange={(e) => setSearchDebounce(e.target.value)}
+                        />
+
+                        <div
+                            style={{
+                                float: "right",
+                            }}
+                        >
+                            <Link to="/deleted-images">
+                                {/* <i className="fas fa-trash" style={{color: "white"}}></i> */}
+                                <button className="btn btn-danger image-popup-delete-button">
+                                    <i className="fas fa-trash"></i> Trash
+                                </button>
+                            </Link>
+                        </div>
+                    </div>
                 </div>
                 <InfiniteScroll
                     dataLength={images.length}
