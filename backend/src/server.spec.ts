@@ -134,6 +134,7 @@ describe("server", () => {
             serviceAccounts: ["service-account@test.test"],
             adminUsers: ["admin@test.test"],
             assetsBaseUrl: "/api/images",
+            disableCleanupJob: true,
         }
         backendService = new BackendService(config)
 

@@ -882,6 +882,9 @@ export class Server {
             })
             this.terminator = createHttpTerminator({ server: this.server, gracefulTerminationTimeout: 100 })
 
+            if (this.config.disableCleanupJob) {
+                return;
+            }
             const cleanup = async () => {
                 console.log("cleanup process running")
                 await this.backendService.cleanup()

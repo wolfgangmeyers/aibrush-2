@@ -102,6 +102,7 @@ export class TestHelper {
             serviceAccounts: ["service-account@test.test"],
             adminUsers: ["admin@test.test"],
             assetsBaseUrl: "/api/images",
+            disableCleanupJob: true,
         }
     }
 

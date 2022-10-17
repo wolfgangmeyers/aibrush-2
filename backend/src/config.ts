@@ -1,5 +1,6 @@
 import fs from "fs";
 import dotenv from "dotenv";
+import { bool } from "aws-sdk/clients/signer";
 dotenv.config();
 
 export interface Config {
@@ -20,6 +21,7 @@ export interface Config {
     serviceAccounts: string[];
     adminUsers: string[];
     assetsBaseUrl: string;
+    disableCleanupJob?: bool;
 }
 
 export const loadConfig = (): Config => {
