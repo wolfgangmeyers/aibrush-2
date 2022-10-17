@@ -159,6 +159,9 @@ export class BackendService {
             args.push(`%${query.filter}%`)
         }
         whereClauses.push("temporary=false")
+        if (query.direction == "desc") {
+            whereClauses.push("deleted=false")
+        }
         let whereClause = "";
         if (whereClauses.length > 0) {
             whereClause = "WHERE " + whereClauses.join(" AND ")
