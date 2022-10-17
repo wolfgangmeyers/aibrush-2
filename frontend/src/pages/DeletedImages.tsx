@@ -23,13 +23,13 @@ export const DeletedImages: FC<Props> = ({ api, assetsUrl }) => {
     };
 
     const onDeleteImage = async (image: Image) => {
+        setImages(images.filter((i) => i.id !== image.id));
         await api.deleteImage(image.id);
-        loadImages();
     };
 
     const onRestoreImage = async (image: Image) => {
+        setImages(images.filter((i) => i.id !== image.id));
         await api.updateImage(image.id, { deleted_at: null });
-        loadImages();
     };
 
     useEffect(() => {
