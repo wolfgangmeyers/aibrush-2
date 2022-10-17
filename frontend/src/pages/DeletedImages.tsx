@@ -18,7 +18,14 @@ export const DeletedImages: FC<Props> = ({ api, assetsUrl }) => {
         const cursor = moment().add(-24, "hours").valueOf();
         const resp = await api.listImages(cursor, "", 100, "asc");
         setImages(
-            resp.data.images?.filter((image) => !!image.deleted_at) || []
+            (resp.data.images?.filter((image) => !!image.deleted_at) || []).sort(
+                (a, b) => {
+                    if (a.deleted_at && b.deleted_at) {
+                        return b.deleted_at - a.deleted_at;
+                    }
+                    return 0;
+                }
+            )
         );
     };
 
