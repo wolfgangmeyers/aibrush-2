@@ -160,7 +160,7 @@ export class BackendService {
         }
         whereClauses.push("temporary=false")
         if (query.direction == "desc") {
-            whereClauses.push("deleted_at=false")
+            whereClauses.push("deleted_at IS NULL")
         }
         let whereClause = "";
         if (whereClauses.length > 0) {
