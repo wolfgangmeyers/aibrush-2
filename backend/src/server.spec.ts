@@ -580,16 +580,6 @@ describe("server", () => {
                         expect(savedNPYData).toBeDefined()
                     })
                 })
-
-                describe("after deleting the image and then trying to get npy data", () => {
-                    beforeEach(async () => {
-                        await client.deleteImage(image.id)
-                    })
-
-                    it("should reject the call with not found", async () => {
-                        await expect(client.getNpyData(image.id)).rejects.toThrow(/Request failed with status code 404/)
-                    })
-                })
             })
 
             describe("when listing images as a different user", () => {
@@ -719,8 +709,26 @@ describe("server", () => {
                         images = response.data
                     })
 
-                    it("should return the image", () => {
-                        expect(images.images).toHaveLength(0)
+                    it("deleted_at should be set", () => {
+                        expect(images.images).toHaveLength(1)
+                        expect(images.images[0].deleted_at).toBeDefined()
+                    })
+
+                    describe("when hard deleting an image (already soft deleted)", () => {
+                        beforeEach(async () => {
+                            await client.deleteImage(image.id)
+                        })
+
+                        describe("when listing images", () => {
+                            beforeEach(async () => {
+                                const response = await client.listImages()
+                                images = response.data
+                            })
+
+                            it("should not return the image", () => {
+                                expect(images.images).toHaveLength(0)
+                            })
+                        })
                     })
                 })
             })

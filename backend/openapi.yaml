@@ -1002,6 +1002,8 @@ components:
           type: boolean
         temporary:
           type: boolean
+        deleted_at:
+          type: integer
       required:
         - id
         - created_at

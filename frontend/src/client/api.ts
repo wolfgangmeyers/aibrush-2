@@ -588,6 +588,12 @@ export interface Image {
      * @memberof Image
      */
     temporary: boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof Image
+     */
+    deleted_at?: number;
 }
 
 /**

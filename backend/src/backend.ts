@@ -44,6 +44,7 @@ import { Filestore, S3Filestore, LocalFilestore } from "./filestore";
 process.env.PGUSER = process.env.PGUSER || "postgres"
 const STUCK_IMAGES_KEY = 1
 const TEMPORARY_IMAGES_KEY = 2
+const DELETED_IMAGES_KEY = 3
 
 export class BackendService {
 
@@ -132,7 +133,7 @@ export class BackendService {
     // list images
     async listImages(query: { userId?: string, status?: ImageStatusEnum, cursor?: number, direction?: "asc" | "desc", limit?: number, filter?: string }): Promise<ImageList> {
         const client = await this.pool.connect()
-        let whereClauses = ["temporary=false"];
+        let whereClauses = [];
         let args = [];
 
         if (query.userId) {
@@ -157,6 +158,7 @@ export class BackendService {
             whereClauses.push(`(label ILIKE $` + (args.length + 1) + ` OR prompt ILIKE $` + (args.length + 1) + `)`)
             args.push(`%${query.filter}%`)
         }
+        whereClauses.push("temporary=false")
         let whereClause = "";
         if (whereClauses.length > 0) {
             whereClause = "WHERE " + whereClauses.join(" AND ")
@@ -256,8 +258,22 @@ export class BackendService {
         return null
     }
 
-    // delete image
     async deleteImage(id: string): Promise<void> {
+        const now = moment().valueOf()
+        // set deleted_at to now
+        const client = await this.pool.connect()
+        try {
+            await client.query(
+                `UPDATE images SET deleted_at=$1, updated_at=$1 WHERE id=$2`,
+                [now, id]
+            )
+        } finally {
+            client.release()
+        }
+    }
+
+    // delete image
+    async hardDeleteImage(id: string): Promise<void> {
         const client = await this.pool.connect()
         try {
             await client.query(
@@ -420,7 +436,7 @@ export class BackendService {
 
     private async getUsersWithPendingImages(zoomSupported: boolean): Promise<Array<string>> {
         const client = await this.pool.connect()
-        let filter = "";
+        let filter = " AND deleted_at IS NULL";
         if (!zoomSupported) {
             filter = " AND enable_zoom=false"
         }
@@ -435,7 +451,7 @@ export class BackendService {
     }
 
     async processImage(zoomSupported: boolean, user?: string): Promise<Image> {
-        let filter = "";
+        let filter = " AND deleted_at IS NULL";
         if (!zoomSupported) {
             filter = " AND enable_zoom=false"
         }
@@ -526,7 +542,7 @@ export class BackendService {
             if (result.rows.length > 0) {
                 const promises: Promise<void>[] = []
                 result.rows.forEach(row => {
-                    promises.push(this.deleteImage(row.id))
+                    promises.push(this.hardDeleteImage(row.id))
                 })
                 await Promise.all(promises)
                 console.log(`cleaned up temporary images: ${result.rowCount} images deleted`)
@@ -538,6 +554,36 @@ export class BackendService {
             client.release()
         }
     }
+
+    private async cleanupDeletedImages(): Promise<void> {
+        // get all images that have been deleted for more than 7 days
+        const client = await this.pool.connect()
+        let lock = false
+        try {
+            lock = await this.acquireLock(client, DELETED_IMAGES_KEY)
+            if (!lock) {
+                return
+            }
+            const result = await client.query(
+                `SELECT * FROM images WHERE deleted_at < $1`,
+                [moment().subtract(7, "days").valueOf()],
+            )
+            if (result.rows.length > 0) {
+                const promises: Promise<void>[] = []
+                result.rows.forEach(row => {
+                    promises.push(this.hardDeleteImage(row.id))
+                })
+                await Promise.all(promises)
+                console.log(`cleaned up deleted images: ${result.rowCount} images deleted`)
+            }
+        } finally {
+            if (lock) {
+                await this.releaseLock(client, DELETED_IMAGES_KEY)
+            }
+            client.release()
+        }
+    }
+
 
     private async acquireLock(client: PoolClient, key: number): Promise<boolean> {
         const result = await client.query(
@@ -557,6 +603,7 @@ export class BackendService {
     async cleanup() {
         await this.cleanupStuckImages()
         await this.cleanupTemporaryImages()
+        await this.cleanupDeletedImages()
     }
 
 

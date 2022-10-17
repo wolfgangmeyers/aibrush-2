@@ -159,7 +159,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 const resp = await api.listImages(cursor, search, 100, "desc");
                 if (resp.data.images) {
                     console.log("Initial load images", resp.data.images.length)
-                    setImages(resp.data.images.sort(sortImages));
+                    setImages(resp.data.images.filter(image => !image.deleted_at).sort(sortImages));
                     setOptimisticPendingCount(0);
                 }
                 return 0;
@@ -195,8 +195,22 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                     const updatedImages = resp.data.images.filter((image) => {
                         return images.findIndex((i) => i.id === image.id) >= 0;
                     });
-                    setImages((images) =>
-                        [
+                    setImages((images) => {
+                        const deletedIds: {[key: string]: boolean} = {};
+                        for (let image of newImages) {
+                            if (image.deleted_at) {
+                                deletedIds[image.id] = true;
+                                console.log(`Deleting image ${image.id} from list`)
+                            }
+                        }
+                        for (let image of updatedImages) {
+                            if (image.deleted_at) {
+                                deletedIds[image.id] = true;
+                                console.log(`Deleting image ${image.id} from list`)
+                            }
+                        }
+                        images = images.filter(image => !deletedIds[image.id]);
+                        return [
                             ...images.map((image) => {
                                 const updatedImage = updatedImages.find(
                                     (i) => i.id === image.id
@@ -206,9 +220,9 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                                 }
                                 return image;
                             }),
-                            ...newImages,
+                            ...newImages.filter(image => !image.deleted_at),
                         ].sort(sortImages)
-                    );
+                    });
                 }
                 return images;
             } catch (err) {
@@ -296,7 +310,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         if (resp.data.images && resp.data.images.length > 0) {
             // combine images with new images and sort by updated_at descending
             setImages((images) =>
-                [...images, ...(resp.data.images || [])].sort(sortImages)
+                [...images, ...(resp.data.images || [])].filter(image => !image.deleted_at).sort(sortImages)
             );
         } else {
             setHasMore(false);

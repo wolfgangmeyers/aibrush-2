@@ -368,7 +368,12 @@ export class Server {
                     res.status(404).send("not found")
                     return;
                 }
-                await this.backendService.deleteImage(req.params.id)
+                if (image.deleted_at) {
+                    await this.backendService.hardDeleteImage(req.params.id)
+                } else {
+                    await this.backendService.deleteImage(req.params.id)
+                }
+                
                 res.sendStatus(204)
             } catch (err) {
                 console.error(err)
