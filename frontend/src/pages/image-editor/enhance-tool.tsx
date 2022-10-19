@@ -4,7 +4,8 @@ import { loadImageAsync } from "../../lib/loadImage";
 import { sleep } from "../../lib/sleep";
 import { defaultArgs } from "../../components/ImagePrompt";
 import { Tool, BaseTool } from "./tool";
-import { Cursor, Rect, Renderer } from "./renderer";
+import { Renderer } from "./renderer";
+import { Cursor, Rect } from "./models";
 import {
     AIBrushApi,
     CreateImageInput,
@@ -14,6 +15,7 @@ import {
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
+import { featherEdges, fixRedShift } from "../../lib/imageutil";
 
 type EnhanceToolState = "default" | "busy" | "confirm" | "erase";
 
@@ -225,93 +227,11 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.progressListener = listener;
     }
 
-    private featherEdges(
-        selectionOverlay: Rect,
-        imageWidth: number,
-        imageHeight: number,
-        imageData: ImageData
-    ) {
-        const featherLeftEdge = selectionOverlay.x != 0;
-        const featherRightEdge =
-            selectionOverlay.x + selectionOverlay.width != imageWidth;
-        const featherTopEdge = selectionOverlay.y != 0;
-        const featherBottomEdge =
-            selectionOverlay.y + selectionOverlay.height != imageHeight;
-
-        const baseWidth = Math.min(
-            selectionOverlay.width,
-            selectionOverlay.height
-        );
-        const featherWidth = Math.floor(baseWidth / 8);
-
-        if (featherTopEdge) {
-            for (let y = 0; y < featherWidth; y++) {
-                for (let x = 0; x < selectionOverlay.width; x++) {
-                    const pixelIndex = (y * selectionOverlay.width + x) * 4;
-                    const alpha = (y / featherWidth) * 255;
-                    const existingAlpha = imageData.data[pixelIndex + 3];
-                    imageData.data[pixelIndex + 3] = Math.min(
-                        alpha,
-                        existingAlpha
-                    );
-                }
-            }
-        }
-        if (featherBottomEdge) {
-            for (
-                let y = selectionOverlay.height - featherWidth;
-                y < selectionOverlay.height;
-                y++
-            ) {
-                for (let x = 0; x < selectionOverlay.width; x++) {
-                    const pixelIndex = (y * selectionOverlay.width + x) * 4;
-                    const alpha =
-                        ((selectionOverlay.height - y) / featherWidth) * 255;
-                    const existingAlpha = imageData.data[pixelIndex + 3];
-                    imageData.data[pixelIndex + 3] = Math.min(
-                        alpha,
-                        existingAlpha
-                    );
-                }
-            }
-        }
-        if (featherLeftEdge) {
-            for (let x = 0; x < featherWidth; x++) {
-                for (let y = 0; y < selectionOverlay.height; y++) {
-                    const pixelIndex = (y * selectionOverlay.width + x) * 4;
-                    const alpha = (x / featherWidth) * 255;
-                    const existingAlpha = imageData.data[pixelIndex + 3];
-                    imageData.data[pixelIndex + 3] = Math.min(
-                        alpha,
-                        existingAlpha
-                    );
-                }
-            }
-        }
-        if (featherRightEdge) {
-            for (
-                let x = selectionOverlay.width - featherWidth;
-                x < selectionOverlay.width;
-                x++
-            ) {
-                for (let y = 0; y < selectionOverlay.height; y++) {
-                    const pixelIndex = (y * selectionOverlay.width + x) * 4;
-                    const alpha =
-                        ((selectionOverlay.width - x) / featherWidth) * 255;
-                    const existingAlpha = imageData.data[pixelIndex + 3];
-                    imageData.data[pixelIndex + 3] = Math.min(
-                        alpha,
-                        existingAlpha
-                    );
-                }
-            }
-        }
-    }
-
     private loadImageData(
         api: AIBrushApi,
         imageId: string,
         baseImage: APIImage,
+        baseImageData: ImageData,
         selectionOverlay: Rect
     ): Promise<ImageData> {
         return new Promise((resolve, reject) => {
@@ -339,13 +259,13 @@ export class EnhanceTool extends BaseTool implements Tool {
                         selectionOverlay.width,
                         selectionOverlay.height
                     );
-                    this.featherEdges(
+                    fixRedShift(baseImageData, imageData);
+                    featherEdges(
                         selectionOverlay,
                         baseImage.width!,
                         baseImage.height!,
                         imageData
                     );
-
                     resolve(imageData);
                     // remove canvas
                     canvas.remove();
@@ -378,6 +298,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             console.error("No selection");
             return;
         }
+        const baseImageData = this.renderer.getImageData(selectionOverlay!)!;
         const input: CreateImageInput = defaultArgs();
         input.label = "";
         input.encoded_image = encodedImage;
@@ -428,6 +349,7 @@ export class EnhanceTool extends BaseTool implements Tool {
                             api,
                             newImages![i].id,
                             image,
+                            baseImageData,
                             selectionOverlay!
                         )
                         newImages![i].data = imageData;
@@ -455,14 +377,6 @@ export class EnhanceTool extends BaseTool implements Tool {
             if (newImages![i].data) {
                 this.imageData.push(newImages![i].data as ImageData);
             }
-            // this.imageData.push(
-            //     await this.loadImageData(
-            //         api,
-            //         newImages[i].id,
-            //         image,
-            //         selectionOverlay!
-            //     )
-            // );
         }
         if (this.imageData.length === 0) {
             this.state = "default";

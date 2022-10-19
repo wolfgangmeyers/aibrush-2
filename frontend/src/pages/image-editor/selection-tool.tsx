@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Cursor, Rect, Renderer } from "./renderer";
+import { Renderer } from "./renderer";
+import { Cursor, Rect } from "./models";
 import { Tool, BaseTool } from "./tool";
 import { AspectRatioSelector } from "../../components/AspectRatioSelector";
 import { getUpscaleLevel } from "../../lib/upscale";
