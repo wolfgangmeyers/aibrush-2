@@ -1,55 +1,67 @@
 import moment from "moment";
 import axios from "axios";
 
-const NEW_RELIC_LICENSE_KEY = process.env.NEW_RELIC_LICENSE_KEY;
 const NEW_RELIC_URL = "https://metric-api.newrelic.com/metric/v1";
 
 interface Metric {
     name: string;
     value: any;
+    type: "gauge" | "count";
     attributes: any;
     timestamp: number; // unix timestamp
+    [key: string]: any;
 }
 
 export class MetricsClient {
     // collect metrics into a batch, and send them to New Relic every 10 seconds
     private metrics: Metric[] = [];
     private interval: NodeJS.Timeout;
-    private enabled = !!NEW_RELIC_LICENSE_KEY;
 
-    constructor() {
+    private get enabled() {
+        return !!this.newRelicLicenseKey;
+    }
+
+    constructor(private newRelicLicenseKey: string) {
         if (this.enabled) {
             this.interval = setInterval(() => this.sendMetrics(), 10000);
         }
     }
 
-    public async sendMetrics() {
-        if (!this.enabled) {
-            const data = [
-                {
-                    metrics: this.metrics,
-                },
-            ];
-
-            await axios.post(NEW_RELIC_URL, data, {
-                headers: {
-                    "Content-Type": "application/json",
-                    "Api-Key": NEW_RELIC_LICENSE_KEY,
-                },
-            });
-
+    private async sendMetrics() {
+        if (this.enabled) {
+            if (this.metrics.length > 0) {
+                const data = [
+                    {
+                        metrics: this.metrics,
+                    },
+                ];
+    
+                const resp = await axios.post(NEW_RELIC_URL, data, {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Api-Key": this.newRelicLicenseKey,
+                    },
+                });
+                console.log("Exported metrics: ", resp.status);
+                console.log(resp.data);
+            }
+            
             this.metrics = [];
         }
     }
 
-    public addMetric(name: string, value: any, attributes: any) {
+    public addMetric(name: string, value: any, type: "gauge" | "count", attributes: any) {
         if (this.enabled) {
             this.metrics.push({
                 name,
                 value,
-                attributes,
+                type,
+                attributes: attributes,
+                "interval.ms": 10000,
                 timestamp: moment().unix(),
             });
+        } else {
+            console.log("Metric: ", name, value, attributes);
         }
     }
 

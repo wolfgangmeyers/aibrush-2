@@ -4,12 +4,14 @@ import cors from "cors"
 import fs from "fs"
 import path from "path"
 import { createHttpTerminator, HttpTerminator } from "http-terminator"
+import moment from "moment";
 
 import { sleep } from "./sleep";
 import { BackendService } from "./backend";
 import { Config } from "./config"
 import { AuthHelper, AuthJWTPayload, authMiddleware, ServiceAccountConfig, hash } from "./auth"
 import { ImageStatusEnum } from "./client"
+import { MetricsClient } from "./metrics"
 
 export class Server {
     private server: HTTPServer;
@@ -18,6 +20,7 @@ export class Server {
     private authHelper: AuthHelper;
     cleanupHandle: NodeJS.Timer
     private hashedServiceAccounts: { [key: string]: boolean } = {}
+    private metricsClient: MetricsClient;
 
     constructor(private config: Config, private backendService: BackendService, private port: string | number) {
         this.app = express()
@@ -25,6 +28,8 @@ export class Server {
         for (let serviceAccount of this.config.serviceAccounts || []) {
             this.hashedServiceAccounts[hash(serviceAccount)] = true
         }
+
+        this.metricsClient = new MetricsClient(this.config.newRelicLicenseKey)
     }
 
     private serviceAccountType(jwt: AuthJWTPayload): "public" | "private" | undefined {
@@ -53,6 +58,24 @@ export class Server {
         this.app.use(cors())
 
         const spec = fs.readFileSync("./openapi.yaml")
+
+        // refactor
+        this.app.use((req, res, next) => {
+            const start = moment()
+            let err: any;
+            res.on("finish", () => {
+                const end = moment()
+                const duration = end.diff(start, "milliseconds")
+                this.metricsClient.addMetric("api.request", 1, "count", {
+                    path: req.path,
+                    method: req.method,
+                    status: res.statusCode,
+                    duration,
+                    error: err ? err.message : undefined,
+                })
+            })
+            next()
+        })
 
         this.app.get("/openapi.yaml", (req, res) => {
             res.status(200).send(spec)
