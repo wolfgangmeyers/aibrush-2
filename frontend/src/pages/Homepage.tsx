@@ -24,7 +24,6 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const [parentImage, setParentImage] = useState<Image | null>(null);
 
-    const [optimisticPendingCount, setOptimisticPendingCount] = useState(0);
     const [showPendingImages, setShowPendingImages] = useState(false);
 
     const [images, setImages] = useState<Array<Image>>([]);
@@ -67,8 +66,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         setErr(null);
         window.scrollTo(0, 0);
         try {
-            const newImages = await api.createImage(input);
-            setOptimisticPendingCount(newImages.data.images?.length || 0);
+            await api.createImage(input);
         } catch (e: any) {
             console.error(e);
             setErr("Error creating image");
@@ -164,7 +162,6 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                             .filter((image) => !image.deleted_at)
                             .sort(sortImages)
                     );
-                    setOptimisticPendingCount(0);
                 }
                 return 0;
             } catch (err) {
@@ -449,7 +446,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                     {pendingOrProcessingImages.length > 0 && (
                         <PendingImagesThumbnail
                             pendingCount={
-                                pendingImages.length + optimisticPendingCount
+                                pendingImages.length
                             }
                             processingCount={processingImages.length}
                             onClick={() => {
