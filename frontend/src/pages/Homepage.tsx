@@ -5,11 +5,11 @@ import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
 import { CreateImageInput, Image, ImageStatusEnum } from "../client/api";
-import { ImageThumbnail } from "../components/ImageThumbnailV2";
+import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 
 import InfiniteScroll from "react-infinite-scroll-component";
-import { ImagePopup } from "../components/ImagePopupV2";
+import { ImagePopup } from "../components/ImagePopup";
 import { BusyModal } from "../components/BusyModal";
 import { PendingImagesThumbnail } from "../components/PendingImagesThumbnail";
 import { PendingImages } from "../components/PendingImages";
@@ -405,7 +405,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
 
             <div className="homepage-images" style={{ marginTop: "48px" }}>
                 <div style={{ textAlign: "left" }}>
-                    <div className="input-group">
+                    <div className="input-group" style={{marginBottom: "16px"}}>
                         <input
                             style={{
                                 // marginBottom: "16px",

@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useState } from "react";
 import { AIBrushApi, Image } from "../client";
 import moment from "moment";
-import { ImageThumbnail } from "../components/ImageThumbnailV2";
+import { ImageThumbnail } from "../components/ImageThumbnail";
 import { useHistory } from "react-router-dom";
 
 interface Props {

@@ -270,100 +270,6 @@ export enum CreateServiceAccountInputTypeEnum {
 /**
  * 
  * @export
- * @interface CreateSuggestionsJobInput
- */
-export interface CreateSuggestionsJobInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateSuggestionsJobInput
-     */
-    seed_id?: string;
-}
-/**
- * 
- * @export
- * @interface CreateSvgJobInput
- */
-export interface CreateSvgJobInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateSvgJobInput
-     */
-    image_id?: string;
-}
-/**
- * 
- * @export
- * @interface CreateWorkflowEventInput
- */
-export interface CreateWorkflowEventInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowEventInput
-     */
-    workflow_id?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowEventInput
-     */
-    message?: string;
-}
-/**
- * 
- * @export
- * @interface CreateWorkflowInput
- */
-export interface CreateWorkflowInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowInput
-     */
-    workflow_type: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowInput
-     */
-    label: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowInput
-     */
-    config_json: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowInput
-     */
-    data_json: string;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof CreateWorkflowInput
-     */
-    is_active: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowInput
-     */
-    state: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateWorkflowInput
-     */
-    execution_delay: number;
-}
-/**
- * 
- * @export
  * @interface FeatureList
  */
 export interface FeatureList {
@@ -796,210 +702,6 @@ export interface RefreshLoginInput {
 /**
  * 
  * @export
- * @interface SuggestionSeed
- */
-export interface SuggestionSeed {
-    /**
-     * 
-     * @type {string}
-     * @memberof SuggestionSeed
-     */
-    id: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof SuggestionSeed
-     */
-    name: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof SuggestionSeed
-     */
-    description: string;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof SuggestionSeed
-     */
-    items: Array<string>;
-    /**
-     * 
-     * @type {string}
-     * @memberof SuggestionSeed
-     */
-    created_by: string;
-}
-/**
- * 
- * @export
- * @interface SuggestionSeedInput
- */
-export interface SuggestionSeedInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof SuggestionSeedInput
-     */
-    name: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof SuggestionSeedInput
-     */
-    description?: string;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof SuggestionSeedInput
-     */
-    items: Array<string>;
-}
-/**
- * 
- * @export
- * @interface SuggestionSeedList
- */
-export interface SuggestionSeedList {
-    /**
-     * 
-     * @type {Array<SuggestionSeed>}
-     * @memberof SuggestionSeedList
-     */
-    suggestionSeeds: Array<SuggestionSeed>;
-}
-/**
- * 
- * @export
- * @interface SuggestionsJob
- */
-export interface SuggestionsJob {
-    /**
-     * 
-     * @type {string}
-     * @memberof SuggestionsJob
-     */
-    id: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof SuggestionsJob
-     */
-    created_by: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof SuggestionsJob
-     */
-    created_at: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof SuggestionsJob
-     */
-    updated_at: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof SuggestionsJob
-     */
-    seed_id: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof SuggestionsJob
-     */
-    status: SuggestionsJobStatusEnum;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof SuggestionsJob
-     */
-    result: Array<string>;
-}
-
-/**
-    * @export
-    * @enum {string}
-    */
-export enum SuggestionsJobStatusEnum {
-    Pending = 'pending',
-    Processing = 'processing',
-    Completed = 'completed',
-    Saved = 'saved',
-    Error = 'error'
-}
-
-/**
- * 
- * @export
- * @interface SuggestionsJobList
- */
-export interface SuggestionsJobList {
-    /**
-     * 
-     * @type {Array<SuggestionsJob>}
-     * @memberof SuggestionsJobList
-     */
-    suggestionsJobs?: Array<SuggestionsJob>;
-}
-/**
- * 
- * @export
- * @interface SvgJob
- */
-export interface SvgJob {
-    /**
-     * 
-     * @type {string}
-     * @memberof SvgJob
-     */
-    id: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof SvgJob
-     */
-    created_by: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof SvgJob
-     */
-    created_at: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof SvgJob
-     */
-    updated_at: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof SvgJob
-     */
-    image_id: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof SvgJob
-     */
-    status: SvgJobStatusEnum;
-}
-
-/**
-    * @export
-    * @enum {string}
-    */
-export enum SvgJobStatusEnum {
-    Pending = 'pending',
-    Processing = 'processing',
-    Completed = 'completed'
-}
-
-/**
- * 
- * @export
  * @interface UpdateImageInput
  */
 export interface UpdateImageInput {
@@ -1074,93 +776,6 @@ export enum UpdateImageInputStatusEnum {
 /**
  * 
  * @export
- * @interface UpdateSuggestionsJobInput
- */
-export interface UpdateSuggestionsJobInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateSuggestionsJobInput
-     */
-    status?: UpdateSuggestionsJobInputStatusEnum;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof UpdateSuggestionsJobInput
-     */
-    result?: Array<string>;
-}
-
-/**
-    * @export
-    * @enum {string}
-    */
-export enum UpdateSuggestionsJobInputStatusEnum {
-    Pending = 'pending',
-    Processing = 'processing',
-    Completed = 'completed',
-    Saved = 'saved'
-}
-
-/**
- * 
- * @export
- * @interface UpdateSvgJobInput
- */
-export interface UpdateSvgJobInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateSvgJobInput
-     */
-    result?: string;
-}
-/**
- * 
- * @export
- * @interface UpdateWorkflowInput
- */
-export interface UpdateWorkflowInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateWorkflowInput
-     */
-    label?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateWorkflowInput
-     */
-    data_json?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateWorkflowInput
-     */
-    config_json?: string;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof UpdateWorkflowInput
-     */
-    is_active?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateWorkflowInput
-     */
-    state?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof UpdateWorkflowInput
-     */
-    execution_delay?: number;
-}
-/**
- * 
- * @export
  * @interface User
  */
 export interface User {
@@ -1195,130 +810,6 @@ export interface VerifyLoginInput {
      * @memberof VerifyLoginInput
      */
     code?: string;
-}
-/**
- * 
- * @export
- * @interface Workflow
- */
-export interface Workflow {
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
-    id: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
-    created_by: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
-    label: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
-    workflow_type: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
-    state: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
-    config_json: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
-    data_json: string;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof Workflow
-     */
-    is_active: boolean;
-    /**
-     * 
-     * @type {number}
-     * @memberof Workflow
-     */
-    execution_delay: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof Workflow
-     */
-    next_execution: number;
-}
-/**
- * 
- * @export
- * @interface WorkflowEvent
- */
-export interface WorkflowEvent {
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowEvent
-     */
-    id?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowEvent
-     */
-    workflow_id?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof WorkflowEvent
-     */
-    created_at?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowEvent
-     */
-    message?: string;
-}
-/**
- * 
- * @export
- * @interface WorkflowEventList
- */
-export interface WorkflowEventList {
-    /**
-     * 
-     * @type {Array<WorkflowEvent>}
-     * @memberof WorkflowEventList
-     */
-    workflowEvents: Array<WorkflowEvent>;
-}
-/**
- * 
- * @export
- * @interface WorkflowList
- */
-export interface WorkflowList {
-    /**
-     * 
-     * @type {Array<Workflow>}
-     * @memberof WorkflowList
-     */
-    workflows: Array<Workflow>;
 }
 
 /**
@@ -1423,175 +914,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Create a new suggestion seed
-         * @param {SuggestionSeedInput} [suggestionSeedInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createSuggestionSeed: async (suggestionSeedInput?: SuggestionSeedInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/suggestion-seeds`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(suggestionSeedInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Create a new suggestions job
-         * @param {CreateSuggestionsJobInput} [createSuggestionsJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createSuggestionsJob: async (createSuggestionsJobInput?: CreateSuggestionsJobInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/suggestions-jobs`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createSuggestionsJobInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Create a new svg job
-         * @param {CreateSvgJobInput} [createSvgJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createSvgJob: async (createSvgJobInput?: CreateSvgJobInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/svg-jobs`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createSvgJobInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Create a new workflow
-         * @param {CreateWorkflowInput} [createWorkflowInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createWorkflow: async (createWorkflowInput?: CreateWorkflowInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/workflows`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createWorkflowInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Create a new workflow event
-         * @param {string} workflowId 
-         * @param {CreateWorkflowEventInput} [createWorkflowEventInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createWorkflowEvent: async (workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'workflowId' is not null or undefined
-            assertParamExists('createWorkflowEvent', 'workflowId', workflowId)
-            const localVarPath = `/api/workflows/{workflow_id}/events`
-                .replace(`{${"workflow_id"}}`, encodeURIComponent(String(workflowId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createWorkflowEventInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1602,138 +924,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             assertParamExists('deleteImage', 'id', id)
             const localVarPath = `/api/images/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Delete a suggestion seed
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteSuggestionSeed: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('deleteSuggestionSeed', 'id', id)
-            const localVarPath = `/api/suggestion-seeds/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Delete a suggestions job
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteSuggestionsJob: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('deleteSuggestionsJob', 'id', id)
-            const localVarPath = `/api/suggestions-jobs/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Delete a svg job
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteSvgJob: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('deleteSvgJob', 'id', id)
-            const localVarPath = `/api/svg-jobs/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Delete the workflow
-         * @param {string} workflowId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteWorkflow: async (workflowId: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'workflowId' is not null or undefined
-            assertParamExists('deleteWorkflow', 'workflowId', workflowId)
-            const localVarPath = `/api/workflows/{workflow_id}`
-                .replace(`{${"workflow_id"}}`, encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1947,138 +1137,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Get a suggestion seed by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getSuggestionSeed: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('getSuggestionSeed', 'id', id)
-            const localVarPath = `/api/suggestion-seeds/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get a suggestions job by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getSuggestionsJob: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('getSuggestionsJob', 'id', id)
-            const localVarPath = `/api/suggestions-jobs/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get a svg job by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getSvgJob: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('getSvgJob', 'id', id)
-            const localVarPath = `/api/svg-jobs/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get a svg job by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getSvgJobResult: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('getSvgJobResult', 'id', id)
-            const localVarPath = `/api/svg-jobs/{id}/result.svg`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2122,101 +1180,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             assertParamExists('getVideoData', 'id', id)
             const localVarPath = `/api/images/{id}.mp4`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get the workflow
-         * @param {string} workflowId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorkflow: async (workflowId: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'workflowId' is not null or undefined
-            assertParamExists('getWorkflow', 'workflowId', workflowId)
-            const localVarPath = `/api/workflows/{workflow_id}`
-                .replace(`{${"workflow_id"}}`, encodeURIComponent(String(workflowId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get the workflow events
-         * @param {string} workflowId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorkflowEvents: async (workflowId: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'workflowId' is not null or undefined
-            assertParamExists('getWorkflowEvents', 'workflowId', workflowId)
-            const localVarPath = `/api/workflows/{workflow_id}/events`
-                .replace(`{${"workflow_id"}}`, encodeURIComponent(String(workflowId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get the workflows
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorkflows: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/workflows`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2347,64 +1310,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Get a list of suggestion seeds
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        listSuggestionSeeds: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/suggestion-seeds`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get a list of suggestions jobs
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        listSuggestionsJobs: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/suggestions-jobs`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Login by email
          * @param {LoginInput} [loginInput] 
          * @param {*} [options] Override http request option.
@@ -2464,93 +1369,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(processImageInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Process a suggestions job
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        processSuggestionsJob: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/process-suggestion-job`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Process a svg job
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        processSvgJob: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/process-svg-job`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get the next pending workflow and set its status to processing.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        processWorkflow: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/process-workflow`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2628,117 +1446,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Update a suggestion seed
-         * @param {string} id 
-         * @param {SuggestionSeedInput} [suggestionSeedInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateSuggestionSeed: async (id: string, suggestionSeedInput?: SuggestionSeedInput, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('updateSuggestionSeed', 'id', id)
-            const localVarPath = `/api/suggestion-seeds/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(suggestionSeedInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Update a suggestions job
-         * @param {string} id 
-         * @param {UpdateSuggestionsJobInput} [updateSuggestionsJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateSuggestionsJob: async (id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('updateSuggestionsJob', 'id', id)
-            const localVarPath = `/api/suggestions-jobs/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(updateSuggestionsJobInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Update a svg job
-         * @param {string} id 
-         * @param {UpdateSvgJobInput} [updateSvgJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateSvgJob: async (id: string, updateSvgJobInput?: UpdateSvgJobInput, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('updateSvgJob', 'id', id)
-            const localVarPath = `/api/svg-jobs/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(updateSvgJobInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Update the video data
          * @param {string} id 
          * @param {any} [body] 
@@ -2769,43 +1476,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Update the workflow
-         * @param {string} workflowId 
-         * @param {UpdateWorkflowInput} [updateWorkflowInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateWorkflow: async (workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'workflowId' is not null or undefined
-            assertParamExists('updateWorkflow', 'workflowId', workflowId)
-            const localVarPath = `/api/workflows/{workflow_id}`
-                .replace(`{${"workflow_id"}}`, encodeURIComponent(String(workflowId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(updateWorkflowInput, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2885,57 +1555,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Create a new suggestion seed
-         * @param {SuggestionSeedInput} [suggestionSeedInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createSuggestionSeed(suggestionSeedInput?: SuggestionSeedInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeed>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createSuggestionSeed(suggestionSeedInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Create a new suggestions job
-         * @param {CreateSuggestionsJobInput} [createSuggestionsJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createSuggestionsJob(createSuggestionsJobInput?: CreateSuggestionsJobInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createSuggestionsJob(createSuggestionsJobInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Create a new svg job
-         * @param {CreateSvgJobInput} [createSvgJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createSvgJob(createSvgJobInput?: CreateSvgJobInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createSvgJob(createSvgJobInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Create a new workflow
-         * @param {CreateWorkflowInput} [createWorkflowInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createWorkflow(createWorkflowInput?: CreateWorkflowInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createWorkflow(createWorkflowInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Create a new workflow event
-         * @param {string} workflowId 
-         * @param {CreateWorkflowEventInput} [createWorkflowEventInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createWorkflowEvent(workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowEvent>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createWorkflowEvent(workflowId, createWorkflowEventInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2943,46 +1562,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async deleteImage(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.deleteImage(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Delete a suggestion seed
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async deleteSuggestionSeed(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteSuggestionSeed(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Delete a suggestions job
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async deleteSuggestionsJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteSuggestionsJob(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Delete a svg job
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async deleteSvgJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteSvgJob(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Delete the workflow
-         * @param {string} workflowId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async deleteWorkflow(workflowId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteWorkflow(workflowId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3044,46 +1623,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Get a suggestion seed by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getSuggestionSeed(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeed>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getSuggestionSeed(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get a suggestions job by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getSuggestionsJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getSuggestionsJob(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get a svg job by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getSvgJob(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getSvgJob(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get a svg job by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getSvgJobResult(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<string>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getSvgJobResult(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -3101,35 +1640,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async getVideoData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getVideoData(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get the workflow
-         * @param {string} workflowId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getWorkflow(workflowId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkflow(workflowId, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get the workflow events
-         * @param {string} workflowId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getWorkflowEvents(workflowId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowEventList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkflowEvents(workflowId, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get the workflows
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getWorkflows(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkflows(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3164,24 +1674,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Get a list of suggestion seeds
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async listSuggestionSeeds(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeedList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listSuggestionSeeds(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get a list of suggestions jobs
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async listSuggestionsJobs(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJobList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listSuggestionsJobs(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Login by email
          * @param {LoginInput} [loginInput] 
          * @param {*} [options] Override http request option.
@@ -3199,33 +1691,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async processImage(processImageInput?: ProcessImageInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.processImage(processImageInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Process a suggestions job
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async processSuggestionsJob(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.processSuggestionsJob(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Process a svg job
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async processSvgJob(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.processSvgJob(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get the next pending workflow and set its status to processing.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async processWorkflow(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.processWorkflow(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3250,39 +1715,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Update a suggestion seed
-         * @param {string} id 
-         * @param {SuggestionSeedInput} [suggestionSeedInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async updateSuggestionSeed(id: string, suggestionSeedInput?: SuggestionSeedInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionSeed>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateSuggestionSeed(id, suggestionSeedInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Update a suggestions job
-         * @param {string} id 
-         * @param {UpdateSuggestionsJobInput} [updateSuggestionsJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async updateSuggestionsJob(id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SuggestionsJob>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateSuggestionsJob(id, updateSuggestionsJobInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Update a svg job
-         * @param {string} id 
-         * @param {UpdateSvgJobInput} [updateSvgJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async updateSvgJob(id: string, updateSvgJobInput?: UpdateSvgJobInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SvgJob>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateSvgJob(id, updateSvgJobInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Update the video data
          * @param {string} id 
          * @param {any} [body] 
@@ -3291,17 +1723,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async updateVideoData(id: string, body?: any, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateVideoData(id, body, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Update the workflow
-         * @param {string} workflowId 
-         * @param {UpdateWorkflowInput} [updateWorkflowInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async updateWorkflow(workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Workflow>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateWorkflow(workflowId, updateWorkflowInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3351,52 +1772,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createServiceAccount(createServiceAccountInput, options).then((request) => request(axios, basePath));
         },
         /**
-         * Create a new suggestion seed
-         * @param {SuggestionSeedInput} [suggestionSeedInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createSuggestionSeed(suggestionSeedInput?: SuggestionSeedInput, options?: any): AxiosPromise<SuggestionSeed> {
-            return localVarFp.createSuggestionSeed(suggestionSeedInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Create a new suggestions job
-         * @param {CreateSuggestionsJobInput} [createSuggestionsJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createSuggestionsJob(createSuggestionsJobInput?: CreateSuggestionsJobInput, options?: any): AxiosPromise<SuggestionsJob> {
-            return localVarFp.createSuggestionsJob(createSuggestionsJobInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Create a new svg job
-         * @param {CreateSvgJobInput} [createSvgJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createSvgJob(createSvgJobInput?: CreateSvgJobInput, options?: any): AxiosPromise<SvgJob> {
-            return localVarFp.createSvgJob(createSvgJobInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Create a new workflow
-         * @param {CreateWorkflowInput} [createWorkflowInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createWorkflow(createWorkflowInput?: CreateWorkflowInput, options?: any): AxiosPromise<Workflow> {
-            return localVarFp.createWorkflow(createWorkflowInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Create a new workflow event
-         * @param {string} workflowId 
-         * @param {CreateWorkflowEventInput} [createWorkflowEventInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createWorkflowEvent(workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options?: any): AxiosPromise<WorkflowEvent> {
-            return localVarFp.createWorkflowEvent(workflowId, createWorkflowEventInput, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -3404,42 +1779,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         deleteImage(id: string, options?: any): AxiosPromise<void> {
             return localVarFp.deleteImage(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Delete a suggestion seed
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteSuggestionSeed(id: string, options?: any): AxiosPromise<void> {
-            return localVarFp.deleteSuggestionSeed(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Delete a suggestions job
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteSuggestionsJob(id: string, options?: any): AxiosPromise<void> {
-            return localVarFp.deleteSuggestionsJob(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Delete a svg job
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteSvgJob(id: string, options?: any): AxiosPromise<void> {
-            return localVarFp.deleteSvgJob(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Delete the workflow
-         * @param {string} workflowId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteWorkflow(workflowId: string, options?: any): AxiosPromise<void> {
-            return localVarFp.deleteWorkflow(workflowId, options).then((request) => request(axios, basePath));
         },
         /**
          * Get the assets url
@@ -3494,42 +1833,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getNpyData(id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get a suggestion seed by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getSuggestionSeed(id: string, options?: any): AxiosPromise<SuggestionSeed> {
-            return localVarFp.getSuggestionSeed(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get a suggestions job by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getSuggestionsJob(id: string, options?: any): AxiosPromise<SuggestionsJob> {
-            return localVarFp.getSuggestionsJob(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get a svg job by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getSvgJob(id: string, options?: any): AxiosPromise<SvgJob> {
-            return localVarFp.getSvgJob(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get a svg job by id
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getSvgJobResult(id: string, options?: any): AxiosPromise<string> {
-            return localVarFp.getSvgJobResult(id, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -3546,32 +1849,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         getVideoData(id: string, options?: any): AxiosPromise<any> {
             return localVarFp.getVideoData(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get the workflow
-         * @param {string} workflowId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorkflow(workflowId: string, options?: any): AxiosPromise<Workflow> {
-            return localVarFp.getWorkflow(workflowId, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get the workflow events
-         * @param {string} workflowId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorkflowEvents(workflowId: string, options?: any): AxiosPromise<WorkflowEventList> {
-            return localVarFp.getWorkflowEvents(workflowId, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get the workflows
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorkflows(options?: any): AxiosPromise<WorkflowList> {
-            return localVarFp.getWorkflows(options).then((request) => request(axios, basePath));
         },
         /**
          * Healthcheck
@@ -3602,22 +1879,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.listImages(cursor, filter, limit, direction, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get a list of suggestion seeds
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        listSuggestionSeeds(options?: any): AxiosPromise<SuggestionSeedList> {
-            return localVarFp.listSuggestionSeeds(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get a list of suggestions jobs
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        listSuggestionsJobs(options?: any): AxiosPromise<SuggestionsJobList> {
-            return localVarFp.listSuggestionsJobs(options).then((request) => request(axios, basePath));
-        },
-        /**
          * Login by email
          * @param {LoginInput} [loginInput] 
          * @param {*} [options] Override http request option.
@@ -3634,30 +1895,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         processImage(processImageInput?: ProcessImageInput, options?: any): AxiosPromise<Image> {
             return localVarFp.processImage(processImageInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Process a suggestions job
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        processSuggestionsJob(options?: any): AxiosPromise<SuggestionsJob> {
-            return localVarFp.processSuggestionsJob(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Process a svg job
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        processSvgJob(options?: any): AxiosPromise<SvgJob> {
-            return localVarFp.processSvgJob(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get the next pending workflow and set its status to processing.
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        processWorkflow(options?: any): AxiosPromise<Workflow> {
-            return localVarFp.processWorkflow(options).then((request) => request(axios, basePath));
         },
         /**
          * Refresh Login code
@@ -3679,36 +1916,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.updateImage(id, updateImageInput, options).then((request) => request(axios, basePath));
         },
         /**
-         * Update a suggestion seed
-         * @param {string} id 
-         * @param {SuggestionSeedInput} [suggestionSeedInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateSuggestionSeed(id: string, suggestionSeedInput?: SuggestionSeedInput, options?: any): AxiosPromise<SuggestionSeed> {
-            return localVarFp.updateSuggestionSeed(id, suggestionSeedInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Update a suggestions job
-         * @param {string} id 
-         * @param {UpdateSuggestionsJobInput} [updateSuggestionsJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateSuggestionsJob(id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options?: any): AxiosPromise<SuggestionsJob> {
-            return localVarFp.updateSuggestionsJob(id, updateSuggestionsJobInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Update a svg job
-         * @param {string} id 
-         * @param {UpdateSvgJobInput} [updateSvgJobInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateSvgJob(id: string, updateSvgJobInput?: UpdateSvgJobInput, options?: any): AxiosPromise<SvgJob> {
-            return localVarFp.updateSvgJob(id, updateSvgJobInput, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Update the video data
          * @param {string} id 
          * @param {any} [body] 
@@ -3717,16 +1924,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         updateVideoData(id: string, body?: any, options?: any): AxiosPromise<void> {
             return localVarFp.updateVideoData(id, body, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Update the workflow
-         * @param {string} workflowId 
-         * @param {UpdateWorkflowInput} [updateWorkflowInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateWorkflow(workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options?: any): AxiosPromise<Workflow> {
-            return localVarFp.updateWorkflow(workflowId, updateWorkflowInput, options).then((request) => request(axios, basePath));
         },
         /**
          * Verify Login code
@@ -3780,62 +1977,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Create a new suggestion seed
-     * @param {SuggestionSeedInput} [suggestionSeedInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createSuggestionSeed(suggestionSeedInput?: SuggestionSeedInput, options?: any) {
-        return AIBrushApiFp(this.configuration).createSuggestionSeed(suggestionSeedInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Create a new suggestions job
-     * @param {CreateSuggestionsJobInput} [createSuggestionsJobInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createSuggestionsJob(createSuggestionsJobInput?: CreateSuggestionsJobInput, options?: any) {
-        return AIBrushApiFp(this.configuration).createSuggestionsJob(createSuggestionsJobInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Create a new svg job
-     * @param {CreateSvgJobInput} [createSvgJobInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createSvgJob(createSvgJobInput?: CreateSvgJobInput, options?: any) {
-        return AIBrushApiFp(this.configuration).createSvgJob(createSvgJobInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Create a new workflow
-     * @param {CreateWorkflowInput} [createWorkflowInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createWorkflow(createWorkflowInput?: CreateWorkflowInput, options?: any) {
-        return AIBrushApiFp(this.configuration).createWorkflow(createWorkflowInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Create a new workflow event
-     * @param {string} workflowId 
-     * @param {CreateWorkflowEventInput} [createWorkflowEventInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createWorkflowEvent(workflowId: string, createWorkflowEventInput?: CreateWorkflowEventInput, options?: any) {
-        return AIBrushApiFp(this.configuration).createWorkflowEvent(workflowId, createWorkflowEventInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Delete a saved image
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -3844,50 +1985,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public deleteImage(id: string, options?: any) {
         return AIBrushApiFp(this.configuration).deleteImage(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Delete a suggestion seed
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public deleteSuggestionSeed(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).deleteSuggestionSeed(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Delete a suggestions job
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public deleteSuggestionsJob(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).deleteSuggestionsJob(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Delete a svg job
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public deleteSvgJob(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).deleteSvgJob(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Delete the workflow
-     * @param {string} workflowId 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public deleteWorkflow(workflowId: string, options?: any) {
-        return AIBrushApiFp(this.configuration).deleteWorkflow(workflowId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3955,50 +2052,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Get a suggestion seed by id
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getSuggestionSeed(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getSuggestionSeed(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get a suggestions job by id
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getSuggestionsJob(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getSuggestionsJob(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get a svg job by id
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getSvgJob(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getSvgJob(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get a svg job by id
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getSvgJobResult(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getSvgJobResult(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Get the binary thumbnail data
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -4018,38 +2071,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public getVideoData(id: string, options?: any) {
         return AIBrushApiFp(this.configuration).getVideoData(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get the workflow
-     * @param {string} workflowId 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getWorkflow(workflowId: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getWorkflow(workflowId, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get the workflow events
-     * @param {string} workflowId 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getWorkflowEvents(workflowId: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getWorkflowEvents(workflowId, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get the workflows
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getWorkflows(options?: any) {
-        return AIBrushApiFp(this.configuration).getWorkflows(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4087,26 +2108,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Get a list of suggestion seeds
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public listSuggestionSeeds(options?: any) {
-        return AIBrushApiFp(this.configuration).listSuggestionSeeds(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get a list of suggestions jobs
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public listSuggestionsJobs(options?: any) {
-        return AIBrushApiFp(this.configuration).listSuggestionsJobs(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Login by email
      * @param {LoginInput} [loginInput] 
      * @param {*} [options] Override http request option.
@@ -4126,36 +2127,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public processImage(processImageInput?: ProcessImageInput, options?: any) {
         return AIBrushApiFp(this.configuration).processImage(processImageInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Process a suggestions job
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public processSuggestionsJob(options?: any) {
-        return AIBrushApiFp(this.configuration).processSuggestionsJob(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Process a svg job
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public processSvgJob(options?: any) {
-        return AIBrushApiFp(this.configuration).processSvgJob(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get the next pending workflow and set its status to processing.
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public processWorkflow(options?: any) {
-        return AIBrushApiFp(this.configuration).processWorkflow(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4182,42 +2153,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Update a suggestion seed
-     * @param {string} id 
-     * @param {SuggestionSeedInput} [suggestionSeedInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public updateSuggestionSeed(id: string, suggestionSeedInput?: SuggestionSeedInput, options?: any) {
-        return AIBrushApiFp(this.configuration).updateSuggestionSeed(id, suggestionSeedInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Update a suggestions job
-     * @param {string} id 
-     * @param {UpdateSuggestionsJobInput} [updateSuggestionsJobInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public updateSuggestionsJob(id: string, updateSuggestionsJobInput?: UpdateSuggestionsJobInput, options?: any) {
-        return AIBrushApiFp(this.configuration).updateSuggestionsJob(id, updateSuggestionsJobInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Update a svg job
-     * @param {string} id 
-     * @param {UpdateSvgJobInput} [updateSvgJobInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public updateSvgJob(id: string, updateSvgJobInput?: UpdateSvgJobInput, options?: any) {
-        return AIBrushApiFp(this.configuration).updateSvgJob(id, updateSvgJobInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Update the video data
      * @param {string} id 
      * @param {any} [body] 
@@ -4227,18 +2162,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public updateVideoData(id: string, body?: any, options?: any) {
         return AIBrushApiFp(this.configuration).updateVideoData(id, body, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Update the workflow
-     * @param {string} workflowId 
-     * @param {UpdateWorkflowInput} [updateWorkflowInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public updateWorkflow(workflowId: string, updateWorkflowInput?: UpdateWorkflowInput, options?: any) {
-        return AIBrushApiFp(this.configuration).updateWorkflow(workflowId, updateWorkflowInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
