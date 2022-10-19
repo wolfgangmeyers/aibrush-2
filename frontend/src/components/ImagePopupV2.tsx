@@ -57,7 +57,11 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                 <span style={{ fontSize: "24px" }}>
                     <i
                         className={`${icon} status-badge status-badge-${status}`}
-                        style={{ fontSize: "10px", position: "relative", top: "-1px" }}
+                        style={{
+                            fontSize: "10px",
+                            position: "relative",
+                            top: "-1px",
+                        }}
                     ></i>
                     &nbsp;{displayStatus}
                 </span>
@@ -146,9 +150,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                 {onEdit && (
                                     <button
                                         className="btn btn-primary btn-sm image-popup-button"
-                                        onClick={() =>
-                                            onEdit && onEdit(image)
-                                        }
+                                        onClick={() => onEdit && onEdit(image)}
                                         style={{ marginRight: "5px" }}
                                     >
                                         <i className="fas fa-edit"></i>
@@ -184,19 +186,66 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                             style={{ marginTop: "28px", marginBottom: "85px" }}
                         >
                             <div>
-                                Similarity to prompt: {(score * 200).toFixed(2)}%
+                                Similarity to prompt: {(score * 200).toFixed(2)}
+                                %
                             </div>
                             <div>
                                 Image dimensions: {image.width} x {image.height}
                             </div>
-                            {onNSFW && <div>
-                                <input
-                                    type="checkbox"
-                                    checked={image.nsfw}
-                                    onChange={() => onNSFW(image, !image.nsfw)}
-                                />
-                                &nbsp;{image.nsfw ? "Contains NSFW content" : "No NSFW content"}
-                            </div>}
+                            {image.nsfw && (
+                                <>
+                                    <div>
+                                        {/* alert warning icon */}
+                                        <i
+                                            className="fas fa-exclamation-triangle"
+                                            style={{
+                                                color: "orange",
+                                                fontSize: "18px",
+                                                position: "relative",
+                                                top: "2px",
+                                            }}
+                                        ></i>
+                                        &nbsp;May contain NSFW content
+                                    </div>
+                                    {onNSFW && (
+                                        <a
+                                            href="javascript:void(0)"
+                                            onClick={() =>
+                                                onNSFW(image, false)
+                                            }
+                                        >
+                                            Mark as Safe for Work
+                                        </a>
+                                    )}
+                                </>
+                            )}
+                            {!image.nsfw && (
+                                <>
+                                    <div>
+                                        {/* green check icon */}
+                                        <i
+                                            className="fas fa-check"
+                                            style={{
+                                                color: "green",
+                                                fontSize: "18px",
+                                                position: "relative",
+                                                top: "2px",
+                                            }}
+                                        ></i>
+                                        &nbsp;Safe for Work
+                                    </div>
+                                    {onNSFW && (
+                                        <a
+                                            href="javascript:void(0)"
+                                            onClick={() =>
+                                                onNSFW(image, true)
+                                            }
+                                        >
+                                            Mark as Not Safe for Work
+                                        </a>
+                                    )}
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

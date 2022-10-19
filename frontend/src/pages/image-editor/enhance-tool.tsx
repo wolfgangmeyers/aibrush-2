@@ -259,7 +259,10 @@ export class EnhanceTool extends BaseTool implements Tool {
                         selectionOverlay.width,
                         selectionOverlay.height
                     );
-                    fixRedShift(baseImageData, imageData);
+                    // Is there a better way to fix this? This often causes
+                    // a visible rectangle difference in coloring. :/
+
+                    // fixRedShift(baseImageData, imageData);
                     featherEdges(
                         selectionOverlay,
                         baseImage.width!,

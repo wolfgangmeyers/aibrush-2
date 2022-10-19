@@ -74,9 +74,9 @@ export class SelectionTool extends BaseTool implements Tool {
                 event.nativeEvent.offsetY
             );
 
-            // round to the nearest 64 pixels
-            x = Math.round(x / 64) * 64;
-            y = Math.round(y / 64) * 64;
+            // round to the nearest 16 pixels
+            x = Math.round(x / 16) * 16;
+            y = Math.round(y / 16) * 16;
             // offset by -256 to center the rect
             x -= 256;
             y -= 256;
@@ -232,33 +232,31 @@ export const Controls: React.FC<ControlsProps> = ({ renderer, tool }) => {
                     }}
                 />
             )}
-            {upscaleLevel && (
-                <div className="form-group">
-                    <label htmlFor="size" style={{ width: "100%" }}>
-                        Size
-                        <small
-                            className="form-text text-muted"
-                            style={{ float: "right" }}
-                        >
-                            {Math.round(size * 100)}%
-                        </small>
-                    </label>
-                    {/* range from 0.1 to 1 */}
-                    <input
-                        type="range"
-                        className="form-control-range"
-                        id="size"
-                        min="0.2"
-                        max="1"
-                        step="0.1"
-                        value={size}
-                        onChange={(event) => {
-                            onChange(aspectRatio, parseFloat(event.target.value));
-                            setSize(parseFloat(event.target.value));
-                        }}
-                    />
-                </div>
-            )}
+            <div className="form-group">
+                <label htmlFor="size" style={{ width: "100%" }}>
+                    Size
+                    <small
+                        className="form-text text-muted"
+                        style={{ float: "right" }}
+                    >
+                        {Math.round(size * 100)}%
+                    </small>
+                </label>
+                {/* range from 0.1 to 1 */}
+                <input
+                    type="range"
+                    className="form-control-range"
+                    id="size"
+                    min="0.2"
+                    max="1"
+                    step="0.1"
+                    value={size}
+                    onChange={(event) => {
+                        onChange(aspectRatio, parseFloat(event.target.value));
+                        setSize(parseFloat(event.target.value));
+                    }}
+                />
+            </div>
         </>
     );
 };
