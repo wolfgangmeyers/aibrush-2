@@ -23,6 +23,7 @@ import {
 import { Config } from './config'
 import { Authentication, hash } from './auth'
 import { sleep } from './sleep'
+import { MetricsClient } from './metrics'
 
 jest.setTimeout(60000);
 
@@ -71,7 +72,7 @@ describe("server", () => {
             serviceAccounts: ["service-account@test.test"],
             adminUsers: ["admin@test.test"],
             assetsBaseUrl: "/api/images",
-        })
+        }, new MetricsClient(""))
         const databases = await backendService.listDatabases()
         for (const db of databases) {
             if (db.startsWith("aibrush_test_")) {
