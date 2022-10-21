@@ -97,7 +97,7 @@ describe("server", () => {
             serviceAccounts: ["service-account@test.test"],
             adminUsers: ["admin@test.test"],
             assetsBaseUrl: "/api/images",
-        })
+        }, new MetricsClient(""))
         databaseName = `aibrush_test_${moment().valueOf()}`
         await backendService.createDatabase(databaseName)
         await sleep(100)
@@ -128,9 +128,9 @@ describe("server", () => {
             assetsBaseUrl: "/api/images",
             disableCleanupJob: true,
         }
-        backendService = new BackendService(config)
+        backendService = new BackendService(config, new MetricsClient(""))
 
-        server = new Server(config, backendService, 35456)
+        server = new Server(config, backendService, 35456, new MetricsClient(""))
         await server.init()
         await server.start()
 
