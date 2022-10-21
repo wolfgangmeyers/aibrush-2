@@ -10,7 +10,7 @@ import { sleep } from "./sleep";
 import { BackendService } from "./backend";
 import { Config } from "./config"
 import { AuthHelper, AuthJWTPayload, authMiddleware, ServiceAccountConfig, hash } from "./auth"
-import { ImageStatusEnum } from "./client"
+import { AddMetricsInput, ImageStatusEnum } from "./client"
 import { MetricsClient } from "./metrics"
 
 export class Server {
@@ -20,16 +20,18 @@ export class Server {
     private authHelper: AuthHelper;
     cleanupHandle: NodeJS.Timer
     private hashedServiceAccounts: { [key: string]: boolean } = {}
-    private metricsClient: MetricsClient;
 
-    constructor(private config: Config, private backendService: BackendService, private port: string | number) {
+    constructor(
+        private config: Config,
+        private backendService: BackendService,
+        private port: string | number,
+        private metricsClient: MetricsClient,
+    ) {
         this.app = express()
         this.authHelper = new AuthHelper(config)
         for (let serviceAccount of this.config.serviceAccounts || []) {
             this.hashedServiceAccounts[hash(serviceAccount)] = true
         }
-
-        this.metricsClient = new MetricsClient(this.config.newRelicLicenseKey)
     }
 
     private serviceAccountType(jwt: AuthJWTPayload): "public" | "private" | undefined {
@@ -47,7 +49,9 @@ export class Server {
     }
 
     async init() {
+        console.log("Backend service initializing")
         await this.backendService.init();
+        console.log("Backend service initialized")
         this.app.use(express.json({
             limit: "10mb",
         }))
@@ -58,6 +62,12 @@ export class Server {
         this.app.use(cors())
 
         const spec = fs.readFileSync("./openapi.yaml")
+
+        this.app.get("/api/healthcheck", async (req, res) => {
+            res.status(200).json({
+                status: "ok"
+            })
+        })
 
         // refactor
         this.app.use((req, res, next) => {
@@ -238,12 +248,6 @@ export class Server {
             res.send({
                 assets_url: assetsUrl
             });
-        })
-
-        this.app.get("/api/healthcheck", async (req, res) => {
-            res.status(200).json({
-                status: "ok"
-            })
         })
 
         // anonymous access of static files
@@ -496,6 +500,17 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 const isAdmin = await this.backendService.isUserAdmin(jwt.userId)
                 res.json({ is_admin: isAdmin })
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        })
+
+        this.app.post("/api/metrics", async (req, res) => {
+            try {
+                const metrics = req.body as AddMetricsInput
+                await this.backendService.addMetrics(metrics)
+                res.sendStatus(200)
             } catch (err) {
                 console.error(err)
                 res.sendStatus(500)

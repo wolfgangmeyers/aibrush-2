@@ -24,6 +24,60 @@ import { BASE_PATH, COLLECTION_FORMATS, RequestArgs, BaseAPI, RequiredError } fr
 /**
  * 
  * @export
+ * @interface AddMetricItem
+ */
+export interface AddMetricItem {
+    /**
+     * 
+     * @type {string}
+     * @memberof AddMetricItem
+     */
+    name: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof AddMetricItem
+     */
+    value: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof AddMetricItem
+     */
+    type: AddMetricItemTypeEnum;
+    /**
+     * 
+     * @type {Array<MetricAttribute>}
+     * @memberof AddMetricItem
+     */
+    attributes: Array<MetricAttribute>;
+}
+
+/**
+    * @export
+    * @enum {string}
+    */
+export enum AddMetricItemTypeEnum {
+    Gauge = 'gauge',
+    Count = 'count'
+}
+
+/**
+ * 
+ * @export
+ * @interface AddMetricsInput
+ */
+export interface AddMetricsInput {
+    /**
+     * 
+     * @type {Array<AddMetricItem>}
+     * @memberof AddMetricsInput
+     */
+    metrics: Array<AddMetricItem>;
+}
+/**
+ * 
+ * @export
  * @interface AssetsUrl
  */
 export interface AssetsUrl {
@@ -676,6 +730,25 @@ export interface LoginResult {
 /**
  * 
  * @export
+ * @interface MetricAttribute
+ */
+export interface MetricAttribute {
+    /**
+     * 
+     * @type {string}
+     * @memberof MetricAttribute
+     */
+    name?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof MetricAttribute
+     */
+    value?: string;
+}
+/**
+ * 
+ * @export
  * @interface ProcessImageInput
  */
 export interface ProcessImageInput {
@@ -818,6 +891,39 @@ export interface VerifyLoginInput {
  */
 export const AIBrushApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
+        /**
+         * Add Metrics
+         * @param {AddMetricsInput} [addMetricsInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        addMetrics: async (addMetricsInput?: AddMetricsInput, options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/metrics`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(addMetricsInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
         /**
          * Create a new image
          * @param {CreateImageInput} [createImageInput] 
@@ -1526,6 +1632,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = AIBrushApiAxiosParamCreator(configuration)
     return {
         /**
+         * Add Metrics
+         * @param {AddMetricsInput} [addMetricsInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async addMetrics(addMetricsInput?: AddMetricsInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.addMetrics(addMetricsInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Create a new image
          * @param {CreateImageInput} [createImageInput] 
          * @param {*} [options] Override http request option.
@@ -1746,6 +1862,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
     const localVarFp = AIBrushApiFp(configuration)
     return {
         /**
+         * Add Metrics
+         * @param {AddMetricsInput} [addMetricsInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        addMetrics(addMetricsInput?: AddMetricsInput, options?: any): AxiosPromise<void> {
+            return localVarFp.addMetrics(addMetricsInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Create a new image
          * @param {CreateImageInput} [createImageInput] 
          * @param {*} [options] Override http request option.
@@ -1944,6 +2069,17 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
  * @extends {BaseAPI}
  */
 export class AIBrushApi extends BaseAPI {
+    /**
+     * Add Metrics
+     * @param {AddMetricsInput} [addMetricsInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public addMetrics(addMetricsInput?: AddMetricsInput, options?: any) {
+        return AIBrushApiFp(this.configuration).addMetrics(addMetricsInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
     /**
      * Create a new image
      * @param {CreateImageInput} [createImageInput] 

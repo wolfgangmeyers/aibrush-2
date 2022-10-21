@@ -103,36 +103,6 @@ class AIBrushAPI(object):
             print(f"Error updating video data ({resp.status_code}): {resp.text}")
             return False
 
-    def process_suggestion_job(self) -> SimpleNamespace:
-        resp = self.http_request("/process-suggestion-job", "POST")
-        return self.parse_json(resp.text)
-
-    def update_suggestions_job(self, job_id: str, status: str, result: List[str]) -> SimpleNamespace:
-        body = {
-            "status": status,
-            "result": result,
-        }
-        resp = self.http_request(f"/suggestions-jobs/{job_id}", "PATCH", body)
-        return self.parse_json(resp.text)
-
-    def get_suggestion_seed(self, seed_id: str) -> SimpleNamespace:
-        resp = self.http_request(f"/suggestion-seeds/{seed_id}", "GET")
-        # print response code and text
-        print(f"{resp.status_code}: {resp.text}")
-        return self.parse_json(resp.text)
-
-    # svg jobs
-    def process_svg_job(self) -> SimpleNamespace:
-        resp = self.http_request("/process-svg-job", "POST")
-        return self.parse_json(resp.text)
-
-    def update_svg_job(self, job_id: str, result: str) -> SimpleNamespace:
-        body = {
-            "result": result,
-        }
-        resp = self.http_request(f"/svg-jobs/{job_id}", "PATCH", body)
-        return self.parse_json(resp.text)
-
     # Make all args default to None
     def create_image(
         self, phrases: List[str] = None,
@@ -234,32 +204,23 @@ class AIBrushAPI(object):
         resp = self.http_request(f"/images/{image_id}", "GET")
         return self.parse_json(resp.text)
 
-    def process_workflow(self) -> SimpleNamespace:
-        resp = self.http_request("/process-workflow", "PUT")
-        return self.parse_json(resp.text)
+#   /api/metrics:
+#     post:
+#       description: Add Metrics
+#       operationId: addMetrics
+#       tags:
+#         - AIBrush
+#       requestBody:
+#         content:
+#           application/json:
+#             schema:
+#               $ref: "#/components/schemas/AddMetricsInput"
+#       responses:
+#         "200":
+#           description: Success
 
-    def update_workflow(
-        self, workflow_id: str=None,
-        label: str=None,
-        data_json: str=None,
-        config_json: str=None,
-        is_active: bool=None,
-        state: str=None,
-        execution_delay: int=None,
-    ) -> SimpleNamespace:
-        body = {}
-        if label:
-            body["label"] = label
-        if data_json:
-            body["data_json"] = data_json
-        if config_json:
-            body["config_json"] = config_json
-        if is_active != None:
-            body["is_active"] = is_active
-        if state:
-            body["state"] = state
-        if execution_delay:
-            body["execution_delay"] = execution_delay
-        resp = self.http_request(f"/workflows/{workflow_id}", "PUT", body)
-        return self.parse_json(resp.text)
-
+    def add_metrics(self, metrics: List[SimpleNamespace]):
+        body = {
+            "metrics": [m.__dict__ for m in metrics]
+        }
+        self.http_request("/metrics", "POST", body)

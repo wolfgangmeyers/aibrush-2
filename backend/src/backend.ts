@@ -1,4 +1,4 @@
-import { Client, Pool, PoolClient } from "pg"
+import { Client, ClientBase, Pool, PoolClient } from "pg"
 import os from "os";
 import { createDb, migrate } from "postgres-migrations"
 import * as uuid from "uuid"
@@ -16,6 +16,7 @@ import {
     ImageStatusEnum,
     InviteCode,
     User,
+    AddMetricsInput,
 } from "./client/api"
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
@@ -23,11 +24,13 @@ import { Config } from "./config"
 import { Authentication, AuthHelper, ServiceAccountConfig } from "./auth";
 import { LoginCode } from "./model"
 import { Filestore, S3Filestore, LocalFilestore } from "./filestore";
+import { MetricsClient } from "./metrics";
 
 process.env.PGUSER = process.env.PGUSER || "postgres"
 const STUCK_IMAGES_KEY = 1
 const TEMPORARY_IMAGES_KEY = 2
 const DELETED_IMAGES_KEY = 3
+const MIGRATIONS_KEY = 4
 
 export class BackendService {
 
@@ -35,7 +38,7 @@ export class BackendService {
     private authHelper: AuthHelper;
     private filestore: Filestore;
 
-    constructor(private config: Config) {
+    constructor(private config: Config, private metrics: MetricsClient) {
         this.authHelper = new AuthHelper(config)
         if (config.s3Bucket) {
             this.filestore = new S3Filestore(config.s3Bucket, config.s3Region)
@@ -68,25 +71,37 @@ export class BackendService {
         if (process.env.DATABASE_URL) {
             this.config.databaseUrl = process.env.DATABASE_URL
         }
-        try {
-            // migrate
-            const client = new Client({
-                connectionString: this.config.databaseUrl,
-                ssl: this.config.databaseSsl && { rejectUnauthorized: false },
-                keepAlive: false,
-            })
-            await client.connect()
-            await migrate({ client }, "./src/migrations")
-            await client.end()
-            await sleep(100)
-        } catch (error) {
-            console.error(error)
-            throw error
-        }
+        let lock = false;
 
         this.pool = new Pool({
             connectionString: this.config.databaseUrl,
             ssl: this.config.databaseSsl && { rejectUnauthorized: false },
+        })
+
+        let client: PoolClient = await this.pool.connect();
+        try {
+            lock = await this.acquireLock(client, 1)
+            if (lock) {
+                await migrate({ client }, "./src/migrations")
+                await sleep(100)
+            }
+        } catch (error) {
+            console.error(error)
+            this.metrics.addMetric("backend.init", 1, "count", {
+                status: "error",
+                error: error.message,
+            })
+            throw error
+        } finally {
+            if (client && lock) {
+                await this.releaseLock(client, 1)
+            }
+            client.release()
+        }
+
+        
+        this.metrics.addMetric("backend.init", 1, "count", {
+            status: "success",
         })
 
         // emergency cleanup logic...
@@ -100,6 +115,9 @@ export class BackendService {
     }
 
     async destroy() {
+        this.metrics.addMetric("backend.destroy", 1, "count", {
+            status: "success",
+        })
         await this.pool.end()
     }
 
@@ -350,12 +368,10 @@ export class BackendService {
     }
 
     async createImages(createdBy: string, body: CreateImageInput): Promise<Array<Image>> {
-        console.log("createImages", createdBy, body)
         const promises: Array<Promise<Image>> = [];
         for (let i = 0; i < (body.count || 1); i++) {
             promises.push(this.createImage(createdBy, body))
         }
-        console.log("await...")
         return Promise.all(promises)
     }
 
@@ -503,6 +519,7 @@ export class BackendService {
             // if any images were updated, log the number
             if (result.rowCount > 0) {
                 console.log(`Cleaning up stuck images: ${result.rowCount} images updated to "pending"`)
+                this.metrics.addMetric("backend.stuck_images", result.rowCount, "count", {})
             }
         } finally {
             if (lock) {
@@ -534,6 +551,7 @@ export class BackendService {
                 })
                 await Promise.all(promises)
                 console.log(`cleaned up temporary images: ${result.rowCount} images deleted`)
+                this.metrics.addMetric("backend.temporary_images", result.rowCount, "count", {})
             }
         } finally {
             if (lock) {
@@ -563,6 +581,7 @@ export class BackendService {
                 })
                 await Promise.all(promises)
                 console.log(`cleaned up deleted images: ${result.rowCount} images deleted`)
+                this.metrics.addMetric("backend.deleted_images", result.rowCount, "count", {})
             }
         } finally {
             if (lock) {
@@ -573,7 +592,7 @@ export class BackendService {
     }
 
 
-    private async acquireLock(client: PoolClient, key: number): Promise<boolean> {
+    private async acquireLock(client: ClientBase, key: number): Promise<boolean> {
         const result = await client.query(
             `SELECT pg_try_advisory_lock($1)`,
             [key]
@@ -581,7 +600,7 @@ export class BackendService {
         return result.rows[0].pg_try_advisory_lock as boolean
     }
 
-    private async releaseLock(client: PoolClient, key: number): Promise<void> {
+    private async releaseLock(client: ClientBase, key: number): Promise<void> {
         await client.query(
             `SELECT pg_advisory_unlock($1)`,
             [key]
@@ -589,9 +608,14 @@ export class BackendService {
     }
 
     async cleanup() {
+        const start = moment()
         await this.cleanupStuckImages()
         await this.cleanupTemporaryImages()
         await this.cleanupDeletedImages()
+        const elapsed = moment().diff(start, "milliseconds")
+        this.metrics.addMetric("backend.cleanup", 1, "count", {
+            duration: elapsed,
+        })
     }
 
 
@@ -681,6 +705,10 @@ export class BackendService {
         await this.deleteExpiredInviteCodes()
         const existingUser = await this.getUser(hash(email))
         if (existingUser) {
+            this.metrics.addMetric("backend.activate_user", 1, "count", {
+                status: "failed",
+                reason: "user_exists",
+            })
             return false
         }
         const client = await this.pool.connect()
@@ -697,6 +725,9 @@ export class BackendService {
                 `INSERT INTO users (id, active) VALUES ($1, true)`,
                 [hash(email)]
             )
+            this.metrics.addMetric("backend.activate_user", 1, "count", {
+                status: "success",
+            })
             return true
         } finally {
             client.release()
@@ -705,9 +736,17 @@ export class BackendService {
 
     async login(email: string, sendEmail=true, inviteCode: string=undefined): Promise<string> {
         if (inviteCode && !await this.activateUser(email, inviteCode)) {
+            this.metrics.addMetric("backend.login", 1, "count", {
+                status: "failed",
+                reason: "invalid_invite_code",
+            })
             throw new Error("User not allowed")
         }
         if (!await this.isUserAllowed(email)) {
+            this.metrics.addMetric("backend.login", 1, "count", {
+                status: "failed",
+                reason: "user_not_allowed",
+            })
             throw new Error("User not allowed")
         }
         // generate crypto random 6 digit code
@@ -731,6 +770,9 @@ export class BackendService {
                 }
                 await this.sendMail(message)
             }
+            this.metrics.addMetric("backend.login", 1, "count", {
+                status: "success",
+            })
             return code
         } finally {
             client.release()
@@ -758,11 +800,18 @@ export class BackendService {
             )
             if (now.isAfter(expiresAt)) {
                 console.log("code expired: " + code)
+                this.metrics.addMetric("backend.verify", 1, "count", {
+                    status: "failed",
+                    reason: "code_expired",
+                })
                 return null
             }
 
             // generate auth tokens
             const auth = this.authHelper.createTokens(loginCode.user_email)
+            this.metrics.addMetric("backend.verify", 1, "count", {
+                status: "success",
+            })
             return auth
         } finally {
             client.release()
@@ -828,6 +877,16 @@ export class BackendService {
         return {
             privacy_uri: process.env.PRIVACY_URI,
             terms_uri: process.env.TERMS_URI,
+        }
+    }
+
+    async addMetrics(metrics: AddMetricsInput) {
+        for (let item of metrics.metrics) {
+            const attributes: any = {};
+            for (let attr of item.attributes) {
+                attributes[attr.name] = attr.value;
+            }
+            this.metrics.addMetric(item.name, item.value, item.type, attributes)
         }
     }
 }

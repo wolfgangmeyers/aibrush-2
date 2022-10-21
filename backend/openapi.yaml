@@ -405,6 +405,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Healthcheck"
+  # metrics
+  # post only
+  /api/metrics:
+    post:
+      description: Add Metrics
+      operationId: addMetrics
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMetricsInput"
+      responses:
+        "200":
+          description: Success
 components:
   schemas:
     CreateImageInput:
@@ -684,3 +700,39 @@ components:
           type: string
         privacy_uri:
           type: string
+# public addMetric(name: string, value: any, type: "gauge" | "count", attributes: any)
+    MetricAttribute:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+    AddMetricItem:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: number
+        type:
+          type: string
+          enum: [gauge, count]
+        attributes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MetricAttribute"
+      required:
+        - name
+        - value
+        - type
+        - attributes
+    AddMetricsInput:
+      type: object
+      properties:
+        metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/AddMetricItem"
+      required:
+        - metrics
