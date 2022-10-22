@@ -69,30 +69,53 @@ export class Server {
             })
         })
 
-        // refactor
-        this.app.use((req, res, next) => {
-            const start = moment()
-            let err: any;
-            res.on("finish", () => {
-                const end = moment()
-                const duration = end.diff(start, "milliseconds")
-                this.metricsClient.addMetric("api.request", 1, "count", {
-                    path: req.path,
-                    method: req.method,
-                    status: res.statusCode,
-                    duration,
-                    error: err ? err.message : undefined,
-                })
-            })
-            next()
-        })
+        // // refactor
+        // this.app.use((req, res, next) => {
+        //     const start = moment()
+        //     let err: any;
+        //     res.on("finish", () => {
+        //         const end = moment()
+        //         const duration = end.diff(start, "milliseconds")
+        //         this.metricsClient.addMetric("api.request", 1, "count", {
+        //             path: req.path,
+        //             method: req.method,
+        //             status: res.statusCode,
+        //             duration,
+        //             error: err ? err.message : undefined,
+        //         })
+        //     })
+        //     next()
+        // })
+
+        const withMetrics = (route: string, fn: (req: express.Request, res: express.Response) => Promise<void>) => {
+            return async (req: express.Request, res: express.Response) => {
+                const start = moment()
+                let err: any;
+                try {
+                    await fn(req, res)
+                } catch (e) {
+                    err = e
+                    throw e
+                } finally {
+                    const end = moment()
+                    const duration = end.diff(start, "milliseconds")
+                    this.metricsClient.addMetric("api.request", 1, "count", {
+                        path: route,
+                        method: req.method,
+                        status: res.statusCode,
+                        duration,
+                        error: err ? err.message : undefined,
+                    })
+                }
+            }
+        };
 
         this.app.get("/openapi.yaml", (req, res) => {
             res.status(200).send(spec)
         })
 
 
-        this.app.post("/api/auth/login", async (req, res) => {
+        this.app.post("/api/auth/login", withMetrics("/api/auth/login", async (req, res) => {
             try {
                 const token = await this.backendService.login(req.body.email, true, req.body.invite_code)
                 res.sendStatus(204)
@@ -106,9 +129,9 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.post("/api/auth/verify", async (req, res) => {
+        this.app.post("/api/auth/verify", withMetrics("/api/auth/verify", async (req, res) => {
             try {
                 const result = await this.backendService.verify(req.body.code)
                 // if result is null, send 400
@@ -121,9 +144,9 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.post("/api/auth/refresh", async (req, res) => {
+        this.app.post("/api/auth/refresh", withMetrics("/api/auth/refresh", async (req, res) => {
             try {
                 const result = await this.backendService.refresh(req.body.refreshToken)
                 // if result is null, send 400
@@ -136,13 +159,13 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
         // allow anonymous access to image data. This is needed in order to
         // use these urls in image elements.
 
         // get image data by id
-        this.app.get("/api/images/:id.image.jpg", async (req, res) => {
+        this.app.get("/api/images/:id.image.jpg", withMetrics("/api/images/:id.image.jpg", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -157,10 +180,10 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
         // get thumbnail data by id
-        this.app.get("/api/images/:id.thumbnail.jpg", async (req, res) => {
+        this.app.get("/api/images/:id.thumbnail.jpg", withMetrics("/api/images/:id.thumbnail.jpg", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -175,9 +198,9 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.get("/api/images/:id.npy", async (req, res) => {
+        this.app.get("/api/images/:id.npy", withMetrics("/api/images/:id.npy", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -196,9 +219,9 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.get("/api/images/:id.mask.jpg", async (req, res) => {
+        this.app.get("/api/images/:id.mask.jpg", withMetrics("/api/images/:id.mask.jpg", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -217,9 +240,9 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.get("/api/images/:id.mp4", async (req, res) => {
+        this.app.get("/api/images/:id.mp4", withMetrics("/api/images/:id.mp4", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -241,14 +264,14 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.get("/api/assets-url", async (req, res) => {
+        this.app.get("/api/assets-url", withMetrics("/api/assets-url", async (req, res) => {
             const assetsUrl = this.config.assetsBaseUrl;
             res.send({
                 assets_url: assetsUrl
             });
-        })
+        }))
 
         // anonymous access of static files
         this.app.use(express.static("./public"))
@@ -262,15 +285,15 @@ export class Server {
 
         // render index.html for frontend routes
         for (let route of ["/worker-config", "/admin", "/images/:id", "/image-editor/:id", "/deleted-images"]) {
-            this.app.get(route, (req, res) => {
+            this.app.get(route, withMetrics(route, async (req, res) => {
                 res.sendFile(getIndexHtmlPath())
-            })
-            this.app.get(route + "/", (req, res) => {
+            }))
+            this.app.get(route + "/", withMetrics(route, async (req, res) => {
                 res.sendFile(getIndexHtmlPath())
-            })
+            }))
         }
 
-        this.app.get("/api/features", async (req, res) => {
+        this.app.get("/api/features", withMetrics("/api/features", async (req, res) => {
             try {
                 const features = await this.backendService.getFeatures()
                 res.json(features)
@@ -278,13 +301,13 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
         // authenticated routes only past this point
         this.app.use(authMiddleware(this.config))
 
         // list images
-        this.app.get("/api/images", async (req, res) => {
+        this.app.get("/api/images", withMetrics("/api/images", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // service accounts can't list images
@@ -315,10 +338,10 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
         // create image
-        this.app.post("/api/images", async (req, res) => {
+        this.app.post("/api/images", withMetrics("/api/images", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 const images = await this.backendService.createImages(jwt.userId, req.body)
@@ -329,10 +352,10 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
         // get image by id
-        this.app.get("/api/images/:id", async (req, res) => {
+        this.app.get("/api/images/:id", withMetrics("/api/images/:id", async (req, res) => {
             try {
                 // check created_by
                 const jwt = this.authHelper.getJWTFromRequest(req)
@@ -353,10 +376,10 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
         // update image by id
-        this.app.patch("/api/images/:id", async (req, res) => {
+        this.app.patch("/api/images/:id", withMetrics("/api/images/:id", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // get image first and check created_by
@@ -377,10 +400,10 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
         // delete image
-        this.app.delete("/api/images/:id", async (req, res) => {
+        this.app.delete("/api/images/:id", withMetrics("/api/images/:id", async (req, res) => {
             try {
                 // get image first and check created_by
                 const jwt = this.authHelper.getJWTFromRequest(req)
@@ -406,9 +429,9 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.put("/api/images/:id.mp4", async (req, res) => {
+        this.app.put("/api/images/:id.mp4", withMetrics("/api/images/:id.mp4", async (req, res) => {
             try {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id)
@@ -429,9 +452,9 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.put("/api/process-image", async (req, res) => {
+        this.app.put("/api/process-image", withMetrics("/api/process-image", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
 
@@ -451,9 +474,9 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.post("/api/auth/service-accounts", async (req, res) => {
+        this.app.post("/api/auth/service-accounts", withMetrics("/api/auth/service-accounts", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // service accounts can't create new service accounts
@@ -472,9 +495,9 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.post("/api/invite-codes", async (req, res) => {
+        this.app.post("/api/invite-codes", withMetrics("/api/invite-codes", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 // service accounts can't create invite codes
@@ -493,9 +516,9 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.get("/api/is-admin", async (req, res) => {
+        this.app.get("/api/is-admin", withMetrics("/api/is-admin", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
                 const isAdmin = await this.backendService.isUserAdmin(jwt.userId)
@@ -504,9 +527,9 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
 
-        this.app.post("/api/metrics", async (req, res) => {
+        this.app.post("/api/metrics", withMetrics("/api/metrics", async (req, res) => {
             try {
                 const metrics = req.body as AddMetricsInput
                 await this.backendService.addMetrics(metrics)
@@ -515,7 +538,7 @@ export class Server {
                 console.error(err)
                 res.sendStatus(500)
             }
-        })
+        }))
     }
 
     start() {
