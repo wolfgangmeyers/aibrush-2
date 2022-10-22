@@ -34,7 +34,7 @@ export const loadConfig = (): Config => {
         smtpUser: process.env.SMTP_USER,
         smtpPassword: process.env.SMTP_PASSWORD,
         smtpFrom: process.env.SMTP_FROM,
-        databaseUrl: process.env.DATABASE_URL,
+        databaseUrl: process.env.HEROKU_POSTGRESQL_ONYX_URL || process.env.DATABASE_URL,
         databaseSsl: process.env.DATABASE_SSL === "true",
         dataFolderName: process.env.DATA_FOLDER_NAME,
         s3Bucket: process.env.S3_BUCKET,
