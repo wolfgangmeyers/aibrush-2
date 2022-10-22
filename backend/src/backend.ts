@@ -17,6 +17,7 @@ import {
     InviteCode,
     User,
     AddMetricsInput,
+    UpdateImageInputStatusEnum,
 } from "./client/api"
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
@@ -381,6 +382,7 @@ export class BackendService {
             console.log("Existing image not found: " + id)
             return null
         }
+        let completed = existingImage.status !== ImageStatusEnum.Completed && body.status === UpdateImageInputStatusEnum.Completed
         // update existing image fields
         Object.keys(body).forEach(key => {
             existingImage[key] = body[key]
@@ -430,6 +432,16 @@ export class BackendService {
                 promises.push(this.filestore.writeFile(`${image.id}.npy`, binaryNpy))
             }
             await Promise.all(promises)
+            if (completed) {
+                const created_at = image.created_at
+                const updated_at = image.updated_at
+                const duration = updated_at - created_at
+                const duration_seconds = duration / 1000
+                // log metric
+                this.metrics.addMetric("backend.image_completed", 1, "count", {
+                    seconds_until_completion: duration_seconds,
+                })
+            }
             return this.hydrateImage({
                 ...image,
             })
