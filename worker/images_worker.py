@@ -173,12 +173,15 @@ def process_loop(process_queue: Queue, update_queue: Queue, metrics_queue: Queue
                     img.save(image_path)
                     
                 if os.path.exists(image_path):
-                    free_memory = get_free_memory()
+                    # TODO: dedicated clip workers? Add clip to stable diffusion model process?
+                    # the code below fails with "No GPUS available" if run from system startup using @reboot in crontab
+
+                    # free_memory = get_free_memory()
                     
-                    # during testing, clip ranking needs at most 4.4 GB of memory (2.4 is not enough)
-                    if free_memory/1e9 < 4.4 and not clip_ranker:
-                        print("Clearing model to free up memory for clip ranking")
-                        clear_model()
+                    # # during testing, clip ranking needs at most 4.4 GB of memory (2.4 is not enough)
+                    # if free_memory/1e9 < 4.4 and not clip_ranker:
+                    #     print("Clearing model to free up memory for clip ranking")
+                    #     clear_model()
                     prompts = "|".join(image.phrases)
                     negative_prompts = "|".join(image.negative_phrases).strip()
                     print(f"Calculating clip ranking for '{prompts}'")
@@ -282,44 +285,46 @@ def metrics_loop(metrics_queue: Queue):
             continue
 
 if __name__ == "__main__":
-    print("Warming up stable diffusion model")
-    # warmup
-    model_name = "stable_diffusion_text2im"
-    create_model()
-    # def _sd_args(image_data, mask_data, npy_data, image):
-    args = _sd_args(None, None, None, SimpleNamespace(
-        phrases=["a cat"],
-        height=512,
-        width=512,
-        id="warmup",
-        iterations=10,
-        stable_diffusion_strength=0.75,
+    try:
+        print("Warming up stable diffusion model")
+        # warmup
+        model_name = "stable_diffusion_text2im"
+        create_model()
+        # def _sd_args(image_data, mask_data, npy_data, image):
+        args = _sd_args(None, None, None, SimpleNamespace(
+            phrases=["a cat"],
+            height=512,
+            width=512,
+            id="warmup",
+            iterations=10,
+            stable_diffusion_strength=0.75,
 
-    ))
-    model.generate(args)
-    get_clip_ranker().rank(argparse.Namespace(text="a cat", image="images/warmup.jpg", cpu=False))
+        ))
+        model.generate(args)
+        get_clip_ranker().rank(argparse.Namespace(text="a cat", image="images/warmup.jpg", cpu=False))
 
-    # create queues
-    process_queue = Queue(maxsize=1)
-    update_queue = Queue(maxsize=1)
-    cleanup_queue = Queue(maxsize=1)
-    metrics_queue = Queue(maxsize=1)
+        # create queues
+        process_queue = Queue(maxsize=1)
+        update_queue = Queue(maxsize=1)
+        cleanup_queue = Queue(maxsize=1)
+        metrics_queue = Queue(maxsize=1)
 
-    # start threads
-    poll_thread = Thread(target=poll_loop, args=(process_queue, metrics_queue))
-    poll_thread.start()
-    process_thread = Thread(target=process_loop, args=(process_queue, update_queue, metrics_queue))
-    process_thread.start()
-    update_thread = Thread(target=update_loop, args=(update_queue, cleanup_queue, metrics_queue))
-    update_thread.start()
-    cleanup_thread = Thread(target=cleanup_loop, args=(cleanup_queue,))
-    cleanup_thread.start()
-    metrics_thread = Thread(target=metrics_loop, args=(metrics_queue,))
-    metrics_thread.start()
+        # start threads
+        poll_thread = Thread(target=poll_loop, args=(process_queue, metrics_queue))
+        poll_thread.start()
+        process_thread = Thread(target=process_loop, args=(process_queue, update_queue, metrics_queue))
+        process_thread.start()
+        update_thread = Thread(target=update_loop, args=(update_queue, cleanup_queue, metrics_queue))
+        update_thread.start()
+        cleanup_thread = Thread(target=cleanup_loop, args=(cleanup_queue,))
+        cleanup_thread.start()
+        metrics_thread = Thread(target=metrics_loop, args=(metrics_queue,))
+        metrics_thread.start()
 
-    # wait for threads to finish
-    poll_thread.join()
-    process_thread.join()
-    update_thread.join()
-    cleanup_thread.join()
-
+        # wait for threads to finish
+        poll_thread.join()
+        process_thread.join()
+        update_thread.join()
+        cleanup_thread.join()
+    except KeyboardInterrupt:
+        del model

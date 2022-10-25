@@ -31,7 +31,7 @@ class ModelProcess:
         return nsfw
 
     def __del__(self):
-        if self.process:
+        if hasattr(self, "process") and self.process:
             self.process.kill()
             self.process.wait()
             self.process = None

@@ -2,3 +2,4 @@ worker/steps
 sandbox
 .env
 dist
+screenlog.*

@@ -5,6 +5,8 @@ import fs from "fs"
 import path from "path"
 import { createHttpTerminator, HttpTerminator } from "http-terminator"
 import moment from "moment";
+import os from "os";
+import * as uuid from "uuid";
 
 import { sleep } from "./sleep";
 import { BackendService } from "./backend";
@@ -19,7 +21,9 @@ export class Server {
     private terminator: HttpTerminator;
     private authHelper: AuthHelper;
     cleanupHandle: NodeJS.Timer
+    metricsHandle: NodeJS.Timer
     private hashedServiceAccounts: { [key: string]: boolean } = {}
+    private serverId: string = uuid.v4();
 
     constructor(
         private config: Config,
@@ -562,7 +566,39 @@ export class Server {
                 }, 1000 * 60)
                 cleanup()
             })
-            
+
+            let lastIdle = 0
+            let lastTick = 0
+            this.metricsHandle = setInterval(async () => {
+                // calculate CPU percentage
+                const cpu = os.cpus()
+                let totalIdle = 0
+                let totalTick = 0
+                for (let i = 0; i < cpu.length; i++) {
+                    const type = cpu[i].times
+                    totalIdle += type.idle
+                    totalTick += type.idle + type.user + type.nice + type.irq + type.sys
+                }
+                const idle = totalIdle / cpu.length
+                const tick = totalTick / cpu.length
+                const diffIdle = idle - lastIdle
+                const diffTick = tick - lastTick
+                const cpuPercentage = 100 * (1 - diffIdle / diffTick)
+                lastIdle = idle
+                lastTick = tick
+
+                // calculate memory used percentage
+                const mem = os.totalmem() - os.freemem()
+                const memPercentage = 100 * mem / os.totalmem()
+
+                // add metrics
+                this.metricsClient.addMetric("server.cpu", cpuPercentage, "gauge", {
+                    server: this.serverId,
+                })
+                this.metricsClient.addMetric("server.mem", memPercentage, "gauge", {
+                    server: this.serverId,
+                })
+            }, 10000)
         })
     }
 
