@@ -570,6 +570,7 @@ export class Server {
             let lastIdle = 0
             let lastTick = 0
             this.metricsHandle = setInterval(async () => {
+                console.log("Calculating server metrics...")
                 // calculate CPU percentage
                 const cpu = os.cpus()
                 let totalIdle = 0

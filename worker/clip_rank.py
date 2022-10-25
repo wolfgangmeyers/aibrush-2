@@ -16,13 +16,15 @@ class ClipRanker:
         self.clip_model.eval().requires_grad_(False)
 
     def rank(self, args):
-        text = clip.tokenize([args.text], truncate=True).to(self.device)
+        return self.rank_image(PIL.Image.open(args.image), args.text)
+    
+    def rank_image(self, img, text):
+        text = clip.tokenize([text], truncate=True).to(self.device)
         # clip context
         text_emb_clip = self.clip_model.encode_text(text)
         text_emb_norm = text_emb_clip[0] / text_emb_clip[0].norm(dim=-1, keepdim=True)
 
         # load image from file
-        img = PIL.Image.open(args.image)
         basewidth = 512
         if img.width <= img.height:
             wpercent = (basewidth/float(img.size[0]))
