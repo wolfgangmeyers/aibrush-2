@@ -32,7 +32,7 @@ export class MetricsClient {
             if (this.metrics.length > 0) {
                 const metricTypes: { [key: string]: number } = {};
                 for (let metric of this.metrics) {
-                    metricTypes[metric.type] = (metricTypes[metric.type] || 0) + 1;
+                    metricTypes[metric.name] = (metricTypes[metric.type] || 0) + 1;
                 }
                 const data = [
                     {
