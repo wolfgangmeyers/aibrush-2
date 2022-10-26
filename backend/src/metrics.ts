@@ -30,6 +30,10 @@ export class MetricsClient {
     private async sendMetrics() {
         if (this.enabled) {
             if (this.metrics.length > 0) {
+                const metricTypes: { [key: string]: number } = {};
+                for (let metric of this.metrics) {
+                    metricTypes[metric.type] = (metricTypes[metric.type] || 0) + 1;
+                }
                 const data = [
                     {
                         metrics: this.metrics,
@@ -42,8 +46,7 @@ export class MetricsClient {
                         "Api-Key": this.newRelicLicenseKey,
                     },
                 });
-                console.log("Exported metrics: ", resp.status);
-                console.log(resp.data);
+                console.log("Exported metrics: ", metricTypes);
             }
             
             this.metrics = [];
