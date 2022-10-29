@@ -377,6 +377,176 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginResult"
+
+  # workers
+  /api/workers:
+    get:
+      description: Get the list of workers
+      operationId: getWorkers
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkerList"
+    post:
+      description: Create a new worker
+      operationId: createWorker
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertWorkerInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Worker"
+  /api/workers/{worker_id}:
+    get:
+      description: Get a worker
+      operationId: getWorker
+      tags:
+        - AIBrush
+      parameters:
+        - name: worker_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Worker"
+    put:
+      description: Update a worker
+      operationId: updateWorker
+      tags:
+        - AIBrush
+      parameters:
+        - name: worker_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertWorkerInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Worker"
+    delete:
+      description: Delete a worker
+      operationId: deleteWorker
+      tags:
+        - AIBrush
+      parameters:
+        - name: worker_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+  # generate a login code
+  /api/workers/{worker_id}/login-code:
+    post:
+      description: Generate a login code for a worker
+      operationId: generateWorkerLoginCode
+      tags:
+        - AIBrush
+      parameters:
+        - name: worker_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkerLoginCode"
+  # log in as a worker, using the login code
+  /api/worker-login:
+    post:
+      description: Log in as a worker
+      operationId: loginAsWorker
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkerLoginCode"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResult"
+  # get/put for worker config
+  /api/workers/{worker_id}/config:
+    get:
+      description: Get a worker config
+      operationId: getWorkerConfig
+      tags:
+        - AIBrush
+      parameters:
+        - name: worker_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkerConfig"
+    put:
+      description: Update a worker config
+      operationId: updateWorkerConfig
+      tags:
+        - AIBrush
+      parameters:
+        - name: worker_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertWorkerConfigInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkerConfig"
   /api/features:
     get:
       description: Get the features
@@ -736,3 +906,71 @@ components:
             $ref: "#/components/schemas/AddMetricItem"
       required:
         - metrics
+    # workers
+    # id, created_at, display_name, login_code
+    Worker:
+      type: object
+      properties:
+        id:
+          type: string
+        created_at:
+          type: integer
+        display_name:
+          type: string
+        last_ping:
+          type: integer
+        status:
+          type: string
+          enum: [inactive, initializing, warming, active, error]
+        login_code:
+          type: string
+      required:
+        - id
+        - created_at
+        - display_name
+    WorkerList:
+      type: object
+      properties:
+        workers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Worker"
+    WorkerLoginCode:
+      type: object
+      properties:
+        login_code:
+          type: string
+      required:
+        - login_code
+    UpsertWorkerInput:
+      type: object
+      properties:
+        display_name:
+          type: string
+      required:
+        - display_name
+    WorkerConfig:
+      type: object
+      properties:
+        worker_id: 
+          type: string
+        model:
+          type: string
+        pool_assignment:
+          type: string
+      required:
+        - worker_id
+        - model
+        - pool_assignment
+    UpsertWorkerConfigInput:
+      type: object
+      properties:
+        model:
+          type: string
+        pool_assignment:
+          type: string
+      required:
+        - worker_id
+        - model
+        - pool_assignment
+  

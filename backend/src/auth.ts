@@ -20,7 +20,9 @@ export interface AuthHelperConfig {
 }
 
 export interface ServiceAccountConfig {
+    // @deprecated
     type: "public" | "private";
+    workerId?: string;
 }
 
 export interface AuthJWTPayload {

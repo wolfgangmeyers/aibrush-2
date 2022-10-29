@@ -24,14 +24,19 @@ from memutil import get_free_memory
 api_url = "https://www.aibrush.art"
 if len(sys.argv) > 1:
     api_url = sys.argv[1]
-
-# load credentials.json
-with open('credentials.json') as f:
-    access_token = json.load(f)["accessToken"]
+if os.path.exists("credentials.json"):
+    print("Loading credentials from credentials.json")
+    # load credentials.json
+    with open('credentials.json') as f:
+        access_token = json.load(f)["accessToken"]
+        client = AIBrushAPI(api_url, access_token)
+elif os.environ.get("WORKER_LOGIN_CODE"):
+    print("Logging in with login code")
+    client = AIBrushAPI(api_url, None, os.environ["WORKER_LOGIN_CODE"])
+else:
+    raise Exception("No credentials.json or WORKER_LOGIN_CODE environment variable found")
 
 zoom_supported = True
-
-client = AIBrushAPI(api_url, access_token)
 
 # create an 'images' folder if it doesn't exist
 for folder in ["images", "output", "output_npy"]:

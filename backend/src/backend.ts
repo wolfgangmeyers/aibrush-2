@@ -18,6 +18,11 @@ import {
     User,
     AddMetricsInput,
     UpdateImageInputStatusEnum,
+    Worker,
+    WorkerConfig,
+    WorkerLoginCode,
+    LoginResult,
+    WorkerStatusEnum,
 } from "./client/api"
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
@@ -449,6 +454,175 @@ export class BackendService {
             client.release()
         }
     }
+
+    async createWorker(displayName: string): Promise<Worker> {
+        const id = uuid.v4()
+        const now = moment().unix()
+        const login_code = ""
+        const status = WorkerStatusEnum.Inactive
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `INSERT INTO workers (id, created_at, display_name, login_code, status) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+                [id, now, displayName, login_code, status]
+            )
+            await this.createWorkerConfig(id, "stable_diffusion_text2im", "public")
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    private async createWorkerConfig(workerId: string, model: string, poolAssignment: string): Promise<WorkerConfig> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `INSERT INTO worker_configs (worker_id, model, pool_assignment) VALUES ($1, $2, $3) RETURNING *`,
+                [workerId, model, poolAssignment]
+            )
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    async listWorkers(): Promise<Worker[]> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM workers`
+            )
+            return result.rows
+        } finally {
+            client.release()
+        }
+    }
+
+    async getWorker(workerId: string): Promise<Worker> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM workers WHERE id = $1`,
+                [workerId]
+            )
+            if (result.rows.length === 0) {
+                return null
+            }
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    async updateWorker(workerId: string, displayName: string): Promise<Worker> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `UPDATE workers SET display_name = $1 WHERE id = $2 RETURNING *`,
+                [displayName, workerId]
+            )
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    async deleteWorker(workerId: string): Promise<void> {
+        const client = await this.pool.connect()
+        try {
+            await client.query(
+                `DELETE FROM workers WHERE id = $1`,
+                [workerId]
+            )
+        } finally {
+            client.release()
+        }
+    }
+
+    async generateWorkerLoginCode(workerId: string): Promise<WorkerLoginCode> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM workers WHERE id = $1`,
+                [workerId]
+            )
+            if (result.rows.length === 0) {
+                return null
+            }
+            const worker = result.rows[0]
+            const login_code = uuid.v4()
+            const result2 = await client.query(
+                `UPDATE workers SET login_code = $1 WHERE id = $2 RETURNING *`,
+                [login_code, workerId]
+            )
+            return result2.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    async loginAsWorker(loginCode: string): Promise<Authentication> {
+        // validate that loginCode is a uuid
+        if (!uuid.validate(loginCode)) {
+            return null
+        }
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM workers WHERE login_code = $1`,
+                [loginCode]
+            )
+            if (result.rows.length === 0) {
+                return null
+            }
+            const worker = result.rows[0]
+            // generate auth tokens
+            const auth = this.authHelper.createTokens(worker.id, {
+                workerId: worker.id,
+                type: "public",
+            })
+            // blank out login code
+            await client.query(
+                `UPDATE workers SET login_code = '' WHERE id = $1`,
+                [worker.id]
+            )
+
+            return auth
+        } finally {
+            client.release()
+        }
+    }
+
+    async getWorkerConfig(workerId: string): Promise<WorkerConfig> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM worker_configs WHERE worker_id = $1`,
+                [workerId]
+            )
+            if (result.rows.length === 0) {
+                return null
+            }
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    // upsertWorkerConfig
+    async updateWorkerConfig(workerId: string, model: string, poolAssignment: string): Promise<WorkerConfig> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `INSERT INTO worker_configs (worker_id, model, pool_assignment) VALUES ($1, $2, $3) ON CONFLICT (worker_id) DO UPDATE SET model = $2, pool_assignment = $3 RETURNING *`,
+                [workerId, model, poolAssignment]
+            )
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
 
     private async getUsersWithPendingImages(zoomSupported: boolean): Promise<Array<string>> {
         const client = await this.pool.connect()

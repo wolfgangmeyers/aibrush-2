@@ -4,11 +4,23 @@ from types import SimpleNamespace
 from typing import List
 import time
 import json
+import traceback
 
 class AIBrushAPI(object):
-    def __init__(self, api_url: str, token: str):
+    def __init__(self, api_url: str, token: str, login_code: str=None):
         self.api_url = api_url
         self.token = token
+        if token == None:
+            self.token = self.login_as_worker(login_code).accessToken
+        else:
+            self.token = token
+
+    def login_as_worker(self, login_code: str) -> SimpleNamespace:
+        body = {
+            "login_code": login_code
+        }
+        resp = self.http_request("/worker-login", "POST", body)
+        return self.parse_json(resp.text)
 
     def http_request(self, path, method, body=None, content_type=None) -> requests.Response:
         if not content_type:
@@ -18,17 +30,17 @@ class AIBrushAPI(object):
         backoff = 2
         for _ in range(5):
             try:
-                if isinstance(body, bytes):
-                    return requests.request(method, url, data=body, headers={
-                        "Content-Type": content_type,
-                        "Authorization": f"Bearer {self.token}",
-                    }, timeout=10)
-                return requests.request(method, url, json=body, headers={
+                headers = {
                     "Content-Type": content_type,
-                    "Authorization": f"Bearer {self.token}",
-                }, timeout=30)
+                }
+                if self.token:
+                    headers["Authorization"] = f"Bearer {self.token}"
+                if isinstance(body, bytes):
+                    return requests.request(method, url, data=body, headers=headers, timeout=10)
+                return requests.request(method, url, json=body, headers=headers, timeout=30)
             except Exception as err:
                 print(f"Error making request: {err}")
+                traceback.print_exc()
                 time.sleep(backoff)
                 backoff *= 2
 
@@ -203,21 +215,6 @@ class AIBrushAPI(object):
     def get_image(self, image_id: str) -> SimpleNamespace:
         resp = self.http_request(f"/images/{image_id}", "GET")
         return self.parse_json(resp.text)
-
-#   /api/metrics:
-#     post:
-#       description: Add Metrics
-#       operationId: addMetrics
-#       tags:
-#         - AIBrush
-#       requestBody:
-#         content:
-#           application/json:
-#             schema:
-#               $ref: "#/components/schemas/AddMetricsInput"
-#       responses:
-#         "200":
-#           description: Success
 
     def add_metrics(self, metrics: List[SimpleNamespace]):
         body = {

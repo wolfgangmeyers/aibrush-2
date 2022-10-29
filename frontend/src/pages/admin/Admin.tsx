@@ -1,5 +1,6 @@
 import React, { FC, useState, useEffect, useRef } from 'react';
-import { AIBrushApi,  } from "../client/api"
+import { AIBrushApi,  } from "../../client/api"
+import { WorkerList } from './WorkerList';
 
 
 interface Props {
@@ -59,5 +60,7 @@ export const Admin: FC<Props> = ({api}) => {
                 <button className="btn btn-primary" onClick={onGenerateLink}>Generate Link</button>
             </div>
         </div>
+        <hr/>
+        <WorkerList api={api} />
     </>)
 }

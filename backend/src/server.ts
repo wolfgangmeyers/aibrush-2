@@ -12,7 +12,7 @@ import { sleep } from "./sleep";
 import { BackendService } from "./backend";
 import { Config } from "./config"
 import { AuthHelper, AuthJWTPayload, authMiddleware, ServiceAccountConfig, hash } from "./auth"
-import { AddMetricsInput, ImageStatusEnum } from "./client"
+import { AddMetricsInput, ImageStatusEnum, UpsertWorkerConfigInput, UpsertWorkerInput } from "./client"
 import { MetricsClient } from "./metrics"
 
 export class Server {
@@ -307,6 +307,17 @@ export class Server {
             }
         }))
 
+        this.app.post("/api/worker-login", withMetrics("/api/worker-login", async (req, res) => {
+            try {
+                const loginCode = req.body.login_code
+                const auth = await this.backendService.loginAsWorker(loginCode)
+                res.json(auth)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        }))
+
         // authenticated routes only past this point
         this.app.use(authMiddleware(this.config))
 
@@ -452,6 +463,155 @@ export class Server {
                 }
                 await this.backendService.updateVideoData(req.params.id, req.body)
                 res.sendStatus(204)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        }))
+
+        this.app.get("/api/workers", withMetrics("/api/workers", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // check admin
+                if (!await this.backendService.isUserAdmin(jwt.userId)) {
+                    console.log(`${jwt.userId} attempted to get workers but is not an admin`)
+                    res.sendStatus(403)
+                    return
+                }
+                const workers = await this.backendService.listWorkers()
+                res.json({
+                    workers: workers
+                })
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        }))
+
+        this.app.post("/api/workers", withMetrics("/api/workers", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // check admin
+                if (!await this.backendService.isUserAdmin(jwt.userId)) {
+                    console.log(`${jwt.userId} attempted to create a worker but is not an admin`)
+                    res.sendStatus(403)
+                    return
+                }
+                const input = req.body as UpsertWorkerInput
+                const worker = await this.backendService.createWorker(input.display_name)
+                res.json(worker)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        }))
+
+        this.app.get("/api/workers/:worker_id", withMetrics("/api/workers/:worker_id", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // check admin
+                if (!await this.backendService.isUserAdmin(jwt.userId)) {
+                    console.log(`${jwt.userId} attempted to get a worker but is not an admin`)
+                    res.sendStatus(403)
+                    return
+                }
+                const worker = await this.backendService.getWorker(req.params.worker_id)
+                if (worker) {
+                    res.json(worker)
+                } else {
+                    res.sendStatus(404)
+                }
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        }))
+
+        this.app.put("/api/workers/:worker_id", withMetrics("/api/workers/:worker_id", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // check admin
+                if (!await this.backendService.isUserAdmin(jwt.userId)) {
+                    console.log(`${jwt.userId} attempted to update a worker but is not an admin`)
+                    res.sendStatus(403)
+                    return
+                }
+                const input = req.body as UpsertWorkerInput
+                const worker = await this.backendService.updateWorker(req.params.worker_id, input.display_name)
+                if (worker) {
+                    res.json(worker)
+                } else {
+                    res.sendStatus(404)
+                }
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        }))
+
+        this.app.delete("/api/workers/:worker_id", withMetrics("/api/workers/:worker_id", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // check admin
+                if (!await this.backendService.isUserAdmin(jwt.userId)) {
+                    console.log(`${jwt.userId} attempted to delete a worker but is not an admin`)
+                    res.sendStatus(403)
+                    return
+                }
+                await this.backendService.deleteWorker(req.params.worker_id)
+                res.sendStatus(204)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        }))
+
+        // get worker config is allowed for all users
+        this.app.get("/api/workers/:worker_id/config", withMetrics("/api/workers/:worker_id/config", async (req, res) => {
+            try {
+                const workerConfig = await this.backendService.getWorkerConfig(req.params.worker_id)
+                if (workerConfig) {
+                    res.json(workerConfig)
+                } else {
+                    res.sendStatus(404)
+                }
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        }))
+
+        // upsert worker config is only allowed for admin users
+        this.app.put("/api/workers/:worker_id/config", withMetrics("/api/workers/:worker_id/config", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // check admin
+                if (!await this.backendService.isUserAdmin(jwt.userId)) {
+                    console.log(`${jwt.userId} attempted to upsert a worker config but is not an admin`)
+                    res.sendStatus(403)
+                    return
+                }
+                const workerId = req.params.worker_id
+                const input = req.body as UpsertWorkerConfigInput
+                const workerConfig = await this.backendService.updateWorkerConfig(workerId, input.model, input.pool_assignment)
+                res.json(workerConfig)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        }))
+
+        this.app.post("/api/workers/:worker_id/login-code", withMetrics("/api/workers/:worker_id/login-code", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // check admin
+                if (!await this.backendService.isUserAdmin(jwt.userId)) {
+                    console.log(`${jwt.userId} attempted to generate a worker login code but is not an admin`)
+                    res.sendStatus(403)
+                    return
+                }
+                const workerLoginCode = await this.backendService.generateWorkerLoginCode(req.params.worker_id)
+                res.json(workerLoginCode)
             } catch (err) {
                 console.error(err)
                 res.sendStatus(500)

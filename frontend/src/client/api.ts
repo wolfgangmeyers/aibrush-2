@@ -849,6 +849,38 @@ export enum UpdateImageInputStatusEnum {
 /**
  * 
  * @export
+ * @interface UpsertWorkerConfigInput
+ */
+export interface UpsertWorkerConfigInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof UpsertWorkerConfigInput
+     */
+    model: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpsertWorkerConfigInput
+     */
+    pool_assignment: string;
+}
+/**
+ * 
+ * @export
+ * @interface UpsertWorkerInput
+ */
+export interface UpsertWorkerInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof UpsertWorkerInput
+     */
+    display_name: string;
+}
+/**
+ * 
+ * @export
  * @interface User
  */
 export interface User {
@@ -883,6 +915,113 @@ export interface VerifyLoginInput {
      * @memberof VerifyLoginInput
      */
     code?: string;
+}
+/**
+ * 
+ * @export
+ * @interface Worker
+ */
+export interface Worker {
+    /**
+     * 
+     * @type {string}
+     * @memberof Worker
+     */
+    id: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof Worker
+     */
+    created_at: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof Worker
+     */
+    display_name: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof Worker
+     */
+    last_ping?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof Worker
+     */
+    status?: WorkerStatusEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof Worker
+     */
+    login_code?: string;
+}
+
+/**
+    * @export
+    * @enum {string}
+    */
+export enum WorkerStatusEnum {
+    Inactive = 'inactive',
+    Initializing = 'initializing',
+    Warming = 'warming',
+    Active = 'active',
+    Error = 'error'
+}
+
+/**
+ * 
+ * @export
+ * @interface WorkerConfig
+ */
+export interface WorkerConfig {
+    /**
+     * 
+     * @type {string}
+     * @memberof WorkerConfig
+     */
+    worker_id: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof WorkerConfig
+     */
+    model: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof WorkerConfig
+     */
+    pool_assignment: string;
+}
+/**
+ * 
+ * @export
+ * @interface WorkerList
+ */
+export interface WorkerList {
+    /**
+     * 
+     * @type {Array<Worker>}
+     * @memberof WorkerList
+     */
+    workers?: Array<Worker>;
+}
+/**
+ * 
+ * @export
+ * @interface WorkerLoginCode
+ */
+export interface WorkerLoginCode {
+    /**
+     * 
+     * @type {string}
+     * @memberof WorkerLoginCode
+     */
+    login_code: string;
 }
 
 /**
@@ -1020,6 +1159,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Create a new worker
+         * @param {UpsertWorkerInput} [upsertWorkerInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createWorker: async (upsertWorkerInput?: UpsertWorkerInput, options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/workers`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(upsertWorkerInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1038,6 +1210,72 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             }
 
             const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Delete a worker
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteWorker: async (workerId: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workerId' is not null or undefined
+            assertParamExists('deleteWorker', 'workerId', workerId)
+            const localVarPath = `/api/workers/{worker_id}`
+                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Generate a login code for a worker
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        generateWorkerLoginCode: async (workerId: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workerId' is not null or undefined
+            assertParamExists('generateWorkerLoginCode', 'workerId', workerId)
+            const localVarPath = `/api/workers/{worker_id}/login-code`
+                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -1309,6 +1547,101 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Get a worker
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorker: async (workerId: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workerId' is not null or undefined
+            assertParamExists('getWorker', 'workerId', workerId)
+            const localVarPath = `/api/workers/{worker_id}`
+                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get a worker config
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkerConfig: async (workerId: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workerId' is not null or undefined
+            assertParamExists('getWorkerConfig', 'workerId', workerId)
+            const localVarPath = `/api/workers/{worker_id}/config`
+                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get the list of workers
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkers: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/workers`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Healthcheck
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1442,6 +1775,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(loginInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Log in as a worker
+         * @param {WorkerLoginCode} [workerLoginCode] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        loginAsWorker: async (workerLoginCode?: WorkerLoginCode, options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/worker-login`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(workerLoginCode, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1589,6 +1955,80 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Update a worker
+         * @param {string} workerId 
+         * @param {UpsertWorkerInput} [upsertWorkerInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateWorker: async (workerId: string, upsertWorkerInput?: UpsertWorkerInput, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workerId' is not null or undefined
+            assertParamExists('updateWorker', 'workerId', workerId)
+            const localVarPath = `/api/workers/{worker_id}`
+                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(upsertWorkerInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Update a worker config
+         * @param {string} workerId 
+         * @param {UpsertWorkerConfigInput} [upsertWorkerConfigInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateWorkerConfig: async (workerId: string, upsertWorkerConfigInput?: UpsertWorkerConfigInput, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workerId' is not null or undefined
+            assertParamExists('updateWorkerConfig', 'workerId', workerId)
+            const localVarPath = `/api/workers/{worker_id}/config`
+                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(upsertWorkerConfigInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Verify Login code
          * @param {VerifyLoginInput} [verifyLoginInput] 
          * @param {*} [options] Override http request option.
@@ -1671,6 +2111,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a new worker
+         * @param {UpsertWorkerInput} [upsertWorkerInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createWorker(upsertWorkerInput?: UpsertWorkerInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Worker>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createWorker(upsertWorkerInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1678,6 +2128,26 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async deleteImage(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.deleteImage(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Delete a worker
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteWorker(workerId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteWorker(workerId, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Generate a login code for a worker
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async generateWorkerLoginCode(workerId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkerLoginCode>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.generateWorkerLoginCode(workerId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -1759,6 +2229,35 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Get a worker
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getWorker(workerId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Worker>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorker(workerId, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get a worker config
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getWorkerConfig(workerId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkerConfig>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkerConfig(workerId, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get the list of workers
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getWorkers(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkerList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkers(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Healthcheck
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1797,6 +2296,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async login(loginInput?: LoginInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.login(loginInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Log in as a worker
+         * @param {WorkerLoginCode} [workerLoginCode] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async loginAsWorker(workerLoginCode?: WorkerLoginCode, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.loginAsWorker(workerLoginCode, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -1839,6 +2348,28 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async updateVideoData(id: string, body?: any, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateVideoData(id, body, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Update a worker
+         * @param {string} workerId 
+         * @param {UpsertWorkerInput} [upsertWorkerInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateWorker(workerId: string, upsertWorkerInput?: UpsertWorkerInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Worker>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateWorker(workerId, upsertWorkerInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Update a worker config
+         * @param {string} workerId 
+         * @param {UpsertWorkerConfigInput} [upsertWorkerConfigInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateWorkerConfig(workerId: string, upsertWorkerConfigInput?: UpsertWorkerConfigInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkerConfig>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateWorkerConfig(workerId, upsertWorkerConfigInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -1897,6 +2428,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createServiceAccount(createServiceAccountInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Create a new worker
+         * @param {UpsertWorkerInput} [upsertWorkerInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createWorker(upsertWorkerInput?: UpsertWorkerInput, options?: any): AxiosPromise<Worker> {
+            return localVarFp.createWorker(upsertWorkerInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1904,6 +2444,24 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         deleteImage(id: string, options?: any): AxiosPromise<void> {
             return localVarFp.deleteImage(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Delete a worker
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteWorker(workerId: string, options?: any): AxiosPromise<void> {
+            return localVarFp.deleteWorker(workerId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Generate a login code for a worker
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        generateWorkerLoginCode(workerId: string, options?: any): AxiosPromise<WorkerLoginCode> {
+            return localVarFp.generateWorkerLoginCode(workerId, options).then((request) => request(axios, basePath));
         },
         /**
          * Get the assets url
@@ -1976,6 +2534,32 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getVideoData(id, options).then((request) => request(axios, basePath));
         },
         /**
+         * Get a worker
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorker(workerId: string, options?: any): AxiosPromise<Worker> {
+            return localVarFp.getWorker(workerId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get a worker config
+         * @param {string} workerId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkerConfig(workerId: string, options?: any): AxiosPromise<WorkerConfig> {
+            return localVarFp.getWorkerConfig(workerId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get the list of workers
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkers(options?: any): AxiosPromise<WorkerList> {
+            return localVarFp.getWorkers(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Healthcheck
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2011,6 +2595,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         login(loginInput?: LoginInput, options?: any): AxiosPromise<void> {
             return localVarFp.login(loginInput, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Log in as a worker
+         * @param {WorkerLoginCode} [workerLoginCode] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        loginAsWorker(workerLoginCode?: WorkerLoginCode, options?: any): AxiosPromise<LoginResult> {
+            return localVarFp.loginAsWorker(workerLoginCode, options).then((request) => request(axios, basePath));
         },
         /**
          * Get the next pending image and set its status to processing.
@@ -2049,6 +2642,26 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         updateVideoData(id: string, body?: any, options?: any): AxiosPromise<void> {
             return localVarFp.updateVideoData(id, body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Update a worker
+         * @param {string} workerId 
+         * @param {UpsertWorkerInput} [upsertWorkerInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateWorker(workerId: string, upsertWorkerInput?: UpsertWorkerInput, options?: any): AxiosPromise<Worker> {
+            return localVarFp.updateWorker(workerId, upsertWorkerInput, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Update a worker config
+         * @param {string} workerId 
+         * @param {UpsertWorkerConfigInput} [upsertWorkerConfigInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateWorkerConfig(workerId: string, upsertWorkerConfigInput?: UpsertWorkerConfigInput, options?: any): AxiosPromise<WorkerConfig> {
+            return localVarFp.updateWorkerConfig(workerId, upsertWorkerConfigInput, options).then((request) => request(axios, basePath));
         },
         /**
          * Verify Login code
@@ -2113,6 +2726,17 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Create a new worker
+     * @param {UpsertWorkerInput} [upsertWorkerInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createWorker(upsertWorkerInput?: UpsertWorkerInput, options?: any) {
+        return AIBrushApiFp(this.configuration).createWorker(upsertWorkerInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Delete a saved image
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -2121,6 +2745,28 @@ export class AIBrushApi extends BaseAPI {
      */
     public deleteImage(id: string, options?: any) {
         return AIBrushApiFp(this.configuration).deleteImage(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Delete a worker
+     * @param {string} workerId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public deleteWorker(workerId: string, options?: any) {
+        return AIBrushApiFp(this.configuration).deleteWorker(workerId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Generate a login code for a worker
+     * @param {string} workerId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public generateWorkerLoginCode(workerId: string, options?: any) {
+        return AIBrushApiFp(this.configuration).generateWorkerLoginCode(workerId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -2210,6 +2856,38 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Get a worker
+     * @param {string} workerId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getWorker(workerId: string, options?: any) {
+        return AIBrushApiFp(this.configuration).getWorker(workerId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get a worker config
+     * @param {string} workerId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getWorkerConfig(workerId: string, options?: any) {
+        return AIBrushApiFp(this.configuration).getWorkerConfig(workerId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get the list of workers
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getWorkers(options?: any) {
+        return AIBrushApiFp(this.configuration).getWorkers(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Healthcheck
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -2252,6 +2930,17 @@ export class AIBrushApi extends BaseAPI {
      */
     public login(loginInput?: LoginInput, options?: any) {
         return AIBrushApiFp(this.configuration).login(loginInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Log in as a worker
+     * @param {WorkerLoginCode} [workerLoginCode] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public loginAsWorker(workerLoginCode?: WorkerLoginCode, options?: any) {
+        return AIBrushApiFp(this.configuration).loginAsWorker(workerLoginCode, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -2298,6 +2987,30 @@ export class AIBrushApi extends BaseAPI {
      */
     public updateVideoData(id: string, body?: any, options?: any) {
         return AIBrushApiFp(this.configuration).updateVideoData(id, body, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update a worker
+     * @param {string} workerId 
+     * @param {UpsertWorkerInput} [upsertWorkerInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public updateWorker(workerId: string, upsertWorkerInput?: UpsertWorkerInput, options?: any) {
+        return AIBrushApiFp(this.configuration).updateWorker(workerId, upsertWorkerInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update a worker config
+     * @param {string} workerId 
+     * @param {UpsertWorkerConfigInput} [upsertWorkerConfigInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public updateWorkerConfig(workerId: string, upsertWorkerConfigInput?: UpsertWorkerConfigInput, options?: any) {
+        return AIBrushApiFp(this.configuration).updateWorkerConfig(workerId, upsertWorkerConfigInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
