@@ -570,35 +570,42 @@ export class Server {
             let lastIdle = 0
             let lastTick = 0
             this.metricsHandle = setInterval(async () => {
-                console.log("Calculating server metrics...")
-                // calculate CPU percentage
-                const cpu = os.cpus()
-                let totalIdle = 0
-                let totalTick = 0
-                for (let i = 0; i < cpu.length; i++) {
-                    const type = cpu[i].times
-                    totalIdle += type.idle
-                    totalTick += type.idle + type.user + type.nice + type.irq + type.sys
+                try {
+                    console.log("Calculating server metrics...")
+                    // calculate CPU percentage
+                    const cpu = os.cpus()
+                    let totalIdle = 0
+                    let totalTick = 0
+                    for (let i = 0; i < cpu.length; i++) {
+                        const type = cpu[i].times
+                        totalIdle += type.idle
+                        totalTick += type.idle + type.user + type.nice + type.irq + type.sys
+                    }
+                    const idle = totalIdle / cpu.length
+                    const tick = totalTick / cpu.length
+                    const diffIdle = idle - lastIdle
+                    const diffTick = tick - lastTick
+                    const cpuPercentage = 100 * (1 - diffIdle / diffTick)
+                    lastIdle = idle
+                    lastTick = tick
+    
+                    // calculate memory used percentage
+                    const mem = os.totalmem() - os.freemem()
+                    const memPercentage = 100 * mem / os.totalmem()
+    
+                    // add metrics
+                    this.metricsClient.addMetric("server.cpu", cpuPercentage, "gauge", {
+                        server: this.serverId,
+                    })
+                    console.log(`server.cpu: ${cpuPercentage}`)
+                    this.metricsClient.addMetric("server.mem", memPercentage, "gauge", {
+                        server: this.serverId,
+                    })
+                    console.log(`server.mem: ${memPercentage}`)
+                } catch (err) {
+                    console.error("Error calculating server metrics", err)
                 }
-                const idle = totalIdle / cpu.length
-                const tick = totalTick / cpu.length
-                const diffIdle = idle - lastIdle
-                const diffTick = tick - lastTick
-                const cpuPercentage = 100 * (1 - diffIdle / diffTick)
-                lastIdle = idle
-                lastTick = tick
-
-                // calculate memory used percentage
-                const mem = os.totalmem() - os.freemem()
-                const memPercentage = 100 * mem / os.totalmem()
-
-                // add metrics
-                this.metricsClient.addMetric("server.cpu", cpuPercentage, "gauge", {
-                    server: this.serverId,
-                })
-                this.metricsClient.addMetric("server.mem", memPercentage, "gauge", {
-                    server: this.serverId,
-                })
+                
             }, 10000)
         })
     }
