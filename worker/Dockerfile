@@ -36,4 +36,4 @@ RUN git clone https://github.com/wolfgangmeyers/aibrush-2.git
 WORKDIR /app/aibrush-2/worker
 RUN mkdir -p models/ldm/stable-diffusion-v1/
 
-CMD ["python", "images_worker.py"]
+CMD ["/app/aibrush-2/worker/images_worker.sh"]
