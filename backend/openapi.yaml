@@ -7,9 +7,9 @@ info:
   description: Orchestration backend for AI Brush
   version: 1.0.0
   contact:
-    email: wolfgangmeyers@gmail.com
+    email: admin@aibrush.art
 servers:
-  - url: https://aibrush.ngrok.io
+  - url: https://www.aibrush.art
   - url: /
 paths:
   /api/images:
@@ -952,7 +952,7 @@ components:
     WorkerConfig:
       type: object
       properties:
-        worker_id: 
+        worker_id:
           type: string
         model:
           type: string
@@ -973,4 +973,3 @@ components:
         - worker_id
         - model
         - pool_assignment
-  
