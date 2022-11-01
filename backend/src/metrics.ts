@@ -39,6 +39,7 @@ export class MetricsClient {
                         metrics: this.metrics,
                     },
                 ];
+                this.metrics = [];
     
                 const resp = await axios.post(NEW_RELIC_URL, data, {
                     headers: {
@@ -49,7 +50,7 @@ export class MetricsClient {
                 console.log("Exported metrics: ", metricTypes);
             }
             
-            this.metrics = [];
+            
         }
     }
 
