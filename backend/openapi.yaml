@@ -921,8 +921,14 @@ components:
           type: integer
         status:
           type: string
-          enum: [inactive, initializing, warming, active, error]
+          enum: [inactive, active, offline, error]
         login_code:
+          type: string
+        engine:
+          type: string
+        num_gpus:
+          type: integer
+        cloud_instance_id:
           type: string
       required:
         - id

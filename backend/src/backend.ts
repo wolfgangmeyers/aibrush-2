@@ -551,6 +551,19 @@ export class BackendService {
         }
     }
 
+    async updateWorkerDeploymentInfo(workerId: string, engine: string, numGpus: number, cloudInstanceId: string): Promise<Worker> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `UPDATE workers SET engine = $1, num_gpus = $2, cloud_instance_id = $3 WHERE id = $4 RETURNING *`,
+                [engine, numGpus, cloudInstanceId, workerId]
+            )
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
     async deleteWorker(workerId: string): Promise<void> {
         const client = await this.pool.connect()
         try {
@@ -575,11 +588,14 @@ export class BackendService {
             }
             const worker = result.rows[0]
             const login_code = uuid.v4()
-            const result2 = await client.query(
-                `UPDATE workers SET login_code = $1 WHERE id = $2 RETURNING *`,
+            await client.query(
+                `UPDATE workers SET login_code = $1 WHERE id = $2`,
                 [login_code, workerId]
             )
-            return result2.rows[0]
+            // return result2.rows[0]
+            return {
+                login_code: login_code,
+            }
         } finally {
             client.release()
         }
