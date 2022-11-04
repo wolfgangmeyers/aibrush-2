@@ -27,6 +27,7 @@
         "postinstall": "tsc",
         "genclient": "openapi-generator-cli generate --generator-name typescript-axios --input-spec ./openapi.yaml --output ./src/client",
         "test": "jest --force-exit --detectOpenHandles",
+        "test_vast": "ts-node ./src/test_vast.ts",
         "build_frontend": "rm -rf ./public && cd ../frontend && yarn build && cp -r build ../backend/public"
     },
     "dependencies": {

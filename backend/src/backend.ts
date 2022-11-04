@@ -129,11 +129,22 @@ export class BackendService {
 
 
     private hydrateImage(image: Image): Image {
+        console.log("HYDRATE IMAGE", image)
         return {
             ...image,
             zoom_scale: parseFloat(image.zoom_scale || "0.0" as any),
             zoom_shift_x: parseFloat(image.zoom_shift_x || "0.0" as any),
             zoom_shift_y: parseFloat(image.zoom_shift_y || "0.0" as any),
+            created_at: parseInt(image.created_at || "0" as any),
+            updated_at: parseInt(image.updated_at || "0" as any),
+        }
+    }
+
+    private hydrateWorker(worker: Worker): Worker {
+        return {
+            ...worker,
+            created_at: parseInt(worker.created_at || "0" as any),
+            last_ping: parseInt(worker.last_ping || "0" as any),
         }
     }
 
@@ -492,7 +503,7 @@ export class BackendService {
             const result = await client.query(
                 `SELECT * FROM workers`
             )
-            return result.rows
+            return result.rows.map(row => this.hydrateWorker(row))
         } finally {
             client.release()
         }
@@ -508,7 +519,7 @@ export class BackendService {
             if (result.rows.length === 0) {
                 return null
             }
-            return result.rows[0]
+            return this.hydrateWorker(result.rows[0])
         } finally {
             client.release()
         }
@@ -520,6 +531,19 @@ export class BackendService {
             const result = await client.query(
                 `UPDATE workers SET display_name = $1 WHERE id = $2 RETURNING *`,
                 [displayName, workerId]
+            )
+            return result.rows[0]
+        } finally {
+            client.release()
+        }
+    }
+
+    async workerPing(workerId: string): Promise<Worker> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `UPDATE workers SET last_ping = $1 WHERE id = $2 RETURNING *`,
+                [moment().unix(), workerId]
             )
             return result.rows[0]
         } finally {

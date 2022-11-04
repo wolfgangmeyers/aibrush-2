@@ -14,6 +14,7 @@ import {
 import { sleep } from "./sleep";
 import { Session, TestHelper } from "./testHelper";
 import { MetricsClient } from "./metrics";
+import moment from "moment";
 
 jest.setTimeout(60000);
 
@@ -137,6 +138,22 @@ describe("workers", () => {
                     it("should return a valid token", () => {
                         expect(authResult.data.accessToken).toBeDefined();
                     });
+
+                    describe("when a worker pings", () => {
+                        const now = moment().unix();
+                        beforeEach(async () => {
+                            await workerSession.client.processImage();
+                        });
+
+                        it("should update the last ping", async () => {
+                            const updatedworker = await adminSession.client.getWorker(
+                                worker.data.id
+                            );
+                            expect(updatedworker.data.last_ping).toBeGreaterThanOrEqual(
+                                now
+                            );
+                        })
+                    })
                 });
             });
 

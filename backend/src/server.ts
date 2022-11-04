@@ -634,6 +634,9 @@ export class Server {
                 }
                 const image = await this.backendService.processImage(req.body.zoom_supported, user)
                 res.json(image)
+                if (jwt.serviceAccountConfig?.workerId) {
+                    this.backendService.workerPing(jwt.serviceAccountConfig.workerId)
+                }
             } catch (err) {
                 console.error(err)
                 res.sendStatus(500)
