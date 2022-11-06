@@ -23,6 +23,8 @@ import {
     WorkerLoginCode,
     LoginResult,
     WorkerStatusEnum,
+    Order,
+    CreateOrderInput,
 } from "./client/api"
 import { sleep } from "./sleep"
 import { EmailMessage } from "./email_message"
@@ -466,9 +468,57 @@ export class BackendService {
         }
     }
 
+    async listOrders(activeOnly: boolean): Promise<Order[]> {
+        const client = await this.pool.connect()
+        try {
+            const now = moment().valueOf()
+            let filter = "";
+            let args = []
+            if (activeOnly) {
+                filter = "WHERE ends_at > $1 AND is_active = true"
+                args = [now]
+            }
+
+            const result = await client.query(
+                `SELECT * FROM orders ${filter} ORDER BY created_at DESC`,
+                args
+            )
+            return result.rows
+        } finally {
+            client.release()
+        }
+    }
+
+    async createOrder(createdBy: string, body: CreateOrderInput, active: boolean, amountPaidCents: number): Promise<Order> {
+        const client = await this.pool.connect()
+        try {
+            const hours = body.hours
+            const id = uuid.v4()
+            const result = await client.query(
+                `INSERT INTO orders (id, created_by, created_at, ends_at, is_active, gpu_count, amount_paid_cents)
+                VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+                [
+                    id,
+                    createdBy,
+                    moment().valueOf(),
+                    moment().add(hours, "hours").valueOf(),
+                    active,
+                    body.gpu_count,
+                    amountPaidCents
+                ]
+            )
+            const order = result.rows[0]
+            return {
+                ...order,
+            }
+        } finally {
+            client.release()
+        }
+    }
+
     async createWorker(displayName: string): Promise<Worker> {
         const id = uuid.v4()
-        const now = moment().unix()
+        const now = moment().valueOf()
         const login_code = ""
         const status = WorkerStatusEnum.Inactive
         const client = await this.pool.connect()
@@ -543,7 +593,7 @@ export class BackendService {
         try {
             const result = await client.query(
                 `UPDATE workers SET last_ping = $1 WHERE id = $2 RETURNING *`,
-                [moment().unix(), workerId]
+                [moment().valueOf(), workerId]
             )
             return result.rows[0]
         } finally {
@@ -954,6 +1004,23 @@ export class BackendService {
             this.metrics.addMetric("backend.activate_user", 1, "count", {
                 status: "success",
             })
+            return true
+        } finally {
+            client.release()
+        }
+    }
+
+    async createUser(email: string): Promise<boolean> {
+        const existingUser = await this.getUser(hash(email))
+        if (existingUser) {
+            return false
+        }
+        const client = await this.pool.connect()
+        try {
+            await client.query(
+                `INSERT INTO users (id, active) VALUES ($1, false)`,
+                [hash(email)]
+            )
             return true
         } finally {
             client.release()

@@ -293,6 +293,25 @@ export type CreateImageInputWidthEnum = typeof CreateImageInputWidthEnum[keyof t
 /**
  * 
  * @export
+ * @interface CreateOrderInput
+ */
+export interface CreateOrderInput {
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateOrderInput
+     */
+    'gpu_count': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateOrderInput
+     */
+    'hours': number;
+}
+/**
+ * 
+ * @export
  * @interface CreateServiceAccountInput
  */
 export interface CreateServiceAccountInput {
@@ -727,6 +746,68 @@ export interface MetricAttribute {
 /**
  * 
  * @export
+ * @interface Order
+ */
+export interface Order {
+    /**
+     * 
+     * @type {string}
+     * @memberof Order
+     */
+    'id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Order
+     */
+    'created_by': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof Order
+     */
+    'created_at': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Order
+     */
+    'ends_at': number;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Order
+     */
+    'is_active': boolean;
+    /**
+     * 
+     * @type {number}
+     * @memberof Order
+     */
+    'gpu_count': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Order
+     */
+    'amount_paid_cents': number;
+}
+/**
+ * 
+ * @export
+ * @interface OrderList
+ */
+export interface OrderList {
+    /**
+     * 
+     * @type {Array<Order>}
+     * @memberof OrderList
+     */
+    'orders': Array<Order>;
+}
+/**
+ * 
+ * @export
  * @interface ProcessImageInput
  */
 export interface ProcessImageInput {
@@ -1117,6 +1198,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Create a new order
+         * @param {CreateOrderInput} [createOrderInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createOrder: async (createOrderInput?: CreateOrderInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/orders`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createOrderInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Create a service account
          * @param {CreateServiceAccountInput} [createServiceAccountInput] 
          * @param {*} [options] Override http request option.
@@ -1449,6 +1563,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             assertParamExists('getNpyData', 'id', id)
             const localVarPath = `/api/images/{id}.npy`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get the list of orders
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getOrders: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/orders`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2092,6 +2235,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a new order
+         * @param {CreateOrderInput} [createOrderInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createOrder(createOrderInput?: CreateOrderInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Order>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createOrder(createOrderInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Create a service account
          * @param {CreateServiceAccountInput} [createServiceAccountInput] 
          * @param {*} [options] Override http request option.
@@ -2197,6 +2350,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async getNpyData(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getNpyData(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get the list of orders
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getOrders(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<OrderList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getOrders(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2410,6 +2572,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createInviteCode(options).then((request) => request(axios, basePath));
         },
         /**
+         * Create a new order
+         * @param {CreateOrderInput} [createOrderInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createOrder(createOrderInput?: CreateOrderInput, options?: any): AxiosPromise<Order> {
+            return localVarFp.createOrder(createOrderInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Create a service account
          * @param {CreateServiceAccountInput} [createServiceAccountInput] 
          * @param {*} [options] Override http request option.
@@ -2505,6 +2676,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         getNpyData(id: string, options?: any): AxiosPromise<any> {
             return localVarFp.getNpyData(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get the list of orders
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getOrders(options?: any): AxiosPromise<OrderList> {
+            return localVarFp.getOrders(options).then((request) => request(axios, basePath));
         },
         /**
          * Get the binary thumbnail data
@@ -2706,6 +2885,17 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Create a new order
+     * @param {CreateOrderInput} [createOrderInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createOrder(createOrderInput?: CreateOrderInput, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).createOrder(createOrderInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Create a service account
      * @param {CreateServiceAccountInput} [createServiceAccountInput] 
      * @param {*} [options] Override http request option.
@@ -2822,6 +3012,16 @@ export class AIBrushApi extends BaseAPI {
      */
     public getNpyData(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getNpyData(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get the list of orders
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getOrders(options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).getOrders(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -261,3 +261,70 @@ export class VastAIApi {
     }
 
 }
+
+export class MockVastAPI {
+    // laziness that allows lax test data
+    _offers: any = [];
+    _instances: any = [];
+
+    // getter that type casts
+    get offers(): Array<Offer> {
+        return this._offers;
+    }
+
+    get instances(): Array<Instance> {
+        return this._instances;
+    }
+
+    async searchOffers(): Promise<SearchOffersResult> {
+        return {
+            offers: this.offers,
+        }
+    }
+
+    async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}) {
+        const id = parseInt(askId);
+        const instance: Instance = {
+            id,
+            actual_status: "active",
+            intended_status: "active",
+            cur_state: "active",
+            next_state: "active",
+            image: image,
+            onStart: onStart,
+            env: env,
+        } as any;
+        this.instances.push(instance);
+        // remove offer
+        this._offers = this.offers.filter(o => o.id !== id);
+        return instance;
+    }
+
+    async listInstances(): Promise<ListInstancesResult> {
+        return {
+            instances: this.instances,
+        }
+    }
+
+    async listInstancesById(): Promise<{[key: string]: Instance}> {
+        const instances = await this.listInstances();
+        const result: {[key: string]: Instance} = {};
+        for (const instance of instances.instances) {
+            result[instance.id] = instance;
+        }
+        return result;
+    }
+
+    async deleteInstance(instanceId: string) {
+        const id = parseInt(instanceId);
+        this._instances = this.instances.filter(i => i.id !== id);
+    }
+}
+
+export interface VastClient {
+    searchOffers(): Promise<SearchOffersResult>;
+    createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<Instance>;
+    listInstances(): Promise<ListInstancesResult>;
+    listInstancesById(): Promise<{[key: string]: Instance}>;
+    deleteInstance(instanceId: string): Promise<void>;
+}

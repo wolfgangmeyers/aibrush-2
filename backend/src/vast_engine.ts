@@ -1,12 +1,17 @@
 import moment from "moment";
-import { VastAIApi } from "./vast";
+import { BackendService } from "./backend";
+import { VastAIApi, VastClient } from "./vast_client";
 
 export const SCALEDOWN_COOLDOWN = moment.duration(10, "minutes");
+export const WORKER_TIMEOUT = moment.duration(10, "minutes");
 export const MAX_COST_PER_GPU = 0.5;
+export const TYPE_VASTAI = "vastai";
+const WORKER_COMMAND = "/app/aibrush-2/worker/images_worker.sh";
 
 export interface ScalingOperation {
     targetId: string;
     operationType: "create" | "destroy";
+    block?: boolean;
 }
 
 export interface Offer {
@@ -17,8 +22,9 @@ export interface Offer {
 
 export interface Worker {
     id: string;
-    num_gpus: number;
+    num_gpus?: number;
     created_at: number;
+    last_ping?: number;
 }
 
 export function calculateScalingOperations(
@@ -31,13 +37,22 @@ export function calculateScalingOperations(
     let numGpus = 0;
     const operations: Array<ScalingOperation> = [];
     for (const worker of workers) {
-        if (worker.num_gpus) {
+        const now = moment().valueOf();
+        if (now - (worker.last_ping || worker.created_at) > WORKER_TIMEOUT.asMilliseconds()) {
+            console.log(`Worker ${worker.id} timed out`);
+            // TODO: emit a metric for this?
+            operations.push({
+                targetId: worker.id,
+                operationType: "destroy",
+                block: true,
+            });
+        } else if (worker.num_gpus) {
             numGpus += worker.num_gpus;
         }
     }
     // if we are at the target, no scaling operations
     if (numGpus === targetGpus) {
-        return [];
+        return operations;
     }
 
     if (numGpus > targetGpus) {
@@ -51,14 +66,6 @@ export function calculateScalingOperations(
         scaleUp(offers, numGpus, targetGpus, operations);
     }
     return operations;
-}
-
-export class VastEngine {
-    private client: VastAIApi;
-
-    constructor(private apiKey: string) {
-        this.client = new VastAIApi(apiKey);
-    }
 }
 
 function scaleDown(
@@ -169,6 +176,80 @@ function scaleUp(
                     });
                 }
             }
+        }
+    }
+}
+
+export class VastEngine {
+    lastScalingOperation = moment();
+
+    constructor(private client: VastClient, private backend: BackendService, private workerImage: string) {
+    }
+
+    async capacity(): Promise<number> {
+        const offers = await this.client.searchOffers()
+        const instances = await this.client.listInstances()
+        // add up all the gpus
+        let numGpus = 0;
+        for (const offer of offers.offers) {
+            numGpus += offer.num_gpus;
+        }
+        for (const instance of instances.instances) {
+            numGpus += instance.num_gpus;
+        }
+        return Math.ceil(numGpus / 2);
+    }
+
+    async scale(activeOrders: number) {
+        const targetGpus = activeOrders * 2;
+        const workers = (await this.backend.listWorkers()).filter(
+            worker => worker.engine === TYPE_VASTAI,
+        );
+
+        const offers = await this.client.searchOffers();
+        // TODO: filter offers based on blocklist
+        const operations = calculateScalingOperations(
+            workers,
+            offers.offers,
+            targetGpus,
+            this.lastScalingOperation
+        );
+        for (const operation of operations) {
+            if (operation.operationType === "create") {
+                // await this.client.createWorker(operation.targetId);
+                const newWorker = await this.backend.createWorker("VastAI Worker")
+                const loginCode = await this.backend.generateWorkerLoginCode(newWorker.id)
+                try {
+                    await this.client.createInstance(operation.targetId, this.workerImage, WORKER_COMMAND, {
+                        "WORKER_LOGIN_CODE": loginCode.login_code,
+                    });
+                    // get the offer from the operation targetId
+                    const offer = offers.offers.find(offer => offer.id.toString() === operation.targetId)
+                    await this.backend.updateWorkerDeploymentInfo(
+                        newWorker.id,
+                        TYPE_VASTAI,
+                        offer.num_gpus,
+                        offer.id.toString(),
+                    )
+                } catch (err) {
+                    // TODO: metric?
+                    console.error("Failed to create instance", err);
+                    await this.backend.deleteWorker(newWorker.id)
+                    throw err
+                }
+                
+            } else {
+                const worker = workers.find(worker => worker.id === operation.targetId)
+                await this.client.deleteInstance(worker.cloud_instance_id);
+                await this.backend.deleteWorker(worker.id);
+                if (operation.block) {
+                    // TODO: deal with blocklist
+                }
+                
+            }
+        }
+        if (operations.length > 0) {
+            this.lastScalingOperation = moment();
         }
     }
 }

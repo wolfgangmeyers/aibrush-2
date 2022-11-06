@@ -12,7 +12,7 @@ import { sleep } from "./sleep";
 import { BackendService } from "./backend";
 import { Config } from "./config"
 import { AuthHelper, AuthJWTPayload, authMiddleware, ServiceAccountConfig, hash } from "./auth"
-import { AddMetricsInput, ImageStatusEnum, UpsertWorkerConfigInput, UpsertWorkerInput } from "./client"
+import { AddMetricsInput, CreateOrderInput, ImageStatusEnum, UpsertWorkerConfigInput, UpsertWorkerInput } from "./client"
 import { MetricsClient } from "./metrics"
 
 export class Server {
@@ -642,6 +642,44 @@ export class Server {
                 res.sendStatus(500)
             }
         }))
+
+        this.app.get("/api/orders", withMetrics("/api/orders", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // check admin
+                if (!await this.backendService.isUserAdmin(jwt.userId)) {
+                    console.log(`${jwt.userId} attempted to get orders but is not an admin`)
+                    res.sendStatus(403)
+                    return
+                }
+                const orders = await this.backendService.listOrders(true)
+                res.json({orders})
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        }))
+
+        this.app.post("/api/orders", withMetrics("/api/orders", async (req, res) => {
+            try {
+                const jwt = this.authHelper.getJWTFromRequest(req)
+                // check admin
+                if (!await this.backendService.isUserAdmin(jwt.userId)) {
+                    console.log(`${jwt.userId} attempted to create an order but is not an admin`)
+                    res.sendStatus(403)
+                    return
+                }
+                const input = req.body as CreateOrderInput
+                const order = await this.backendService.createOrder(jwt.userId, input, true, 0)
+                res.json(order)
+            } catch (err) {
+                console.error(err)
+                res.sendStatus(500)
+            }
+        }))
+
+
+
 
         this.app.post("/api/auth/service-accounts", withMetrics("/api/auth/service-accounts", async (req, res) => {
             try {

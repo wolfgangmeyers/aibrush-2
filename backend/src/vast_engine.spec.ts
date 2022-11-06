@@ -1,6 +1,16 @@
-import { calculateScalingOperations, ScalingOperation, SCALEDOWN_COOLDOWN, Offer, Worker } from "./vast_engine";
+import { calculateScalingOperations, ScalingOperation, SCALEDOWN_COOLDOWN, Offer, Worker, WORKER_TIMEOUT, VastEngine, TYPE_VASTAI } from "./vast_engine";
 import moment from "moment";
 import * as uuid from "uuid";
+
+import { BackendService } from "./backend";
+import { MetricsClient } from "./metrics";
+import { Server } from "./server";
+import { sleep } from "./sleep";
+import { Session, TestHelper } from "./testHelper";
+import { MockVastAPI } from "./vast_client";
+import { hash } from "./auth";
+
+jest.setTimeout(60000);
 
 interface TestCase {
     description: string;
@@ -24,7 +34,7 @@ describe("Vast Scaling Engine Calculations", () => {
         workers: [{
             id: "worker-1",
             num_gpus: 1,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }],
         offers: [],
         targetGpus: 0,
@@ -38,7 +48,7 @@ describe("Vast Scaling Engine Calculations", () => {
         workers: [{
             id: "worker-1",
             num_gpus: 1,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }],
         offers: [],
         targetGpus: 1,
@@ -49,11 +59,11 @@ describe("Vast Scaling Engine Calculations", () => {
         workers: [{
             id: "worker-1",
             num_gpus: 1,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }, {
             id: "worker-2",
             num_gpus: 1,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }],
         offers: [],
         targetGpus: 0,
@@ -70,11 +80,11 @@ describe("Vast Scaling Engine Calculations", () => {
         workers: [{
             id: "worker-1",
             num_gpus: 1,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }, {
             id: "worker-2",
             num_gpus: 1,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }],
         offers: [],
         targetGpus: 1,
@@ -88,7 +98,7 @@ describe("Vast Scaling Engine Calculations", () => {
         workers: [{
             id: "worker-1",
             num_gpus: 2,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }],
         offers: [],
         targetGpus: 1,
@@ -99,11 +109,11 @@ describe("Vast Scaling Engine Calculations", () => {
         workers: [{
             id: "worker-1",
             num_gpus: 2,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }, {
             id: "worker-2",
             num_gpus: 3,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }],
         offers: [],
         targetGpus: 1,
@@ -117,11 +127,11 @@ describe("Vast Scaling Engine Calculations", () => {
         workers: [{
             id: "worker-1",
             num_gpus: 3,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }, {
             id: "worker-2",
             num_gpus: 2,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }],
         offers: [],
         targetGpus: 2,
@@ -135,19 +145,19 @@ describe("Vast Scaling Engine Calculations", () => {
         workers: [{
             id: "worker-1",
             num_gpus: 2,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }, {
             id: "worker-2",
             num_gpus: 2,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }, {
             id: "worker-3",
             num_gpus: 2,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }, {
             id: "worker-4",
             num_gpus: 1,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }],
         offers: [],
         targetGpus: 3,
@@ -164,11 +174,11 @@ describe("Vast Scaling Engine Calculations", () => {
         workers: [{
             id: "worker-1",
             num_gpus: 3,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }, {
             id: "worker-2",
             num_gpus: 1,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }],
         offers: [],
         targetGpus: 2,
@@ -182,11 +192,11 @@ describe("Vast Scaling Engine Calculations", () => {
         workers: [{
             id: "worker-1",
             num_gpus: 3,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }, {
             id: "worker-2",
             num_gpus: 2,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }],
         offers: [],
         targetGpus: 2,
@@ -200,12 +210,44 @@ describe("Vast Scaling Engine Calculations", () => {
         workers: [{
             id: "worker-1",
             num_gpus: 1,
-            created_at: moment().unix(),
+            created_at: moment().valueOf(),
         }],
         offers: [],
         targetGpus: 0,
         lastScalingOperation: moment().subtract(SCALEDOWN_COOLDOWN).add(1, "second"),
         expected: [],
+    }, {
+        description: "current=1, target=1, worker timeout (failed to start)",
+        workers: [{
+            id: "worker-1",
+            num_gpus: 1,
+            created_at: moment().subtract(WORKER_TIMEOUT).subtract(1, "second").valueOf(),
+            last_ping: null,
+        }],
+        offers: [],
+        targetGpus: 0,
+        lastScalingOperation: moment().subtract(SCALEDOWN_COOLDOWN),
+        expected: [{
+            targetId: "worker-1",
+            operationType: "destroy",
+            block: true,
+        }],
+    }, {
+        description: "current=1, target=1, worker timeout (died)",
+        workers: [{
+            id: "worker-1",
+            num_gpus: 1,
+            created_at: moment().subtract(1, "days").valueOf(),
+            last_ping: moment().subtract(WORKER_TIMEOUT).subtract(1, "second").valueOf(),
+        }],
+        offers: [],
+        targetGpus: 0,
+        lastScalingOperation: moment().subtract(SCALEDOWN_COOLDOWN),
+        expected: [{
+            targetId: "worker-1",
+            operationType: "destroy",
+            block: true,
+        }],
     }, {
         description: "current=0, available=0 target=1, no scaling operations",
         workers: [],
@@ -428,4 +470,176 @@ describe("Vast Scaling Engine Calculations", () => {
             expect(actual.sort((a, b) => a.targetId.localeCompare(b.targetId))).toEqual(testCase.expected.sort((a, b) => a.targetId.localeCompare(b.targetId)));
         });
     }
+});
+
+describe("VastEngine", () => {
+    let backendService: BackendService;
+    let vastEngine: VastEngine;
+    let testHelper: TestHelper;
+    let databaseName: string;
+    let mockVastClient: MockVastAPI;
+
+    const adminId = hash("admin@test.test")
+
+    beforeAll(async () => {
+        testHelper = new TestHelper();
+        await testHelper.cleanupDatabases();
+    });
+
+    beforeEach(async () => {
+        databaseName = await testHelper.createTestDatabase();
+        await testHelper.cleanupTestFiles();
+        const config = testHelper.createConfig(databaseName);
+        backendService = new BackendService(config, new MetricsClient(""));
+        await backendService.init();
+        mockVastClient = new MockVastAPI();
+        vastEngine = new VastEngine(mockVastClient, backendService, "wolfgangmeyers/aibrush:latest");
+        await backendService.createUser("admin@test.test");
+    });
+
+    afterEach(async () => {
+        await backendService.destroy();
+    });
+
+    describe("scale with no workers, no offers and no orders", () => {
+        it("should not scale", async () => {
+            await vastEngine.scale(0);
+            expect(mockVastClient.instances).toEqual([]);
+            expect(mockVastClient.offers).toEqual([]);
+            const workerResult = await backendService.listWorkers();
+            expect(workerResult).toEqual([]);
+        });
+    })
+
+    describe("scale with no workers, no offers and one order", () => {
+        it("should not scale", async () => {
+            await vastEngine.scale(1);
+            expect(mockVastClient.instances).toEqual([]);
+            expect(mockVastClient.offers).toEqual([]);
+            const workerResult = await backendService.listWorkers();
+            expect(workerResult).toEqual([]);
+        });
+    });
+
+    describe("scale with no workers, one offer and no orders", () => {
+        it("should not scale", async () => {
+            mockVastClient._offers = [{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]
+            await vastEngine.scale(0);
+            expect(mockVastClient.instances).toEqual([]);
+            expect(mockVastClient.offers).toEqual([{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]);
+            const workerResult = await backendService.listWorkers();
+            expect(workerResult).toEqual([]);
+        });
+    });
+
+    describe("scale with no workers, one offer and one order", () => {
+        it("should scale up", async () => {
+            mockVastClient._offers = [{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]
+            await vastEngine.scale(1);
+            const workerResult = await backendService.listWorkers();
+            expect(workerResult.length).toEqual(1);
+            const worker = workerResult[0];
+            expect(worker.login_code).toBeTruthy();
+            expect(worker.cloud_instance_id).toEqual("1");
+            expect(worker.engine).toEqual(TYPE_VASTAI);
+            expect(worker.num_gpus).toEqual(1);
+            expect(mockVastClient.instances).toEqual([{
+                id: 1,
+                actual_status: "active",
+                intended_status: "active",
+                cur_state: "active",
+                next_state: "active",
+                image: "wolfgangmeyers/aibrush:latest",
+                onStart: "/app/aibrush-2/worker/images_worker.sh",
+                env: {
+                    "WORKER_LOGIN_CODE": worker.login_code,
+                },
+            }]);
+            expect(mockVastClient.offers).toEqual([]);
+        });
+    });
+
+    describe("scale with one worker, one offer and one order", () => {
+        it("should not scale", async () => {
+            mockVastClient._offers = [{
+                id: 2,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]
+            mockVastClient._instances = [{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]
+            const worker = await backendService.createWorker("existing");
+            await backendService.updateWorkerDeploymentInfo(worker.id, TYPE_VASTAI, 2, "1");
+            await vastEngine.scale(1);
+            expect(mockVastClient.instances).toEqual([{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]);
+            expect(mockVastClient.offers).toEqual([{
+                id: 2,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]);
+            const workerResult = await backendService.listWorkers();
+            expect(workerResult.length).toEqual(1);
+        });
+    });
+
+    describe("scale with one worker, no offers and no orders", () => {
+        it("should scale down", async () => {
+            mockVastClient._instances = [{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]
+            const worker = await backendService.createWorker("existing");
+            await backendService.updateWorkerDeploymentInfo(worker.id, TYPE_VASTAI, 2, "1");
+            // set the last scaling operation to 10 minutes ago
+            vastEngine.lastScalingOperation = moment().subtract(10, "minutes");
+            await vastEngine.scale(0);
+            expect(mockVastClient.instances).toEqual([]);
+            expect(mockVastClient.offers).toEqual([]);
+            const workerResult = await backendService.listWorkers();
+            expect(workerResult.length).toEqual(0);
+        });
+    });
+
+    describe("scale with one worker, no offers and no orders, cooldown in effect", () => {
+        it("should not scale down", async () => {
+            mockVastClient._instances = [{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]
+            const worker = await backendService.createWorker("existing");
+            await backendService.updateWorkerDeploymentInfo(worker.id, TYPE_VASTAI, 2, "1");
+            // set the last scaling operation to 1 minute ago
+            vastEngine.lastScalingOperation = moment().subtract(1, "minutes");
+            await vastEngine.scale(0);
+            expect(mockVastClient.instances).toEqual([{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]);
+            expect(mockVastClient.offers).toEqual([]);
+            const workerResult = await backendService.listWorkers();
+            expect(workerResult.length).toEqual(1);
+        })
+    })
 });

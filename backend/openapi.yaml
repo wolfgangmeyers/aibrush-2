@@ -591,6 +591,36 @@ paths:
       responses:
         "200":
           description: Success
+  /api/orders:
+    get:
+      description: Get the list of orders
+      operationId: getOrders
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderList"
+    post:
+      description: Create a new order
+      operationId: createOrder
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
 components:
   schemas:
     CreateImageInput:
@@ -979,3 +1009,47 @@ components:
         - worker_id
         - model
         - pool_assignment
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+        created_by:
+          type: string
+        created_at:
+          type: integer
+        ends_at:
+          type: integer
+        is_active:
+          type: boolean
+        gpu_count:
+          type: integer
+        amount_paid_cents:
+          type: integer
+      required:
+        - id
+        - created_by
+        - created_at
+        - ends_at
+        - is_active
+        - gpu_count
+        - amount_paid_cents
+    CreateOrderInput:
+      type: object
+      properties:
+        gpu_count:
+          type: integer
+        hours:
+          type: integer
+      required:
+        - gpu_count
+        - hours
+    OrderList:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+      required:
+        - orders

@@ -1,4 +1,4 @@
-import { VastAIApi } from "./vast";
+import { VastAIApi } from "./vast_client";
 import * as axios from "axios";
 import os from "os";
 
