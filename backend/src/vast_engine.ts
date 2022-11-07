@@ -285,3 +285,7 @@ export class VastEngine implements ScalingEngine {
         }
     }
 }
+
+// # pip install git+https://github.com/wolfgangmeyers/SwinIR
+// clone into swinir folder
+// git clone https://github.com/wolfgangmeyers/SwinIR.git swinir

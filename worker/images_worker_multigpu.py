@@ -239,6 +239,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
 
             if image.model != model_name:
                 model_name = image.model
+                model = None
                 model = create_model(model_name, device=device)
 
             update_image(0, "processing")
@@ -335,9 +336,9 @@ class ImagesWorker:
         self.metrics_thread.start()
 
 if __name__ == "__main__":
-    cpu_model = load_sd_model()
     device_count = torch.cuda.device_count()
     for i in range(device_count):
+        cpu_model = load_sd_model()
         print(f"Device {i}: {torch.cuda.get_device_name(i)}")
         worker = ImagesWorker(f"cuda:{i}", cpu_model)
         worker.start()

@@ -162,6 +162,7 @@ export class VastAIApi implements VastClient {
 
     async searchOffers(): Promise<SearchOffersResult> {
 
+
         const q = {
             disk_space: {
                 gte: 10,
@@ -214,7 +215,16 @@ export class VastAIApi implements VastClient {
         const qjson = JSON.stringify(q);
         const urlEncodedQ = encodeURIComponent(qjson);
         const result = await axios.default.get(`${serverUrl}/bundles/?api_key=${this.apiKey}&q=${urlEncodedQ}`)
-        return result.data as SearchOffersResult;
+        const offers = (result.data as SearchOffersResult).offers.filter(offer => {
+            const cpus = offer.cpu_cores
+            const cpus_effective = offer.cpu_cores_effective
+            const ratio = cpus_effective / cpus
+            const ram_effective = offer.cpu_ram * ratio
+            return ram_effective >= 30000
+        })
+        return {
+            offers
+        }
     }
 
     async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<Instance> {

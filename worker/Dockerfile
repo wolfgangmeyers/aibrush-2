@@ -19,7 +19,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 RUN pip install transformers==4.19.2 diffusers invisible-watermark
 RUN pip install cython
-RUN pip install omegaconf einops pytorch-lightning transformers pip install ftfy regex omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests
+RUN pip install omegaconf einops pytorch-lightning transformers pip install ftfy regex omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests cog timm numpy opencv-python-headless pillow
 
 RUN pip install -e git+https://github.com/CompVis/stable-diffusion#egg=latent-diffusion
 RUN pip install -e git+https://github.com/openai/CLIP.git@main#egg=clip
@@ -34,6 +34,7 @@ WORKDIR /app
 
 RUN git clone https://github.com/wolfgangmeyers/aibrush-2.git
 WORKDIR /app/aibrush-2/worker
+RUN git clone https://github.com/wolfgangmeyers/SwinIR.git swinir
 RUN mkdir -p models/ldm/stable-diffusion-v1/
 
 CMD ["/app/aibrush-2/worker/images_worker.sh"]

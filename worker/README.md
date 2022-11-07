@@ -32,12 +32,13 @@ pip install -e git+https://github.com/CompVis/stable-diffusion#egg=latent-diffus
 pip install cython
 pip install dalle_pytorch albumentations opencv-python imageio imageio-ffmpeg pytorch-lightning omegaconf test-tube streamlit einops torch-fidelity transformers
 
-pip install ftfy regex omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests
+pip install ftfy regex omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests cog timm numpy opencv-python-headless pillow
 
 pip install -e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers
 pip install -e git+https://github.com/openai/CLIP.git@main#egg=clip
 
-pip install git+https://github.com/wolfgangmeyers/SwinIR
+# pip install git+https://github.com/wolfgangmeyers/SwinIR
+git clone  
 
 ```
 
