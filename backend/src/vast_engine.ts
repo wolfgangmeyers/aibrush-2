@@ -10,6 +10,7 @@ export const WORKER_TIMEOUT = moment.duration(10, "minutes");
 export const MAX_COST_PER_GPU = 0.5;
 export const TYPE_VASTAI = "vastai";
 const WORKER_COMMAND = "/app/aibrush-2/worker/images_worker.sh";
+export const VASTAI_SCALING_EVENT = "vastai_scaling_event";
 
 export interface ScalingOperation {
     targetId: string;
@@ -185,11 +186,10 @@ function scaleUp(
 }
 
 export class VastEngine implements ScalingEngine {
-    lastScalingOperation: moment.Moment;
 
     constructor(private client: VastClient, private backend: BackendService, private workerImage: string, private clock: Clock, private metricsClient: MetricsClient) {
-        this.lastScalingOperation = clock.now();
     }
+
     get maxAllocationPercentage(): number {
         // willing to allocate up to 80% of available GPUs
         return 0.8;
@@ -225,11 +225,12 @@ export class VastEngine implements ScalingEngine {
         );
 
         const offers = (await this.client.searchOffers()).offers.filter(offer => !blockedWorkerIds.has(offer.id.toString()));
+        const lastScalingOperation = moment(await this.backend.getLastEventTime(VASTAI_SCALING_EVENT))
         const operations = calculateScalingOperations(
             workers,
             offers,
             targetGpus,
-            this.lastScalingOperation,
+            lastScalingOperation,
             this.clock,
         );
         for (const operation of operations) {
@@ -280,7 +281,7 @@ export class VastEngine implements ScalingEngine {
             }
         }
         if (operations.length > 0) {
-            this.lastScalingOperation = this.clock.now();
+            await this.backend.setLastEventTime(VASTAI_SCALING_EVENT, this.clock.now().valueOf())
         }
     }
 }

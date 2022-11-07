@@ -790,7 +790,7 @@ export class BackendService {
             if (result.rows.length === 0) {
                 return 0
             }
-            return result.rows[0].event_time
+            return parseInt(result.rows[0].event_time)
         } finally {
             client.release()
         }

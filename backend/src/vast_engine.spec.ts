@@ -1,4 +1,4 @@
-import { calculateScalingOperations, ScalingOperation, SCALEDOWN_COOLDOWN, Offer, Worker, WORKER_TIMEOUT, VastEngine, TYPE_VASTAI } from "./vast_engine";
+import { calculateScalingOperations, ScalingOperation, SCALEDOWN_COOLDOWN, Offer, Worker, WORKER_TIMEOUT, VastEngine, TYPE_VASTAI, VASTAI_SCALING_EVENT } from "./vast_engine";
 import moment from "moment";
 import * as uuid from "uuid";
 
@@ -615,7 +615,7 @@ describe("VastEngine", () => {
             const worker = await backendService.createWorker("existing");
             await backendService.updateWorkerDeploymentInfo(worker.id, TYPE_VASTAI, 2, "1");
             // set the last scaling operation to 10 minutes ago
-            vastEngine.lastScalingOperation = clock.now().subtract(10, "minutes");
+            await backendService.setLastEventTime(VASTAI_SCALING_EVENT, clock.now().subtract(10, "minutes").valueOf());
             await vastEngine.scale(0);
             expect(mockVastClient.instances).toEqual([]);
             expect(mockVastClient.offers).toEqual([]);
@@ -634,7 +634,7 @@ describe("VastEngine", () => {
             const worker = await backendService.createWorker("existing");
             await backendService.updateWorkerDeploymentInfo(worker.id, TYPE_VASTAI, 2, "1");
             // set the last scaling operation to 1 minute ago
-            vastEngine.lastScalingOperation = moment().subtract(1, "minutes");
+            await backendService.setLastEventTime(VASTAI_SCALING_EVENT, clock.now().subtract(1, "minutes").valueOf());
             await vastEngine.scale(0);
             expect(mockVastClient.instances).toEqual([{
                 id: 1,
