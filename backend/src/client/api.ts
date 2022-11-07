@@ -813,10 +813,10 @@ export interface OrderList {
 export interface ProcessImageInput {
     /**
      * 
-     * @type {boolean}
+     * @type {string}
      * @memberof ProcessImageInput
      */
-    'zoom_supported': boolean;
+    'model'?: string;
 }
 /**
  * 

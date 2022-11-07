@@ -634,7 +634,7 @@ export class Server {
                 if (jwt.serviceAccountConfig?.type == "private") {
                     user = jwt.userId;
                 }
-                const image = await this.backendService.processImage(req.body.zoom_supported, user)
+                const image = await this.backendService.processImage(req.body.model, user)
                 res.json(image)
                 if (jwt.serviceAccountConfig?.workerId) {
                     this.backendService.workerPing(jwt.serviceAccountConfig.workerId)

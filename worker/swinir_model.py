@@ -31,10 +31,16 @@ model_args = SimpleNamespace(**{
     'tile_overlap': 32,
 })
 
-class SwinIRModel:
+def load_model():
+    model = define_model(model_args)
+    model.eval()
+    return model
 
-    def __init__(self, args=None):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+class SwinIRModel:
+    def __init__(self, args=None, model=None, device=None):
+        self.device = device
+        if self.device is None:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # set up model
         if os.path.exists(model_args.model_path):
             print(f'loading model from {model_args.model_path}')
@@ -46,10 +52,10 @@ class SwinIRModel:
             r = requests.get(url, allow_redirects=True)
             print(f'downloading model {model_args.model_path}')
             open(model_args.model_path, 'wb').write(r.content)
-
-        self.model = define_model(model_args)
-        self.model.eval()
-        self.model = self.model.to(self.device)
+        self.model = model
+        if self.model is None:
+            self.model = load_model()
+            self.model = self.model.to(self.device)
 
     def generate(self, args):
         init_image = args.init_image
@@ -76,6 +82,7 @@ class SwinIRModel:
             output = np.transpose(output[[2, 1, 0], :, :], (1, 2, 0))  # CHW-RGB to HCW-BGR
         output = (output * 255.0).round().astype(np.uint8)  # float32 to uint8
         cv2.imwrite(output_image, output)
+        return False
 
 def define_model(model_args):
     # 003 real-world image sr

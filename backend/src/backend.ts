@@ -809,15 +809,18 @@ export class BackendService {
         }
     }
 
-    private async getUsersWithPendingImages(zoomSupported: boolean): Promise<Array<string>> {
+    private async getUsersWithPendingImages(model: string): Promise<Array<string>> {
+        const args = []
         const client = await this.pool.connect()
         let filter = " AND deleted_at IS NULL";
-        if (!zoomSupported) {
-            filter = " AND enable_zoom=false"
+        if (model) {
+            filter = "AND deleted_at IS NULL AND model = $1 ";
+            args.push(model);
         }
         try {
             const result = await client.query(
-                `SELECT DISTINCT created_by FROM images WHERE status='pending'${filter}`
+                `SELECT DISTINCT created_by FROM images WHERE status='pending'${filter}`,
+                args
             )
             return result.rows.map(row => row.created_by)
         } finally {
@@ -825,13 +828,10 @@ export class BackendService {
         }
     }
 
-    async processImage(zoomSupported: boolean, user?: string): Promise<Image> {
-        let filter = " AND deleted_at IS NULL";
-        if (!zoomSupported) {
-            filter = " AND enable_zoom=false"
-        }
+    async processImage(model?: string, user?: string): Promise<Image> {
+        
         // get all users with pending images
-        const users = await this.getUsersWithPendingImages(zoomSupported)
+        const users = await this.getUsersWithPendingImages(model)
         // if there are no users, return null
         if (users.length === 0) {
             return null
@@ -839,6 +839,12 @@ export class BackendService {
         if (!user) {
             // get random user
             user = users[Math.floor(Math.random() * users.length)]
+        }
+        const args = [user]
+        let filter = " AND deleted_at IS NULL";
+        if (model) {
+            filter = " AND model = $2 AND deleted_at IS NULL";
+            args.push(model);
         }
 
         // get random image from user
@@ -848,7 +854,7 @@ export class BackendService {
             await client.query("BEGIN")
             const result = await client.query(
                 `SELECT * FROM images WHERE created_by=$1 AND status='pending'${filter} ORDER BY created_at ASC LIMIT 1`,
-                [user]
+                args
             )
             if (result.rows.length === 0) {
                 return null;

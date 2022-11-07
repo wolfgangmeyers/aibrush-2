@@ -821,10 +821,8 @@ components:
             $ref: "#/components/schemas/Image"
     ProcessImageInput:
       properties:
-        zoom_supported:
-          type: boolean
-      required:
-        - zoom_supported
+        model:
+          type: string
     LoginInput:
       type: object
       properties:

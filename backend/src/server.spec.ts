@@ -130,7 +130,7 @@ describe("server", () => {
         }
         backendService = new BackendService(config, new MetricsClient(""))
 
-        server = new Server(config, backendService, 35456, new MetricsClient(""))
+        server = new Server(config, backendService, 35456, new MetricsClient(""), null)
         await server.init()
         await server.start()
 
@@ -686,6 +686,27 @@ describe("server", () => {
                 })
             })
 
+            describe("when processing an image with different model arg", () => {
+                let processingImage: Image;
+
+                beforeEach(async () => {
+                    // authenticate as service account
+                    await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                })
+
+                beforeEach(async () => {
+                    // process the image
+                    const response = await client2.processImage({
+                        model: "swinir"
+                    })
+                    processingImage = response.data
+                })
+
+                it("should return the null", () => {
+                    expect(processingImage).toBeNull();
+                })
+            })
+
             describe("when deleting an image", () => {
                 let images: ImageList;
 
@@ -909,53 +930,6 @@ describe("server", () => {
                 })
             })
 
-            describe("when processing an image as a service acct with zoom_supported=false", () => {
-
-                let processResponse: AxiosResponse<Image>;
-
-                // authenticate as service account
-                beforeEach(async () => {
-                    await authenticateUser(
-                        backendService,
-                        httpClient,
-                        "service-account@test.test"
-                    )
-                })
-
-                beforeEach(async () => {
-                    processResponse = await client.processImage({
-                        zoom_supported: false,
-                    })
-                })
-
-                it("should return null", () => {
-                    expect(processResponse.data).toBe(null)
-                })
-            })
-
-            describe("when processing an image as a service acct with zoom_supported=true", () => {
-
-                let processResponse: AxiosResponse<Image>;
-
-                // authenticate as service account
-                beforeEach(async () => {
-                    await authenticateUser(
-                        backendService,
-                        httpClient,
-                        "service-account@test.test"
-                    )
-                })
-
-                beforeEach(async () => {
-                    processResponse = await client.processImage({
-                        zoom_supported: true,
-                    })
-                })
-
-                it("should return the image", () => {
-                    expect(processResponse.data.id).toBe(image.id)
-                })
-            })
         }) // end of describe "when creating an image with enable_video=true and enable_zoom=true and default zoom options"
 
         describe("when creating an image with enable_video=true and enable_zoom=true and non-default zoom options", () => {
@@ -1222,7 +1196,7 @@ describe("server", () => {
                 })
 
                 beforeEach(async () => {
-                    response = await client2.processImage({ zoom_supported: true });
+                    response = await client2.processImage();
                 })
 
                 it("should return pending images belonging to the creator", () => {
@@ -1251,7 +1225,7 @@ describe("server", () => {
                 })
 
                 beforeEach(async () => {
-                    response = await client2.processImage({ zoom_supported: true });
+                    response = await client2.processImage();
                 })
 
                 it("should return null", () => {
@@ -1289,7 +1263,7 @@ describe("server", () => {
                 })
 
                 beforeEach(async () => {
-                    response = await client2.processImage({ zoom_supported: true });
+                    response = await client2.processImage();
                 })
 
                 it("should return pending images belonging to the creator", () => {
@@ -1318,7 +1292,7 @@ describe("server", () => {
                 })
 
                 beforeEach(async () => {
-                    response = await client2.processImage({ zoom_supported: true });
+                    response = await client2.processImage();
                 })
 
                 it("should return pending images belonging to the creator", () => {

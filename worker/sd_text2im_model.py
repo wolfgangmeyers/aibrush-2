@@ -132,14 +132,20 @@ def check_safety(x_image):
     # # return x_checked_image, has_nsfw_concept
     return x_image, False
 
+def load_model():
+    config = OmegaConf.load(_default_args.config)
+    return load_model_from_config(config, _default_args.ckpt)
 
 class StableDiffusionText2ImageModel:
-    def __init__(self, args=None):
+    def __init__(self, args=None, model=None, device=None):
         args = _default_args
-        self.config = OmegaConf.load(f"{args.config}")
-        self.model = load_model_from_config(self.config, f"{args.ckpt}")
-        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        self.model = self.model.to(self.device)
+        self.device = device
+        if self.device is None:
+            self.device = torch.device("cuda")
+        self.model = model
+        if self.model is None:
+            self.model = load_model()
+            self.model = self.model.to(self.device)
         if args.plms:
             raise NotImplementedError("PLMS sampler not (yet) supported")
             # self.sampler = PLMSSampler(self.model)
@@ -153,6 +159,7 @@ class StableDiffusionText2ImageModel:
         self.wm_encoder.set_watermark('bytes', self.wm.encode('utf-8'))
 
     def generate(self, args: SimpleNamespace | argparse.Namespace):
+        has_nsfw_concept = False
         default_args = _default_args.__dict__
         if args.init_img:
             default_args = {
@@ -255,6 +262,7 @@ class StableDiffusionText2ImageModel:
 
         print(f"Your samples are ready and waiting for you here: \n{self.outpath} \n"
             f" \nEnjoy.")
+        return has_nsfw_concept
 
 
 if __name__ == "__main__":
