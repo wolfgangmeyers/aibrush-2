@@ -157,9 +157,10 @@ def poll_loop(process_queue: Queue, metrics_queue: Queue):
             backoff = min(backoff * 2, 10)
             continue
 
-def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, device: device, model: any):
+def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, device: device):
     torch.cuda.device(device)
     model_name = "stable_diffusion_text2im"
+    model = create_model(model_name, device=device)
     # warmup
     warmup_id = str(uuid4())
     args = _sd_args(None, None, None, SimpleNamespace(
@@ -309,9 +310,8 @@ def metrics_loop(metrics_queue: Queue):
             continue
 
 class ImagesWorker:
-    def __init__(self, device, cpu_model):
+    def __init__(self, device):
         self.device = device
-        self.model = StableDiffusionText2ImageModel(model=cpu_model.to(device), device=device)
         # create queues
         self.process_queue = Queue(maxsize=1)
         self.update_queue = Queue(maxsize=1)
@@ -321,7 +321,7 @@ class ImagesWorker:
 
         # start threads
         self.poll_thread = Thread(target=poll_loop, args=(self.process_queue, self.metrics_queue))
-        self.process_thread = Thread(target=process_loop, args=(self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue, self.device, self.model))
+        self.process_thread = Thread(target=process_loop, args=(self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue, self.device))
         self.update_thread = Thread(target=update_loop, args=(self.update_queue, self.cleanup_queue, self.metrics_queue))
         self.cleanup_thread = Thread(target=cleanup_loop, args=(self.cleanup_queue,))
         self.metrics_thread = Thread(target=metrics_loop, args=(self.metrics_queue,))
