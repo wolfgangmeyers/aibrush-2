@@ -40,8 +40,6 @@ elif os.environ.get("WORKER_LOGIN_CODE"):
 else:
     raise Exception("No credentials.json or WORKER_LOGIN_CODE environment variable found")
 
-zoom_supported = True
-
 # create an 'images' folder if it doesn't exist
 for folder in ["images", "output", "output_npy"]:
     if not os.path.exists(folder):
@@ -129,10 +127,19 @@ def metric(name: str, type: str, value: any, attributes: dict = None) -> SimpleN
 
 def poll_loop(process_queue: Queue, metrics_queue: Queue):
     backoff = 1
+    model_name = "stable_diffusion_text2im"
+    last_model_check = time.time()
     while True:
         try:
             start = time.time()
-            image = client.process_image(zoom_supported)
+            # model stickiness
+            if time.time() - last_model_check > 60:
+                image = client.process_image(None)
+                if image and image.model != model_name:
+                    model_name = image.model
+                last_model_check = time.time()
+            else:
+                image = client.process_image(model_name)
             metrics_queue.put(metric("worker.poll", "count", 1, {
                 "duration_seconds": time.time() - start
             }))
@@ -150,24 +157,26 @@ def poll_loop(process_queue: Queue, metrics_queue: Queue):
             backoff = min(backoff * 2, 10)
             continue
 
-def process_loop(process_queue: Queue, update_queue: Queue, metrics_queue: Queue, device: device, model: any):
+def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, device: device, model: any):
     model_name = "stable_diffusion_text2im"
     # warmup
+    warmup_id = str(uuid4())
     args = _sd_args(None, None, None, SimpleNamespace(
         phrases=["a cat"],
         height=512,
         width=512,
-        id="warmup",
+        id=warmup_id,
         iterations=10,
         stable_diffusion_strength=0.75,
-
     ))
     print("Warming up model")
     model.generate(args)
-    warmup_id = uuid4()
+    
     clip_ranker = get_clip_ranker(device=device)
     clip_ranker.rank(argparse.Namespace(text="a cat", image=f"images/{warmup_id}.jpg", cpu=False))
     cleanup(warmup_id)
+    print("warmup complete")
+    ready_queue.put(True)
     while True:
         try:
             image = process_queue.get()
@@ -202,10 +211,10 @@ def process_loop(process_queue: Queue, update_queue: Queue, metrics_queue: Queue
                     prompts = "|".join(image.phrases)
                     negative_prompts = "|".join(image.negative_phrases).strip()
                     print(f"Calculating clip ranking for '{prompts}'")
-                    score = get_clip_ranker().rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
+                    score = clip_ranker.rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
                     if negative_prompts:
                         print(f"Calculating negative clip ranking for '{prompts}'")
-                        negative_score = get_clip_ranker().rank(argparse.Namespace(text=negative_prompts, image=image_path, cpu=False))
+                        negative_score = clip_ranker.rank(argparse.Namespace(text=negative_prompts, image=image_path, cpu=False))
                     with open(image_path, "rb") as f:
                         image_data = f.read()
                     # base64 encode image
@@ -300,24 +309,27 @@ def metrics_loop(metrics_queue: Queue):
 class ImagesWorker:
     def __init__(self, device, cpu_model):
         self.device = device
-        self.model = StableDiffusionText2ImageModel(model=cpu_model.to_device(device), device=device)
+        self.model = StableDiffusionText2ImageModel(model=cpu_model.to(device), device=device)
         # create queues
         self.process_queue = Queue(maxsize=1)
         self.update_queue = Queue(maxsize=1)
         self.cleanup_queue = Queue(maxsize=1)
         self.metrics_queue = Queue(maxsize=1)
+        self.ready_queue = Queue(maxsize=1)
 
         # start threads
         self.poll_thread = Thread(target=poll_loop, args=(self.process_queue, self.metrics_queue))
-        self.process_thread = Thread(target=process_loop, args=(self.process_queue, self.update_queue, self.metrics_queue))
+        self.process_thread = Thread(target=process_loop, args=(self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue, self.device, self.model))
         self.update_thread = Thread(target=update_loop, args=(self.update_queue, self.cleanup_queue, self.metrics_queue))
         self.cleanup_thread = Thread(target=cleanup_loop, args=(self.cleanup_queue,))
         self.metrics_thread = Thread(target=metrics_loop, args=(self.metrics_queue,))
 
     def start(self):
         # start threads
-        self.poll_thread.start()
         self.process_thread.start()
+        self.ready_queue.get() # allow warmup to complete
+
+        self.poll_thread.start()
         self.update_thread.start()
         self.cleanup_thread.start()
         self.metrics_thread.start()
@@ -329,5 +341,5 @@ if __name__ == "__main__":
         print(f"Device {i}: {torch.cuda.get_device_name(i)}")
         worker = ImagesWorker(f"cuda:{i}", cpu_model)
         worker.start()
-
-# TODO: in poll, add model caching (need backend changes)
+    while True:
+        time.sleep(1)

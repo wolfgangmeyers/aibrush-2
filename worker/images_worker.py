@@ -36,8 +36,6 @@ elif os.environ.get("WORKER_LOGIN_CODE"):
 else:
     raise Exception("No credentials.json or WORKER_LOGIN_CODE environment variable found")
 
-zoom_supported = True
-
 # create an 'images' folder if it doesn't exist
 for folder in ["images", "output", "output_npy"]:
     if not os.path.exists(folder):
@@ -135,7 +133,7 @@ def poll_loop(process_queue: Queue, metrics_queue: Queue):
     while True:
         try:
             start = time.time()
-            image = client.process_image(zoom_supported)
+            image = client.process_image(None)
             metrics_queue.put(metric("worker.poll", "count", 1, {
                 "duration_seconds": time.time() - start
             }))
