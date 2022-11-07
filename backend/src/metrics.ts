@@ -47,7 +47,7 @@ export class MetricsClient {
                         "Api-Key": this.newRelicLicenseKey,
                     },
                 });
-                console.log("Exported metrics: ", metricTypes);
+                // console.log("Exported metrics: ", metricTypes);
             }
             
             
@@ -65,7 +65,7 @@ export class MetricsClient {
                 timestamp: moment().unix(),
             });
         } else {
-            console.log("Metric: ", name, value, attributes);
+            // console.log("Metric: ", name, value, attributes);
         }
     }
 

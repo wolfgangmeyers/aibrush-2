@@ -615,7 +615,7 @@ describe("VastEngine", () => {
             const worker = await backendService.createWorker("existing");
             await backendService.updateWorkerDeploymentInfo(worker.id, TYPE_VASTAI, 2, "1");
             // set the last scaling operation to 10 minutes ago
-            vastEngine.lastScalingOperation = moment().subtract(10, "minutes");
+            vastEngine.lastScalingOperation = clock.now().subtract(10, "minutes");
             await vastEngine.scale(0);
             expect(mockVastClient.instances).toEqual([]);
             expect(mockVastClient.offers).toEqual([]);

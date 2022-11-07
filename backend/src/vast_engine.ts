@@ -61,7 +61,7 @@ export function calculateScalingOperations(
 
     if (numGpus > targetGpus) {
         if (
-            clock.now().diff(lastScalingOperation, "milliseconds") >
+            clock.now().diff(lastScalingOperation, "milliseconds") >=
             SCALEDOWN_COOLDOWN.asMilliseconds()
         ) {
             scaleDown(workers, numGpus, targetGpus, operations);
