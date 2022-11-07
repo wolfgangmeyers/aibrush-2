@@ -29,7 +29,8 @@ describe("orders", () => {
             config,
             backendService,
             35456,
-            new MetricsClient("")
+            new MetricsClient(""),
+            null,
         );
         await server.init();
         await server.start();
