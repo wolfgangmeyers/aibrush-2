@@ -155,7 +155,7 @@ export interface ListInstancesResult {
     instances: Array<Instance>;
 }
 
-export class VastAIApi {
+export class VastAIApi implements VastClient {
     constructor(private apiKey: string) {
 
     }
@@ -213,14 +213,12 @@ export class VastAIApi {
 
         const qjson = JSON.stringify(q);
         const urlEncodedQ = encodeURIComponent(qjson);
-        console.log(urlEncodedQ);
         const result = await axios.default.get(`${serverUrl}/bundles/?api_key=${this.apiKey}&q=${urlEncodedQ}`)
         return result.data as SearchOffersResult;
     }
 
-    async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}) {
+    async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<Instance> {
         const url = `${serverUrl}/asks/${askId}/?api_key=${this.apiKey}`
-        console.log("create url", url)
         const r = await axios.default.put(url, {
             client_id: "me",
             image: image,
@@ -234,7 +232,7 @@ export class VastAIApi {
                 "Content-Type": "application/json",
             }
         });
-        return r.data;
+        return r.data as any;
     }
 
     // list instances
@@ -282,7 +280,7 @@ export class MockVastAPI {
         }
     }
 
-    async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}) {
+    async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<Instance> {
         const id = parseInt(askId);
         const instance: Instance = {
             id,

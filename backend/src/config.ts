@@ -23,6 +23,7 @@ export interface Config {
     assetsBaseUrl: string;
     disableCleanupJob?: bool;
     newRelicLicenseKey?: string;
+    enableScalingService?: bool;
 }
 
 export const loadConfig = (): Config => {
@@ -46,6 +47,7 @@ export const loadConfig = (): Config => {
         adminUsers: process.env.ADMIN_USERS ? process.env.ADMIN_USERS.split(",").map(u => u.toLowerCase().trim()) : [],
         assetsBaseUrl: process.env.ASSETS_BASE_URL || "/api/images",
         newRelicLicenseKey: process.env.NEW_RELIC_LICENSE_KEY,
+        enableScalingService: process.env.ENABLE_SCALING_SERVICE === "true",
     };
     return config;
 }

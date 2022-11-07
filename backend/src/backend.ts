@@ -35,10 +35,14 @@ import { Filestore, S3Filestore, LocalFilestore } from "./filestore";
 import { MetricsClient } from "./metrics";
 
 process.env.PGUSER = process.env.PGUSER || "postgres"
-const STUCK_IMAGES_KEY = 1
-const TEMPORARY_IMAGES_KEY = 2
-const DELETED_IMAGES_KEY = 3
-const MIGRATIONS_KEY = 4
+
+export const STUCK_IMAGES_KEY = 1
+export const TEMPORARY_IMAGES_KEY = 2
+export const DELETED_IMAGES_KEY = 3
+export const MIGRATIONS_KEY = 4
+export const SCALING_KEY = 5
+
+const BLOCK_DURATION_DAYS = 7
 
 export class BackendService {
 
@@ -515,8 +519,67 @@ export class BackendService {
             client.release()
         }
     }
+    
+    async blockWorker(workerId: string, engine: string, now: moment.Moment) {
+        this.metrics.addMetric("backend.block_worker", 1, "count", {
+            engine: engine,
+        })
+        // block for BLOCK_DURATION_DAYS
+        const until = now.clone().add(BLOCK_DURATION_DAYS, "days").valueOf()
+        const client = await this.pool.connect()
+        try {
+            // upsert - if exists, update until, otherwise insert
+            await client.query(
+                `INSERT INTO blocklist (id, engine, until)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (id, engine) DO UPDATE SET until = $3`,
+                [
+                    workerId,
+                    engine,
+                    until
+                ]
+            )
+        } finally {
+            client.release()
+        }
+    }
+
+    async listBlockedWorkerIds(engine: string, now: moment.Moment): Promise<string[]> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT id FROM blocklist WHERE engine = $1 AND until > $2`,
+                [
+                    engine,
+                    now.valueOf()
+                ]
+            )
+            return result.rows.map(row => row.id)
+        } finally {
+            client.release()
+        }
+    }
+
+    async isWorkerBlocked(workerId: string, engine: string, now: moment.Moment): Promise<boolean> { 
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT count(*) FROM blocklist WHERE id=$1 AND engine=$2 AND until > $3`,
+                [
+                    workerId,
+                    engine,
+                    now.valueOf()
+                ]
+            )
+            const count = result.rows[0].count
+            return count > 0
+        } finally {
+            client.release()
+        }
+    }
 
     async createWorker(displayName: string): Promise<Worker> {
+        this.metrics.addMetric("backend.create_worker", 1, "count", {})
         const id = uuid.v4()
         const now = moment().valueOf()
         const login_code = ""
@@ -589,6 +652,7 @@ export class BackendService {
     }
 
     async workerPing(workerId: string): Promise<Worker> {
+        this.metrics.addMetric("backend.worker_ping", 1, "count", {})
         const client = await this.pool.connect()
         try {
             const result = await client.query(
@@ -654,8 +718,10 @@ export class BackendService {
     async loginAsWorker(loginCode: string): Promise<Authentication> {
         // validate that loginCode is a uuid
         if (!uuid.validate(loginCode)) {
+            this.metrics.addMetric("backend.login_as_worker", 1, "count", {status: "invalid_login_code"})
             return null
         }
+        
         const client = await this.pool.connect()
         try {
             const result = await client.query(
@@ -663,6 +729,7 @@ export class BackendService {
                 [loginCode]
             )
             if (result.rows.length === 0) {
+                this.metrics.addMetric("backend.login_as_worker", 1, "count", {status: "login_code_not_found"})
                 return null
             }
             const worker = result.rows[0]
@@ -676,7 +743,7 @@ export class BackendService {
                 `UPDATE workers SET login_code = '' WHERE id = $1`,
                 [worker.id]
             )
-
+            this.metrics.addMetric("backend.login_as_worker", 1, "count", {status: "success"})
             return auth
         } finally {
             client.release()
@@ -699,8 +766,8 @@ export class BackendService {
         }
     }
 
-    // upsertWorkerConfig
     async updateWorkerConfig(workerId: string, model: string, poolAssignment: string): Promise<WorkerConfig> {
+        this.metrics.addMetric("backend.update_worker_config", 1, "count", {})
         const client = await this.pool.connect()
         try {
             const result = await client.query(
@@ -713,6 +780,34 @@ export class BackendService {
         }
     }
 
+    async getLastEventTime(eventName: string): Promise<number> {
+        const client = await this.pool.connect()
+        try {
+            const result = await client.query(
+                `SELECT * FROM last_event WHERE event_name = $1`,
+                [eventName]
+            )
+            if (result.rows.length === 0) {
+                return 0
+            }
+            return result.rows[0].event_time
+        } finally {
+            client.release()
+        }
+    }
+
+    async setLastEventTime(eventName: string, eventTime: number): Promise<void> {
+        // upsert
+        const client = await this.pool.connect()
+        try {
+            await client.query(
+                `INSERT INTO last_event (event_name, event_time) VALUES ($1, $2) ON CONFLICT (event_name) DO UPDATE SET event_time = $2`,
+                [eventName, eventTime]
+            )
+        } finally {
+            client.release()
+        }
+    }
 
     private async getUsersWithPendingImages(zoomSupported: boolean): Promise<Array<string>> {
         const client = await this.pool.connect()
@@ -881,6 +976,20 @@ export class BackendService {
             `SELECT pg_advisory_unlock($1)`,
             [key]
         )
+    }
+
+    async withLock(key: number, fn: () => Promise<void>): Promise<void> {
+        const client = await this.pool.connect()
+        try {
+            const lock = await this.acquireLock(client, key)
+            if (!lock) {
+                return
+            }
+            await fn()
+        } finally {
+            await this.releaseLock(client, key)
+            client.release()
+        }
     }
 
     async cleanup() {

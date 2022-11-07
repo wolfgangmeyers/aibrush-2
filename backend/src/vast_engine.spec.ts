@@ -9,6 +9,7 @@ import { sleep } from "./sleep";
 import { Session, TestHelper } from "./testHelper";
 import { MockVastAPI } from "./vast_client";
 import { hash } from "./auth";
+import { FakeClock, RealClock } from "./clock";
 
 jest.setTimeout(60000);
 
@@ -466,6 +467,7 @@ describe("Vast Scaling Engine Calculations", () => {
                 testCase.offers,
                 testCase.targetGpus,
                 testCase.lastScalingOperation,
+                new RealClock(),
             );
             expect(actual.sort((a, b) => a.targetId.localeCompare(b.targetId))).toEqual(testCase.expected.sort((a, b) => a.targetId.localeCompare(b.targetId)));
         });
@@ -478,6 +480,7 @@ describe("VastEngine", () => {
     let testHelper: TestHelper;
     let databaseName: string;
     let mockVastClient: MockVastAPI;
+    let clock: FakeClock;
 
     const adminId = hash("admin@test.test")
 
@@ -493,7 +496,8 @@ describe("VastEngine", () => {
         backendService = new BackendService(config, new MetricsClient(""));
         await backendService.init();
         mockVastClient = new MockVastAPI();
-        vastEngine = new VastEngine(mockVastClient, backendService, "wolfgangmeyers/aibrush:latest");
+        clock = new FakeClock(moment());
+        vastEngine = new VastEngine(mockVastClient, backendService, "wolfgangmeyers/aibrush:latest", clock, new MetricsClient(""));
         await backendService.createUser("admin@test.test");
     });
 
@@ -641,5 +645,45 @@ describe("VastEngine", () => {
             const workerResult = await backendService.listWorkers();
             expect(workerResult.length).toEqual(1);
         })
+    })
+
+    describe("scale with one worker(timeout), no offers and one order", () => {
+        it("should destroy the timed out worker", async () => {
+            mockVastClient._instances = [{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]
+            const worker = await backendService.createWorker("existing");
+            await backendService.updateWorkerDeploymentInfo(worker.id, TYPE_VASTAI, 2, "1");
+            clock._now = moment().add(10, "minutes");
+            await vastEngine.scale(1);
+            expect(mockVastClient.instances).toEqual([]);
+            expect(mockVastClient.offers).toEqual([]);
+            const workerResult = await backendService.listWorkers();
+            expect(workerResult.length).toEqual(0);
+            const isBlocked = await backendService.isWorkerBlocked("1", TYPE_VASTAI, clock.now());
+            expect(isBlocked).toEqual(true);
+        });
+    })
+
+    describe("scale with no workers, one offer (blocked), and one order", () => {
+        it("should not scale up", async () => {
+            mockVastClient._offers = [{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]
+            await backendService.blockWorker("1", TYPE_VASTAI, clock.now());
+            await vastEngine.scale(1);
+            expect(mockVastClient.instances).toEqual([]);
+            expect(mockVastClient.offers).toEqual([{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]);
+            const workerResult = await backendService.listWorkers();
+            expect(workerResult.length).toEqual(0);
+        });
     })
 });

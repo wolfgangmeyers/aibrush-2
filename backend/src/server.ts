@@ -14,6 +14,7 @@ import { Config } from "./config"
 import { AuthHelper, AuthJWTPayload, authMiddleware, ServiceAccountConfig, hash } from "./auth"
 import { AddMetricsInput, CreateOrderInput, ImageStatusEnum, UpsertWorkerConfigInput, UpsertWorkerInput } from "./client"
 import { MetricsClient } from "./metrics"
+import { ScalingService } from "./scaling_service"
 
 export class Server {
     private server: HTTPServer;
@@ -30,6 +31,7 @@ export class Server {
         private backendService: BackendService,
         private port: string | number,
         private metricsClient: MetricsClient,
+        private scalingService: ScalingService,
     ) {
         this.app = express()
         this.authHelper = new AuthHelper(config)
@@ -288,7 +290,7 @@ export class Server {
         }
 
         // render index.html for frontend routes
-        for (let route of ["/worker-config", "/admin", "/images/:id", "/image-editor/:id", "/deleted-images"]) {
+        for (let route of ["/worker-config", "/admin", "/images/:id", "/image-editor/:id", "/deleted-images", "/orders"]) {
             this.app.get(route, withMetrics(route, async (req, res) => {
                 res.sendFile(getIndexHtmlPath())
             }))
@@ -678,9 +680,6 @@ export class Server {
             }
         }))
 
-
-
-
         this.app.post("/api/auth/service-accounts", withMetrics("/api/auth/service-accounts", async (req, res) => {
             try {
                 const jwt = this.authHelper.getJWTFromRequest(req)
@@ -808,7 +807,12 @@ export class Server {
                 }
                 
             }, 10000)
+
+            if (this.config.enableScalingService) {
+                this.scalingService.start()
+            }
         })
+        
     }
 
     async stop() {
@@ -819,6 +823,9 @@ export class Server {
         if (this.cleanupHandle) {
             clearInterval(this.cleanupHandle)
             this.cleanupHandle = undefined
+        }
+        if (this.config.enableScalingService) {
+            this.scalingService.stop()
         }
     }
 }

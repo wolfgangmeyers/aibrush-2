@@ -15,6 +15,7 @@ import { DeletedImages } from "./pages/DeletedImages";
 
 // V2 UI
 import { Homepage } from "./pages/Homepage";
+import { Orders } from "./pages/admin/Orders";
 
 const config = getConfig();
 const httpClient = axios.default;
@@ -149,6 +150,9 @@ function App() {
               <>
                 <Route path="/admin">
                   <Admin api={client} />
+                </Route>
+                <Route path="/orders">
+                  <Orders api={client} />
                 </Route>
               </>
             )}
