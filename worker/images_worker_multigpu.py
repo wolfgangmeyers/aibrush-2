@@ -339,9 +339,8 @@ class ImagesWorker:
 if __name__ == "__main__":
     device_count = torch.cuda.device_count()
     for i in range(device_count):
-        cpu_model = load_sd_model()
         print(f"Device {i}: {torch.cuda.get_device_name(i)}")
-        worker = ImagesWorker(f"cuda:{i}", cpu_model)
+        worker = ImagesWorker(f"cuda:{i}")
         worker.start()
     while True:
         time.sleep(1)
