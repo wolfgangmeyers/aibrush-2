@@ -158,6 +158,7 @@ def poll_loop(process_queue: Queue, metrics_queue: Queue):
             continue
 
 def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, device: device, model: any):
+    torch.cuda.device(device)
     model_name = "stable_diffusion_text2im"
     # warmup
     warmup_id = str(uuid4())
