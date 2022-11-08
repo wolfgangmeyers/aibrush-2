@@ -57,41 +57,45 @@ export class ScalingService {
     }
 
     async scale() {
-        await this.backend.withLock(SCALING_KEY, async () => {
-            const lastScalingEvent = await this.backend.getLastEventTime(
-                SCALING_SERVICE_EVENT
-            );
-            if (
-                moment().valueOf() - lastScalingEvent <
-                SCALING_SERVICE_COOLDOWN
-            ) {
-                return;
-            }
-            await this.backend.setLastEventTime(
-                SCALING_SERVICE_EVENT,
-                moment().valueOf()
-            );
-            const activeOrders = await this.backend.listOrders(true);
-            let unallocated = 0;
-            for (let order of activeOrders) {
-                unallocated += order.gpu_count;
-            }
-            
-            for (const engine of this.engines) {
-                if (unallocated <= 0) {
-                    await engine.scale(0);
-                    continue;
-                }
-                const capacity = await engine.capacity();
-                // An attempt not to gobble up every single machine
-                // in a given engine with limited capacity
-                const maxAllocation = Math.ceil(
-                    capacity * engine.maxAllocationPercentage
+        try {
+            await this.backend.withLock(SCALING_KEY, async () => {
+                const lastScalingEvent = await this.backend.getLastEventTime(
+                    SCALING_SERVICE_EVENT
                 );
-                const allocated = Math.min(unallocated, maxAllocation);
-                unallocated -= allocated;
-                await engine.scale(allocated);
-            }
-        });
+                if (
+                    moment().valueOf() - lastScalingEvent <
+                    SCALING_SERVICE_COOLDOWN
+                ) {
+                    return;
+                }
+                await this.backend.setLastEventTime(
+                    SCALING_SERVICE_EVENT,
+                    moment().valueOf()
+                );
+                const activeOrders = await this.backend.listOrders(true);
+                let unallocated = 0;
+                for (let order of activeOrders) {
+                    unallocated += order.gpu_count;
+                }
+                
+                for (const engine of this.engines) {
+                    if (unallocated <= 0) {
+                        await engine.scale(0);
+                        continue;
+                    }
+                    const capacity = await engine.capacity();
+                    // An attempt not to gobble up every single machine
+                    // in a given engine with limited capacity
+                    const maxAllocation = Math.ceil(
+                        capacity * engine.maxAllocationPercentage
+                    );
+                    const allocated = Math.min(unallocated, maxAllocation);
+                    unallocated -= allocated;
+                    await engine.scale(allocated);
+                }
+            });
+        } catch (e) {
+            console.error(e);
+        }
     }
 }
