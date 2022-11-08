@@ -37,7 +37,7 @@ const main = async () => {
         // const result2 = await api.createInstance("1234", "wolfgangmeyers/aibrush:latest", "/app/aibrush-2/worker/images_worker.sh", {
         //     "WORKER_LOGIN_CODE": "...",
         // })
-        // console.log(result2);
+        console.log(result2);
 
         // list instances
         const result3 = await api.listInstances();

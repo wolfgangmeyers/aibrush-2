@@ -57,6 +57,7 @@ export class ScalingService {
     }
 
     async scale() {
+        console.log("ScalingService.scale");
         try {
             await this.backend.withLock(SCALING_KEY, async () => {
                 const lastScalingEvent = await this.backend.getLastEventTime(

@@ -147,6 +147,11 @@ export interface Instance {
     machine_dir_ssh_port: number;
 }
 
+export interface CreateInstanceResult {
+    success: boolean;
+    new_contract: number;
+}
+
 export interface SearchOffersResult {
     offers: Array<Offer>;
 }
@@ -227,7 +232,7 @@ export class VastAIApi implements VastClient {
         }
     }
 
-    async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<Instance> {
+    async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<CreateInstanceResult> {
         const url = `${serverUrl}/asks/${askId}/?api_key=${this.apiKey}`
         const r = await axios.default.put(url, {
             client_id: "me",
@@ -290,7 +295,7 @@ export class MockVastAPI {
         }
     }
 
-    async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<Instance> {
+    async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<CreateInstanceResult> {
         const id = parseInt(askId);
         const offer = this.offers.find((offer: any) => offer.id === id);
         const instance: Instance = {
@@ -307,7 +312,10 @@ export class MockVastAPI {
         this.instances.push(instance);
         // remove offer
         this._offers = this.offers.filter(o => o.id !== id);
-        return instance;
+        return {
+            success: true,
+            new_contract: id,
+        };
     }
 
     async listInstances(): Promise<ListInstancesResult> {
@@ -333,7 +341,7 @@ export class MockVastAPI {
 
 export interface VastClient {
     searchOffers(): Promise<SearchOffersResult>;
-    createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<Instance>;
+    createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<CreateInstanceResult>;
     listInstances(): Promise<ListInstancesResult>;
     listInstancesById(): Promise<{[key: string]: Instance}>;
     deleteInstance(instanceId: string): Promise<void>;

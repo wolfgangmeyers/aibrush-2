@@ -220,6 +220,7 @@ export class VastEngine implements ScalingEngine {
     }
 
     async scale(activeOrders: number) {
+        console.log("scaling vast to", activeOrders);
         this.metricsClient.addMetric("vast_engine.scale", activeOrders, "gauge", {}); 
         const targetGpus = activeOrders * 2;
         const blockedWorkerIds = new Set(await this.backend.listBlockedWorkerIds(TYPE_VASTAI, this.clock.now()))
@@ -246,10 +247,21 @@ export class VastEngine implements ScalingEngine {
                 const loginCode = await this.backend.generateWorkerLoginCode(newWorker.id)
                 
                 try {
-                    const instance = await this.client.createInstance(operation.targetId, this.workerImage, WORKER_COMMAND, {
+                    const result = await this.client.createInstance(operation.targetId, this.workerImage, WORKER_COMMAND, {
                         "WORKER_LOGIN_CODE": loginCode.login_code,
                     });
                     await sleep(1000)
+                    if (!result.success) {
+                        await this.backend.deleteWorker(newWorker.id)
+                        throw new Error("Failed to create instance: " + JSON.stringify(result));
+                    }
+                    const instances = await this.client.listInstances();
+                    await sleep(1000)
+                    const instance = instances.instances.find(instance => instance.id === result.new_contract);
+                    if (!instance) {
+                        await this.backend.deleteWorker(newWorker.id)
+                        throw new Error("Failed to find instance: " + JSON.stringify(result));
+                    }
                     // get the offer from the operation targetId
                     await this.backend.updateWorkerDeploymentInfo(
                         newWorker.id,
