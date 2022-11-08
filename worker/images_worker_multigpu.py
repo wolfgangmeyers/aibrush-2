@@ -158,10 +158,10 @@ def poll_loop(process_queue: Queue, metrics_queue: Queue):
             backoff = min(backoff * 2, 10)
             continue
 
-def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, device: device):
+def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, gpu: str):
     torch.cuda.device(device)
     model_name = "stable_diffusion_text2im"
-    model = create_model(model_name, device=device)
+    model = create_model(model_name, gpu)
     # warmup
     warmup_id = str(uuid4())
     args = _sd_args(None, None, None, SimpleNamespace(
@@ -175,7 +175,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
     print("Warming up model")
     model.generate(args)
     
-    clip_ranker = get_clip_ranker(device=device)
+    clip_ranker = get_clip_ranker(gpu)
     clip_ranker.rank(argparse.Namespace(text="a cat", image=f"images/{warmup_id}.jpg", cpu=False))
     cleanup(warmup_id)
     print("warmup complete")
@@ -243,7 +243,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
             if image.model != model_name:
                 model_name = image.model
                 model = None
-                model = create_model(model_name, device=device)
+                model = create_model(model_name, gpu)
 
             update_image(0, "processing")
 
@@ -311,8 +311,7 @@ def metrics_loop(metrics_queue: Queue):
             continue
 
 class ImagesWorker:
-    def __init__(self, device):
-        self.device = device
+    def __init__(self, gpu: str):
         # create queues
         self.process_queue = Queue(maxsize=1)
         self.update_queue = Queue(maxsize=1)
@@ -322,7 +321,7 @@ class ImagesWorker:
 
         # start threads
         self.poll_thread = Thread(target=poll_loop, args=(self.process_queue, self.metrics_queue))
-        self.process_thread = Thread(target=process_loop, args=(self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue, self.device))
+        self.process_thread = Thread(target=process_loop, args=(self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue, gpu))
         self.update_thread = Thread(target=update_loop, args=(self.update_queue, self.cleanup_queue, self.metrics_queue))
         self.cleanup_thread = Thread(target=cleanup_loop, args=(self.cleanup_queue,))
         self.metrics_thread = Thread(target=metrics_loop, args=(self.metrics_queue,))
