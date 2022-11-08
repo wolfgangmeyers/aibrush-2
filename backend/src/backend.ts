@@ -135,7 +135,6 @@ export class BackendService {
 
 
     private hydrateImage(image: Image): Image {
-        console.log("HYDRATE IMAGE", image)
         return {
             ...image,
             zoom_scale: parseFloat(image.zoom_scale || "0.0" as any),

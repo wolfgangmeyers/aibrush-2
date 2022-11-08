@@ -260,6 +260,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
             traceback.print_exc()
             continue
 
+
 def update_loop(update_queue: Queue, cleanup_queue: Queue, metrics_queue: Queue):
     while True:
         try:
