@@ -16,10 +16,11 @@ from PIL import Image
 import argparse
 from io import BytesIO
 
-import clip_rank
-# from model_process import ModelProcess
-from sd_text2im_model import StableDiffusionText2ImageModel, load_model as load_sd_model
-from swinir_model import SwinIRModel
+# import clip_rank
+from clip_process import ClipProcess
+from model_process import ModelProcess
+# from sd_text2im_model import StableDiffusionText2ImageModel, load_model as load_sd_model
+# from swinir_model import SwinIRModel
 # from glid_3_xl_model import generate_model_signature
 from memutil import get_free_memory
 from torch import device
@@ -101,16 +102,16 @@ model_lock = Lock()
 # model = None
 # clip_ranker = None
 
-def get_clip_ranker(device=None):
+def get_clip_ranker(gpu: str):
     with model_lock:
-        return clip_rank.ClipRanker(device=device)
+        return ClipProcess(gpu)
 
-def create_model(model_name: str, device=None):
+def create_model(model_name: str, gpu: str):
     with model_lock:
         if model_name == "swinir":
-            return SwinIRModel(device=device)
+            return ModelProcess("swinir_model.py", gpu)
         elif model_name == "stable_diffusion_text2im":
-            return StableDiffusionText2ImageModel(device=device)
+            return ModelProcess("sd_text2im_model.py", gpu)
         else:
             raise Exception(f"Unknown model name: {model_name}")
 

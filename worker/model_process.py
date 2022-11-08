@@ -4,13 +4,15 @@ import argparse
 import json
 from printutil import eprint
 import traceback
+import torch
+import sys
 
 # wrap the local model in a separate process
 class ModelProcess:
 
-    def __init__(self, model_file: str) -> None:
+    def __init__(self, model_file: str, gpu="cuda:0") -> None:
         print("ModelProcess created")
-        self.process = subprocess.Popen(["python", model_file], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.process = subprocess.Popen(["python", model_file, gpu], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def generate(self, args: SimpleNamespace | argparse.Namespace) -> bool:
         print("ModelProcess generate called")
@@ -38,6 +40,8 @@ class ModelProcess:
             print("Model process killed")
 
 def child_process(Model, name):
+    gpu = "cuda:0" if len(sys.argv) == 1 else sys.argv[1]
+    torch.cuda.set_device(gpu)
     eprint(f"local model process running for {name}")
     model = None
     eprint("model process created")

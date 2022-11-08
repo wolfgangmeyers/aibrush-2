@@ -3,15 +3,17 @@ from types import SimpleNamespace
 import argparse
 import traceback
 import json
+import sys
+import torch
 
 from clip_rank import ClipRanker
 from printutil import eprint
 
 class ClipProcess:
 
-    def __init__(self):
+    def __init__(self, gpu="cuda:0"):
         print("ClipProcess created")
-        self.process = subprocess.Popen(["python", "clip_process.py"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.process = subprocess.Popen(["python", "clip_process.py", gpu], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def rank(self, args):
         print("ClipProcess rank called")
@@ -37,6 +39,8 @@ class ClipProcess:
             print("Clip process killed")
 
 def child_process():
+    gpu = "cuda:0" if len(sys.argv) == 1 else sys.argv[1]
+    torch.cuda.set_device(gpu)
     eprint("clip process running")
     clip_ranker = ClipRanker()
     eprint("clip process created")

@@ -8,12 +8,10 @@ VIT_L_14 = "ViT-L/14"
 VIT_B_32 = "ViT-B/32"
 
 class ClipRanker:
-    def __init__(self, device=None):
+    def __init__(self):
         if not torch.cuda.is_available():
             raise Exception("No GPU available")
-        self.device = device
-        if self.device is None:
-            self.device = torch.device('cuda:0')
+        self.device = torch.device("cuda")
         self.clip_model, self.clip_preprocess = clip.load(VIT_L_14, device=self.device, jit=False)
         self.clip_model.eval().requires_grad_(False)
 
