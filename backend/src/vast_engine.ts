@@ -4,6 +4,7 @@ import { Clock, RealClock } from "./clock";
 import { MetricsClient } from "./metrics";
 import { ScalingEngine } from "./scaling_engine";
 import { VastAIApi, VastClient } from "./vast_client";
+import { sleep } from "./sleep"
 
 export const SCALEDOWN_COOLDOWN = moment.duration(10, "minutes");
 export const WORKER_TIMEOUT = moment.duration(10, "minutes");
@@ -197,7 +198,9 @@ export class VastEngine implements ScalingEngine {
 
     async capacity(): Promise<number> {
         const offersPromise = this.client.searchOffers();
+        await sleep(1000);
         const instancesPromise = this.client.listInstances();
+        await sleep(1000);
         const [offers, instances] = await Promise.all([offersPromise, instancesPromise]);
 
         // add up all the gpus
@@ -225,6 +228,7 @@ export class VastEngine implements ScalingEngine {
         );
 
         const offers = (await this.client.searchOffers()).offers.filter(offer => !blockedWorkerIds.has(offer.id.toString()));
+        await sleep(1000)
         const lastScalingOperation = moment(await this.backend.getLastEventTime(VASTAI_SCALING_EVENT))
         const operations = calculateScalingOperations(
             workers,
@@ -245,6 +249,7 @@ export class VastEngine implements ScalingEngine {
                     await this.client.createInstance(operation.targetId, this.workerImage, WORKER_COMMAND, {
                         "WORKER_LOGIN_CODE": loginCode.login_code,
                     });
+                    await sleep(1000)
                     // get the offer from the operation targetId
                     const offer = offers.find(offer => offer.id.toString() === operation.targetId)
                     await this.backend.updateWorkerDeploymentInfo(
@@ -266,6 +271,7 @@ export class VastEngine implements ScalingEngine {
                 try {
                     const worker = workers.find(worker => worker.id === operation.targetId)
                     await this.client.deleteInstance(worker.cloud_instance_id);
+                    await sleep(1000)
                     await this.backend.deleteWorker(worker.id);
                     if (operation.block) {
                         await this.backend.blockWorker(worker.cloud_instance_id, TYPE_VASTAI, this.clock.now())
