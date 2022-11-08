@@ -5,9 +5,10 @@ from types import SimpleNamespace
 import time
 import json
 from queue import Queue
-from threading import Thread
+from threading import Thread, Lock
+from uuid import uuid4
 
-from torch import rand
+import torch
 from api_client import AIBrushAPI
 import base64
 import traceback
@@ -15,10 +16,14 @@ from PIL import Image
 import argparse
 from io import BytesIO
 
-import clip_process
+# import clip_rank
+from clip_process import ClipProcess
 from model_process import ModelProcess
+# from sd_text2im_model import StableDiffusionText2ImageModel, load_model as load_sd_model
+# from swinir_model import SwinIRModel
 # from glid_3_xl_model import generate_model_signature
 from memutil import get_free_memory
+from torch import device
 
 
 api_url = "https://www.aibrush.art"
@@ -52,10 +57,6 @@ def cleanup(image_id: str):
     for fname in os.listdir("output_npy"):
         if image_id in fname:
             os.remove(os.path.join("output_npy", fname))
-    # TODO: image-specific paths for video frames
-    # if os.path.exists("steps"):
-    #     for fname in os.listdir("steps"):
-    #         os.remove(os.path.join("steps", fname))
     if os.path.exists("results"):
         for fname in os.listdir(os.path.join("results", "swinir_real_sr_x4")):
             if image_id in fname:
@@ -95,31 +96,28 @@ def _sd_args(image_data, mask_data, npy_data, image):
         args.init_img = os.path.join("images", image.id + "-init.jpg")
     return args
 
-model_name: str = None
-model = None
-model_signature: str = None
-clip_ranker = None
+model_lock = Lock()
 
-def get_clip_ranker():
-    global clip_ranker
-    if clip_ranker is None:
-        clip_ranker = clip_process.ClipProcess()
-    return clip_ranker
+# model_name: str = None
+# model = None
+# clip_ranker = None
 
-def clear_clip_ranker():
-    global clip_ranker
-    clip_ranker = None
+def get_clip_ranker(gpu: str):
+    with model_lock:
+        return ClipProcess(gpu)
 
-def create_model():
-    global model
-    if model_name == "swinir":
-        model = ModelProcess("swinir_model.py")
-    elif model_name == "stable_diffusion_text2im":
-        model = ModelProcess("sd_text2im_model.py")
+def create_model(model_name: str, gpu: str):
+    with model_lock:
+        if model_name == "swinir":
+            return ModelProcess("swinir_model.py", gpu)
+        elif model_name == "stable_diffusion_text2im":
+            return ModelProcess("sd_text2im_model.py", gpu)
+        else:
+            raise Exception(f"Unknown model name: {model_name}")
 
-def clear_model():
-    global model
-    model = None
+# def clear_model():
+#     global model
+#     model = None
 
 def metric(name: str, type: str, value: any, attributes: dict = None) -> SimpleNamespace:
     attribute_list = []
@@ -130,10 +128,19 @@ def metric(name: str, type: str, value: any, attributes: dict = None) -> SimpleN
 
 def poll_loop(process_queue: Queue, metrics_queue: Queue):
     backoff = 1
+    model_name = "stable_diffusion_text2im"
+    last_model_check = time.time()
     while True:
         try:
             start = time.time()
-            image = client.process_image(None)
+            # model stickiness
+            if time.time() - last_model_check > 60:
+                image = client.process_image(None)
+                if image and image.model != model_name:
+                    model_name = image.model
+                last_model_check = time.time()
+            else:
+                image = client.process_image(model_name)
             metrics_queue.put(metric("worker.poll", "count", 1, {
                 "duration_seconds": time.time() - start
             }))
@@ -144,16 +151,35 @@ def poll_loop(process_queue: Queue, metrics_queue: Queue):
             else:
                 time.sleep(backoff)
                 backoff = min(backoff * 2, 10)
-        except Exception as e:
-            print(f"Pool Loop Error: {e}")
+        except Exception as err:
+            print(f"Pool Loop Error: {err}")
             traceback.print_exc()
             time.sleep(backoff)
             backoff = min(backoff * 2, 10)
             continue
 
-def process_loop(process_queue: Queue, update_queue: Queue, metrics_queue: Queue):
-    global clip_ranker
-    global model_name, model
+def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, gpu: str):
+    torch.cuda.device(device)
+    model_name = "stable_diffusion_text2im"
+    model = create_model(model_name, gpu)
+    # warmup
+    warmup_id = str(uuid4())
+    args = _sd_args(None, None, None, SimpleNamespace(
+        phrases=["a cat"],
+        height=512,
+        width=512,
+        id=warmup_id,
+        iterations=10,
+        stable_diffusion_strength=0.75,
+    ))
+    print("Warming up model")
+    model.generate(args)
+    
+    clip_ranker = get_clip_ranker(gpu)
+    clip_ranker.rank(argparse.Namespace(text="a cat", image=f"images/{warmup_id}.jpg", cpu=False))
+    cleanup(warmup_id)
+    print("warmup complete")
+    ready_queue.put(True)
     while True:
         try:
             image = process_queue.get()
@@ -188,10 +214,10 @@ def process_loop(process_queue: Queue, update_queue: Queue, metrics_queue: Queue
                     prompts = "|".join(image.phrases)
                     negative_prompts = "|".join(image.negative_phrases).strip()
                     print(f"Calculating clip ranking for '{prompts}'")
-                    score = get_clip_ranker().rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
+                    score = clip_ranker.rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
                     if negative_prompts:
                         print(f"Calculating negative clip ranking for '{prompts}'")
-                        negative_score = get_clip_ranker().rank(argparse.Namespace(text=negative_prompts, image=image_path, cpu=False))
+                        negative_score = clip_ranker.rank(argparse.Namespace(text=negative_prompts, image=image_path, cpu=False))
                     with open(image_path, "rb") as f:
                         image_data = f.read()
                     # base64 encode image
@@ -215,15 +241,12 @@ def process_loop(process_queue: Queue, update_queue: Queue, metrics_queue: Queue
                 args = _sd_args(image_data, None, None, image)
 
             if image.model != model_name:
-                clear_model()
                 model_name = image.model
-                create_model()
+                model = None
+                model = create_model(model_name, gpu)
 
             update_image(0, "processing")
 
-            # TODO: detect memory overflow and clear clip ranker?
-            if not model:
-                create_model()
             nsfw = model.generate(args)
             nsfw = nsfw or image.nsfw # inherit nsfw from parent
 
@@ -287,47 +310,37 @@ def metrics_loop(metrics_queue: Queue):
             traceback.print_exc()
             continue
 
-if __name__ == "__main__":
-    try:
-        print("Warming up stable diffusion model")
-        # warmup
-        model_name = "stable_diffusion_text2im"
-        create_model()
-        # def _sd_args(image_data, mask_data, npy_data, image):
-        args = _sd_args(None, None, None, SimpleNamespace(
-            phrases=["a cat"],
-            height=512,
-            width=512,
-            id="warmup",
-            iterations=10,
-            stable_diffusion_strength=0.75,
-
-        ))
-        model.generate(args)
-        get_clip_ranker().rank(argparse.Namespace(text="a cat", image="images/warmup.jpg", cpu=False))
-
+class ImagesWorker:
+    def __init__(self, gpu: str):
         # create queues
-        process_queue = Queue(maxsize=1)
-        update_queue = Queue(maxsize=1)
-        cleanup_queue = Queue(maxsize=1)
-        metrics_queue = Queue(maxsize=1)
+        self.process_queue = Queue(maxsize=1)
+        self.update_queue = Queue(maxsize=1)
+        self.cleanup_queue = Queue(maxsize=1)
+        self.metrics_queue = Queue(maxsize=1)
+        self.ready_queue = Queue(maxsize=1)
 
         # start threads
-        poll_thread = Thread(target=poll_loop, args=(process_queue, metrics_queue))
-        poll_thread.start()
-        process_thread = Thread(target=process_loop, args=(process_queue, update_queue, metrics_queue))
-        process_thread.start()
-        update_thread = Thread(target=update_loop, args=(update_queue, cleanup_queue, metrics_queue))
-        update_thread.start()
-        cleanup_thread = Thread(target=cleanup_loop, args=(cleanup_queue,))
-        cleanup_thread.start()
-        metrics_thread = Thread(target=metrics_loop, args=(metrics_queue,))
-        metrics_thread.start()
+        self.poll_thread = Thread(target=poll_loop, args=(self.process_queue, self.metrics_queue))
+        self.process_thread = Thread(target=process_loop, args=(self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue, gpu))
+        self.update_thread = Thread(target=update_loop, args=(self.update_queue, self.cleanup_queue, self.metrics_queue))
+        self.cleanup_thread = Thread(target=cleanup_loop, args=(self.cleanup_queue,))
+        self.metrics_thread = Thread(target=metrics_loop, args=(self.metrics_queue,))
 
-        # wait for threads to finish
-        poll_thread.join()
-        process_thread.join()
-        update_thread.join()
-        cleanup_thread.join()
-    except KeyboardInterrupt:
-        del model
+    def start(self):
+        # start threads
+        self.process_thread.start()
+        self.ready_queue.get() # allow warmup to complete
+
+        self.poll_thread.start()
+        self.update_thread.start()
+        self.cleanup_thread.start()
+        self.metrics_thread.start()
+
+if __name__ == "__main__":
+    device_count = torch.cuda.device_count()
+    for i in range(device_count):
+        print(f"Device {i}: {torch.cuda.get_device_name(i)}")
+        worker = ImagesWorker(f"cuda:{i}")
+        worker.start()
+    while True:
+        time.sleep(1)
