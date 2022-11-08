@@ -570,6 +570,7 @@ describe("VastEngine", () => {
                 env: {
                     "WORKER_LOGIN_CODE": worker.login_code,
                 },
+                num_gpus: 1,
             }]);
             expect(mockVastClient.offers).toEqual([]);
         });

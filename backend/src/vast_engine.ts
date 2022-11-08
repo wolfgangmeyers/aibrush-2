@@ -246,17 +246,16 @@ export class VastEngine implements ScalingEngine {
                 const loginCode = await this.backend.generateWorkerLoginCode(newWorker.id)
                 
                 try {
-                    await this.client.createInstance(operation.targetId, this.workerImage, WORKER_COMMAND, {
+                    const instance = await this.client.createInstance(operation.targetId, this.workerImage, WORKER_COMMAND, {
                         "WORKER_LOGIN_CODE": loginCode.login_code,
                     });
                     await sleep(1000)
                     // get the offer from the operation targetId
-                    const offer = offers.find(offer => offer.id.toString() === operation.targetId)
                     await this.backend.updateWorkerDeploymentInfo(
                         newWorker.id,
                         TYPE_VASTAI,
-                        offer.num_gpus,
-                        offer.id.toString(),
+                        instance.num_gpus,
+                        instance.id.toString(),
                     )
                 } catch (err) {
                     tags.error = err.message

@@ -292,6 +292,7 @@ export class MockVastAPI {
 
     async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<Instance> {
         const id = parseInt(askId);
+        const offer = this.offers.find((offer: any) => offer.id === id);
         const instance: Instance = {
             id,
             actual_status: "active",
@@ -301,6 +302,7 @@ export class MockVastAPI {
             image: image,
             onStart: onStart,
             env: env,
+            num_gpus: offer.num_gpus,
         } as any;
         this.instances.push(instance);
         // remove offer
