@@ -191,10 +191,10 @@ export class VastAIApi implements VastClient {
                 gte: 40.000000000000014,
             },
             inet_up: {
-                gte: 2.0000000000000004,
+                gte: 50.0000000000000004,
             },
             inet_down: {
-                gte: 8.000000000000002,
+                gte: 200.000000000000002,
             },
             order: [
                 [
