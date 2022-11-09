@@ -16,6 +16,12 @@ export function getScalingEngines(
 ): ScalingEngine[] {
     const result: ScalingEngine[] = [];
     if (process.env.VAST_API_KEY) {
+        // TODO: add one engine per gpu type
+        // TODO: configure different price tolerance per GPU type
+        // in this order:
+        // A5000
+        // RTX 3090
+        // A6000
         result.push(
             new VastEngine(
                 new VastAIApi(process.env.VAST_API_KEY),
@@ -25,6 +31,7 @@ export function getScalingEngines(
             )
         );
     }
+    // these are all A10G GPUs
     result.push(
         new Ec2Engine(
             new EC2ClientImpl(),
