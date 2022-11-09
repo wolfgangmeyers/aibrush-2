@@ -177,9 +177,11 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
     ))
     print("Warming up model")
     model.generate(args)
-    
+    print("warmup step 1 completed")
     clip_ranker = get_clip_ranker(gpu)
+    print("process loop: clip ranker created")
     clip_ranker.rank(argparse.Namespace(text="a cat", image=f"images/{warmup_id}.jpg", cpu=False))
+    print("process loop: ranker warmed up")
     cleanup(warmup_id)
     print("warmup complete")
     ready_queue.put(True)
