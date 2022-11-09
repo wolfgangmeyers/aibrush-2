@@ -1,6 +1,7 @@
 import moment from "moment";
 import { BackendService, SCALING_KEY } from "./backend";
 import { RealClock } from "./clock";
+import { EC2ClientImpl, Ec2Engine } from "./ec2_engine";
 import { MetricsClient } from "./metrics";
 import { ScalingEngine } from "./scaling_engine";
 import { VastAIApi } from "./vast_client";
@@ -11,7 +12,6 @@ const SCALING_SERVICE_COOLDOWN = 60 * 1000;
 
 export function getScalingEngines(
     backendService: BackendService,
-    workerImage: string,
     metricsClient: MetricsClient
 ): ScalingEngine[] {
     const result: ScalingEngine[] = [];
@@ -20,12 +20,19 @@ export function getScalingEngines(
             new VastEngine(
                 new VastAIApi(process.env.VAST_API_KEY),
                 backendService,
-                workerImage,
                 new RealClock(),
                 metricsClient
             )
         );
     }
+    result.push(
+        new Ec2Engine(
+            new EC2ClientImpl(),
+            backendService,
+            new RealClock(),
+            metricsClient,
+        )
+    )
     return result;
 }
 

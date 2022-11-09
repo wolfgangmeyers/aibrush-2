@@ -11,6 +11,7 @@ export const WORKER_TIMEOUT = moment.duration(10, "minutes");
 export const MAX_COST_PER_GPU = 0.5;
 export const TYPE_VASTAI = "vastai";
 const WORKER_COMMAND = "/app/aibrush-2/worker/images_worker.sh";
+const WORKER_IMAGE = "wolfgangmeyers/aibrush:latest";
 export const VASTAI_SCALING_EVENT = "vastai_scaling_event";
 
 export interface ScalingOperation {
@@ -188,7 +189,7 @@ function scaleUp(
 
 export class VastEngine implements ScalingEngine {
 
-    constructor(private client: VastClient, private backend: BackendService, private workerImage: string, private clock: Clock, private metricsClient: MetricsClient) {
+    constructor(private client: VastClient, private backend: BackendService, private clock: Clock, private metricsClient: MetricsClient) {
     }
 
     get maxAllocationPercentage(): number {
@@ -247,7 +248,7 @@ export class VastEngine implements ScalingEngine {
                 const loginCode = await this.backend.generateWorkerLoginCode(newWorker.id)
                 
                 try {
-                    const result = await this.client.createInstance(operation.targetId, this.workerImage, WORKER_COMMAND, {
+                    const result = await this.client.createInstance(operation.targetId, WORKER_IMAGE, WORKER_COMMAND, {
                         "WORKER_LOGIN_CODE": loginCode.login_code,
                     });
                     await sleep(1000)
@@ -302,7 +303,3 @@ export class VastEngine implements ScalingEngine {
         }
     }
 }
-
-// # pip install git+https://github.com/wolfgangmeyers/SwinIR
-// clone into swinir folder
-// git clone https://github.com/wolfgangmeyers/SwinIR.git swinir

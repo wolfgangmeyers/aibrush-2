@@ -497,7 +497,7 @@ describe("VastEngine", () => {
         await backendService.init();
         mockVastClient = new MockVastAPI();
         clock = new FakeClock(moment());
-        vastEngine = new VastEngine(mockVastClient, backendService, "wolfgangmeyers/aibrush:latest", clock, new MetricsClient(""));
+        vastEngine = new VastEngine(mockVastClient, backendService, clock, new MetricsClient(""));
         await backendService.createUser("admin@test.test");
     });
 

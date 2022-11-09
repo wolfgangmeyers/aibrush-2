@@ -13,7 +13,7 @@ const metricsClient = new MetricsClient(config.newRelicLicenseKey)
 
 const backendService = new BackendService(config, metricsClient)
 const port =  parseInt(process.env.PORT || "3000")
-const scalingEngines = getScalingEngines(backendService, "wolfgangmeyers/aibrush:latest", metricsClient);
+const scalingEngines = getScalingEngines(backendService, metricsClient);
 const scalingService = new ScalingService(backendService, scalingEngines);
 const server = new Server(config, backendService, port, metricsClient, scalingService);
 server.init().then(() => {
