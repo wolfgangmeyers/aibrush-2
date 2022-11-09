@@ -107,7 +107,9 @@ def get_clip_ranker(gpu: str):
         return ClipProcess(gpu)
 
 def create_model(model_name: str, gpu: str):
+    print("create_model", model_name, gpu)
     with model_lock:
+        print("lock acquired")
         if model_name == "swinir":
             return ModelProcess("swinir_model.py", gpu)
         elif model_name == "stable_diffusion_text2im":
@@ -159,9 +161,10 @@ def poll_loop(process_queue: Queue, metrics_queue: Queue):
             continue
 
 def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, gpu: str):
-    torch.cuda.device(device)
+    print("process loop started")
     model_name = "stable_diffusion_text2im"
     model = create_model(model_name, gpu)
+    print("process loop: model created")
     # warmup
     warmup_id = str(uuid4())
     args = _sd_args(None, None, None, SimpleNamespace(
