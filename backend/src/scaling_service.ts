@@ -31,6 +31,7 @@ export function getScalingEngines(
             backendService,
             new RealClock(),
             metricsClient,
+            "us-west-2"
         )
     )
     return result;
