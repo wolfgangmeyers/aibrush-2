@@ -812,7 +812,6 @@ export class Server {
                 this.scalingService.start()
             }
         })
-        
     }
 
     async stop() {
