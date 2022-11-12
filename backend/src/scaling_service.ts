@@ -105,9 +105,10 @@ export class ScalingService {
                     const maxAllocation = Math.ceil(
                         capacity * engine.maxAllocationPercentage
                     );
-                    const allocated = Math.min(unallocated, maxAllocation);
+                    let allocated = Math.min(unallocated, maxAllocation);
+                    
+                    allocated = await engine.scale(allocated);
                     unallocated -= allocated;
-                    await engine.scale(allocated);
                 }
             });
         } catch (e) {

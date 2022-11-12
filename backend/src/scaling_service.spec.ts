@@ -130,6 +130,26 @@ describe("ScalingService", () => {
         })
     })
 
+    describe("failover capacity", () => {
+        // when an engine returns a different number than the
+        // requested scale, the scaling service will adjust.
+        beforeEach(async () => {
+            for (let i = 0; i < 4; i++) {
+                await backendService.createOrder(adminId, {
+                    gpu_count: 1,
+                    hours: 1,
+                }, true, 0);
+            }
+            scalingEngine1.returnScale = 3;
+            await scalingService.scale();
+        })
+
+        it("Should scale engine 1 to 3, engine 2 to 1", async () => {
+            expect(scalingEngine1._scale).toBe(4);
+            expect(scalingEngine2._scale).toBe(1);
+        })
+    })
+
     describe("scaling synchronization cooldown (before)", () => {
         beforeEach(async () => {
             for (let i = 0; i < 15; i++) {

@@ -1,4 +1,5 @@
 import * as axios from "axios"
+import { ErrorFactory } from "./error_factory";
 
 const serverUrl = "https://vast.ai/api/v0";
 
@@ -279,7 +280,7 @@ export class MockVastAPI {
     // laziness that allows lax test data
     _offers: any = [];
     _instances: any = [];
-    provisionError: Error;
+    errFactory: ErrorFactory;
 
     // getter that type casts
     get offers(): Array<Offer> {
@@ -297,8 +298,11 @@ export class MockVastAPI {
     }
 
     async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<CreateInstanceResult> {
-        if (this.provisionError) {
-            throw this.provisionError;
+        if (this.errFactory) {
+            const err = this.errFactory.error()
+            if (err) {
+                throw err;
+            }
         }
         const id = parseInt(askId);
         const offer = this.offers.find((offer: any) => offer.id === id);

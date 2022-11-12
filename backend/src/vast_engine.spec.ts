@@ -10,6 +10,7 @@ import { Session, TestHelper } from "./testHelper";
 import { MockVastAPI } from "./vast_client";
 import { hash } from "./auth";
 import { FakeClock, RealClock } from "./clock";
+import { ErrorFactory } from "./error_factory";
 
 jest.setTimeout(60000);
 
@@ -695,7 +696,7 @@ describe("VastEngine", () => {
                 num_gpus: 1,
                 dph_total: 0.3,
             }]
-            mockVastClient.provisionError =  new Error("nope");
+            mockVastClient.errFactory = new ErrorFactory([new Error("nope")])
             expect(await vastEngine.scale(1)).toEqual(0);
             expect(mockVastClient.instances).toEqual([]);
             expect(mockVastClient.offers).toEqual([{

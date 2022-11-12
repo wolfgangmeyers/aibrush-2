@@ -8,6 +8,7 @@ export interface ScalingEngine {
 export class FakeScalingEngine implements ScalingEngine {
 
     _scale: number = -1;
+    returnScale: number = -1;
 
     constructor(
         private _maxAllocationPercentage: number,
@@ -25,6 +26,9 @@ export class FakeScalingEngine implements ScalingEngine {
 
     async scale(activeOrders: number): Promise<number> {
         this._scale = activeOrders;
+        if (this.returnScale) {
+            return this.returnScale;
+        }
         return activeOrders;
     }
 }
