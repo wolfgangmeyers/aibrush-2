@@ -28,7 +28,7 @@ export class Ec2Engine implements ScalingEngine {
     async capacity(): Promise<number> {
         return 60;
     }
-    async scale(activeOrders: number): Promise<void> {
+    async scale(activeOrders: number): Promise<number> {
         console.log("scaling EC2 to ", activeOrders);
         const lastScalingOperation = await this.backend.getLastEventTime(
             EC2_SCALING_EVENT
@@ -70,7 +70,7 @@ export class Ec2Engine implements ScalingEngine {
                 tags.error = err.message;
                 console.error("Failed to create instance", err);
                 await this.backend.deleteWorker(worker.id);
-                throw err;
+                break;
             } finally {
                 this.metricsClient.addMetric(
                     "ec2_engine.create",
@@ -120,6 +120,7 @@ export class Ec2Engine implements ScalingEngine {
                 this.clock.now().valueOf()
             );
         }
+        return workers.length;
     }
 }
 
@@ -175,12 +176,18 @@ docker run -e 'WORKER_LOGIN_CODE=${workerLoginCode}' --gpus all ${WORKER_IMAGE} 
 }
 
 export class FakeEC2Client implements EC2Client {
+
+    provisionError: any = null;
+
     constructor(public _instances: Array<AWS.EC2.Instance>) {}
 
     async createInstance(
         region: string,
         workerLoginCode: string
     ): Promise<AWS.EC2.Reservation> {
+        if (this.provisionError) {
+            throw this.provisionError;
+        }
         this._instances.push({
             InstanceId: uuid.v4(),
             region: region,

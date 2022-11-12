@@ -279,6 +279,7 @@ export class MockVastAPI {
     // laziness that allows lax test data
     _offers: any = [];
     _instances: any = [];
+    provisionError: Error;
 
     // getter that type casts
     get offers(): Array<Offer> {
@@ -296,6 +297,9 @@ export class MockVastAPI {
     }
 
     async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<CreateInstanceResult> {
+        if (this.provisionError) {
+            throw this.provisionError;
+        }
         const id = parseInt(askId);
         const offer = this.offers.find((offer: any) => offer.id === id);
         const instance: Instance = {

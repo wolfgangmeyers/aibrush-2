@@ -40,7 +40,7 @@ describe("EC2Engine", () => {
 
     describe("scale to 0, 0 workers", () => {
         it("should not scale", async () => {
-            await ec2Engine.scale(0);
+            expect(await ec2Engine.scale(0)).toEqual(0);
             expect(mockEc2Client._instances.length).toBe(0);
             const lastEventTime = await backendService.getLastEventTime(EC2_SCALING_EVENT);
             expect(lastEventTime).toBe(0);
@@ -49,7 +49,7 @@ describe("EC2Engine", () => {
 
     describe("scale to 1, 0 workers", () => {
         it("should scale", async () => {
-            await ec2Engine.scale(1);
+            expect(await ec2Engine.scale(1)).toEqual(1);
             expect(mockEc2Client._instances.length).toBe(1);
             const workers = await backendService.listWorkers();
             expect(workers.length).toBe(1);
@@ -73,7 +73,7 @@ describe("EC2Engine", () => {
             mockEc2Client._instances.push({
                 InstanceId: "i-1234567890",
             });
-            await ec2Engine.scale(1);
+            expect(await ec2Engine.scale(1)).toEqual(1);
             expect(mockEc2Client._instances.length).toBe(1);
             const workers = await backendService.listWorkers();
             expect(workers.length).toBe(1);
@@ -92,7 +92,7 @@ describe("EC2Engine", () => {
             mockEc2Client._instances.push({
                 InstanceId: "i-1234567890",
             });
-            await ec2Engine.scale(0);
+            expect(await ec2Engine.scale(0)).toEqual(0);
             expect(mockEc2Client._instances.length).toBe(0);
             const workers = await backendService.listWorkers();
             expect(workers.length).toBe(0);
@@ -111,7 +111,7 @@ describe("EC2Engine", () => {
             mockEc2Client._instances.push({
                 InstanceId: "i-1234567890",
             });
-            await ec2Engine.scale(0);
+            expect(await ec2Engine.scale(0)).toEqual(0);
             expect(mockEc2Client._instances.length).toBe(1);
             const workers = await backendService.listWorkers();
             expect(workers.length).toBe(1);
@@ -130,7 +130,7 @@ describe("EC2Engine", () => {
             mockEc2Client._instances.push({
                 InstanceId: "i-1234567890",
             });
-            await ec2Engine.scale(60);
+            expect(await ec2Engine.scale(60)).toEqual(60);
             expect(mockEc2Client._instances.length).toBe(60);
             const workers = await backendService.listWorkers();
             expect(workers.length).toBe(60);
@@ -152,7 +152,7 @@ describe("EC2Engine", () => {
                     InstanceId: instanceId,
                 });
             }
-            await ec2Engine.scale(1);
+            expect(await ec2Engine.scale(1)).toEqual(1);
             expect(mockEc2Client._instances.length).toBe(1);
             const workers = await backendService.listWorkers();
             expect(workers.length).toBe(1);
@@ -172,10 +172,20 @@ describe("EC2Engine", () => {
                 InstanceId: "i-1234567890",
             });
             await backendService.setLastEventTime(EC2_SCALING_EVENT, clock.now().valueOf());
-            await ec2Engine.scale(0);
+            expect(await ec2Engine.scale(0)).toEqual(1);
             expect(mockEc2Client._instances.length).toBe(1);
             const workers = await backendService.listWorkers();
             expect(workers.length).toBe(1);
+        });
+    })
+
+    describe("scale to 1, 0 workers, error on provision", () => {
+        it("should not scale", async () => {
+            mockEc2Client.provisionError = new Error("nope");
+            expect(await ec2Engine.scale(1)).toEqual(0);
+            expect(mockEc2Client._instances.length).toBe(0);
+            const workers = await backendService.listWorkers();
+            expect(workers.length).toBe(0);
         });
     })
 

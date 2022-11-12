@@ -220,7 +220,7 @@ export class VastEngine implements ScalingEngine {
         return Math.ceil(numGpus / 2);
     }
 
-    async scale(activeOrders: number) {
+    async scale(activeOrders: number): Promise<number> {
         console.log("scaling vast to", activeOrders);
         this.metricsClient.addMetric("vast_engine.scale", activeOrders, "gauge", {}); 
         const targetGpus = activeOrders * 2;
@@ -264,17 +264,18 @@ export class VastEngine implements ScalingEngine {
                         throw new Error("Failed to find instance: " + JSON.stringify(result));
                     }
                     // get the offer from the operation targetId
-                    await this.backend.updateWorkerDeploymentInfo(
+                    const updatedWorker = await this.backend.updateWorkerDeploymentInfo(
                         newWorker.id,
                         TYPE_VASTAI,
                         instance.num_gpus,
                         instance.id.toString(),
                     )
+                    workers.push(updatedWorker)
                 } catch (err) {
                     tags.error = err.message
                     console.error("Failed to create instance", err);
                     await this.backend.deleteWorker(newWorker.id)
-                    throw err
+                    break;
                 } finally {
                     this.metricsClient.addMetric("vast_engine.create", 1, "count", tags)
                 }
@@ -288,6 +289,7 @@ export class VastEngine implements ScalingEngine {
                     if (operation.block) {
                         await this.backend.blockWorker(worker.cloud_instance_id, TYPE_VASTAI, this.clock.now())
                     }
+                    workers.splice(workers.indexOf(worker), 1)
                 } catch (err) {
                     tags.error = err.message
                     console.error("Failed to delete instance", err);
@@ -301,5 +303,6 @@ export class VastEngine implements ScalingEngine {
         if (operations.length > 0) {
             await this.backend.setLastEventTime(VASTAI_SCALING_EVENT, this.clock.now().valueOf())
         }
+        return workers.length;
     }
 }

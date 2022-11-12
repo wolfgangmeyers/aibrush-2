@@ -507,7 +507,7 @@ describe("VastEngine", () => {
 
     describe("scale with no workers, no offers and no orders", () => {
         it("should not scale", async () => {
-            await vastEngine.scale(0);
+            expect(await vastEngine.scale(0)).toEqual(0);
             expect(mockVastClient.instances).toEqual([]);
             expect(mockVastClient.offers).toEqual([]);
             const workerResult = await backendService.listWorkers();
@@ -517,7 +517,7 @@ describe("VastEngine", () => {
 
     describe("scale with no workers, no offers and one order", () => {
         it("should not scale", async () => {
-            await vastEngine.scale(1);
+            expect(await vastEngine.scale(1)).toEqual(0);
             expect(mockVastClient.instances).toEqual([]);
             expect(mockVastClient.offers).toEqual([]);
             const workerResult = await backendService.listWorkers();
@@ -532,7 +532,7 @@ describe("VastEngine", () => {
                 num_gpus: 1,
                 dph_total: 0.3,
             }]
-            await vastEngine.scale(0);
+            expect(await vastEngine.scale(0)).toEqual(0);
             expect(mockVastClient.instances).toEqual([]);
             expect(mockVastClient.offers).toEqual([{
                 id: 1,
@@ -551,7 +551,7 @@ describe("VastEngine", () => {
                 num_gpus: 1,
                 dph_total: 0.3,
             }]
-            await vastEngine.scale(1);
+            expect(await vastEngine.scale(1)).toEqual(1)
             const workerResult = await backendService.listWorkers();
             expect(workerResult.length).toEqual(1);
             const worker = workerResult[0];
@@ -590,7 +590,7 @@ describe("VastEngine", () => {
             }]
             const worker = await backendService.createWorker("existing");
             await backendService.updateWorkerDeploymentInfo(worker.id, TYPE_VASTAI, 2, "1");
-            await vastEngine.scale(1);
+            expect(await vastEngine.scale(1)).toEqual(1);
             expect(mockVastClient.instances).toEqual([{
                 id: 1,
                 num_gpus: 1,
@@ -617,7 +617,7 @@ describe("VastEngine", () => {
             await backendService.updateWorkerDeploymentInfo(worker.id, TYPE_VASTAI, 2, "1");
             // set the last scaling operation to 10 minutes ago
             await backendService.setLastEventTime(VASTAI_SCALING_EVENT, clock.now().subtract(10, "minutes").valueOf());
-            await vastEngine.scale(0);
+            expect(await vastEngine.scale(0)).toEqual(0);
             expect(mockVastClient.instances).toEqual([]);
             expect(mockVastClient.offers).toEqual([]);
             const workerResult = await backendService.listWorkers();
@@ -636,7 +636,7 @@ describe("VastEngine", () => {
             await backendService.updateWorkerDeploymentInfo(worker.id, TYPE_VASTAI, 2, "1");
             // set the last scaling operation to 1 minute ago
             await backendService.setLastEventTime(VASTAI_SCALING_EVENT, clock.now().subtract(1, "minutes").valueOf());
-            await vastEngine.scale(0);
+            expect(await vastEngine.scale(0)).toEqual(1);
             expect(mockVastClient.instances).toEqual([{
                 id: 1,
                 num_gpus: 1,
@@ -658,7 +658,7 @@ describe("VastEngine", () => {
             const worker = await backendService.createWorker("existing");
             await backendService.updateWorkerDeploymentInfo(worker.id, TYPE_VASTAI, 2, "1");
             clock._now = moment().add(10, "minutes");
-            await vastEngine.scale(1);
+            expect(await vastEngine.scale(1)).toEqual(0);
             expect(mockVastClient.instances).toEqual([]);
             expect(mockVastClient.offers).toEqual([]);
             const workerResult = await backendService.listWorkers();
@@ -676,7 +676,7 @@ describe("VastEngine", () => {
                 dph_total: 0.3,
             }]
             await backendService.blockWorker("1", TYPE_VASTAI, clock.now());
-            await vastEngine.scale(1);
+            expect(await vastEngine.scale(1)).toEqual(0);
             expect(mockVastClient.instances).toEqual([]);
             expect(mockVastClient.offers).toEqual([{
                 id: 1,
@@ -686,5 +686,25 @@ describe("VastEngine", () => {
             const workerResult = await backendService.listWorkers();
             expect(workerResult.length).toEqual(0);
         });
+    })
+
+    describe("scale with no workers, one offer, and one order, provision error", () => {
+        it("should not scale up", async () => {
+            mockVastClient._offers = [{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]
+            mockVastClient.provisionError =  new Error("nope");
+            expect(await vastEngine.scale(1)).toEqual(0);
+            expect(mockVastClient.instances).toEqual([]);
+            expect(mockVastClient.offers).toEqual([{
+                id: 1,
+                num_gpus: 1,
+                dph_total: 0.3,
+            }]);
+            const workerResult = await backendService.listWorkers();
+            expect(workerResult.length).toEqual(0);
+        })
     })
 });

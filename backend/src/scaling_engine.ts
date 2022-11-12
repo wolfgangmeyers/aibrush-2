@@ -2,7 +2,7 @@
 export interface ScalingEngine {
     get maxAllocationPercentage(): number;
     capacity(): Promise<number>;
-    scale(activeOrders: number): Promise<void>;
+    scale(activeOrders: number): Promise<number>;
 }
 
 export class FakeScalingEngine implements ScalingEngine {
@@ -23,7 +23,8 @@ export class FakeScalingEngine implements ScalingEngine {
         return this._capacity;
     }
 
-    async scale(activeOrders: number): Promise<void> {
+    async scale(activeOrders: number): Promise<number> {
         this._scale = activeOrders;
+        return activeOrders;
     }
 }
