@@ -24,14 +24,14 @@ export function getScalingEngines(
         // A5000
         // RTX 3090
         // A6000
-        result.push(
-            new VastEngine(
-                new VastAIApi(process.env.VAST_API_KEY),
-                backendService,
-                new RealClock(),
-                metricsClient
-            )
-        );
+        // result.push(
+        //     new VastEngine(
+        //         new VastAIApi(process.env.VAST_API_KEY),
+        //         backendService,
+        //         new RealClock(),
+        //         metricsClient
+        //     )
+        // );
     }
     if (process.env.RUNPOD_API_KEY) {
         result.push(
@@ -45,16 +45,16 @@ export function getScalingEngines(
             )
         )
     }
-    // these are all A10G GPUs
-    result.push(
-        new Ec2Engine(
-            new EC2ClientImpl(),
-            backendService,
-            new RealClock(),
-            metricsClient,
-            "us-west-2"
-        )
-    )
+    // // these are all A10G GPUs
+    // result.push(
+    //     new Ec2Engine(
+    //         new EC2ClientImpl(),
+    //         backendService,
+    //         new RealClock(),
+    //         metricsClient,
+    //         "us-west-2"
+    //     )
+    // )
     return result;
 }
 

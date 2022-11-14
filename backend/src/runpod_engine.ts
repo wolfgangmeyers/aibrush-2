@@ -255,11 +255,7 @@ export class RunpodEngine implements ScalingEngine {
                 }
             }
         }
-        return results
-            .flatMap((result) => result.gpuTypes)
-            .filter((gpuType) => {
-                return !!gpuType.lowestPrice.stockStatus;
-            });
+        return gpuTypes;
     }
 
     async capacity(): Promise<number> {
@@ -354,6 +350,7 @@ export class RunpodEngine implements ScalingEngine {
                         ],
                         volumeMountPath: "",
                     });
+                    console.log("Created pod", result);
                     const updatedWorker =
                         await this.backend.updateWorkerDeploymentInfo(
                             newWorker.id,

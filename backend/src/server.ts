@@ -810,6 +810,7 @@ export class Server {
 
             if (this.config.enableScalingService) {
                 this.scalingService.start()
+                this.scalingService.scale()
             }
         })
     }

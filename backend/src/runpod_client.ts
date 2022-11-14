@@ -187,6 +187,10 @@ export class RunpodApi {
                 },
             }
         );
+        const result = (r.data as any);
+        if (result.errors) {
+            throw new Error(result.errors[0].message);
+        }
         return (r.data as any).data.podFindAndDeployOnDemand;
     }
 }
@@ -214,7 +218,7 @@ export class MockRunpodApi implements RunpodClient {
 
     async getCommunityGpuTypes(gpuTypesInput: GpuTypesInput, lowestPriceInput: LowestPriceInput): Promise<GpuTypesResult> {
         return {
-            gpuTypes: this.gpuTypes,
+            gpuTypes: this.gpuTypes.filter(gpuType => gpuType.maxGpuCount === lowestPriceInput.gpuCount),
         }
     }
 
