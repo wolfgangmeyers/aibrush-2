@@ -133,7 +133,7 @@ export const Login: FC<LoginProps> = (props) => {
                     aria-describedby="emailHelp"
                     placeholder="Enter email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value.trim())}
                   />
                 </div>
                 <button
