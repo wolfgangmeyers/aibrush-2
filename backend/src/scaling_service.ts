@@ -103,7 +103,7 @@ export class ScalingService {
                     // An attempt not to gobble up every single machine
                     // in a given engine with limited capacity
                     const maxAllocation = Math.ceil(
-                        capacity * engine.maxAllocationPercentage
+                        capacity * 1
                     );
                     let allocated = Math.min(unallocated, maxAllocation);
                     

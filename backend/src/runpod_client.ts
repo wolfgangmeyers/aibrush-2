@@ -1,4 +1,6 @@
 import * as axios from "axios";
+import { ErrorFactory } from "./error_factory";
+import * as uuid from "uuid";
 
 export const RUNPOD_TEMPLATE_ID = process.env.RUNPOD_TEMPLATE_ID;
 
@@ -186,5 +188,77 @@ export class RunpodApi {
             }
         );
         return (r.data as any).data;
+    }
+}
+
+export interface RunpodClient {
+    getCommunityGpuTypes(gpuTypesInput: GpuTypesInput, lowestPriceInput: LowestPriceInput): Promise<GpuTypesResult>;
+    getMyPods(): Promise<PodsResult>;
+    createPod(input: CreatePodInput): Promise<CreatePodResult>;
+    terminatePod(input: PodTerminateInput): Promise<void>;
+}
+
+export class MockRunpodApi implements RunpodClient {
+    _pods: any = [];
+    _gpuTypes: any = [];
+    errFactory: ErrorFactory;
+
+    // getter that type casts
+    get pods(): Array<Pod> {
+        return this._pods;
+    }
+
+    get gpuTypes(): Array<GPUType> {
+        return this._gpuTypes;
+    }
+
+    async getCommunityGpuTypes(gpuTypesInput: GpuTypesInput, lowestPriceInput: LowestPriceInput): Promise<GpuTypesResult> {
+        return {
+            gpuTypes: this.gpuTypes,
+        }
+    }
+
+    async getMyPods(): Promise<PodsResult> {
+        return {
+            myself: {
+                pods: this.pods,
+            },
+        }
+    }
+
+    async createPod(input: CreatePodInput): Promise<CreatePodResult> {
+        if (this.errFactory) {
+            const err = this.errFactory.error()
+            if (err) {
+                throw err;
+            }
+        }
+        const pod: Pod = {
+            id: input.name,
+            name: input.name,
+            runtime: {
+                uptimeInSeconds: 0,
+                ports: [],
+                gpus: [],
+                container: {
+                    cpuPercent: 0,
+                    memoryPercent: 0,
+                },
+            },
+        } as any;
+        this._pods.push(pod);
+        return {
+            id: uuid.v4(),
+            imageName: input.imageName,
+            env: [],
+            machine: {
+                podHostId: "podHostId",
+            },
+            machineId: "machineId",
+        }
+    }
+
+    async terminatePod(input: PodTerminateInput): Promise<void> {
+        this._pods = this.pods.filter(p => p.id !== input.podId);
     }
 }

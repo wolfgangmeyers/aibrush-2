@@ -21,10 +21,6 @@ export class Ec2Engine implements ScalingEngine {
         private region: string
     ) {}
 
-    get maxAllocationPercentage(): number {
-        return 1;
-    }
-
     async capacity(): Promise<number> {
         return 60;
     }

@@ -28,8 +28,8 @@ describe("ScalingService", () => {
         backendService = new BackendService(config, new MetricsClient(""));
         await backendService.init();
         await backendService.createUser("admin@test.test");
-        scalingEngine1 = new FakeScalingEngine(0.5, 10);
-        scalingEngine2 = new FakeScalingEngine(1, 10);
+        scalingEngine1 = new FakeScalingEngine(5);
+        scalingEngine2 = new FakeScalingEngine(10);
         scalingService = new ScalingService(backendService, [scalingEngine1, scalingEngine2]);
     });
 

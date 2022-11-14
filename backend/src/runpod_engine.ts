@@ -1,10 +1,13 @@
 import moment from "moment";
+import { BackendService } from "./backend";
 import { Clock } from "./clock";
+import { MetricsClient } from "./metrics";
+import { RunpodClient } from "./runpod_client";
+import { ScalingEngine } from "./scaling_engine";
 
 export const SCALEDOWN_COOLDOWN = moment.duration(10, "minutes");
 export const WORKER_TIMEOUT = moment.duration(10, "minutes");
-
-// TODO: find a way to reuse vast.ai engine logic
+export const RUNPOD_SCALING_EVENT = "runpod_scaling_event";
 
 export interface ScalingOperation {
     targetId: string;
@@ -203,5 +206,23 @@ function scaleUp(
                 });
             }
         }
+    }
+}
+
+export class RunpodEngine implements ScalingEngine {
+    constructor(
+        private client: RunpodClient,
+        private backend: BackendService,
+        private clock: Clock,
+        private metricsClient: MetricsClient,
+        private gpuType: "NVIDIA GeForce RTX 3090" | "NVIDIA RTX A5000" | "NVIDIA RTX A6000",
+    ) {}
+
+    capacity(): Promise<number> {
+        throw new Error("Method not implemented.");
+    }
+
+    scale(activeOrders: number): Promise<number> {
+        throw new Error("Method not implemented.");
     }
 }

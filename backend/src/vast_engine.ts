@@ -196,20 +196,11 @@ export class VastEngine implements ScalingEngine {
         private metricsClient: MetricsClient
     ) {}
 
-    get maxAllocationPercentage(): number {
-        // willing to allocate up to 80% of available GPUs
-        return 0.8;
-    }
-
     async capacity(): Promise<number> {
-        const offersPromise = this.client.searchOffers();
+        const offers = await this.client.searchOffers();
         await sleep(1000);
-        const instancesPromise = this.client.listInstances();
+        const instances = await this.client.listInstances();
         await sleep(1000);
-        const [offers, instances] = await Promise.all([
-            offersPromise,
-            instancesPromise,
-        ]);
 
         // add up all the gpus
         let numGpus = 0;
