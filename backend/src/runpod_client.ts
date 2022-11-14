@@ -187,7 +187,7 @@ export class RunpodApi {
                 },
             }
         );
-        return (r.data as any).data;
+        return (r.data as any).data.podFindAndDeployOnDemand;
     }
 }
 

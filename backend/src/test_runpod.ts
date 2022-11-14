@@ -32,7 +32,7 @@ const main = async () => {
             gpuTypeId: "NVIDIA A100 80GB PCIe",
             name: "AiBrush Worker",
             dockerArgs: "/app/aibrush-2/worker/images_worker.sh",
-            templateId: RUNPOD_TEMPLATE_ID,
+            // templateId: RUNPOD_TEMPLATE_ID,
             imageName: "wolfgangmeyers/aibrush:latest",
             ports: "",
             env: [
@@ -43,7 +43,7 @@ const main = async () => {
             ],
             volumeMountPath: "",
         });
-        console.log(JSON.stringify(createResult.id, null, 2));
+        console.log(JSON.stringify(createResult, null, 2));
 
 
         // const gpuType = result.gpuTypes[0];

@@ -242,7 +242,24 @@ export class RunpodEngine implements ScalingEngine {
             );
         }
         const results = await Promise.all(promises);
-        return results.flatMap((result) => result.gpuTypes);
+        const gpuTypes: GPUType[] = [];
+        for (let i = 0; i < results.length; i++) {
+            if (results[i].gpuTypes.length > 0) {
+                const gpuType = results[i].gpuTypes[0];
+                if (gpuType.lowestPrice.stockStatus) {
+                    gpuTypes.push({
+                        ...gpuType,
+                        maxGpuCount: i + 1,
+                        // kind of a hack. Need to pair gpu count with the gpu type
+                    });
+                }
+            }
+        }
+        return results
+            .flatMap((result) => result.gpuTypes)
+            .filter((gpuType) => {
+                return !!gpuType.lowestPrice.stockStatus;
+            });
     }
 
     async capacity(): Promise<number> {
@@ -337,12 +354,13 @@ export class RunpodEngine implements ScalingEngine {
                         ],
                         volumeMountPath: "",
                     });
-                    const updatedWorker = await this.backend.updateWorkerDeploymentInfo(
-                        newWorker.id,
-                        TYPE_RUNPOD,
-                        operation.gpuCount,
-                        result.id,
-                    )
+                    const updatedWorker =
+                        await this.backend.updateWorkerDeploymentInfo(
+                            newWorker.id,
+                            TYPE_RUNPOD,
+                            operation.gpuCount,
+                            result.id
+                        );
                     workers.push(updatedWorker);
                 } catch (err) {
                     tags.error = err.message;
@@ -363,7 +381,7 @@ export class RunpodEngine implements ScalingEngine {
                         (worker) => worker.id === operation.targetId
                     );
                     await this.client.terminatePod({
-                        podId: worker.cloud_instance_id
+                        podId: worker.cloud_instance_id,
                     });
                     await this.backend.deleteWorker(worker.id);
                     workers.splice(workers.indexOf(worker), 1);
@@ -385,7 +403,7 @@ export class RunpodEngine implements ScalingEngine {
             await this.backend.setLastEventTime(
                 RUNPOD_SCALING_EVENT,
                 this.clock.now().valueOf()
-            )
+            );
         }
         return workers.length;
     }
