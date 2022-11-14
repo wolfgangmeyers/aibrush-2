@@ -3,7 +3,7 @@ import * as axios from "axios";
 export const RUNPOD_TEMPLATE_ID = process.env.RUNPOD_TEMPLATE_ID;
 
 export interface GpuTypesInput {
-    id: "NVIDIA GeForce RTX 3090" | "NVIDIA RTX A5000" | "NVIDIA RTX A6000" | "NVIDIA A100 80GB PCIe";
+    id: "NVIDIA GeForce RTX 3090" | "NVIDIA RTX A5000" | "NVIDIA RTX A6000";
 }
 
 export interface LowestPriceInput {

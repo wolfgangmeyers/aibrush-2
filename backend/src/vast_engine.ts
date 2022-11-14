@@ -4,7 +4,7 @@ import { Clock, RealClock } from "./clock";
 import { MetricsClient } from "./metrics";
 import { ScalingEngine } from "./scaling_engine";
 import { VastAIApi, VastClient } from "./vast_client";
-import { sleep } from "./sleep"
+import { sleep } from "./sleep";
 
 export const SCALEDOWN_COOLDOWN = moment.duration(10, "minutes");
 export const WORKER_TIMEOUT = moment.duration(10, "minutes");
@@ -38,14 +38,17 @@ export function calculateScalingOperations(
     offers: Array<Offer>,
     targetGpus: number,
     lastScalingOperation: moment.Moment,
-    clock: Clock,
+    clock: Clock
 ): Array<ScalingOperation> {
     // add up the number of gpus in the workers (some may be null if not deployed)
     let numGpus = 0;
     const operations: Array<ScalingOperation> = [];
     for (const worker of workers) {
         const now = clock.now().valueOf();
-        if (now - (worker.last_ping || worker.created_at) > WORKER_TIMEOUT.asMilliseconds()) {
+        if (
+            now - (worker.last_ping || worker.created_at) >
+            WORKER_TIMEOUT.asMilliseconds()
+        ) {
             console.log(`Worker ${worker.id} timed out`);
             // TODO: emit a metric for this?
             operations.push({
@@ -159,8 +162,6 @@ function scaleUp(
                 if (offers.length > 0 && numGpus < targetGpus) {
                     gpuSize = gpuCount;
                     if (numGpus + gpuCount >= targetGpus) {
-                        gpuSize = targetGpus - numGpus;
-                        numGpus += gpuSize;
                         completed = true;
                         operations.push({
                             targetId: offers.pop().id.toString(),
@@ -188,9 +189,12 @@ function scaleUp(
 }
 
 export class VastEngine implements ScalingEngine {
-
-    constructor(private client: VastClient, private backend: BackendService, private clock: Clock, private metricsClient: MetricsClient) {
-    }
+    constructor(
+        private client: VastClient,
+        private backend: BackendService,
+        private clock: Clock,
+        private metricsClient: MetricsClient
+    ) {}
 
     get maxAllocationPercentage(): number {
         // willing to allocate up to 80% of available GPUs
@@ -202,7 +206,10 @@ export class VastEngine implements ScalingEngine {
         await sleep(1000);
         const instancesPromise = this.client.listInstances();
         await sleep(1000);
-        const [offers, instances] = await Promise.all([offersPromise, instancesPromise]);
+        const [offers, instances] = await Promise.all([
+            offersPromise,
+            instancesPromise,
+        ]);
 
         // add up all the gpus
         let numGpus = 0;
@@ -216,92 +223,140 @@ export class VastEngine implements ScalingEngine {
         }
         this.metricsClient.addMetric("vast_engine.capacity", numGpus, "gauge", {
             allocated_gpus: allocatedGpus.toString(),
-        })
+        });
         return Math.ceil(numGpus / 2);
     }
 
     async scale(activeOrders: number): Promise<number> {
         console.log("scaling vast to", activeOrders);
-        this.metricsClient.addMetric("vast_engine.scale", activeOrders, "gauge", {}); 
+        this.metricsClient.addMetric(
+            "vast_engine.scale",
+            activeOrders,
+            "gauge",
+            {}
+        );
         const targetGpus = activeOrders * 2;
-        const blockedWorkerIds = new Set(await this.backend.listBlockedWorkerIds(TYPE_VASTAI, this.clock.now()))
+        const blockedWorkerIds = new Set(
+            await this.backend.listBlockedWorkerIds(
+                TYPE_VASTAI,
+                this.clock.now()
+            )
+        );
         const workers = (await this.backend.listWorkers()).filter(
-            worker => worker.engine === TYPE_VASTAI,
+            (worker) => worker.engine === TYPE_VASTAI
         );
 
-        const offers = (await this.client.searchOffers()).offers.filter(offer => !blockedWorkerIds.has(offer.id.toString()));
-        await sleep(1000)
-        const lastScalingOperation = moment(await this.backend.getLastEventTime(VASTAI_SCALING_EVENT))
+        const offers = (await this.client.searchOffers()).offers.filter(
+            (offer) => !blockedWorkerIds.has(offer.id.toString())
+        );
+        await sleep(1000);
+        const lastScalingOperation = moment(
+            await this.backend.getLastEventTime(VASTAI_SCALING_EVENT)
+        );
         const operations = calculateScalingOperations(
             workers,
             offers,
             targetGpus,
             lastScalingOperation,
-            this.clock,
+            this.clock
         );
         for (const operation of operations) {
             const tags: any = {
                 operation_type: operation.operationType,
-            }
+            };
             if (operation.operationType === "create") {
-                const newWorker = await this.backend.createWorker("VastAI Worker")
-                const loginCode = await this.backend.generateWorkerLoginCode(newWorker.id)
-                
+                const newWorker = await this.backend.createWorker(
+                    "VastAI Worker"
+                );
+                const loginCode = await this.backend.generateWorkerLoginCode(
+                    newWorker.id
+                );
+
                 try {
-                    const result = await this.client.createInstance(operation.targetId, WORKER_IMAGE, WORKER_COMMAND, {
-                        "WORKER_LOGIN_CODE": loginCode.login_code,
-                    });
-                    await sleep(1000)
+                    const result = await this.client.createInstance(
+                        operation.targetId,
+                        WORKER_IMAGE,
+                        WORKER_COMMAND,
+                        {
+                            WORKER_LOGIN_CODE: loginCode.login_code,
+                        }
+                    );
+                    await sleep(1000);
                     if (!result.success) {
-                        await this.backend.deleteWorker(newWorker.id)
-                        throw new Error("Failed to create instance: " + JSON.stringify(result));
+                        await this.backend.deleteWorker(newWorker.id);
+                        throw new Error(
+                            "Failed to create instance: " +
+                                JSON.stringify(result)
+                        );
                     }
                     const instances = await this.client.listInstances();
-                    await sleep(1000)
-                    const instance = instances.instances.find(instance => instance.id === result.new_contract);
+                    await sleep(1000);
+                    const instance = instances.instances.find(
+                        (instance) => instance.id === result.new_contract
+                    );
                     if (!instance) {
-                        await this.backend.deleteWorker(newWorker.id)
-                        throw new Error("Failed to find instance: " + JSON.stringify(result));
+                        await this.backend.deleteWorker(newWorker.id);
+                        throw new Error(
+                            "Failed to find instance: " + JSON.stringify(result)
+                        );
                     }
                     // get the offer from the operation targetId
-                    const updatedWorker = await this.backend.updateWorkerDeploymentInfo(
-                        newWorker.id,
-                        TYPE_VASTAI,
-                        instance.num_gpus,
-                        instance.id.toString(),
-                    )
-                    workers.push(updatedWorker)
+                    const updatedWorker =
+                        await this.backend.updateWorkerDeploymentInfo(
+                            newWorker.id,
+                            TYPE_VASTAI,
+                            instance.num_gpus,
+                            instance.id.toString()
+                        );
+                    workers.push(updatedWorker);
                 } catch (err) {
-                    tags.error = err.message
+                    tags.error = err.message;
                     console.error("Failed to create instance", err);
-                    await this.backend.deleteWorker(newWorker.id)
+                    await this.backend.deleteWorker(newWorker.id);
                     break;
                 } finally {
-                    this.metricsClient.addMetric("vast_engine.create", 1, "count", tags)
+                    this.metricsClient.addMetric(
+                        "vast_engine.create",
+                        1,
+                        "count",
+                        tags
+                    );
                 }
-                
             } else {
                 try {
-                    const worker = workers.find(worker => worker.id === operation.targetId)
+                    const worker = workers.find(
+                        (worker) => worker.id === operation.targetId
+                    );
                     await this.client.deleteInstance(worker.cloud_instance_id);
-                    await sleep(1000)
+                    await sleep(1000);
                     await this.backend.deleteWorker(worker.id);
                     if (operation.block) {
-                        await this.backend.blockWorker(worker.cloud_instance_id, TYPE_VASTAI, this.clock.now())
+                        await this.backend.blockWorker(
+                            worker.cloud_instance_id,
+                            TYPE_VASTAI,
+                            this.clock.now()
+                        );
                     }
-                    workers.splice(workers.indexOf(worker), 1)
+                    workers.splice(workers.indexOf(worker), 1);
                 } catch (err) {
-                    tags.error = err.message
+                    tags.error = err.message;
                     console.error("Failed to delete instance", err);
-                    throw err
+                    throw err;
                 } finally {
-                    this.metricsClient.addMetric("vast_engine.destroy", 1, "count", tags)
+                    this.metricsClient.addMetric(
+                        "vast_engine.destroy",
+                        1,
+                        "count",
+                        tags
+                    );
                 }
-                
             }
         }
         if (operations.length > 0) {
-            await this.backend.setLastEventTime(VASTAI_SCALING_EVENT, this.clock.now().valueOf())
+            await this.backend.setLastEventTime(
+                VASTAI_SCALING_EVENT,
+                this.clock.now().valueOf()
+            );
         }
         return workers.length;
     }
