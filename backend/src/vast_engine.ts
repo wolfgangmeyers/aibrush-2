@@ -223,13 +223,14 @@ export class VastEngine implements ScalingEngine {
         }
         this.metricsClient.addMetric("vast_engine.capacity", numGpus, "gauge", {
             allocated_gpus: allocatedGpus,
+            gpu_type: this.gpuType,
         });
         return Math.ceil(numGpus / gpuMultiplier);
     }
 
     async scale(activeOrders: number): Promise<number> {
         const gpuMultiplier = GPU_PER_ORDER_MULTIPLIERS[this.gpuType];
-        console.log("scaling vast to", activeOrders);
+        console.log(`scaling vast ${this.gpuType} to`, activeOrders);
         this.metricsClient.addMetric(
             "vast_engine.scale",
             activeOrders,
@@ -264,6 +265,7 @@ export class VastEngine implements ScalingEngine {
         for (const operation of operations) {
             const tags: any = {
                 operation_type: operation.operationType,
+                gpu_type: this.gpuType,
             };
             if (operation.operationType === "create") {
                 const newWorker = await this.backend.createWorker(

@@ -1,4 +1,5 @@
-import * as axios from "axios"
+import * as axios from "axios";
+import { sleep } from "./sleep";
 import { ErrorFactory } from "./error_factory";
 
 const serverUrl = "https://vast.ai/api/v0";
@@ -162,13 +163,40 @@ export interface ListInstancesResult {
 }
 
 export class VastAIApi implements VastClient {
-    constructor(private apiKey: string) {
+    constructor(private apiKey: string) {}
 
+    // a generic api call function that retries with an exponential backoff if 429 status
+    private async apiCall(method: string, url: string, data?: any): Promise<any> {
+        const fn = async () => {
+            const r = await axios.default({
+                method: method as any,
+                url,
+                data,
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            return r;
+        };
+        let cooldown = 1;
+        for (let i = 0; i < 3; i++) {
+            try {
+                return await fn();
+            } catch (e) {
+                if (e.response.status === 429) {
+                    if (i === 2) {
+                        throw e;
+                    }
+                    await sleep(cooldown * 1000);
+                    cooldown *= 2;
+                } else {
+                    throw e;
+                }
+            }
+        }
     }
 
     async searchOffers(gpuType: string): Promise<SearchOffersResult> {
-
-
         const q = {
             disk_space: {
                 gte: 10,
@@ -179,8 +207,7 @@ export class VastAIApi implements VastClient {
             duration: {
                 gte: 259200.0000000001,
             },
-            datacenter: {
-            },
+            datacenter: {},
             verified: {
                 eq: true,
             },
@@ -202,65 +229,91 @@ export class VastAIApi implements VastClient {
             inet_down: {
                 gte: 200.000000000000002,
             },
-            order: [
-                [
-                    "score",
-                    "desc",
-                ],
-            ],
+            order: [["score", "desc"]],
             allocated_storage: 10,
             cuda_max_good: {
                 gte: 11,
             },
             type: "ask",
             gpu_name: {
-                eq: gpuType
+                eq: gpuType,
             },
-        }
+        };
 
         const qjson = JSON.stringify(q);
         const urlEncodedQ = encodeURIComponent(qjson);
-        const result = await axios.default.get(`${serverUrl}/bundles/?api_key=${this.apiKey}&q=${urlEncodedQ}`)
-        const offers = (result.data as SearchOffersResult).offers.filter(offer => {
-            const cpus = offer.cpu_cores
-            const cpus_effective = offer.cpu_cores_effective
-            const ratio = cpus_effective / cpus
-            const ram_effective = offer.cpu_ram * ratio
-            return ram_effective >= 30000
-        })
+        // const result = await axios.default.get(
+        //     `${serverUrl}/bundles/?api_key=${this.apiKey}&q=${urlEncodedQ}`
+        // );
+        const result = await this.apiCall(
+            "get",
+            `${serverUrl}/bundles/?api_key=${this.apiKey}&q=${urlEncodedQ}`
+        );
+        const offers = (result.data as SearchOffersResult).offers.filter(
+            (offer) => {
+                const cpus = offer.cpu_cores;
+                const cpus_effective = offer.cpu_cores_effective;
+                const ratio = cpus_effective / cpus;
+                const ram_effective = offer.cpu_ram * ratio;
+                return ram_effective >= 30000;
+            }
+        );
         return {
-            offers
-        }
+            offers,
+        };
     }
 
-    async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<CreateInstanceResult> {
-        const url = `${serverUrl}/asks/${askId}/?api_key=${this.apiKey}`
-        const r = await axios.default.put(url, {
-            client_id: "me",
-            image: image,
-            env: env,
-            onstart: onStart,
-            args_str: "",
-            runtype: "ssh_proxy",
-            use_jupyter_lab: false,
-        }, {
-            headers: {
-                "Content-Type": "application/json",
+    async createInstance(
+        askId: string,
+        image: string,
+        onStart: string,
+        env: { [key: string]: string }
+    ): Promise<CreateInstanceResult> {
+        const url = `${serverUrl}/asks/${askId}/?api_key=${this.apiKey}`;
+        // const r = await axios.default.put(
+        //     url,
+        //     {
+        //         client_id: "me",
+        //         image: image,
+        //         env: env,
+        //         onstart: onStart,
+        //         args_str: "",
+        //         runtype: "ssh_proxy",
+        //         use_jupyter_lab: false,
+        //     },
+        //     {
+        //         headers: {
+        //             "Content-Type": "application/json",
+        //         },
+        //     }
+        // );
+        const r = await this.apiCall(
+            "put",
+            url,
+            {
+                client_id: "me",
+                image: image,
+                env: env,
+                onstart: onStart,
+                args_str: "",
+                runtype: "ssh_proxy",
+                use_jupyter_lab: false,
             }
-        });
+        );
         return r.data as any;
     }
 
     // list instances
     async listInstances(): Promise<ListInstancesResult> {
-        const url = `${serverUrl}/instances/?api_key=${this.apiKey}`
-        const r = await axios.default.get(url);
+        const url = `${serverUrl}/instances/?api_key=${this.apiKey}`;
+        // const r = await axios.default.get(url);
+        const r = await this.apiCall("get", url);
         return r.data;
     }
 
-    async listInstancesById(): Promise<{[key: string]: Instance}> {
+    async listInstancesById(): Promise<{ [key: string]: Instance }> {
         const instances = await this.listInstances();
-        const result: {[key: string]: Instance} = {};
+        const result: { [key: string]: Instance } = {};
         for (const instance of instances.instances) {
             result[instance.id] = instance;
         }
@@ -269,11 +322,13 @@ export class VastAIApi implements VastClient {
 
     // delete instance
     async deleteInstance(instanceId: string) {
-        const url = `${serverUrl}/instances/${instanceId}/?api_key=${this.apiKey}`
-        const r = await axios.default.delete(url);
+        const url = `${serverUrl}/instances/${instanceId}/?api_key=${this.apiKey}`;
+        // const r = await axios.default.delete(url);
+        const r = await this.apiCall("delete", url);
         return r.data;
     }
 
+    
 }
 
 export class MockVastAPI implements VastClient {
@@ -293,13 +348,18 @@ export class MockVastAPI implements VastClient {
 
     async searchOffers(gpuType: string): Promise<SearchOffersResult> {
         return {
-            offers: this.offers.filter(offer => offer.gpu_name === gpuType),
-        }
+            offers: this.offers.filter((offer) => offer.gpu_name === gpuType),
+        };
     }
 
-    async createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<CreateInstanceResult> {
+    async createInstance(
+        askId: string,
+        image: string,
+        onStart: string,
+        env: { [key: string]: string }
+    ): Promise<CreateInstanceResult> {
         if (this.errFactory) {
-            const err = this.errFactory.error()
+            const err = this.errFactory.error();
             if (err) {
                 throw err;
             }
@@ -319,7 +379,7 @@ export class MockVastAPI implements VastClient {
         } as any;
         this.instances.push(instance);
         // remove offer
-        this._offers = this.offers.filter(o => o.id !== id);
+        this._offers = this.offers.filter((o) => o.id !== id);
         return {
             success: true,
             new_contract: id,
@@ -329,12 +389,12 @@ export class MockVastAPI implements VastClient {
     async listInstances(): Promise<ListInstancesResult> {
         return {
             instances: this.instances,
-        }
+        };
     }
 
-    async listInstancesById(): Promise<{[key: string]: Instance}> {
+    async listInstancesById(): Promise<{ [key: string]: Instance }> {
         const instances = await this.listInstances();
-        const result: {[key: string]: Instance} = {};
+        const result: { [key: string]: Instance } = {};
         for (const instance of instances.instances) {
             result[instance.id] = instance;
         }
@@ -343,14 +403,19 @@ export class MockVastAPI implements VastClient {
 
     async deleteInstance(instanceId: string) {
         const id = parseInt(instanceId);
-        this._instances = this.instances.filter(i => i.id !== id);
+        this._instances = this.instances.filter((i) => i.id !== id);
     }
 }
 
 export interface VastClient {
     searchOffers(gpuType: string): Promise<SearchOffersResult>;
-    createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<CreateInstanceResult>;
+    createInstance(
+        askId: string,
+        image: string,
+        onStart: string,
+        env: { [key: string]: string }
+    ): Promise<CreateInstanceResult>;
     listInstances(): Promise<ListInstancesResult>;
-    listInstancesById(): Promise<{[key: string]: Instance}>;
+    listInstancesById(): Promise<{ [key: string]: Instance }>;
     deleteInstance(instanceId: string): Promise<void>;
 }
