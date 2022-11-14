@@ -166,7 +166,7 @@ export class VastAIApi implements VastClient {
 
     }
 
-    async searchOffers(): Promise<SearchOffersResult> {
+    async searchOffers(gpuType: string): Promise<SearchOffersResult> {
 
 
         const q = {
@@ -214,7 +214,7 @@ export class VastAIApi implements VastClient {
             },
             type: "ask",
             gpu_name: {
-                eq: "RTX 3090"
+                eq: gpuType
             },
         }
 
@@ -276,7 +276,7 @@ export class VastAIApi implements VastClient {
 
 }
 
-export class MockVastAPI {
+export class MockVastAPI implements VastClient {
     // laziness that allows lax test data
     _offers: any = [];
     _instances: any = [];
@@ -291,9 +291,9 @@ export class MockVastAPI {
         return this._instances;
     }
 
-    async searchOffers(): Promise<SearchOffersResult> {
+    async searchOffers(gpuType: string): Promise<SearchOffersResult> {
         return {
-            offers: this.offers,
+            offers: this.offers.filter(offer => offer.gpu_name === gpuType),
         }
     }
 
@@ -348,7 +348,7 @@ export class MockVastAPI {
 }
 
 export interface VastClient {
-    searchOffers(): Promise<SearchOffersResult>;
+    searchOffers(gpuType: string): Promise<SearchOffersResult>;
     createInstance(askId: string, image: string, onStart: string, env: {[key: string]: string}): Promise<CreateInstanceResult>;
     listInstances(): Promise<ListInstancesResult>;
     listInstancesById(): Promise<{[key: string]: Instance}>;

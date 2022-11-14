@@ -958,6 +958,8 @@ components:
           type: integer
         cloud_instance_id:
           type: string
+        gpu_type:
+          type: string
       required:
         - id
         - created_at

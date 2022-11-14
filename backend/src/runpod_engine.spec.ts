@@ -329,7 +329,6 @@ describe("Runpod Scaling Engine Calculations", () => {
                 {
                     targetId: "worker-1",
                     operationType: "destroy",
-                    block: true,
                 },
             ],
         },
@@ -353,7 +352,6 @@ describe("Runpod Scaling Engine Calculations", () => {
                 {
                     targetId: "worker-1",
                     operationType: "destroy",
-                    block: true,
                 },
             ],
         },
@@ -847,7 +845,8 @@ describe("RunpodEngine", () => {
                 worker.id,
                 TYPE_RUNPOD,
                 2,
-                "pod-id"
+                "pod-id",
+                "NVIDIA GeForce RTX 3090",
             );
             expect(await runpodEngine.scale(1)).toEqual(1);
             expect(mockRunpodClient._pods).toEqual([
@@ -892,7 +891,8 @@ describe("RunpodEngine", () => {
                 worker.id,
                 TYPE_RUNPOD,
                 2,
-                "pod-id"
+                "pod-id",
+                "NVIDIA GeForce RTX 3090",
             );
             // set the last scaling operation to 10 minutes ago
             await backendService.setLastEventTime(
@@ -929,7 +929,8 @@ describe("RunpodEngine", () => {
                 worker.id,
                 TYPE_RUNPOD,
                 2,
-                "pod-id"
+                "pod-id",
+                "NVIDIA GeForce RTX 3090",
             );
             // set the last scaling operation to 1 minute ago
             await backendService.setLastEventTime(
@@ -980,7 +981,8 @@ describe("RunpodEngine", () => {
                 worker.id,
                 TYPE_RUNPOD,
                 2,
-                "pod-id"
+                "pod-id",
+                "NVIDIA GeForce RTX 3090",
             );
             clock._now = moment().add(10, "minutes");
             expect(await runpodEngine.scale(1)).toEqual(0);

@@ -14,6 +14,12 @@ const WORKER_COMMAND = "/app/aibrush-2/worker/images_worker.sh";
 const WORKER_IMAGE = "wolfgangmeyers/aibrush:latest";
 export const VASTAI_SCALING_EVENT = "vastai_scaling_event";
 
+const GPU_PER_ORDER_MULTIPLIERS = {
+    "RTX 3090": 2,
+    "RTX A5000": 2,
+    "RTX A6000": 1,
+};
+
 export interface ScalingOperation {
     targetId: string;
     operationType: "create" | "destroy";
@@ -193,14 +199,17 @@ export class VastEngine implements ScalingEngine {
         private client: VastClient,
         private backend: BackendService,
         private clock: Clock,
-        private metricsClient: MetricsClient
+        private metricsClient: MetricsClient,
+        private gpuType: string,
     ) {}
 
     async capacity(): Promise<number> {
-        const offers = await this.client.searchOffers();
+        const gpuMultiplier = GPU_PER_ORDER_MULTIPLIERS[this.gpuType];
+        const offers = await this.client.searchOffers(this.gpuType);
         await sleep(1000);
-        const instances = await this.client.listInstances();
-        await sleep(1000);
+        const workers = (await this.backend.listWorkers()).filter(
+            (worker) => worker.engine === TYPE_VASTAI && worker.gpu_type === this.gpuType
+        )
 
         // add up all the gpus
         let numGpus = 0;
@@ -208,17 +217,18 @@ export class VastEngine implements ScalingEngine {
             numGpus += offer.num_gpus;
         }
         let allocatedGpus = 0;
-        for (const instance of instances.instances) {
-            numGpus += instance.num_gpus;
-            allocatedGpus += instance.num_gpus;
+        for (const worker of workers) {
+            numGpus += worker.num_gpus;
+            allocatedGpus += worker.num_gpus;
         }
         this.metricsClient.addMetric("vast_engine.capacity", numGpus, "gauge", {
             allocated_gpus: allocatedGpus,
         });
-        return Math.ceil(numGpus / 2);
+        return Math.ceil(numGpus / gpuMultiplier);
     }
 
     async scale(activeOrders: number): Promise<number> {
+        const gpuMultiplier = GPU_PER_ORDER_MULTIPLIERS[this.gpuType];
         console.log("scaling vast to", activeOrders);
         this.metricsClient.addMetric(
             "vast_engine.scale",
@@ -226,7 +236,7 @@ export class VastEngine implements ScalingEngine {
             "gauge",
             {}
         );
-        const targetGpus = activeOrders * 2;
+        const targetGpus = activeOrders * gpuMultiplier;
         const blockedWorkerIds = new Set(
             await this.backend.listBlockedWorkerIds(
                 TYPE_VASTAI,
@@ -234,10 +244,10 @@ export class VastEngine implements ScalingEngine {
             )
         );
         const workers = (await this.backend.listWorkers()).filter(
-            (worker) => worker.engine === TYPE_VASTAI
+            (worker) => worker.engine === TYPE_VASTAI && worker.gpu_type === this.gpuType
         );
 
-        const offers = (await this.client.searchOffers()).offers.filter(
+        const offers = (await this.client.searchOffers(this.gpuType)).offers.filter(
             (offer) => !blockedWorkerIds.has(offer.id.toString())
         );
         await sleep(1000);
@@ -297,7 +307,8 @@ export class VastEngine implements ScalingEngine {
                             newWorker.id,
                             TYPE_VASTAI,
                             instance.num_gpus,
-                            instance.id.toString()
+                            instance.id.toString(),
+                            this.gpuType,
                         );
                     workers.push(updatedWorker);
                 } catch (err) {
@@ -349,6 +360,10 @@ export class VastEngine implements ScalingEngine {
                 this.clock.now().valueOf()
             );
         }
-        return workers.length;
+        let workerGpus = 0;
+        for (let worker of workers) {
+            workerGpus += worker.num_gpus;
+        }
+        return Math.ceil(workerGpus / gpuMultiplier);
     }
 }

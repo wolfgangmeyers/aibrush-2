@@ -263,7 +263,7 @@ export class RunpodEngine implements ScalingEngine {
         const workersPromise = this.backend.listWorkers();
         const gpuTypes = await gpuTypesPromise;
         const workers = (await workersPromise).filter(
-            (worker) => worker.engine === TYPE_RUNPOD
+            (worker) => worker.engine === TYPE_RUNPOD && worker.gpu_type === this.gpuType
         );
         // add up all the gpus
         let numGpus = 0;
@@ -304,7 +304,7 @@ export class RunpodEngine implements ScalingEngine {
         );
         const targetGpus = activeOrders * gpuMultiplier;
         const workers = (await this.backend.listWorkers()).filter(
-            (worker) => worker.engine === TYPE_RUNPOD
+            (worker) => worker.engine === TYPE_RUNPOD && worker.gpu_type === this.gpuType
         );
         const gpuTypes = await this.getGpuTypes();
         const lastScalingOperation = moment(
@@ -356,7 +356,8 @@ export class RunpodEngine implements ScalingEngine {
                             newWorker.id,
                             TYPE_RUNPOD,
                             operation.gpuCount,
-                            result.id
+                            result.id,
+                            this.gpuType,
                         );
                     workers.push(updatedWorker);
                 } catch (err) {
@@ -402,6 +403,10 @@ export class RunpodEngine implements ScalingEngine {
                 this.clock.now().valueOf()
             );
         }
-        return workers.length;
+        let workerGpus = 0;
+        for (let worker of workers) {
+            workerGpus += worker.num_gpus;
+        }
+        return Math.ceil(workerGpus / gpuMultiplier);
     }
 }

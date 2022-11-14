@@ -18,43 +18,41 @@ export function getScalingEngines(
 ): ScalingEngine[] {
     const result: ScalingEngine[] = [];
     if (process.env.VAST_API_KEY) {
-        // TODO: add one engine per gpu type
-        // TODO: configure different price tolerance per GPU type
-        // in this order:
-        // A5000
-        // RTX 3090
-        // A6000
-        // result.push(
-        //     new VastEngine(
-        //         new VastAIApi(process.env.VAST_API_KEY),
-        //         backendService,
-        //         new RealClock(),
-        //         metricsClient
-        //     )
-        // );
+        for (let gpuType of ["RTX A5000", "RTX 3090", "RTX A6000"]) {
+            result.push(
+                new VastEngine(
+                    new VastAIApi(process.env.VAST_API_KEY),
+                    backendService,
+                    new RealClock(),
+                    metricsClient,
+                    gpuType,
+                )
+            );
+        }
     }
     if (process.env.RUNPOD_API_KEY) {
-        result.push(
-            // TODO: add one engine per gpu type
-            new RunpodEngine(
-                new RunpodApi(process.env.RUNPOD_API_KEY),
-                backendService,
-                new RealClock(),
-                metricsClient,
-                "NVIDIA GeForce RTX 3090"
+        for (let gpuType of ["NVIDIA RTX A5000", "NVIDIA GeForce RTX 3090", "NVIDIA RTX A6000"]) {
+            result.push(
+                new RunpodEngine(
+                    new RunpodApi(process.env.RUNPOD_API_KEY),
+                    backendService,
+                    new RealClock(),
+                    metricsClient,
+                    gpuType as any,
+                )
             )
-        )
+        }
     }
     // // these are all A10G GPUs
-    // result.push(
-    //     new Ec2Engine(
-    //         new EC2ClientImpl(),
-    //         backendService,
-    //         new RealClock(),
-    //         metricsClient,
-    //         "us-west-2"
-    //     )
-    // )
+    result.push(
+        new Ec2Engine(
+            new EC2ClientImpl(),
+            backendService,
+            new RealClock(),
+            metricsClient,
+            "us-west-2"
+        )
+    )
     return result;
 }
 

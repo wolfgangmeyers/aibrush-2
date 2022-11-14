@@ -664,12 +664,12 @@ export class BackendService {
         }
     }
 
-    async updateWorkerDeploymentInfo(workerId: string, engine: string, numGpus: number, cloudInstanceId: string): Promise<Worker> {
+    async updateWorkerDeploymentInfo(workerId: string, engine: string, numGpus: number, cloudInstanceId: string, gpuType: string): Promise<Worker> {
         const client = await this.pool.connect()
         try {
             const result = await client.query(
-                `UPDATE workers SET engine = $1, num_gpus = $2, cloud_instance_id = $3 WHERE id = $4 RETURNING *`,
-                [engine, numGpus, cloudInstanceId, workerId]
+                `UPDATE workers SET engine = $1, num_gpus = $2, cloud_instance_id = $3, gpu_type = $4 WHERE id = $5 RETURNING *`,
+                [engine, numGpus, cloudInstanceId, gpuType, workerId]
             )
             return result.rows[0]
         } finally {

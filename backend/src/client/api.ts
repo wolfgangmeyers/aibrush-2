@@ -1033,6 +1033,12 @@ export interface Worker {
      * @memberof Worker
      */
     'cloud_instance_id'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Worker
+     */
+    'gpu_type'?: string;
 }
 
 export const WorkerStatusEnum = {

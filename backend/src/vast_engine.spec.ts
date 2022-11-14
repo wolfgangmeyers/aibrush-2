@@ -669,7 +669,8 @@ describe("VastEngine", () => {
             mockVastClient,
             backendService,
             clock,
-            new MetricsClient("")
+            new MetricsClient(""),
+            "RTX 3090"
         );
         await backendService.createUser("admin@test.test");
     });
@@ -705,6 +706,7 @@ describe("VastEngine", () => {
                     id: 1,
                     num_gpus: 1,
                     dph_total: 0.3,
+                    gpu_name: "RTX 3090",
                 },
             ];
             expect(await vastEngine.scale(0)).toEqual(0);
@@ -714,6 +716,7 @@ describe("VastEngine", () => {
                     id: 1,
                     num_gpus: 1,
                     dph_total: 0.3,
+                    gpu_name: "RTX 3090",
                 },
             ]);
             const workerResult = await backendService.listWorkers();
@@ -728,6 +731,7 @@ describe("VastEngine", () => {
                     id: 1,
                     num_gpus: 1,
                     dph_total: 0.3,
+                    gpu_name: "RTX 3090",
                 },
             ];
             expect(await vastEngine.scale(1)).toEqual(1);
@@ -764,6 +768,7 @@ describe("VastEngine", () => {
                     id: 2,
                     num_gpus: 1,
                     dph_total: 0.3,
+                    gpu_name: "RTX 3090",
                 },
             ];
             mockVastClient._instances = [
@@ -778,7 +783,8 @@ describe("VastEngine", () => {
                 worker.id,
                 TYPE_VASTAI,
                 2,
-                "1"
+                "1",
+                "RTX 3090",
             );
             expect(await vastEngine.scale(1)).toEqual(1);
             expect(mockVastClient.instances).toEqual([
@@ -793,6 +799,7 @@ describe("VastEngine", () => {
                     id: 2,
                     num_gpus: 1,
                     dph_total: 0.3,
+                    gpu_name: "RTX 3090",
                 },
             ]);
             const workerResult = await backendService.listWorkers();
@@ -814,7 +821,8 @@ describe("VastEngine", () => {
                 worker.id,
                 TYPE_VASTAI,
                 2,
-                "1"
+                "1",
+                "RTX 3090",
             );
             // set the last scaling operation to 10 minutes ago
             await backendService.setLastEventTime(
@@ -843,7 +851,8 @@ describe("VastEngine", () => {
                 worker.id,
                 TYPE_VASTAI,
                 2,
-                "1"
+                "1",
+                "RTX 3090",
             );
             // set the last scaling operation to 1 minute ago
             await backendService.setLastEventTime(
@@ -878,7 +887,8 @@ describe("VastEngine", () => {
                 worker.id,
                 TYPE_VASTAI,
                 2,
-                "1"
+                "1",
+                "RTX 3090",
             );
             clock._now = moment().add(10, "minutes");
             expect(await vastEngine.scale(1)).toEqual(0);
@@ -902,6 +912,7 @@ describe("VastEngine", () => {
                     id: 1,
                     num_gpus: 1,
                     dph_total: 0.3,
+                    gpu_name: "RTX 3090",
                 },
             ];
             await backendService.blockWorker("1", TYPE_VASTAI, clock.now());
@@ -912,6 +923,7 @@ describe("VastEngine", () => {
                     id: 1,
                     num_gpus: 1,
                     dph_total: 0.3,
+                    gpu_name: "RTX 3090",
                 },
             ]);
             const workerResult = await backendService.listWorkers();
@@ -926,6 +938,7 @@ describe("VastEngine", () => {
                     id: 1,
                     num_gpus: 1,
                     dph_total: 0.3,
+                    gpu_name: "RTX 3090",
                 },
             ];
             mockVastClient.errFactory = new ErrorFactory([new Error("nope")]);
@@ -936,6 +949,7 @@ describe("VastEngine", () => {
                     id: 1,
                     num_gpus: 1,
                     dph_total: 0.3,
+                    gpu_name: "RTX 3090",
                 },
             ]);
             const workerResult = await backendService.listWorkers();

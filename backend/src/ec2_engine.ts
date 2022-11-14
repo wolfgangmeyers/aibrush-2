@@ -36,7 +36,7 @@ export class Ec2Engine implements ScalingEngine {
             {}
         );
         const workers = (await this.backend.listWorkers()).filter(
-            (worker) => worker.engine == TYPE_EC2
+            (worker) => worker.engine == TYPE_EC2 && worker.gpu_type === "A10G"
         );
         let scaled = false;
         while (workers.length < activeOrders) {
@@ -59,7 +59,8 @@ export class Ec2Engine implements ScalingEngine {
                         worker.id,
                         TYPE_EC2,
                         1,
-                        instanceId
+                        instanceId,
+                        "A10G",
                     )
                 );
             } catch (err) {

@@ -68,7 +68,8 @@ describe("EC2Engine", () => {
                 worker.id,
                 TYPE_EC2,
                 1,
-                "i-1234567890"
+                "i-1234567890",
+                "A10G",
             )
             mockEc2Client._instances.push({
                 InstanceId: "i-1234567890",
@@ -87,7 +88,8 @@ describe("EC2Engine", () => {
                 worker.id,
                 TYPE_EC2,
                 1,
-                "i-1234567890"
+                "i-1234567890",
+                "A10G",
             )
             mockEc2Client._instances.push({
                 InstanceId: "i-1234567890",
@@ -106,7 +108,8 @@ describe("EC2Engine", () => {
                 worker.id,
                 "VASTAI",
                 1,
-                "i-1234567890"
+                "i-1234567890",
+                "A10G",
             )
             mockEc2Client._instances.push({
                 InstanceId: "i-1234567890",
@@ -125,7 +128,8 @@ describe("EC2Engine", () => {
                 worker.id,
                 TYPE_EC2,
                 1,
-                "i-1234567890"
+                "i-1234567890",
+                "A10G",
             )
             mockEc2Client._instances.push({
                 InstanceId: "i-1234567890",
@@ -146,7 +150,8 @@ describe("EC2Engine", () => {
                     worker.id,
                     TYPE_EC2,
                     1,
-                    instanceId
+                    instanceId,
+                    "A10G",
                 )
                 mockEc2Client._instances.push({
                     InstanceId: instanceId,
@@ -166,7 +171,8 @@ describe("EC2Engine", () => {
                 worker.id,
                 TYPE_EC2,
                 1,
-                "i-1234567890"
+                "i-1234567890",
+                "A10G",
             )
             mockEc2Client._instances.push({
                 InstanceId: "i-1234567890",
