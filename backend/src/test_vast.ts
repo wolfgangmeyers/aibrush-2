@@ -14,7 +14,7 @@ const api = new VastAIApi(apiKey);
 
 const main = async () => {
     try {
-        const result = await api.searchOffers();
+        const result = await api.searchOffers("RTX 3090");
         let total_gpus = 0
         for (const offer of result.offers) {
             console.log({
