@@ -107,11 +107,12 @@ export class ScalingService {
                 }
                 
                 for (const engine of this.engines) {
+                    const capacity = await engine.capacity();
                     if (unallocated <= 0) {
                         await engine.scale(0);
                         continue;
                     }
-                    const capacity = await engine.capacity();
+                    
                     // An attempt not to gobble up every single machine
                     // in a given engine with limited capacity
                     const maxAllocation = Math.ceil(
