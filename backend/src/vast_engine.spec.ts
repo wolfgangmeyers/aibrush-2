@@ -769,7 +769,7 @@ describe("VastEngine", () => {
             mockVastClient._instances = [
                 {
                     id: 1,
-                    num_gpus: 1,
+                    num_gpus: 2,
                     dph_total: 0.3,
                 },
             ];
@@ -784,7 +784,7 @@ describe("VastEngine", () => {
             expect(mockVastClient.instances).toEqual([
                 {
                     id: 1,
-                    num_gpus: 1,
+                    num_gpus: 2,
                     dph_total: 0.3,
                 },
             ]);

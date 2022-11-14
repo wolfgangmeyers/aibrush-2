@@ -7,8 +7,8 @@ const main = async () => {
     try {
         const result = await api.getCommunityGpuTypes(
             {
-                // id: "NVIDIA GeForce RTX 3090",
-                id: "NVIDIA A100 80GB PCIe",
+                id: "NVIDIA GeForce RTX 3090",
+                // id: "NVIDIA A100 80GB PCIe",
             },
             {
                 minDownload: 100,

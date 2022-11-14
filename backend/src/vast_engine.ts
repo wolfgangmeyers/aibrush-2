@@ -213,7 +213,7 @@ export class VastEngine implements ScalingEngine {
             allocatedGpus += instance.num_gpus;
         }
         this.metricsClient.addMetric("vast_engine.capacity", numGpus, "gauge", {
-            allocated_gpus: allocatedGpus.toString(),
+            allocated_gpus: allocatedGpus,
         });
         return Math.ceil(numGpus / 2);
     }

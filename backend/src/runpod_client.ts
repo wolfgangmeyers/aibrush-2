@@ -54,7 +54,7 @@ export interface CreatePodInput {
     ports: string;
     volumeMountPath: string;
     env: Array<{key: string, value: string}>;
-    templateId: string;
+    templateId?: string;
 }
 
 interface CreatePodResult {
@@ -234,7 +234,7 @@ export class MockRunpodApi implements RunpodClient {
             }
         }
         const pod: Pod = {
-            id: input.name,
+            id: "pod-id",
             name: input.name,
             runtime: {
                 uptimeInSeconds: 0,
@@ -248,7 +248,7 @@ export class MockRunpodApi implements RunpodClient {
         } as any;
         this._pods.push(pod);
         return {
-            id: uuid.v4(),
+            id: "pod-id",
             imageName: input.imageName,
             env: [],
             machine: {

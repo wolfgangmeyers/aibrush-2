@@ -2,12 +2,13 @@ import moment from "moment";
 import { BackendService } from "./backend";
 import { Clock } from "./clock";
 import { MetricsClient } from "./metrics";
-import { RunpodClient } from "./runpod_client";
+import { GpuTypesResult, RunpodClient } from "./runpod_client";
 import { ScalingEngine } from "./scaling_engine";
 
 export const SCALEDOWN_COOLDOWN = moment.duration(10, "minutes");
 export const WORKER_TIMEOUT = moment.duration(10, "minutes");
 export const RUNPOD_SCALING_EVENT = "runpod_scaling_event";
+export const TYPE_RUNPOD = "runpod";
 
 export interface ScalingOperation {
     targetId: string;
@@ -77,7 +78,6 @@ export function calculateScalingOperations(
             operations.push({
                 targetId: worker.id,
                 operationType: "destroy",
-                block: true,
             });
         } else if (worker.num_gpus) {
             numGpus += worker.num_gpus;
@@ -215,14 +215,178 @@ export class RunpodEngine implements ScalingEngine {
         private backend: BackendService,
         private clock: Clock,
         private metricsClient: MetricsClient,
-        private gpuType: "NVIDIA GeForce RTX 3090" | "NVIDIA RTX A5000" | "NVIDIA RTX A6000",
+        private gpuType:
+            | "NVIDIA GeForce RTX 3090"
+            | "NVIDIA RTX A5000"
+            | "NVIDIA RTX A6000"
     ) {}
 
-    capacity(): Promise<number> {
-        throw new Error("Method not implemented.");
+    private async getGpuTypes(): Promise<GPUType[]> {
+        const promises: Array<Promise<GpuTypesResult>> = [];
+        for (let i = 1; i <= 8; i++) {
+            promises.push(
+                this.client.getCommunityGpuTypes(
+                    {
+                        id: this.gpuType,
+                    },
+                    {
+                        minDownload: 100,
+                        minUpload: 10,
+                        minMemoryInGb: 20,
+                        gpuCount: i,
+                        minVcpuCount: 1,
+                        secureCloud: false,
+                        supportPublicIp: false,
+                    }
+                )
+            );
+        }
+        const results = await Promise.all(promises);
+        return results.flatMap((result) => result.gpuTypes);
     }
 
-    scale(activeOrders: number): Promise<number> {
-        throw new Error("Method not implemented.");
+    async capacity(): Promise<number> {
+        const gpuTypesPromise: Promise<GPUType[]> = this.getGpuTypes();
+        const workersPromise = this.backend.listWorkers();
+        const gpuTypes = await gpuTypesPromise;
+        const workers = (await workersPromise).filter(
+            (worker) => worker.engine === TYPE_RUNPOD
+        );
+        // add up all the gpus
+        let numGpus = 0;
+        let allocatedGpus = 0;
+        for (const worker of workers) {
+            if (worker.num_gpus) {
+                numGpus += worker.num_gpus;
+                allocatedGpus += worker.num_gpus;
+            }
+        }
+        for (const gpuType of gpuTypes) {
+            if (gpuType.lowestPrice.stockStatus) {
+                numGpus +=
+                    AVAILABILITY_MAP[gpuType.lowestPrice.stockStatus] *
+                    gpuType.maxGpuCount;
+            }
+        }
+        this.metricsClient.addMetric(
+            "runpod_engine.capacity",
+            numGpus,
+            "gauge",
+            {
+                allocated_gpus: allocatedGpus,
+            }
+        );
+        const gpuMultiplier = GPU_PER_ORDER_MULTIPLIERS[this.gpuType];
+        return Math.ceil(numGpus / gpuMultiplier);
+    }
+
+    async scale(activeOrders: number): Promise<number> {
+        console.log("scaling runpod to", activeOrders);
+        const gpuMultiplier = GPU_PER_ORDER_MULTIPLIERS[this.gpuType];
+        this.metricsClient.addMetric(
+            "runpod_engine.scale",
+            activeOrders,
+            "gauge",
+            {}
+        );
+        const targetGpus = activeOrders * gpuMultiplier;
+        const workers = (await this.backend.listWorkers()).filter(
+            (worker) => worker.engine === TYPE_RUNPOD
+        );
+        const gpuTypes = await this.getGpuTypes();
+        const lastScalingOperation = moment(
+            await this.backend.getLastEventTime(RUNPOD_SCALING_EVENT)
+        );
+        const operations = calculateScalingOperations(
+            workers,
+            gpuTypes,
+            targetGpus,
+            lastScalingOperation,
+            this.clock
+        );
+        for (const operation of operations) {
+            const tags: any = {
+                operation_type: operation.operationType,
+            };
+            if (operation.operationType === "create") {
+                const newWorker = await this.backend.createWorker(
+                    "Runpod Worker"
+                );
+                const loginCode = await this.backend.generateWorkerLoginCode(
+                    newWorker.id
+                );
+
+                try {
+                    const result = await this.client.createPod({
+                        cloudType: "COMMUNITY",
+                        gpuCount: operation.gpuCount,
+                        volumeInGb: 0,
+                        containerDiskInGb: 1,
+                        minVcpuCount: 1,
+                        minMemoryInGb: 20,
+                        gpuTypeId: operation.targetId,
+                        name: "AiBrush Worker",
+                        dockerArgs: "/app/aibrush-2/worker/images_worker.sh",
+                        imageName: "wolfgangmeyers/aibrush:latest",
+                        ports: "",
+                        env: [
+                            {
+                                key: "WORKER_LOGIN_CODE",
+                                value: loginCode.login_code,
+                            },
+                        ],
+                        volumeMountPath: "",
+                    });
+                    const updatedWorker = await this.backend.updateWorkerDeploymentInfo(
+                        newWorker.id,
+                        TYPE_RUNPOD,
+                        operation.gpuCount,
+                        result.id,
+                    )
+                    workers.push(updatedWorker);
+                } catch (err) {
+                    tags.error = err.message;
+                    console.error("Failed to create instance", err);
+                    await this.backend.deleteWorker(newWorker.id);
+                    break;
+                } finally {
+                    this.metricsClient.addMetric(
+                        "runpod_engine.create",
+                        1,
+                        "count",
+                        tags
+                    );
+                }
+            } else {
+                try {
+                    const worker = workers.find(
+                        (worker) => worker.id === operation.targetId
+                    );
+                    await this.client.terminatePod({
+                        podId: worker.cloud_instance_id
+                    });
+                    await this.backend.deleteWorker(worker.id);
+                    workers.splice(workers.indexOf(worker), 1);
+                } catch (err) {
+                    tags.error = err.message;
+                    console.error("Failed to delete instance", err);
+                    throw err;
+                } finally {
+                    this.metricsClient.addMetric(
+                        "runpod_engine.destroy",
+                        1,
+                        "count",
+                        tags
+                    );
+                }
+            }
+        }
+        if (operations.length > 0) {
+            await this.backend.setLastEventTime(
+                RUNPOD_SCALING_EVENT,
+                this.clock.now().valueOf()
+            )
+        }
+        return workers.length;
     }
 }
