@@ -3,6 +3,8 @@ import { BackendService, SCALING_KEY } from "./backend";
 import { RealClock } from "./clock";
 import { EC2ClientImpl, Ec2Engine } from "./ec2_engine";
 import { MetricsClient } from "./metrics";
+import { RunpodApi } from "./runpod_client";
+import { RunpodEngine } from "./runpod_engine";
 import { ScalingEngine } from "./scaling_engine";
 import { VastAIApi } from "./vast_client";
 import { VastEngine } from "./vast_engine";
@@ -30,6 +32,18 @@ export function getScalingEngines(
                 metricsClient
             )
         );
+    }
+    if (process.env.RUNPOD_API_KEY) {
+        result.push(
+            // TODO: add one engine per gpu type
+            new RunpodEngine(
+                new RunpodApi(process.env.RUNPOD_API_KEY),
+                backendService,
+                new RealClock(),
+                metricsClient,
+                "NVIDIA GeForce RTX 3090"
+            )
+        )
     }
     // these are all A10G GPUs
     result.push(
