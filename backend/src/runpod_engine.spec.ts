@@ -8,10 +8,9 @@ import {
     RunpodEngine,
     TYPE_RUNPOD,
     RUNPOD_SCALING_EVENT,
-    
 } from "./runpod_engine";
 import moment from "moment";
-import {FakeClock, RealClock } from "./clock";
+import { FakeClock, RealClock } from "./clock";
 import { BackendService } from "./backend";
 import { TestHelper } from "./testHelper";
 import { MockRunpodApi } from "./runpod_client";
@@ -43,7 +42,8 @@ function sortOps(operations: Array<ScalingOperation>): Array<ScalingOperation> {
 describe("Runpod Scaling Engine Calculations", () => {
     const testCases: Array<TestCase> = [
         {
-            description: "current=0, available=0, target=0, no scaling operations",
+            description:
+                "current=0, available=0, target=0, no scaling operations",
             workers: [],
             gpuTypes: [],
             targetGpus: 0,
@@ -70,7 +70,8 @@ describe("Runpod Scaling Engine Calculations", () => {
             ],
         },
         {
-            description: "current=1, available=1, target=1, no scaling operations",
+            description:
+                "current=1, available=1, target=1, no scaling operations",
             workers: [
                 {
                     id: "worker-1",
@@ -145,7 +146,8 @@ describe("Runpod Scaling Engine Calculations", () => {
             ],
         },
         {
-            description: "current=2, available=0, target=1, no scaling operations",
+            description:
+                "current=2, available=0, target=1, no scaling operations",
             workers: [
                 {
                     id: "worker-1",
@@ -374,7 +376,7 @@ describe("Runpod Scaling Engine Calculations", () => {
                     lowestPrice: {
                         stockStatus: "Low",
                         uninterruptablePrice: 0.45,
-                    }
+                    },
                 },
             ],
             targetGpus: 1,
@@ -422,7 +424,7 @@ describe("Runpod Scaling Engine Calculations", () => {
                     targetId: "NVIDIA GeForce RTX 3090",
                     operationType: "create",
                     gpuCount: 1,
-                }
+                },
             ],
         },
         {
@@ -473,8 +475,8 @@ describe("Runpod Scaling Engine Calculations", () => {
                     targetId: "NVIDIA GeForce RTX 3090",
                     operationType: "create",
                     gpuCount: 4,
-                }
-            ],  
+                },
+            ],
         },
         {
             description: "current=0, available=4(5),1(1), target=5, scale up",
@@ -679,7 +681,7 @@ describe("Runpod Scaling Engine Calculations", () => {
                 },
             ],
         },
-    ]
+    ];
 
     for (let testCase of testCases) {
         it(testCase.description, () => {
@@ -690,15 +692,11 @@ describe("Runpod Scaling Engine Calculations", () => {
                 testCase.lastScalingOperation,
                 new RealClock()
             );
-            
-            expect(
-                sortOps(actual)
-            ).toEqual(
-                sortOps(testCase.expected)
-            );
-        })
+
+            expect(sortOps(actual)).toEqual(sortOps(testCase.expected));
+        });
     }
-})
+});
 
 describe("RunpodEngine", () => {
     let backendService: BackendService;
@@ -728,7 +726,7 @@ describe("RunpodEngine", () => {
             backendService,
             clock,
             new MetricsClient(""),
-            "NVIDIA GeForce RTX 3090",
+            "NVIDIA GeForce RTX 3090"
         );
         await backendService.createUser("admin@test.test");
     });
@@ -752,8 +750,8 @@ describe("RunpodEngine", () => {
             expect(mockRunpodClient._pods).toEqual([]);
             const workerResult = await backendService.listWorkers();
             expect(workerResult).toEqual([]);
-        })
-    })
+        });
+    });
 
     describe("scale with no workers, one gpu and no orders", () => {
         it("should not scale", async () => {
@@ -772,7 +770,7 @@ describe("RunpodEngine", () => {
             const workerResult = await backendService.listWorkers();
             expect(workerResult).toEqual([]);
         });
-    })
+    });
 
     describe("scale with no workers, one gpu, and one order", () => {
         it("should scale up", async () => {
@@ -806,12 +804,11 @@ describe("RunpodEngine", () => {
                         gpus: [],
                         ports: [],
                         uptimeInSeconds: 0,
-                    }
+                    },
                 },
             ]);
-
         });
-    })
+    });
 
     describe("scale with one worker, one offer and one order", () => {
         it("should not scale", async () => {
@@ -837,7 +834,7 @@ describe("RunpodEngine", () => {
                         gpus: [],
                         ports: [],
                         uptimeInSeconds: 0,
-                    }
+                    },
                 },
             ];
             const worker = await backendService.createWorker("existing");
@@ -846,7 +843,7 @@ describe("RunpodEngine", () => {
                 TYPE_RUNPOD,
                 2,
                 "pod-id",
-                "NVIDIA GeForce RTX 3090",
+                "NVIDIA GeForce RTX 3090"
             );
             expect(await runpodEngine.scale(1)).toEqual(1);
             expect(mockRunpodClient._pods).toEqual([
@@ -861,7 +858,7 @@ describe("RunpodEngine", () => {
                         gpus: [],
                         ports: [],
                         uptimeInSeconds: 0,
-                    }
+                    },
                 },
             ]);
             const workerResult = await backendService.listWorkers();
@@ -883,7 +880,7 @@ describe("RunpodEngine", () => {
                         gpus: [],
                         ports: [],
                         uptimeInSeconds: 0,
-                    }
+                    },
                 },
             ];
             const worker = await backendService.createWorker("existing");
@@ -892,7 +889,7 @@ describe("RunpodEngine", () => {
                 TYPE_RUNPOD,
                 2,
                 "pod-id",
-                "NVIDIA GeForce RTX 3090",
+                "NVIDIA GeForce RTX 3090"
             );
             // set the last scaling operation to 10 minutes ago
             await backendService.setLastEventTime(
@@ -921,7 +918,7 @@ describe("RunpodEngine", () => {
                         gpus: [],
                         ports: [],
                         uptimeInSeconds: 0,
-                    }
+                    },
                 },
             ];
             const worker = await backendService.createWorker("existing");
@@ -930,7 +927,7 @@ describe("RunpodEngine", () => {
                 TYPE_RUNPOD,
                 2,
                 "pod-id",
-                "NVIDIA GeForce RTX 3090",
+                "NVIDIA GeForce RTX 3090"
             );
             // set the last scaling operation to 1 minute ago
             await backendService.setLastEventTime(
@@ -950,7 +947,7 @@ describe("RunpodEngine", () => {
                         gpus: [],
                         ports: [],
                         uptimeInSeconds: 0,
-                    }
+                    },
                 },
             ]);
             const workerResult = await backendService.listWorkers();
@@ -973,7 +970,7 @@ describe("RunpodEngine", () => {
                         gpus: [],
                         ports: [],
                         uptimeInSeconds: 0,
-                    }
+                    },
                 },
             ];
             const worker = await backendService.createWorker("existing");
@@ -982,7 +979,7 @@ describe("RunpodEngine", () => {
                 TYPE_RUNPOD,
                 2,
                 "pod-id",
-                "NVIDIA GeForce RTX 3090",
+                "NVIDIA GeForce RTX 3090"
             );
             clock._now = moment().add(10, "minutes");
             expect(await runpodEngine.scale(1)).toEqual(0);
@@ -1002,7 +999,7 @@ describe("RunpodEngine", () => {
     // refactor to runpod
     describe("scale with no workers, one gpu, and one order, provision error", () => {
         it("should not scale up", async () => {
-            mockRunpodClient._pods = []
+            mockRunpodClient._pods = [];
             mockRunpodClient._gpuTypes = [
                 {
                     id: "NVIDIA GeForce RTX 3090",
@@ -1021,4 +1018,153 @@ describe("RunpodEngine", () => {
             expect(workerResult.length).toEqual(0);
         });
     });
-})
+
+    describe("order to gpu mappings", () => {
+        describe("RTX 3090, one order", () => {
+
+            beforeEach(() => {
+                runpodEngine = new RunpodEngine(
+                    mockRunpodClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "NVIDIA GeForce RTX 3090"
+                );
+            })
+
+            it("should use 2 gpus", async () => {
+                mockRunpodClient._pods = [];
+                mockRunpodClient._gpuTypes = [
+                    {
+                        id: "NVIDIA GeForce RTX 3090",
+                        maxGpuCount: 1,
+                        lowestPrice: {
+                            stockStatus: "Low",
+                            uninterruptablePrice: 0.45,
+                        },
+                    },
+                    {
+                        id: "NVIDIA GeForce RTX 3090",
+                        maxGpuCount: 2,
+                        lowestPrice: {
+                            stockStatus: "Low",
+                            uninterruptablePrice: 0.45,
+                        },
+                    },
+
+                    {
+                        id: "NVIDIA GeForce RTX 3090",
+                        maxGpuCount: 3,
+                        lowestPrice: {
+                            stockStatus: "Low",
+                            uninterruptablePrice: 0.45,
+                        },
+                    },
+                ];
+                expect(await runpodEngine.scale(1)).toEqual(1);
+                expect(mockRunpodClient._pods).toHaveLength(1);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(1);
+                expect(workerResult[0].num_gpus).toEqual(2);
+            });
+        });
+
+        describe("A5000, one order", () => {
+
+            beforeEach(() => {
+                runpodEngine = new RunpodEngine(
+                    mockRunpodClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "NVIDIA RTX A5000"
+                );
+            })
+
+            it("should use 2 gpus", async () => {
+                mockRunpodClient._pods = [];
+                mockRunpodClient._gpuTypes = [
+                    {
+                        id: "NVIDIA RTX A5000",
+                        maxGpuCount: 1,
+                        lowestPrice: {
+                            stockStatus: "Low",
+                            uninterruptablePrice: 0.45,
+                        },
+                    },
+                    {
+                        id: "NVIDIA RTX A5000",
+                        maxGpuCount: 2,
+                        lowestPrice: {
+                            stockStatus: "Low",
+                            uninterruptablePrice: 0.45,
+                        },
+                    },
+
+                    {
+                        id: "NVIDIA RTX A5000",
+                        maxGpuCount: 3,
+                        lowestPrice: {
+                            stockStatus: "Low",
+                            uninterruptablePrice: 0.45,
+                        },
+                    },
+                ];
+                expect(await runpodEngine.scale(1)).toEqual(1);
+                expect(mockRunpodClient._pods).toHaveLength(1);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(1);
+                expect(workerResult[0].num_gpus).toEqual(2);
+            });
+        })
+
+        describe("A6000, one order", () => {
+
+            beforeEach(() => {
+                runpodEngine = new RunpodEngine(
+                    mockRunpodClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "NVIDIA RTX A6000"
+                );
+            })
+
+            it("should use 1 gpus", async () => {
+                mockRunpodClient._pods = [];
+                mockRunpodClient._gpuTypes = [
+                    {
+                        id: "NVIDIA RTX A6000",
+                        maxGpuCount: 1,
+                        lowestPrice: {
+                            stockStatus: "Low",
+                            uninterruptablePrice: 0.45,
+                        },
+                    },
+                    {
+                        id: "NVIDIA RTX A6000",
+                        maxGpuCount: 2,
+                        lowestPrice: {
+                            stockStatus: "Low",
+                            uninterruptablePrice: 0.45,
+                        },
+                    },
+
+                    {
+                        id: "NVIDIA RTX A6000",
+                        maxGpuCount: 3,
+                        lowestPrice: {
+                            stockStatus: "Low",
+                            uninterruptablePrice: 0.45,
+                        },
+                    },
+                ];
+                expect(await runpodEngine.scale(1)).toEqual(1);
+                expect(mockRunpodClient._pods).toHaveLength(1);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(1);
+                expect(workerResult[0].num_gpus).toEqual(1);
+            });
+        })
+    });
+});

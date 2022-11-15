@@ -956,4 +956,132 @@ describe("VastEngine", () => {
             expect(workerResult.length).toEqual(0);
         });
     });
+
+    describe("order to gpu mappings", () => {
+        describe("RTX 3090, one order", () => {
+            beforeEach(() => {
+                vastEngine = new VastEngine(
+                    mockVastClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "RTX 3090",
+                )
+            })
+
+            // refactor for vast client
+            it("should use 2 gpus", async () => {
+                mockVastClient._instances = [];
+                mockVastClient._offers = [
+                    {
+                        id: 1,
+                        num_gpus: 1,
+                        dph_total: 0.3,
+                        gpu_name: "RTX 3090",
+                    },
+                    {
+                        id: 2,
+                        num_gpus: 2,
+                        dph_total: 0.3,
+                        gpu_name: "RTX 3090",
+                    },
+                    {
+                        id: 3,
+                        num_gpus: 3,
+                        dph_total: 0.3,
+                        gpu_name: "RTX 3090",
+                    },
+                ];
+                expect(await vastEngine.scale(1)).toEqual(1);
+                expect(mockVastClient.instances).toHaveLength(1);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(1);
+                expect(workerResult[0].num_gpus).toEqual(2);
+            })
+        })
+
+        describe("RTX A5000, one order", () => {
+            beforeEach(() => {
+                vastEngine = new VastEngine(
+                    mockVastClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "RTX A5000",
+                )
+            })
+
+            // refactor for vast client
+            it("should use 2 gpus", async () => {
+                mockVastClient._instances = [];
+                mockVastClient._offers = [
+                    {
+                        id: 1,
+                        num_gpus: 1,
+                        dph_total: 0.3,
+                        gpu_name: "RTX A5000",
+                    },
+                    {
+                        id: 2,
+                        num_gpus: 2,
+                        dph_total: 0.3,
+                        gpu_name: "RTX A5000",
+                    },
+                    {
+                        id: 3,
+                        num_gpus: 3,
+                        dph_total: 0.3,
+                        gpu_name: "RTX A5000",
+                    },
+                ];
+                expect(await vastEngine.scale(1)).toEqual(1);
+                expect(mockVastClient.instances).toHaveLength(1);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(1);
+                expect(workerResult[0].num_gpus).toEqual(2);
+            })
+        })
+
+        describe("RTX A6000, one order", () => {
+            beforeEach(() => {
+                vastEngine = new VastEngine(
+                    mockVastClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "RTX A6000",
+                )
+            })
+
+            // refactor for vast client
+            it("should use 1 gpus", async () => {
+                mockVastClient._instances = [];
+                mockVastClient._offers = [
+                    {
+                        id: 1,
+                        num_gpus: 1,
+                        dph_total: 0.3,
+                        gpu_name: "RTX A6000",
+                    },
+                    {
+                        id: 2,
+                        num_gpus: 2,
+                        dph_total: 0.3,
+                        gpu_name: "RTX A6000",
+                    },
+                    {
+                        id: 3,
+                        num_gpus: 3,
+                        dph_total: 0.3,
+                        gpu_name: "RTX A6000",
+                    },
+                ];
+                expect(await vastEngine.scale(1)).toEqual(1);
+                expect(mockVastClient.instances).toHaveLength(1);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(1);
+                expect(workerResult[0].num_gpus).toEqual(1);
+            })
+        });
+    })
 });
