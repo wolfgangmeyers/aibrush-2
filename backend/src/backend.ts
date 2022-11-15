@@ -963,9 +963,27 @@ export class BackendService {
         if (users.length === 0) {
             return null;
         }
+
         if (!user) {
             // get random user
-            user = users[Math.floor(Math.random() * users.length)];
+
+            const orders = await this.listOrders(true);
+            const paidUsers: string[] = [];
+            // a user may have multiple current orders,
+            // and some orders may have multiple gpus
+            for (let order of orders) {
+                if (users.indexOf(order.created_by) !== -1) {
+                    for (let i = 0; i < order.gpu_count; i++) {
+                        paidUsers.push(order.created_by);
+                    }
+                }
+            }
+            // 50/50 split between paid and free pool
+            if (Math.random() < 0.5 && paidUsers.length > 0) {
+                user = paidUsers[Math.floor(Math.random() * paidUsers.length)];
+            } else {
+                user = users[Math.floor(Math.random() * users.length)];
+            }
         }
         const args = [user];
         let filter = " AND deleted_at IS NULL";
