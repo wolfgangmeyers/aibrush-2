@@ -120,10 +120,6 @@ export class SelectionTool extends BaseTool implements Tool {
         this.sync();
     }
 
-    onTouchStart(event: React.TouchEvent<HTMLCanvasElement>): void {
-        
-    }
-
     onWheel(event: WheelEvent) {
         this.zoomHelper.onWheel(event);
     }
