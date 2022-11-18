@@ -5,20 +5,15 @@ import { Image, ImageStatusEnum } from "../client/api";
 interface Props {
     assetsUrl: string;
     image: Image;
+    bulkDelete?: boolean;
     onClick?: (image: Image) => void;
 }
 
-export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, onClick }) => {
+export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, bulkDelete, onClick }) => {
     const src = `${assetsUrl}/${image.id}.thumbnail.jpg?updated_at=${image.updated_at}`;
     const [retry, setRetry] = useState("");
-    const [hover, setHover] = useState(false);
-
-    // on mouse in/out, set hover state
-    const onMouseEnter = () => setHover(true);
-    const onMouseLeave = () => setHover(false);
 
     useEffect(() => {
-
         // This is to help deal with eventual consistency from S3.
         // if image.updated_at (unix timestamp in milliseconds) is less than a minute ago, try to reload the image
         if (moment().diff(moment(image.updated_at), "minutes") < 1) {
@@ -35,50 +30,38 @@ export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, onClick }) => {
         label = image.phrases[0];
     }
     
+    let className = "image-thumbnail";
+    if (bulkDelete) {
+        className += " bulk-delete";
+    }
 
     return (
         <div
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
+            className={className}
             style={{
                 backgroundImage: `url(${src}${retry}), url(/images/default.jpg)`,
-                backgroundSize: "contain",
-                width: "128px",
-                height: "128px",
-                margin: "8px",
-                float: "left",
-                cursor: "pointer",
                 filter: image.nsfw ? "blur(8px)" : undefined,
             }}
             onClick={() => onClick && onClick(image)}
         >
-            {hover && <div style={{
-                background: "rgba(255, 255, 255, 0.5)",
-                color: "black",
-                width: "100%",
-                height: "100%",
-                lineHeight: "1"
-            }}>
+            {!bulkDelete && <div className="image-thumbnail-label">
                 {label}
             </div>}
-            {!hover && image.status === ImageStatusEnum.Pending && <div style={{
-                background: "rgba(255, 255, 255, 0.3)",
-                color: "#555",
-                width: "100%",
-                height: "100%",
-                fontSize: "80px"
-            }}>
-                {/* pending / wait symbol */}
+
+            {bulkDelete && <div className="image-thumbnail-label">
+                <input type="checkbox" style={{
+                    width: "20px",
+                    height: "20px",
+                    marginLeft: "16px",
+                    marginTop: "16px",
+                }} checked readOnly />
+            </div>}
+
+            {image.status === ImageStatusEnum.Pending && <div className="image-thumbnail-pending">
                 <i style={{marginTop: "20px"}} className="fa fa-hourglass-half"></i>
             </div>}
             {
-                !hover && image.status === ImageStatusEnum.Processing && <div style={{
-                    background: "rgba(255, 255, 255, 0.3)",
-                    color: "#555",
-                    width: "100%",
-                    height: "100%",
-                    fontSize: "80px"
-                }}>
+                image.status === ImageStatusEnum.Processing && <div className="image-thumbnail-pending">
                     <i style={{marginTop: "20px"}} className="fa fa-cog fa-spin"></i>
                 </div>
             }

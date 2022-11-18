@@ -482,7 +482,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
         return (
             <div style={{ marginTop: "16px" }}>
                 <button
-                    className="btn btn-primary"
+                    className="btn btn-primary btn-sm"
                     onClick={() => {
                         tool.cancel();
                     }}
@@ -492,7 +492,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     Revert
                 </button>
                 <button
-                    className="btn btn-primary"
+                    className="btn btn-primary btn-sm"
                     onClick={() => tool.confirm()}
                     style={{ marginLeft: "8px" }}
                 >
@@ -502,7 +502,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                 </button>
                 {/* erase button */}
                 {state == "confirm" && <button
-                    className="btn btn-primary"
+                    className="btn btn-primary btn-sm"
                     onClick={() => tool.erase()}
                     style={{ marginLeft: "8px" }}
                 >

@@ -70,8 +70,13 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
             constructor: (r: Renderer) => new PencilTool(r),
             defaultArgs: {},
             renderControls: (t: Tool, renderer: Renderer) => {
-                return <PencilControls tool={t as PencilTool} renderer={renderer} />;
-            }
+                return (
+                    <PencilControls
+                        tool={t as PencilTool}
+                        renderer={renderer}
+                    />
+                );
+            },
         },
         {
             name: "smudge",
@@ -80,7 +85,12 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
             constructor: (r: Renderer) => new SmudgeTool(r),
             defaultArgs: {},
             renderControls: (t: Tool, renderer: Renderer) => {
-                return <SmudgeControls tool={t as SmudgeTool} renderer={renderer} />;
+                return (
+                    <SmudgeControls
+                        tool={t as SmudgeTool}
+                        renderer={renderer}
+                    />
+                );
             },
         },
         {
@@ -89,9 +99,15 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
             constructor: (r: Renderer) => new BaseTool("import-export"),
             defaultArgs: {},
             renderControls: (t: Tool, renderer: Renderer) => {
-                return <ImportExportControls renderer={renderer} tool={t as BaseTool} api={api} />;
-            }
-        }
+                return (
+                    <ImportExportControls
+                        renderer={renderer}
+                        tool={t as BaseTool}
+                        api={api}
+                    />
+                );
+            },
+        },
     ];
 
     const [image, setImage] = useState<APIImage | null>(null);
@@ -115,7 +131,7 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
             const newTool = toolconfig.constructor(renderer);
             setTool(newTool);
             newTool.onSaveImage((encodedImage) => {
-                console.log("Saving image...")
+                console.log("Saving image...");
                 api.updateImage(id, {
                     encoded_image: encodedImage,
                 });
@@ -127,7 +143,7 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
         api.getImage(id).then((image) => {
             setImage(image.data);
             api.getImageData(id, {
-                responseType: "arraybuffer"
+                responseType: "arraybuffer",
             }).then((resp) => {
                 const binaryImageData = Buffer.from(resp.data, "binary");
                 const base64ImageData = binaryImageData.toString("base64");
@@ -142,7 +158,7 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                     const renderer = createRenderer(canvasRef.current);
                     renderer.setBaseImage(imageElement);
                     setRenderer(renderer);
-                }
+                };
             });
         });
     }, [id]);
@@ -211,67 +227,103 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                     </h1>
                 </div>
             </div>
-            <div className="row" style={{marginTop: "32px"}}>
+            <div className="row" style={{ marginTop: "32px" }}>
                 <div className="col-lg-3">
-                    {renderer && <>{tools.map((tool) => renderTool(tool))}</>}
+                    {renderer && (
+                        <>
+                            {tools.map((tool) => renderTool(tool))}
+                            {(canRedo || canUndo) && (
+                                <div className="form-group">
+                                    <div className="btn-group">
+                                        <button
+                                            className="btn btn-primary image-popup-button"
+                                            disabled={!renderer || !canUndo}
+                                            onClick={() =>
+                                                renderer && renderer.undo()
+                                            }
+                                        >
+                                            {/* undo */}
+                                            <i className="fas fa-undo"></i>
+                                        </button>
+                                        <button
+                                            className="btn btn-primary image-popup-button"
+                                            disabled={!renderer || !canRedo}
+                                            onClick={() =>
+                                                renderer && renderer.redo()
+                                            }
+                                        >
+                                            <i className="fas fa-redo"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
                 <div className="col-lg-9">
                     <div style={{ verticalAlign: "middle" }}>
-                        {showSelectionControls && (
-                            <>
-                                <div
-                                    style={{ float: "left", marginTop: "45%" }}
-                                >
-                                    <button
-                                        // center vertically
+                        <div>
+                            <canvas
+                                style={{
+                                    cursor: "none",
+                                }}
+                                ref={canvasRef}
+                                className="image-editor-canvas"
+                                onMouseDown={(e) =>
+                                    preventDefault(e) &&
+                                    tool &&
+                                    tool.onMouseDown(e)
+                                }
+                                onMouseMove={(e) =>
+                                    preventDefault(e) &&
+                                    tool &&
+                                    tool.onMouseMove(e)
+                                }
+                                onMouseUp={(e) =>
+                                    preventDefault(e) &&
+                                    tool &&
+                                    tool.onMouseUp(e)
+                                }
+                                onMouseLeave={(e) =>
+                                    preventDefault(e) &&
+                                    tool &&
+                                    tool.onMouseLeave(e)
+                                }
+                                // onWheel={e => tool && tool.onWheel(e)}
+                                onTouchStart={(e) =>
+                                    preventDefault(e) 
+                                }
+                                onTouchMove={(e) =>
+                                    preventDefault(e)&&
+                                    alert("fuck you")
+                                }
+                                onTouchEnd={(e) =>
+                                    preventDefault(e)
+                                }
+                                onTouchCancel={(e) =>
+                                    preventDefault(e)
+                                }
 
-                                        className="btn btn-secondary"
+                            ></canvas>
+                            {showSelectionControls && (
+                                <>
+                                    <button
+                                        className="btn btn-secondary canvas-select-left"
                                         onClick={() => tool!.select("left")}
                                     >
                                         <i className="fas fa-chevron-left"></i>
                                     </button>
-                                </div>
-                                <div
-                                    style={{ float: "right", marginTop: "45%" }}
-                                >
                                     <button
-                                        // center vertically
-
-                                        className="btn btn-secondary"
+                                        className="btn btn-secondary canvas-select-right"
                                         onClick={() => tool!.select("right")}
                                     >
                                         <i className="fas fa-chevron-right"></i>
                                     </button>
-                                </div>
-                            </>
-                        )}
-
-                        <canvas
-                            style={{cursor: "none"}}
-                            ref={canvasRef}
-                            className="image-editor-canvas"
-                            onMouseDown={(e) => preventDefault(e) && tool && tool.onMouseDown(e)}
-                            onMouseMove={(e) => preventDefault(e) && tool && tool.onMouseMove(e)}
-                            onMouseUp={(e) => preventDefault(e) && tool && tool.onMouseUp(e)}
-                            onMouseLeave={(e) => preventDefault(e) && tool && tool.onMouseLeave(e)}
-                            // onWheel={e => tool && tool.onWheel(e)}
-                        />
+                                </>
+                            )}
+                        </div>
                     </div>
                     <div className="row">
-                        <button
-                            className="btn btn-primary"
-                            style={{
-                                position: "absolute",
-                                left: "10%",
-                                transform: "translate(10%, 0)"
-                            }}
-                            disabled={!renderer || !canUndo}
-                            onClick={() => renderer && renderer.undo()}
-                        >
-                            {/* undo */}
-                            <i className="fas fa-undo"></i>&nbsp;
-                            Undo
-                        </button>
                         <button
                             className="btn btn-primary"
                             // center horizontally
@@ -287,23 +339,10 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                             }}
                         >
                             {/* reset zoom */}
-                            <i className="fas fa-search-plus"></i>&nbsp;
-                            Reset View
+                            <i className="fas fa-search-plus"></i>&nbsp; Reset
+                            View
                         </button>
                         {/* redo */}
-                        <button
-                            className="btn btn-primary"
-                            style={{
-                                position: "absolute",
-                                right: "10%",
-                                transform: "translate(-10%, 0)"
-                            }}
-                            disabled={!renderer || !canRedo}
-                            onClick={() => renderer && renderer.redo()}
-                        >
-                            <i className="fas fa-redo"></i>&nbsp;
-                            Redo
-                        </button>
                     </div>
                     {/* vertically center button within the div */}
                 </div>

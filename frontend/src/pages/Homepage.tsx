@@ -1,5 +1,6 @@
 // V2 page
 import React, { FC, useState, useEffect } from "react";
+import Dropdown from "react-bootstrap/Dropdown";
 import { useParams, useHistory, Link } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
+    const [cursor, setCursor] = useState(0);
     const [creating, setCreating] = useState(false);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const [parentImage, setParentImage] = useState<Image | null>(null);
@@ -31,6 +33,12 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
     const [hasMore, setHasMore] = useState<boolean>(true);
     const [search, setSearch] = useState<string>("");
     const [searchDebounce, setSearchDebounce] = useState<string>("");
+
+    const [bulkDeleteSelecting, setBulkDeleteSelecting] = useState(false);
+    const [bulkDeleting, setBulkDeleting] = useState(false);
+    const [bulkDeleteIds, setBulkDeleteIds] = useState<{
+        [key: string]: boolean;
+    }>({});
 
     const { id } = useParams<{ id?: string }>();
     const history = useHistory();
@@ -181,9 +189,9 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             // clear error
             setErr(null);
             // set cursor to max updated_at from images
-            const cursor = images.reduce((max, image) => {
-                return Math.max(max, image.updated_at);
-            }, 0);
+            // const cursor = images.reduce((max, image) => {
+            //     return Math.max(max, image.updated_at);
+            // }, 0);
 
             try {
                 const resp = await api.listImages(
@@ -193,6 +201,13 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                     "asc"
                 );
                 if (resp.data.images) {
+                    let latestCursor = cursor;
+                    for (let image of resp.data.images) {
+                        if (image.updated_at > latestCursor) {
+                            latestCursor = image.updated_at;
+                        }
+                    }
+                    
                     // split resp.data.images into "new" and "updated" lists
                     // image is "new" if it's not in images
                     const newImages = resp.data.images.filter((image) => {
@@ -235,6 +250,9 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                             ...newImages.filter((image) => !image.deleted_at),
                         ].sort(sortImages);
                     });
+                    if (latestCursor > cursor) {
+                        setCursor(latestCursor);
+                    }
                 }
                 return images;
             } catch (err) {
@@ -249,7 +267,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         return () => {
             clearInterval(timerHandle);
         };
-    }, [api, images, search]);
+    }, [api, images, search, cursor]);
 
     useEffect(() => {
         // de-duplicate images by id
@@ -358,12 +376,40 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
 
     const onThumbnailClicked = (image: Image) => {
         // setSelectedImage(image);
-        history.push(`/images/${image.id}`);
+        if (bulkDeleteSelecting) {
+            setBulkDeleteIds({
+                ...bulkDeleteIds,
+                [image.id]: !bulkDeleteIds[image.id],
+            });
+        } else {
+            history.push(`/images/${image.id}`);
+        }
     };
 
     const handleCancelFork = () => {
         setParentImage(null);
         window.scrollTo(0, 0);
+    };
+
+    const onConfirmBulkDelete = async () => {
+        try {
+            setBulkDeleting(true);
+            // await api.deleteImages(Object.keys(bulkDeleteIds));
+            const promises = Object.keys(bulkDeleteIds).map((id) => {
+                return api.deleteImage(id);
+            });
+            await Promise.all(promises);
+            setImages((images) => {
+                return images.filter((image) => !bulkDeleteIds[image.id]);
+            });
+            setBulkDeleteIds({});
+            setBulkDeleteSelecting(false);
+        } catch (e) {
+            console.error(e);
+            setErr("Error deleting images");
+        } finally {
+            setBulkDeleting(false);
+        }
     };
 
     const completedOrSavedImages = images.filter((image) => {
@@ -405,20 +451,15 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
 
             <div className="homepage-images" style={{ marginTop: "48px" }}>
                 <div style={{ textAlign: "left" }}>
-                    <div className="input-group" style={{marginBottom: "16px"}}>
+                    <div
+                        className="input-group"
+                        style={{ marginBottom: "16px" }}
+                    >
                         <input
-                            style={{
-                                // marginBottom: "16px",
-                                color: "white",
-                                backgroundColor: "black",
-                                border: "1px solid white",
-                                // paddingLeft: "30px",
-                                width: "80%",
-                                marginRight: "16px",
-                            }}
+                            style={{}}
                             value={searchDebounce}
                             type="search"
-                            className="form-control"
+                            className="form-control image-search"
                             placeholder="Search..."
                             onChange={(e) => setSearchDebounce(e.target.value)}
                         />
@@ -428,12 +469,52 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                                 float: "right",
                             }}
                         >
-                            <Link to="/deleted-images">
-                                {/* <i className="fas fa-trash" style={{color: "white"}}></i> */}
-                                <button className="btn btn-danger image-popup-delete-button">
-                                    <i className="fas fa-trash"></i> Trash
-                                </button>
-                            </Link>
+                            {!bulkDeleteSelecting && (
+                                <Dropdown>
+                                    <Dropdown.Toggle variant="danger">
+                                        <i className="fas fa-trash"></i>
+                                    </Dropdown.Toggle>
+
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item
+                                            onClick={() =>
+                                                setBulkDeleteSelecting(true)
+                                            }
+                                        >
+                                            Bulk Delete
+                                        </Dropdown.Item>
+                                        <Dropdown.Item
+                                            onClick={() =>
+                                                history.push("/deleted-images")
+                                            }
+                                        >
+                                            View Deleted Images
+                                        </Dropdown.Item>
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            )}
+                            {bulkDeleteSelecting && (
+                                <>
+                                    <button
+                                        className="btn btn-primary image-popup-button"
+                                        onClick={() => {
+                                            setBulkDeleteSelecting(false);
+                                            setBulkDeleteIds({});
+                                        }}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        style={{marginLeft: "8px"}}
+                                        className="btn image-popup-delete-button"
+                                        onClick={() => {
+                                            onConfirmBulkDelete();
+                                        }}
+                                    >
+                                        Delete
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -445,9 +526,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                 >
                     {pendingOrProcessingImages.length > 0 && (
                         <PendingImagesThumbnail
-                            pendingCount={
-                                pendingImages.length
-                            }
+                            pendingCount={pendingImages.length}
                             processingCount={processingImages.length}
                             onClick={() => {
                                 setShowPendingImages(true);
@@ -460,6 +539,9 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                             image={image}
                             assetsUrl={assetsUrl}
                             onClick={onThumbnailClicked}
+                            bulkDelete={
+                                bulkDeleteSelecting && bulkDeleteIds[image.id]
+                            }
                         />
                     ))}
                 </InfiniteScroll>
@@ -491,6 +573,9 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             <ScrollToTop />
             <BusyModal show={creating} title="Creating images">
                 <p>Please wait while we create your image.</p>
+            </BusyModal>
+            <BusyModal show={bulkDeleting} title="Deleting images">
+                <p>Please wait while we delete your images.</p>
             </BusyModal>
             <PendingImages
                 images={pendingOrProcessingImages}

@@ -2,11 +2,33 @@
     width: 80%;
 }
 
+.canvas-select-left {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+  }
+  
+  .canvas-select-right {
+    position: absolute;
+    top: 50%;
+    right: 0%;
+  }
+  
+
 /* extra large screen */
 @media (min-width: 1500px) {
     .image-editor-canvas {
         width: 60%;
     }
+
+    .canvas-select-left {
+        left: 15%;
+      }
+      
+      .canvas-select-right {
+        right: 15%;
+      }
+      
 }
 
 .palette-button, .color-picker {
