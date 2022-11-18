@@ -85,9 +85,6 @@ export class PencilTool extends BaseTool implements Tool {
         if (this.colorPicking) {
             return;
         }
-        if (event.type === "touch") {
-            alert("??")
-        }
         if (event.button === 0) {
             let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
                 event.nativeEvent.offsetX,
