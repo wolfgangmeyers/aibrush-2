@@ -149,7 +149,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                 )}
                                 {onEdit && (
                                     <button
-                                        className="btn btn-primary btn-sm image-popup-button"
+                                        className="btn btn-primary btn-sm image-popup-button edit-button"
                                         onClick={() => onEdit && onEdit(image)}
                                         style={{ marginRight: "5px" }}
                                     >

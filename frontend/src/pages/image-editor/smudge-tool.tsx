@@ -4,9 +4,6 @@ import { BaseTool, Tool } from "./tool";
 import { ZoomHelper } from "./zoomHelper";
 
 export class SmudgeTool extends BaseTool implements Tool {
-    private renderer: Renderer;
-    private zoomHelper: ZoomHelper;
-
     private brushSize = 10;
     private brushOpacity = 0.2;
 
@@ -30,9 +27,7 @@ export class SmudgeTool extends BaseTool implements Tool {
     private dirtyListener?: (dirty: boolean) => void;
 
     constructor(renderer: Renderer) {
-        super("smudge");
-        this.renderer = renderer;
-        this.zoomHelper = new ZoomHelper(renderer);
+        super(renderer, "smudge");
     }
 
     private sync() {
@@ -67,7 +62,7 @@ export class SmudgeTool extends BaseTool implements Tool {
                 x,
                 y,
                 this.brushSize,
-                this.brushOpacity,
+                this.brushOpacity
             );
             this.dirty = true;
         }
@@ -89,6 +84,13 @@ export class SmudgeTool extends BaseTool implements Tool {
                 this.renderer.copyEditImageFromBaseImage();
             }
             this.dirty = true;
+            let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
+                event.nativeEvent.offsetX,
+                event.nativeEvent.offsetY
+            );
+            this.lastX = x;
+            this.lastY = y;
+            this.sync();
         } else if (event.button === 1) {
             this.panning = true;
         }
@@ -96,11 +98,9 @@ export class SmudgeTool extends BaseTool implements Tool {
     }
 
     onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
-        if (event.button === 0) {
-            this.smudging = false;
-        } else if (event.button === 1) {
-            this.panning = false;
-        }
+        this.smudging = false;
+        this.panning = false;
+        this.sync();
     }
 
     onSaveImage(listener: (encodedImage: string) => void): void {
@@ -196,26 +196,32 @@ export const SmudgeControls: FC<Props> = ({ renderer, tool }) => {
                     max="1"
                     step="0.01"
                     value={brushOpacity}
-                    onChange={(e) => setBrushOpacity(parseFloat(e.target.value))}
+                    onChange={(e) =>
+                        setBrushOpacity(parseFloat(e.target.value))
+                    }
                 />
             </div>
-            {dirty && (
-                <div className="form-group" style={{ marginTop: "16px" }}>
-                    <button
-                        className="btn btn-secondary"
-                        onClick={() => tool.cancel()}
-                    >
-                        Revert
-                    </button>
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => tool.confirm()}
-                        style={{ marginLeft: "8px" }}
-                    >
-                        Save
-                    </button>
-                </div>
-            )}
+            <div
+                className="form-group"
+                style={{
+                    marginTop: "16px",
+                    visibility: dirty ? "visible" : "hidden",
+                }}
+            >
+                <button
+                    className="btn btn-secondary"
+                    onClick={() => tool.cancel()}
+                >
+                    Revert
+                </button>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => tool.confirm()}
+                    style={{ marginLeft: "8px" }}
+                >
+                    Save
+                </button>
+            </div>
         </div>
     );
 };

@@ -10,10 +10,9 @@ import {
     getClosestAspectRatio,
 } from "../../lib/aspecRatios";
 import { ZoomHelper } from "./zoomHelper";
+import { runInThisContext } from "vm";
 
 export class SelectionTool extends BaseTool implements Tool {
-    private renderer: Renderer;
-    private zoomHelper: ZoomHelper;
     private selectionOverlay: Rect | undefined;
     private selectionOverlayPreview: Rect | undefined;
 
@@ -25,9 +24,7 @@ export class SelectionTool extends BaseTool implements Tool {
     // TODO: size modifier to make the selection overlay smaller
 
     constructor(renderer: Renderer) {
-        super("select");
-        this.renderer = renderer;
-        this.zoomHelper = new ZoomHelper(renderer);
+        super(renderer, "select");
     }
 
     // TODO: smaller/larger, aspect ratios?
@@ -50,7 +47,9 @@ export class SelectionTool extends BaseTool implements Tool {
     }
 
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
-        if (this.selectionOverlayPreview && event.button === 0) {
+        if (event.type == "touch") {
+            this.onMouseMove(event);
+        }else if (event.button === 0) {
             this.selectionOverlay = this.selectionOverlayPreview;
             this.selectionOverlayPreview = undefined;
             this.sync();
@@ -103,6 +102,15 @@ export class SelectionTool extends BaseTool implements Tool {
     }
 
     onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+        if (event.button === 0) {
+            this.selectionOverlay = this.selectionOverlayPreview;
+            this.selectionOverlayPreview = undefined;
+            this.sync();
+            this.updateArgs({
+                ...this.getArgs(),
+                selectionOverlay: this.selectionOverlay,
+            });
+        }
         this.panning = false;
     }
 
@@ -112,13 +120,9 @@ export class SelectionTool extends BaseTool implements Tool {
         this.sync();
     }
 
-    // onKeyDown(event: KeyboardEvent) {
-    //     // TODO
-    // }
-
-    // onKeyUp(event: KeyboardEvent) {
-    //     // TODO
-    // }
+    onTouchStart(event: React.TouchEvent<HTMLCanvasElement>): void {
+        
+    }
 
     onWheel(event: WheelEvent) {
         this.zoomHelper.onWheel(event);

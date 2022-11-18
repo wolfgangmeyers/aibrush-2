@@ -1,4 +1,6 @@
 import React from "react";
+import { Renderer } from "./renderer";
+import { ZoomHelper } from "./zoomHelper";
 
 export interface Tool {
     name: string;
@@ -8,6 +10,11 @@ export interface Tool {
     onMouseMove(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>): void;
     onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>): void;
     onMouseLeave(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>): void;
+
+    onTouchStart(event: React.TouchEvent<HTMLCanvasElement>): void;
+    onTouchMove(event: React.TouchEvent<HTMLCanvasElement>): void;
+    onTouchEnd(event: React.TouchEvent<HTMLCanvasElement>): void;
+
     onKeyDown(event: KeyboardEvent): void;
     onKeyUp(event: KeyboardEvent): void;
     onWheel(event: WheelEvent): void;
@@ -18,10 +25,17 @@ export interface Tool {
 }
 
 export class BaseTool implements Tool {
-
     saveListener?: (encodedImage: string) => void = () => {};
 
-    constructor(readonly name: string) {}
+    private touchHandle: number | undefined;
+
+    readonly zoomHelper: ZoomHelper;
+
+    private _pinchZooming = false;
+
+    constructor(readonly renderer: Renderer, readonly name: string) {
+        this.zoomHelper = new ZoomHelper(renderer);
+    }
 
     getArgs(): any {
         return JSON.parse(
@@ -35,6 +49,79 @@ export class BaseTool implements Tool {
     onMouseMove(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {}
     onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {}
     onMouseLeave(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {}
+
+    onTouchStart(event: React.TouchEvent<HTMLCanvasElement>) {
+        if (this.touchHandle) {
+            window.clearTimeout(this.touchHandle);
+        }
+        const touches: React.Touch[] = [];
+        // make a deep copy so that the values live past the delay
+        for (let i = 0; i < event.touches.length; i++) {
+            const touch = event.touches[i];
+            touches.push({
+                identifier: touch.identifier,
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                pageX: touch.pageX,
+                pageY: touch.pageY,
+                screenX: touch.screenX,
+                screenY: touch.screenY,
+                target: null,
+            } as any);
+        }
+        event = {
+            touches,
+        } as any;
+        this.touchHandle = window.setTimeout(() => {
+            this.touchHandle = undefined;
+            if (event.touches.length === 2) {
+                this._pinchZooming = true;
+                this.zoomHelper.onTouchStart(event);
+            } else {
+                const rect = this.renderer.getCanvas().getBoundingClientRect();
+                const touch = event.touches[0];
+                if (touch) {
+                    this.onMouseDown({
+                        type: "touch",
+                        button: 0,
+                        nativeEvent: {
+                            offsetX: touch.clientX - rect.left,
+                            offsetY: touch.clientY - rect.top,
+                        },
+                    } as any);
+                }
+            }
+        }, 200);
+    }
+    onTouchMove(event: React.TouchEvent<HTMLCanvasElement>) {
+        if (event.touches.length === 2) {
+            this.zoomHelper.onTouchMove(event);
+        } else {
+            const rect = this.renderer.getCanvas().getBoundingClientRect();
+            const touch = event.touches[0];
+            if (touch) {
+                this.onMouseMove({
+                    type: "touch",
+                    button: 0,
+                    nativeEvent: {
+                        offsetX: touch.clientX - rect.left,
+                        offsetY: touch.clientY - rect.top,
+                    },
+                } as any);
+            }
+        }
+    }
+    onTouchEnd(event: React.TouchEvent<HTMLCanvasElement>) {
+        if (this._pinchZooming) {
+            this._pinchZooming = false;
+            this.zoomHelper.onTouchEnd(event);
+        } else {
+            this.onMouseUp({
+                button: 0,
+            } as any);
+        }
+    }
+
     onKeyDown(event: KeyboardEvent) {}
     onKeyUp(event: KeyboardEvent) {}
     onWheel(event: WheelEvent) {}

@@ -21,9 +21,6 @@ const defaultColors = [
 ];
 
 export class PencilTool extends BaseTool implements Tool {
-    private renderer: Renderer;
-    private zoomHelper: ZoomHelper;
-
     private brushSize = 10;
     private brushColor = defaultColors[0];
     private palette: string[] = [...defaultColors];
@@ -52,9 +49,7 @@ export class PencilTool extends BaseTool implements Tool {
     private colorPickedListener?: (color: string) => void;
 
     constructor(renderer: Renderer) {
-        super("pencil");
-        this.renderer = renderer;
-        this.zoomHelper = new ZoomHelper(renderer);
+        super(renderer, "pencil");
     }
 
     private sync() {
@@ -90,6 +85,9 @@ export class PencilTool extends BaseTool implements Tool {
         if (this.colorPicking) {
             return;
         }
+        if (event.type === "touch") {
+            alert("??")
+        }
         if (event.button === 0) {
             let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
                 event.nativeEvent.offsetX,
@@ -116,10 +114,6 @@ export class PencilTool extends BaseTool implements Tool {
         } else if (this.panning) {
             this.zoomHelper.onPan(event);
         } else {
-            let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
-                event.nativeEvent.offsetX,
-                event.nativeEvent.offsetY
-            );
             if (this.isDrawing) {
                 this.renderer.drawLine(
                     this.lastX,
@@ -291,23 +285,24 @@ export const Controls: FC<ControlsProps> = ({ renderer, tool }) => {
                     onColorSelected={(color) => onColorSelected(color)}
                 />
             </div>
-            {dirty && (
-                <div className="form-group" style={{ marginTop: "16px" }}>
-                    <button
-                        className="btn btn-secondary"
-                        onClick={() => tool.cancel()}
-                    >
-                        Revert
-                    </button>
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => tool.confirm()}
-                        style={{ marginLeft: "8px" }}
-                    >
-                        Save
-                    </button>
-                </div>
-            )}
+            <div className="form-group" style={{
+                marginTop: "16px",
+                visibility: dirty ? "visible" : "hidden",
+            }}>
+                <button
+                    className="btn btn-secondary"
+                    onClick={() => tool.cancel()}
+                >
+                    Revert
+                </button>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => tool.confirm()}
+                    style={{ marginLeft: "8px" }}
+                >
+                    Save
+                </button>
+            </div>
         </div>
     );
 };

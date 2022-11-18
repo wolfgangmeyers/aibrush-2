@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useHistory } from "react-router-dom";
-import loadImage from "blueimp-load-image";
 
 import { AIBrushApi, Image as APIImage } from "../../client";
 import { getUpscaleLevel } from "../../lib/upscale";
@@ -96,7 +95,7 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
         {
             name: "import-export",
             iconClass: "fas fa-file-import",
-            constructor: (r: Renderer) => new BaseTool("import-export"),
+            constructor: (r: Renderer) => new BaseTool(r, "import-export"),
             defaultArgs: {},
             renderControls: (t: Tool, renderer: Renderer) => {
                 return (
@@ -266,6 +265,8 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                             <canvas
                                 style={{
                                     cursor: "none",
+                                    touchAction: "none",
+                                    userSelect: "none",
                                 }}
                                 ref={canvasRef}
                                 className="image-editor-canvas"
@@ -289,20 +290,54 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                                     tool &&
                                     tool.onMouseLeave(e)
                                 }
-                                // onWheel={e => tool && tool.onWheel(e)}
                                 onTouchStart={(e) =>
-                                    preventDefault(e) 
+                                    preventDefault(e) &&
+                                    tool &&
+                                    // (() => {
+                                        
+                                    //     const rect = canvasRef.current!.getBoundingClientRect();
+                                    //     const touch = e.touches[0];
+                                    //     if (touch) {
+                                    //         tool.onMouseDown({
+                                    //             type: "touch",
+                                    //             button: 0,
+                                    //             nativeEvent: {
+                                    //                 offsetX: touch.clientX - rect.left,
+                                    //                 offsetY: touch.clientY - rect.top,
+                                    //             }
+                                    //         } as any);
+                                    //     }
+                                    // })()
+                                    tool.onTouchStart(e)
                                 }
+
                                 onTouchMove={(e) =>
-                                    preventDefault(e)&&
-                                    alert("fuck you")
+                                    preventDefault(e) &&
+                                    tool &&
+                                    // (() => {
+                                    //     const rect = canvasRef.current!.getBoundingClientRect();
+                                    //     const touch = e.touches[0];
+                                    //     if (touch) {
+                                    //         tool.onMouseMove({
+                                    //             nativeEvent: {
+                                    //                 offsetX: touch.clientX - rect.left,
+                                    //                 offsetY: touch.clientY - rect.top,
+                                    //             }
+                                    //         } as any);
+                                    //     }
+                                    // })()
+                                    tool.onTouchMove(e)
                                 }
+
                                 onTouchEnd={(e) =>
-                                    preventDefault(e)
+                                    preventDefault(e) &&
+                                    tool &&
+                                    // tool.onMouseUp({
+                                    //     button: 0
+                                    // } as any)
+                                    tool.onTouchEnd(e)
                                 }
-                                onTouchCancel={(e) =>
-                                    preventDefault(e)
-                                }
+                                
 
                             ></canvas>
                             {showSelectionControls && (

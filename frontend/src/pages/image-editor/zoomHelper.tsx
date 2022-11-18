@@ -2,8 +2,16 @@ import { Renderer } from "./renderer";
 
 export class ZoomHelper {
 
-    constructor(private renderer: Renderer) {}
+    private startTouches: React.TouchList | null;
+    private startZoom = 1;
+    private startOffsetX = 0;
+    private startOffsetY = 0;
 
+    constructor(private renderer: Renderer) {
+        this.startTouches = null;
+    }
+
+    
     onWheel(event: WheelEvent) {
         const originalZoom = this.renderer.getZoom();
         let zoom = this.renderer.getZoom();
@@ -53,6 +61,66 @@ export class ZoomHelper {
 
         this.renderer.updateZoomAndOffset(zoom, offsetX, offsetY);
     }
+
+    onTouchStart(event: React.TouchEvent<HTMLCanvasElement>) {
+        if (event.touches.length === 2) {
+            this.startTouches = event.touches;
+            this.startZoom = this.renderer.getZoom();
+            this.startOffsetX = this.renderer.getOffsetX();
+            this.startOffsetY = this.renderer.getOffsetY();
+        }
+    }
+
+    onTouchMove(event: React.TouchEvent<HTMLCanvasElement>) {
+        if (this.startTouches) {
+            const canvasRect = this.renderer.getCanvas().getBoundingClientRect();
+            const startTouch1 = this.startTouches[0];
+            const startTouch2 = this.startTouches[1];
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+
+            const startDistance = Math.sqrt(
+                Math.pow(startTouch1.clientX - startTouch2.clientX, 2) +
+                Math.pow(startTouch1.clientY - startTouch2.clientY, 2)
+            );
+            const distance = Math.sqrt(
+                Math.pow(touch1.clientX - touch2.clientX, 2) +
+                Math.pow(touch1.clientY - touch2.clientY, 2)
+            );
+            const zoom = this.startZoom * (distance / startDistance);
+            // alert(`zoom: ${zoom}, startZoom: ${this.startZoom} startDistance: ${startDistance}, distance: ${distance}`);
+
+            const startCenterX = (startTouch1.clientX + startTouch2.clientX) / 2;
+            const startCenterY = (startTouch1.clientY + startTouch2.clientY) / 2;
+            const centerX = (touch1.clientX + touch2.clientX) / 2;
+            const centerY = (touch1.clientY + touch2.clientY) / 2;
+
+            const startCanvasPoint = this.translateMouseToCanvasCoordinates(
+                startCenterX - canvasRect.left,
+                startCenterY - canvasRect.top
+            );
+            const canvasPoint = this.translateMouseToCanvasCoordinates(
+                centerX - canvasRect.left,
+                centerY - canvasRect.top
+            );
+
+            let offsetX = this.renderer.getOffsetX();
+            let offsetY = this.renderer.getOffsetY();
+
+            let xDiff = canvasPoint.x - startCanvasPoint.x;
+            let yDiff = canvasPoint.y - startCanvasPoint.y;
+
+            offsetX = this.startOffsetX + xDiff * (zoom / this.startZoom);
+            offsetY = this.startOffsetY + yDiff * (zoom / this.startZoom);
+
+            this.renderer.updateZoomAndOffset(zoom, offsetX, offsetY);
+        }
+    }
+
+    onTouchEnd(event: React.TouchEvent<HTMLCanvasElement>) {
+        this.startTouches = null;
+    }
+
 
     translateMouseToCanvasCoordinates(mouseX: number, mouseY: number, zoom?: number, offsetX?: number, offsetY?: number) {
         let x = mouseX;

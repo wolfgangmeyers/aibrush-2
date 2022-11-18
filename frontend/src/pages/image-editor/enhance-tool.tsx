@@ -28,9 +28,6 @@ interface ImageWithData extends APIImage {
 }
 
 export class EnhanceTool extends BaseTool implements Tool {
-    private renderer: Renderer;
-    private zoomHelper: ZoomHelper;
-
     private prompt: string = "";
     private count: number = 4;
     private variationStrength: number = 0.35;
@@ -72,9 +69,7 @@ export class EnhanceTool extends BaseTool implements Tool {
     }
 
     constructor(renderer: Renderer) {
-        super("enhance");
-        this.renderer = renderer;
-        this.zoomHelper = new ZoomHelper(renderer);
+        super(renderer, "enhance");
     }
 
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
@@ -189,10 +184,6 @@ export class EnhanceTool extends BaseTool implements Tool {
     onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
         this.panning = false;
         this.erasing = false;
-        let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
-            event.nativeEvent.offsetX,
-            event.nativeEvent.offsetY
-        );
     }
 
     onMouseLeave(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>): void {
