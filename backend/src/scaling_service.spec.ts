@@ -1,6 +1,7 @@
 import moment from "moment";
 import { hash } from "./auth";
 import { BackendService } from "./backend";
+import { ConsoleLogger } from "./logs";
 import { MetricsClient } from "./metrics";
 import { FakeScalingEngine } from "./scaling_engine";
 import { ScalingService, SCALING_SERVICE_EVENT } from "./scaling_service";
@@ -25,12 +26,12 @@ describe("ScalingService", () => {
         databaseName = await testHelper.createTestDatabase();
         await testHelper.cleanupTestFiles();
         const config = testHelper.createConfig(databaseName);
-        backendService = new BackendService(config, new MetricsClient(""));
+        backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger());
         await backendService.init();
         await backendService.createUser("admin@test.test");
         scalingEngine1 = new FakeScalingEngine(5);
         scalingEngine2 = new FakeScalingEngine(10);
-        scalingService = new ScalingService(backendService, [scalingEngine1, scalingEngine2]);
+        scalingService = new ScalingService(backendService, [scalingEngine1, scalingEngine2], new ConsoleLogger());
     });
 
     afterEach(async () => {

@@ -24,6 +24,7 @@ import { Config } from './config'
 import { Authentication, hash } from './auth'
 import { sleep } from './sleep'
 import { MetricsClient } from './metrics'
+import { ConsoleLogger } from './logs'
 
 jest.setTimeout(60000);
 
@@ -72,7 +73,7 @@ describe("server", () => {
             serviceAccounts: ["service-account@test.test"],
             adminUsers: ["admin@test.test"],
             assetsBaseUrl: "/api/images",
-        }, new MetricsClient(""))
+        }, new MetricsClient(""), new ConsoleLogger())
         const databases = await backendService.listDatabases()
         for (const db of databases) {
             if (db.startsWith("aibrush_test_")) {
@@ -97,7 +98,7 @@ describe("server", () => {
             serviceAccounts: ["service-account@test.test"],
             adminUsers: ["admin@test.test"],
             assetsBaseUrl: "/api/images",
-        }, new MetricsClient(""))
+        }, new MetricsClient(""), new ConsoleLogger())
         databaseName = `aibrush_test_${moment().valueOf()}`
         await backendService.createDatabase(databaseName)
         await sleep(100)
@@ -128,9 +129,9 @@ describe("server", () => {
             assetsBaseUrl: "/api/images",
             disableCleanupJob: true,
         }
-        backendService = new BackendService(config, new MetricsClient(""))
+        backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger())
 
-        server = new Server(config, backendService, 35456, new MetricsClient(""), null)
+        server = new Server(config, backendService, 35456, new MetricsClient(""), new ConsoleLogger(), null)
         await server.init()
         await server.start()
 

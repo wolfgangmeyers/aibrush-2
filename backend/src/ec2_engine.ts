@@ -6,6 +6,7 @@ import { Clock } from "./clock";
 import { MetricsClient } from "./metrics";
 import { ScalingEngine } from "./scaling_engine";
 import Bugsnag from "@bugsnag/js";
+import { Logger } from "./logs";
 
 export const SCALEDOWN_COOLDOWN = moment.duration(10, "minutes");
 export const TYPE_EC2 = "ec2";
@@ -19,6 +20,7 @@ export class Ec2Engine implements ScalingEngine {
         private backend: BackendService,
         private clock: Clock,
         private metricsClient: MetricsClient,
+        private logger: Logger,
         private region: string
     ) {}
 
@@ -26,7 +28,7 @@ export class Ec2Engine implements ScalingEngine {
         return 60;
     }
     async scale(activeOrders: number): Promise<number> {
-        console.log("scaling EC2 to ", activeOrders);
+        this.logger.log("scaling EC2 to ", activeOrders);
         const lastScalingOperation = await this.backend.getLastEventTime(
             EC2_SCALING_EVENT
         );

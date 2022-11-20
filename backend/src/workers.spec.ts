@@ -15,6 +15,7 @@ import { sleep } from "./sleep";
 import { Session, TestHelper } from "./testHelper";
 import { MetricsClient } from "./metrics";
 import moment from "moment";
+import { ConsoleLogger } from "./logs";
 
 jest.setTimeout(60000);
 
@@ -39,12 +40,13 @@ describe("workers", () => {
         databaseName = await testHelper.createTestDatabase();
         await testHelper.cleanupTestFiles();
         const config = testHelper.createConfig(databaseName);
-        backendService = new BackendService(config, new MetricsClient(""));
+        backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger());
         server = new Server(
             config,
             backendService,
             35456,
             new MetricsClient(""),
+            new ConsoleLogger(),
             null,
         );
         await server.init();

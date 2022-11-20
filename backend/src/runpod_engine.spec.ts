@@ -17,6 +17,7 @@ import { MockRunpodApi } from "./runpod_client";
 import { hash } from "./auth";
 import { MetricsClient } from "./metrics";
 import { ErrorFactory } from "./error_factory";
+import { ConsoleLogger } from "./logs";
 
 jest.setTimeout(60000);
 
@@ -690,7 +691,8 @@ describe("Runpod Scaling Engine Calculations", () => {
                 testCase.gpuTypes,
                 testCase.targetGpus,
                 testCase.lastScalingOperation,
-                new RealClock()
+                new RealClock(),
+                new ConsoleLogger(),
             );
 
             expect(sortOps(actual)).toEqual(sortOps(testCase.expected));
@@ -717,7 +719,7 @@ describe("RunpodEngine", () => {
         databaseName = await testHelper.createTestDatabase();
         await testHelper.cleanupTestFiles();
         const config = testHelper.createConfig(databaseName);
-        backendService = new BackendService(config, new MetricsClient(""));
+        backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger());
         await backendService.init();
         mockRunpodClient = new MockRunpodApi();
         clock = new FakeClock(moment());
@@ -726,6 +728,7 @@ describe("RunpodEngine", () => {
             backendService,
             clock,
             new MetricsClient(""),
+            new ConsoleLogger(),
             "NVIDIA GeForce RTX 3090"
         );
         await backendService.createUser("admin@test.test");
@@ -1028,6 +1031,7 @@ describe("RunpodEngine", () => {
                     backendService,
                     clock,
                     new MetricsClient(""),
+                    new ConsoleLogger(),
                     "NVIDIA GeForce RTX 3090"
                 );
             })
@@ -1077,6 +1081,7 @@ describe("RunpodEngine", () => {
                     backendService,
                     clock,
                     new MetricsClient(""),
+                    new ConsoleLogger(),
                     "NVIDIA RTX A5000"
                 );
             })
@@ -1126,6 +1131,7 @@ describe("RunpodEngine", () => {
                     backendService,
                     clock,
                     new MetricsClient(""),
+                    new ConsoleLogger(),
                     "NVIDIA RTX A6000"
                 );
             })

@@ -37,6 +37,7 @@ import {
 } from "./client";
 import { MetricsClient } from "./metrics";
 import { ScalingService } from "./scaling_service";
+import { Logger } from "./logs";
 
 export class Server {
     private server: HTTPServer;
@@ -53,10 +54,11 @@ export class Server {
         private backendService: BackendService,
         private port: string | number,
         private metricsClient: MetricsClient,
+        private logger: Logger,
         private scalingService: ScalingService
     ) {
         this.app = express();
-        this.authHelper = new AuthHelper(config);
+        this.authHelper = new AuthHelper(config, () => moment().valueOf(), logger);
         for (let serviceAccount of this.config.serviceAccounts || []) {
             this.hashedServiceAccounts[hash(serviceAccount)] = true;
         }
@@ -79,9 +81,9 @@ export class Server {
     }
 
     async init() {
-        console.log("Backend service initializing");
+        this.logger.log("Backend service initializing");
         await this.backendService.init();
-        console.log("Backend service initialized");
+        this.logger.log("Backend service initialized");
 
         let middleware: any;
 
@@ -154,7 +156,7 @@ export class Server {
                 } catch (err) {
                     // if "User not allowed" then return 403
                     if (err.message === "User not allowed") {
-                        console.log("User not allowed: " + req.body.email);
+                        this.logger.log("User not allowed: " + req.body.email);
                         res.sendStatus(403);
                         return;
                     }
@@ -363,38 +365,43 @@ export class Server {
         );
 
         // authenticated routes only past this point
-        this.app.use(authMiddleware(this.config));
+        this.app.use(authMiddleware(this.config, this.logger));
 
         // list images
         this.app.get(
             "/api/images",
             withMetrics("/api/images", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                // service accounts can't list images
-                let cursor: number | undefined;
                 try {
-                    cursor = parseInt(req.query.cursor as string);
-                } catch (err) {}
-                // direction
-                let direction: "asc" | "desc" | undefined = req.query
-                    .direction as any;
-                let limit: number | undefined;
-                try {
-                    limit = parseInt(req.query.limit as string);
-                } catch (err) {}
-                let filter: string | undefined = req.query.filter as any;
-
-                let query = {
-                    userId: jwt.userId,
-                    status: req.query.status as ImageStatusEnum,
-                    cursor,
-                    direction,
-                    limit,
-                    filter,
-                };
-
-                const images = await this.backendService.listImages(query);
-                res.json(images);
+                    const jwt = this.authHelper.getJWTFromRequest(req);
+                    // service accounts can't list images
+                    let cursor: number | undefined;
+                    try {
+                        cursor = parseInt(req.query.cursor as string);
+                    } catch (err) {}
+                    // direction
+                    let direction: "asc" | "desc" | undefined = req.query
+                        .direction as any;
+                    let limit: number | undefined;
+                    try {
+                        limit = parseInt(req.query.limit as string);
+                    } catch (err) {}
+                    let filter: string | undefined = req.query.filter as any;
+    
+                    let query = {
+                        userId: jwt.userId,
+                        status: req.query.status as ImageStatusEnum,
+                        cursor,
+                        direction,
+                        limit,
+                        filter,
+                    };
+    
+                    const images = await this.backendService.listImages(query);
+                    res.json(images);
+                } catch (err) {
+                    console.error(err);
+                }
+                
             })
         );
 
@@ -421,7 +428,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 const image = await this.backendService.getImage(req.params.id);
                 if (!image) {
-                    console.log(
+                    this.logger.log(
                         `user ${jwt.userId} tried to get image ${req.params.id} which does not exist`
                     );
                     res.status(404).send("not found");
@@ -432,7 +439,7 @@ export class Server {
                     !this.isPublicServiceAccount(jwt) &&
                     image.created_by != jwt.userId
                 ) {
-                    console.log(
+                    this.logger.log(
                         `user ${jwt.userId} tried to get image ${req.params.id} but not authorized`
                     );
                     res.status(404).send("not found");
@@ -450,7 +457,7 @@ export class Server {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id);
                 if (!image) {
-                    console.log(
+                    this.logger.log(
                         `user ${jwt.userId} tried to update image ${req.params.id} which does not exist`
                     );
                     res.status(404).send("not found");
@@ -460,7 +467,7 @@ export class Server {
                     !this.isPublicServiceAccount(jwt) &&
                     image.created_by !== jwt.userId
                 ) {
-                    console.log(
+                    this.logger.log(
                         `user ${jwt.userId} tried to update image ${req.params.id} but not authorized`
                     );
                     res.status(404).send("not found");
@@ -482,14 +489,14 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 let image = await this.backendService.getImage(req.params.id);
                 if (!image) {
-                    console.log(
+                    this.logger.log(
                         `user ${jwt.userId} tried to delete image ${req.params.id} which does not exist`
                     );
                     res.status(404).send("not found");
                     return;
                 }
                 if (image.created_by !== jwt.userId) {
-                    console.log(
+                    this.logger.log(
                         `user ${jwt.userId} tried to delete image ${req.params.id} but not authorized`
                     );
                     res.status(404).send("not found");
@@ -517,7 +524,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 // only service account can update video data
                 if (!this.serviceAccountType(jwt)) {
-                    console.log(
+                    this.logger.log(
                         `${jwt.userId} attempted to update video data but is not a service acct`
                     );
                     res.sendStatus(404);
@@ -537,7 +544,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    console.log(
+                    this.logger.log(
                         `${jwt.userId} attempted to get workers but is not an admin`
                     );
                     res.sendStatus(403);
@@ -556,7 +563,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    console.log(
+                    this.logger.log(
                         `${jwt.userId} attempted to create a worker but is not an admin`
                     );
                     res.sendStatus(403);
@@ -576,7 +583,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    console.log(
+                    this.logger.log(
                         `${jwt.userId} attempted to get a worker but is not an admin`
                     );
                     res.sendStatus(403);
@@ -599,7 +606,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    console.log(
+                    this.logger.log(
                         `${jwt.userId} attempted to update a worker but is not an admin`
                     );
                     res.sendStatus(403);
@@ -624,7 +631,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    console.log(
+                    this.logger.log(
                         `${jwt.userId} attempted to delete a worker but is not an admin`
                     );
                     res.sendStatus(403);
@@ -657,7 +664,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    console.log(
+                    this.logger.log(
                         `${jwt.userId} attempted to upsert a worker config but is not an admin`
                     );
                     res.sendStatus(403);
@@ -683,7 +690,7 @@ export class Server {
                     const jwt = this.authHelper.getJWTFromRequest(req);
                     // check admin
                     if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                        console.log(
+                        this.logger.log(
                             `${jwt.userId} attempted to generate a worker login code but is not an admin`
                         );
                         res.sendStatus(403);
@@ -705,7 +712,7 @@ export class Server {
 
                 // only service accounts can process images
                 if (!this.serviceAccountType(jwt)) {
-                    console.log(
+                    this.logger.log(
                         `${jwt.userId} attempted to process image but is not a service acct`
                     );
                     res.sendStatus(403);
@@ -734,7 +741,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    console.log(
+                    this.logger.log(
                         `${jwt.userId} attempted to get orders but is not an admin`
                     );
                     res.sendStatus(403);
@@ -751,7 +758,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    console.log(
+                    this.logger.log(
                         `${jwt.userId} attempted to create an order but is not an admin`
                     );
                     res.sendStatus(403);
@@ -801,7 +808,7 @@ export class Server {
                     return;
                 }
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    console.log(
+                    this.logger.log(
                         `user ${jwt.userId} tried to create invite code but is not an admin`
                     );
                     res.sendStatus(404);
@@ -854,9 +861,9 @@ export class Server {
                 return;
             }
             const cleanup = async () => {
-                console.log("cleanup process running");
+                this.logger.log("cleanup process running");
                 await this.backendService.cleanup();
-                console.log("cleanup complete");
+                this.logger.log("cleanup complete");
             };
             sleep(Math.random() * 1000).then(() => {
                 this.cleanupHandle = setInterval(() => {
@@ -869,7 +876,6 @@ export class Server {
             let lastTick = 0;
             this.metricsHandle = setInterval(async () => {
                 try {
-                    console.log("Calculating server metrics...");
                     // calculate CPU percentage
                     const cpu = os.cpus();
                     let totalIdle = 0;
@@ -905,7 +911,6 @@ export class Server {
                             server: this.serverId,
                         }
                     );
-                    console.log(`server.cpu: ${cpuPercentage}`);
                     this.metricsClient.addMetric(
                         "server.mem",
                         memPercentage,
@@ -914,7 +919,6 @@ export class Server {
                             server: this.serverId,
                         }
                     );
-                    console.log(`server.mem: ${memPercentage}`);
                 } catch (err) {
                     Bugsnag.notify(err);
                 }

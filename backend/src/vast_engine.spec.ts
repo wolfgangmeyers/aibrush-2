@@ -21,6 +21,7 @@ import { MockVastAPI } from "./vast_client";
 import { hash } from "./auth";
 import { FakeClock, RealClock } from "./clock";
 import { ErrorFactory } from "./error_factory";
+import { ConsoleLogger } from "./logs";
 
 jest.setTimeout(60000);
 
@@ -661,7 +662,7 @@ describe("VastEngine", () => {
         databaseName = await testHelper.createTestDatabase();
         await testHelper.cleanupTestFiles();
         const config = testHelper.createConfig(databaseName);
-        backendService = new BackendService(config, new MetricsClient(""));
+        backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger());
         await backendService.init();
         mockVastClient = new MockVastAPI();
         clock = new FakeClock(moment());

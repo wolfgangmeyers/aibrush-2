@@ -34,6 +34,7 @@ import { LoginCode } from "./model";
 import { Filestore, S3Filestore, LocalFilestore } from "./filestore";
 import { MetricsClient } from "./metrics";
 import Bugsnag from "@bugsnag/js";
+import { Logger } from "./logs";
 
 process.env.PGUSER = process.env.PGUSER || "postgres";
 
@@ -50,8 +51,8 @@ export class BackendService {
     private authHelper: AuthHelper;
     private filestore: Filestore;
 
-    constructor(private config: Config, private metrics: MetricsClient) {
-        this.authHelper = new AuthHelper(config);
+    constructor(private config: Config, private metrics: MetricsClient, private logger: Logger) {
+        this.authHelper = new AuthHelper(config, () => moment().valueOf(), logger);
         if (config.s3Bucket) {
             this.filestore = new S3Filestore(config.s3Bucket, config.s3Region);
         } else {
@@ -484,7 +485,7 @@ export class BackendService {
     async updateImage(id: string, body: UpdateImageInput): Promise<Image> {
         const existingImage = await this.getImage(id);
         if (!existingImage) {
-            console.log("Existing image not found: " + id);
+            this.logger.log("Existing image not found: " + id);
             return null;
         }
         let completed =
@@ -1039,7 +1040,7 @@ export class BackendService {
             );
             // if any images were updated, log the number
             if (result.rowCount > 0) {
-                console.log(
+                this.logger.log(
                     `Cleaning up stuck images: ${result.rowCount} images updated to "pending"`
                 );
                 this.metrics.addMetric(
@@ -1078,7 +1079,7 @@ export class BackendService {
                     promises.push(this.hardDeleteImage(row.id));
                 });
                 await Promise.all(promises);
-                console.log(
+                this.logger.log(
                     `cleaned up temporary images: ${result.rowCount} images deleted`
                 );
                 this.metrics.addMetric(
@@ -1115,7 +1116,7 @@ export class BackendService {
                     promises.push(this.hardDeleteImage(row.id));
                 });
                 await Promise.all(promises);
-                console.log(
+                this.logger.log(
                     `cleaned up deleted images: ${result.rowCount} images deleted`
                 );
                 this.metrics.addMetric(
@@ -1174,7 +1175,7 @@ export class BackendService {
 
     async updateVideoData(id: string, videoData: Buffer) {
         // write video data to mp4 file
-        console.log(`writing video data to ${id}.mp4`);
+        this.logger.log(`writing video data to ${id}.mp4`);
         const image = await this.getImage(id);
         await this.filestore.writeFile(
             `${id}.mp4`,
@@ -1382,7 +1383,7 @@ export class BackendService {
                 [code]
             );
             if (result.rows.length === 0) {
-                console.log("login code not found: " + code);
+                this.logger.log("login code not found: " + code);
                 return null;
             }
             const loginCode = result.rows[0] as LoginCode;
@@ -1391,7 +1392,7 @@ export class BackendService {
             const expiresAt = moment(loginCode.expires_at);
             await client.query(`DELETE FROM login_codes WHERE code=$1`, [code]);
             if (now.isAfter(expiresAt)) {
-                console.log("code expired: " + code);
+                this.logger.log("code expired: " + code);
                 this.metrics.addMetric("backend.verify", 1, "count", {
                     status: "failed",
                     reason: "code_expired",

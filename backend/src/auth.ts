@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { Config } from "./config";
 import Bugsnag from "@bugsnag/js";
+import { Logger } from "./logs";
+import moment from "moment";
 
 export function hash(username: string): string {
     return crypto.createHash("sha256").update(username).digest("base64")
@@ -34,7 +36,7 @@ export interface AuthJWTPayload {
 }
 
 export class AuthHelper {
-    constructor(private config: AuthHelperConfig, private now = Date.now) {
+    constructor(private config: AuthHelperConfig, private now = Date.now, private logger: Logger) {
 
     }
 
@@ -78,12 +80,12 @@ export class AuthHelper {
             const payload: AuthJWTPayload = jwt.verify(token, this.config.secret) as any;
             if (payload.type !== type) {
                 // log the mismatch
-                console.log(`Token type mismatch: ${payload.type} !== ${type}`);
+                this.logger.log(`Token type mismatch: ${payload.type} !== ${type}`);
                 return null;
             }
             if (payload.exp < Math.floor(this.now() / 1000)) {
                 // log the expired token
-                console.log(`Token expired: ${payload.exp} < ${Math.floor(this.now() / 1000)}`);
+                this.logger.log(`Token expired: ${payload.exp} < ${Math.floor(this.now() / 1000)}`);
                 return null;
             }
             return payload;
@@ -101,7 +103,7 @@ export class AuthHelper {
     public getJWTFromRequest(req: Request): AuthJWTPayload {
         const authzHeader = req.headers["authorization"];
         if (!authzHeader) {
-            console.log("no authz header")
+            this.logger.log("no authz header")
             return null;
         }
         // parse JWT from header
@@ -110,16 +112,16 @@ export class AuthHelper {
     }
 }
 
-export function authMiddleware(config: Config) {
+export function authMiddleware(config: Config, logger: Logger) {
 
-    const helper = new AuthHelper(config);
+    const helper = new AuthHelper(config, () => moment().valueOf(), logger);
 
     return (req: Request, res: Response, next: NextFunction) => {
 
         const jwt = helper.getJWTFromRequest(req);
 
         if (!jwt) {
-            console.log("could not verify token")
+            logger.log("could not verify token")
             return res.status(401).send("Unauthorized");
         }
         next();

@@ -3,6 +3,7 @@ import moment from "moment";
 import { BackendService, SCALING_KEY } from "./backend";
 import { RealClock } from "./clock";
 import { EC2ClientImpl, Ec2Engine } from "./ec2_engine";
+import { Logger } from "./logs";
 import { MetricsClient } from "./metrics";
 import { RunpodApi } from "./runpod_client";
 import { RunpodEngine } from "./runpod_engine";
@@ -15,7 +16,8 @@ const SCALING_SERVICE_COOLDOWN = 60 * 1000;
 
 export function getScalingEngines(
     backendService: BackendService,
-    metricsClient: MetricsClient
+    metricsClient: MetricsClient,
+    logger: Logger,
 ): ScalingEngine[] {
     const result: ScalingEngine[] = [];
     if (process.env.VAST_API_KEY) {
@@ -39,6 +41,7 @@ export function getScalingEngines(
                     backendService,
                     new RealClock(),
                     metricsClient,
+                    logger,
                     gpuType as any,
                 )
             )
@@ -51,6 +54,7 @@ export function getScalingEngines(
             backendService,
             new RealClock(),
             metricsClient,
+            logger,
             "us-west-2"
         )
     )
@@ -66,7 +70,8 @@ export class ScalingService {
      */
     constructor(
         private backend: BackendService,
-        private engines: ScalingEngine[]
+        private engines: ScalingEngine[],
+        private logger: Logger,
     ) {}
 
     start() {
@@ -85,7 +90,7 @@ export class ScalingService {
     }
 
     async scale() {
-        console.log("ScalingService.scale");
+        
         try {
             await this.backend.withLock(SCALING_KEY, async () => {
                 const lastScalingEvent = await this.backend.getLastEventTime(
@@ -106,6 +111,10 @@ export class ScalingService {
                 for (let order of activeOrders) {
                     unallocated += order.gpu_count;
                 }
+                this.logger.log("ScalingService.scale", {
+                    activeOrders: activeOrders.length,
+                    gpuCount: unallocated,
+                });
                 
                 for (const engine of this.engines) {
                     const capacity = await engine.capacity();

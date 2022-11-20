@@ -1,5 +1,6 @@
 import { BackendService } from "./backend";
 import { Order, OrderList } from "./client";
+import { ConsoleLogger } from "./logs";
 import { MetricsClient } from "./metrics";
 import { Server } from "./server";
 import { sleep } from "./sleep";
@@ -24,12 +25,13 @@ describe("orders", () => {
         databaseName = await testHelper.createTestDatabase();
         await testHelper.cleanupTestFiles();
         const config = testHelper.createConfig(databaseName);
-        backendService = new BackendService(config, new MetricsClient(""));
+        backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger());
         server = new Server(
             config,
             backendService,
             35456,
             new MetricsClient(""),
+            new ConsoleLogger(),
             null,
         );
         await server.init();

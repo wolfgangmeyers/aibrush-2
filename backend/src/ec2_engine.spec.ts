@@ -3,6 +3,7 @@ import { hash } from "./auth";
 import { BackendService } from "./backend"
 import { FakeClock } from "./clock";
 import { Ec2Engine, EC2_SCALING_EVENT, FakeEC2Client, TYPE_EC2 } from "./ec2_engine";
+import { ConsoleLogger } from "./logs";
 import { MetricsClient } from "./metrics";
 import { TestHelper } from "./testHelper";
 
@@ -25,12 +26,12 @@ describe("EC2Engine", () => {
         databaseName = await testHelper.createTestDatabase();
         await testHelper.cleanupTestFiles();
         const config = testHelper.createConfig(databaseName);
-        backendService = new BackendService(config, new MetricsClient(""));
+        backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger());
         await backendService.init();
         mockEc2Client = new FakeEC2Client([]);
         clock = new FakeClock(moment());
         // vastEngine = new VastEngine(mockVastClient, backendService, "wolfgangmeyers/aibrush:latest", clock, new MetricsClient(""));
-        ec2Engine = new Ec2Engine(mockEc2Client, backendService, clock, new MetricsClient(""), "us-west-2");
+        ec2Engine = new Ec2Engine(mockEc2Client, backendService, clock, new MetricsClient(""), new ConsoleLogger(), "us-west-2");
         await backendService.createUser("admin@test.test");
     });
 

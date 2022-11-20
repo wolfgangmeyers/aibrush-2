@@ -7,6 +7,7 @@ import moment from 'moment'
 import fs from "fs"
 import { Config } from "./config"
 import { MetricsClient } from "./metrics"
+import { ConsoleLogger } from "./logs"
 
 export interface Session {
     httpClient: AxiosInstance;
@@ -69,7 +70,7 @@ export class TestHelper {
             serviceAccounts: ["service-account@test.test"],
             adminUsers: ["admin@test.test"],
             assetsBaseUrl: "/api/images",
-        }, new MetricsClient(""))
+        }, new MetricsClient(""), new ConsoleLogger())
         const databases = await backendService.listDatabases()
         for (const db of databases) {
             if (db.startsWith("aibrush_test_")) {
@@ -126,7 +127,7 @@ export class TestHelper {
             serviceAccounts: ["service-account@test.test"],
             adminUsers: ["admin@test.test"],
             assetsBaseUrl: "/api/images",
-        }, new MetricsClient(""))
+        }, new MetricsClient(""), new ConsoleLogger())
         const databaseName = `aibrush_test_${moment().valueOf()}`
         await backendService.createDatabase(databaseName)
         await sleep(100)

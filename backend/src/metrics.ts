@@ -41,7 +41,7 @@ export class MetricsClient {
                 ];
                 this.metrics = [];
     
-                const resp = await axios.post(NEW_RELIC_URL, data, {
+                await axios.post(NEW_RELIC_URL, data, {
                     headers: {
                         "Content-Type": "application/json",
                         "Api-Key": this.newRelicLicenseKey,

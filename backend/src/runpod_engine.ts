@@ -2,6 +2,7 @@ import Bugsnag from "@bugsnag/js";
 import moment from "moment";
 import { BackendService } from "./backend";
 import { Clock } from "./clock";
+import { Logger } from "./logs";
 import { MetricsClient } from "./metrics";
 import { GpuTypesResult, RunpodClient } from "./runpod_client";
 import { ScalingEngine } from "./scaling_engine";
@@ -63,7 +64,8 @@ export function calculateScalingOperations(
     gpuTypes: GPUType[],
     targetGpus: number,
     lastScalingOperation: moment.Moment,
-    clock: Clock
+    clock: Clock,
+    logger: Logger,
 ): Array<ScalingOperation> {
     // add up the number of gpus in the workers (some may be null if not deployed)
     let numGpus = 0;
@@ -74,7 +76,7 @@ export function calculateScalingOperations(
             now - (worker.last_ping || worker.created_at) >
             WORKER_TIMEOUT.asMilliseconds()
         ) {
-            console.log(`Worker ${worker.id} timed out`);
+            logger.log(`Worker ${worker.id} timed out`);
             // TODO: emit a metric for this?
             operations.push({
                 targetId: worker.id,
@@ -97,7 +99,7 @@ export function calculateScalingOperations(
             scaleDown(workers, numGpus, targetGpus, operations);
         }
     } else {
-        scaleUp(gpuTypes, numGpus, targetGpus, operations);
+        scaleUp(gpuTypes, numGpus, targetGpus, operations, logger);
     }
     return operations;
 }
@@ -153,7 +155,8 @@ function scaleUp(
     gpuTypes: GPUType[],
     numGpus: number,
     targetGpus: number,
-    operations: ScalingOperation[]
+    operations: ScalingOperation[],
+    logger: Logger,
 ) {
     if (gpuTypes.length === 0) {
         return;
@@ -174,14 +177,12 @@ function scaleUp(
     while (!completed) {
         let gpuSize = 0;
         for (const gpuCount of gpuCounts) {
-            console.log("gpuCount", gpuCount);
             const availability = availabilityByGPUCount[gpuCount];
             if (availability > 0 && numGpus < targetGpus) {
                 gpuSize = gpuCount;
                 if (numGpus + gpuCount >= targetGpus) {
                     completed = true;
 
-                    console.log("Adding gpuSize(completed)", gpuSize);
                     operations.push({
                         targetId: gpuId,
                         operationType: "create",
@@ -195,11 +196,13 @@ function scaleUp(
         if (!completed) {
             if (gpuSize == 0) {
                 completed = true;
-                console.log("offers exhausted");
+                // console.log("offers exhausted");
+                logger.log("offers exhausted", {
+                    engine: "runpod"
+                });
             } else {
                 availabilityByGPUCount[gpuSize] -= 1;
                 numGpus += gpuSize;
-                console.log("Adding gpuSize(not completed)", gpuSize);
                 operations.push({
                     targetId: gpuId,
                     operationType: "create",
@@ -216,6 +219,7 @@ export class RunpodEngine implements ScalingEngine {
         private backend: BackendService,
         private clock: Clock,
         private metricsClient: MetricsClient,
+        private logger: Logger,
         private gpuType:
             | "NVIDIA GeForce RTX 3090"
             | "NVIDIA RTX A5000"
@@ -296,7 +300,7 @@ export class RunpodEngine implements ScalingEngine {
     }
 
     async scale(activeOrders: number): Promise<number> {
-        console.log(`scaling runpod ${this.gpuType} to`, activeOrders);
+        this.logger.log(`scaling runpod ${this.gpuType} to ${activeOrders}`);
         const gpuMultiplier = GPU_PER_ORDER_MULTIPLIERS[this.gpuType];
         this.metricsClient.addMetric(
             "runpod_engine.scale",
@@ -317,7 +321,8 @@ export class RunpodEngine implements ScalingEngine {
             gpuTypes,
             targetGpus,
             lastScalingOperation,
-            this.clock
+            this.clock,
+            this.logger
         );
         for (const operation of operations) {
             const tags: any = {
@@ -353,7 +358,6 @@ export class RunpodEngine implements ScalingEngine {
                         ],
                         volumeMountPath: "",
                     });
-                    console.log("Created pod", result);
                     const updatedWorker =
                         await this.backend.updateWorkerDeploymentInfo(
                             newWorker.id,
