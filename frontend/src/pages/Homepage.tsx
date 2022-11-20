@@ -21,7 +21,6 @@ interface Props {
 }
 
 export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
-    const [cursor, setCursor] = useState(0);
     const [creating, setCreating] = useState(false);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const [parentImage, setParentImage] = useState<Image | null>(null);
@@ -189,9 +188,9 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             // clear error
             setErr(null);
             // set cursor to max updated_at from images
-            // const cursor = images.reduce((max, image) => {
-            //     return Math.max(max, image.updated_at);
-            // }, 0);
+            const cursor = images.reduce((max, image) => {
+                return Math.max(max, image.updated_at);
+            }, 0);
 
             try {
                 const resp = await api.listImages(
@@ -207,7 +206,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                             latestCursor = image.updated_at;
                         }
                     }
-                    
+
                     // split resp.data.images into "new" and "updated" lists
                     // image is "new" if it's not in images
                     const newImages = resp.data.images.filter((image) => {
@@ -250,9 +249,6 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                             ...newImages.filter((image) => !image.deleted_at),
                         ].sort(sortImages);
                     });
-                    if (latestCursor > cursor) {
-                        setCursor(latestCursor);
-                    }
                 }
                 return images;
             } catch (err) {
@@ -267,7 +263,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
         return () => {
             clearInterval(timerHandle);
         };
-    }, [api, images, search, cursor]);
+    }, [api, images, search]);
 
     useEffect(() => {
         // de-duplicate images by id
@@ -414,15 +410,17 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
 
     const completedOrSavedImages = images.filter((image) => {
         return (
-            image.status === ImageStatusEnum.Completed ||
-            image.status === ImageStatusEnum.Saved
+            !image.deleted_at &&
+            (image.status === ImageStatusEnum.Completed ||
+                image.status === ImageStatusEnum.Saved)
         );
     });
 
     const pendingOrProcessingImages = images.filter(
         (image) =>
-            image.status === ImageStatusEnum.Pending ||
-            image.status === ImageStatusEnum.Processing
+            !image.deleted_at &&
+            (image.status === ImageStatusEnum.Pending ||
+                image.status === ImageStatusEnum.Processing)
     );
 
     const pendingImages = pendingOrProcessingImages.filter(
@@ -505,7 +503,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                                         Cancel
                                     </button>
                                     <button
-                                        style={{marginLeft: "8px"}}
+                                        style={{ marginLeft: "8px" }}
                                         className="btn image-popup-delete-button"
                                         onClick={() => {
                                             onConfirmBulkDelete();
@@ -522,7 +520,7 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
                     dataLength={images.length}
                     next={onLoadMore}
                     hasMore={hasMore}
-                    loader={<h4>Loading...</h4>}
+                    loader={<><hr/><h4>Loading...</h4></>}
                 >
                     {pendingOrProcessingImages.length > 0 && (
                         <PendingImagesThumbnail

@@ -33,6 +33,7 @@ import { Authentication, AuthHelper, ServiceAccountConfig } from "./auth";
 import { LoginCode } from "./model";
 import { Filestore, S3Filestore, LocalFilestore } from "./filestore";
 import { MetricsClient } from "./metrics";
+import Bugsnag from "@bugsnag/js";
 
 process.env.PGUSER = process.env.PGUSER || "postgres";
 
@@ -97,11 +98,13 @@ export class BackendService {
                 await sleep(100);
             }
         } catch (error) {
-            console.error(error);
             this.metrics.addMetric("backend.init", 1, "count", {
                 status: "error",
                 error: error.message,
             });
+            Bugsnag.notify(error, evt => {
+                evt.context = "backend.init";
+            })
             throw error;
         } finally {
             if (client && lock) {
@@ -255,8 +258,7 @@ export class BackendService {
                 `${id}.image.jpg`
             );
             return image;
-        } catch (err) {
-            console.error(err);
+        } catch (_) {
             return null;
         }
     }
@@ -270,8 +272,7 @@ export class BackendService {
                     `${id}.thumbnail.jpg`
                 );
                 return thumbnail;
-            } catch (err) {
-                console.error(err);
+            } catch (_) {
             }
         }
         return null;
@@ -284,8 +285,7 @@ export class BackendService {
                 // load image data from file and convert from base64 to buffer
                 const npy = await this.filestore.readBinaryFile(`${id}.npy`);
                 return npy;
-            } catch (err) {
-                console.error(err);
+            } catch (_) {
             }
         }
         return null;
@@ -297,8 +297,8 @@ export class BackendService {
                 // load image data from file and convert from base64 to buffer
                 const mask = this.filestore.readBinaryFile(`${id}.mask.jpg`);
                 return mask;
-            } catch (err) {
-                console.error(err);
+            } catch (_) {
+                
             }
         }
         return null;
@@ -410,10 +410,9 @@ export class BackendService {
                     );
                     encoded_image = parentImageData.toString("base64");
                 } catch (err) {
-                    console.error(
-                        `error loading parent image data for ${image.id} (parent=${body.parent})`,
-                        err
-                    );
+                    Bugsnag.notify(err, (event) => {
+                        event.context = `load parent image data`;
+                    });
                 }
             }
             const promises: Promise<void>[] = [];
@@ -1279,8 +1278,8 @@ export class BackendService {
             }
             // create the new user and then delete the invite code
             await client.query(
-                `INSERT INTO users (id, active) VALUES ($1, true)`,
-                [hash(email)]
+                `INSERT INTO users (id, email, active) VALUES ($1, $2, true)`,
+                [hash(email), email]
             );
             this.metrics.addMetric("backend.activate_user", 1, "count", {
                 status: "success",
@@ -1291,6 +1290,7 @@ export class BackendService {
         }
     }
 
+    // this is only for testing
     async createUser(email: string): Promise<boolean> {
         const existingUser = await this.getUser(hash(email));
         if (existingUser) {
@@ -1299,10 +1299,22 @@ export class BackendService {
         const client = await this.pool.connect();
         try {
             await client.query(
-                `INSERT INTO users (id, active) VALUES ($1, false)`,
-                [hash(email)]
+                `INSERT INTO users (id, email, active) VALUES ($1, $2, false)`,
+                [hash(email), email]
             );
             return true;
+        } finally {
+            client.release();
+        }
+    }
+
+    private async backfillUserEmail(email: string): Promise<void> {
+        const client = await this.pool.connect();
+        try {
+            await client.query(
+                `UPDATE users SET email=$1 WHERE id=$2`,
+                [email, hash(email)]
+            );
         } finally {
             client.release();
         }
@@ -1389,6 +1401,7 @@ export class BackendService {
 
             // generate auth tokens
             const auth = this.authHelper.createTokens(loginCode.user_email);
+            this.backfillUserEmail(loginCode.user_email);
             this.metrics.addMetric("backend.verify", 1, "count", {
                 status: "success",
             });

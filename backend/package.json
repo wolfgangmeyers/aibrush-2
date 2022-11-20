@@ -34,6 +34,8 @@
         "shell": "ts-node"
     },
     "dependencies": {
+        "@bugsnag/js": "^7.18.0",
+        "@bugsnag/plugin-express": "^7.18.0",
         "aws-sdk": "^2.1066.0",
         "axios": "^0.22.0",
         "cors": "^2.8.5",

@@ -1,3 +1,4 @@
+import Bugsnag from "@bugsnag/js";
 import moment from "moment";
 import { BackendService } from "./backend";
 import { Clock } from "./clock";
@@ -364,7 +365,9 @@ export class RunpodEngine implements ScalingEngine {
                     workers.push(updatedWorker);
                 } catch (err) {
                     tags.error = err.message;
-                    console.error("Failed to create instance", err);
+                    Bugsnag.notify(err, evt => {
+                        evt.context = "RunpodEngine.create";
+                    })
                     await this.backend.deleteWorker(newWorker.id);
                     break;
                 } finally {
@@ -387,7 +390,9 @@ export class RunpodEngine implements ScalingEngine {
                     workers.splice(workers.indexOf(worker), 1);
                 } catch (err) {
                     tags.error = err.message;
-                    console.error("Failed to delete instance", err);
+                    Bugsnag.notify(err, evt => {
+                        evt.context = "RunpodEngine.delete";
+                    })
                     throw err;
                 } finally {
                     this.metricsClient.addMetric(

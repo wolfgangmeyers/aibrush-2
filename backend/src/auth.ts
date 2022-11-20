@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { Config } from "./config";
+import Bugsnag from "@bugsnag/js";
 
 export function hash(username: string): string {
     return crypto.createHash("sha256").update(username).digest("base64")
@@ -90,7 +91,9 @@ export class AuthHelper {
             if (err.name === "TokenExpiredError") {
                 return null;
             }
-            console.error("Error verifying token", err)
+            Bugsnag.notify(err, evt => {
+                evt.context = "verifyToken";
+            })
             return null;
         }
     }

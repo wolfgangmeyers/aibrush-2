@@ -5,6 +5,7 @@ import { MetricsClient } from "./metrics";
 import { ScalingEngine } from "./scaling_engine";
 import { VastAIApi, VastClient } from "./vast_client";
 import { sleep } from "./sleep";
+import Bugsnag from "@bugsnag/js";
 
 export const SCALEDOWN_COOLDOWN = moment.duration(10, "minutes");
 export const WORKER_TIMEOUT = moment.duration(10, "minutes");
@@ -315,7 +316,9 @@ export class VastEngine implements ScalingEngine {
                     workers.push(updatedWorker);
                 } catch (err) {
                     tags.error = err.message;
-                    console.error("Failed to create instance", err);
+                    Bugsnag.notify(err, evt => {
+                        evt.context = "VastEngine.create";
+                    })
                     await this.backend.deleteWorker(newWorker.id);
                     break;
                 } finally {
@@ -344,7 +347,9 @@ export class VastEngine implements ScalingEngine {
                     workers.splice(workers.indexOf(worker), 1);
                 } catch (err) {
                     tags.error = err.message;
-                    console.error("Failed to delete instance", err);
+                    Bugsnag.notify(err, evt => {
+                        evt.context = "VastEngine.delete";
+                    })
                     throw err;
                 } finally {
                     this.metricsClient.addMetric(

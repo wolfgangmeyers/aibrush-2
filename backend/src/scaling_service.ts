@@ -1,3 +1,4 @@
+import Bugsnag from "@bugsnag/js";
 import moment from "moment";
 import { BackendService, SCALING_KEY } from "./backend";
 import { RealClock } from "./clock";
@@ -125,7 +126,9 @@ export class ScalingService {
                 }
             });
         } catch (e) {
-            console.error(e);
+            Bugsnag.notify(e, evt => {
+                evt.context = "ScalingService.scale";
+            })
         }
     }
 }

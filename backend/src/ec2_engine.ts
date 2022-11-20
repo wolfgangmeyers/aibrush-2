@@ -5,6 +5,7 @@ import { BackendService } from "./backend";
 import { Clock } from "./clock";
 import { MetricsClient } from "./metrics";
 import { ScalingEngine } from "./scaling_engine";
+import Bugsnag from "@bugsnag/js";
 
 export const SCALEDOWN_COOLDOWN = moment.duration(10, "minutes");
 export const TYPE_EC2 = "ec2";
@@ -65,7 +66,9 @@ export class Ec2Engine implements ScalingEngine {
                 );
             } catch (err) {
                 tags.error = err.message;
-                console.error("Failed to create instance", err);
+                Bugsnag.notify(err, (evt) => {
+                    evt.context = "EC2Engine.createInstance";
+                });
                 await this.backend.deleteWorker(worker.id);
                 break;
             } finally {
