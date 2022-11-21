@@ -26,7 +26,7 @@ RUN pip install -e git+https://github.com/openai/CLIP.git@main#egg=clip
 RUN pip install -e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers
 
 # include license in the image
-RUN wget https://huggingface.co/spaces/CompVis/stable-diffusion-license/raw/main/license.txt -O /STABLE_DIFFUSION_LICENSE.txt
+RUN wget https://huggingface.co/spaces/runwayml/stable-diffusion-license/raw/main/license.txt -O /STABLE_DIFFUSION_LICENSE.txt
 
 # mkdir and set working directory to /app
 RUN mkdir /app

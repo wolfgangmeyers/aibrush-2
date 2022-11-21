@@ -49,7 +49,7 @@ export class SelectionTool extends BaseTool implements Tool {
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
         if (event.type == "touch") {
             this.onMouseMove(event);
-        }else if (event.button === 0) {
+        } else if (event.button === 0) {
             this.selectionOverlay = this.selectionOverlayPreview;
             this.selectionOverlayPreview = undefined;
             this.sync();
@@ -102,7 +102,7 @@ export class SelectionTool extends BaseTool implements Tool {
     }
 
     onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
-        if (event.button === 0) {
+        if (event.button === 0 && event.type == "touch") {
             this.selectionOverlay = this.selectionOverlayPreview;
             this.selectionOverlayPreview = undefined;
             this.sync();

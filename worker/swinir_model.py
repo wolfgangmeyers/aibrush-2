@@ -37,10 +37,8 @@ def load_model():
     return model
 
 class SwinIRModel:
-    def __init__(self, args=None, model=None, device=None):
-        self.device = device
-        if self.device is None:
-            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    def __init__(self):
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # set up model
         if os.path.exists(model_args.model_path):
             print(f'loading model from {model_args.model_path}')
@@ -52,10 +50,8 @@ class SwinIRModel:
             r = requests.get(url, allow_redirects=True)
             print(f'downloading model {model_args.model_path}')
             open(model_args.model_path, 'wb').write(r.content)
-        self.model = model
-        if self.model is None:
-            self.model = load_model()
-            self.model = self.model.to(self.device)
+        self.model = load_model()
+        self.model = self.model.to(self.device)
 
     def generate(self, args):
         init_image = args.init_image

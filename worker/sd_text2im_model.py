@@ -137,7 +137,7 @@ def load_model():
     return load_model_from_config(config, _default_args.ckpt)
 
 class StableDiffusionText2ImageModel:
-    def __init__(self, args=None, model=None, device=None):
+    def __init__(self):
         args = _default_args
         self.device = torch.device("cuda")
         self.model = load_model()

@@ -50,7 +50,7 @@ def child_process(Model, name):
             args_json = input()
             args = SimpleNamespace(**json.loads(args_json))
             if model is None:
-                model = Model(args)
+                model = Model()
             eprint(f"input received: {args}")
             model.generate(args)
             print("GENERATED")

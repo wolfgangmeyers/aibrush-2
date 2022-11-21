@@ -118,6 +118,7 @@ export class BaseTool implements Tool {
         } else {
             this.onMouseUp({
                 button: 0,
+                type: "touch",
             } as any);
         }
     }
