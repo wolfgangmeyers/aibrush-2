@@ -15,7 +15,6 @@ if (process.env.BUGSNAG_API_KEY) {
         apiKey: process.env.BUGSNAG_API_KEY,
         plugins: [BugsnagPluginExpress],
     });
-    Bugsnag.notify(new Error('Test error'))
 }
 
 import { sleep } from "./sleep";
