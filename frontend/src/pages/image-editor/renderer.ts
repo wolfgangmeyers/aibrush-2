@@ -10,7 +10,7 @@ export class Renderer {
     private backgroundLayer: HTMLCanvasElement;
     private baseImageLayer: HTMLCanvasElement;
     private editLayer: HTMLCanvasElement;
-    private overlayLayer: HTMLCanvasElement;
+    // private overlayLayer: HTMLCanvasElement;
 
     private selectionOverlay: Rect | undefined;
     private selectionOverlayPreview: Rect | undefined;
@@ -28,7 +28,7 @@ export class Renderer {
         this.backgroundLayer = document.createElement("canvas");
         this.baseImageLayer = document.createElement("canvas");
         this.editLayer = document.createElement("canvas");
-        this.overlayLayer = document.createElement("canvas");
+        // this.overlayLayer = document.createElement("canvas");
 
         this.zoom = 1;
         this.offsetX = 0;
@@ -140,7 +140,8 @@ export class Renderer {
             // context.drawImage(this.backgroundLayer, 0, 0);
             context.drawImage(this.baseImageLayer, 0, 0);
             context.drawImage(this.editLayer, 0, 0);
-            context.drawImage(this.overlayLayer, 0, 0);
+            // context.drawImage(this.overlayLayer, 0, 0);
+            this.drawOverlay(context, this.canvas.width, this.canvas.height);
             context.setTransform(1, 0, 0, 1, 0, 0);
         }
     }
@@ -157,7 +158,7 @@ export class Renderer {
         const ctx = this.backgroundLayer.getContext("2d");
         if (ctx) {
             const pattern = ctx.createPattern(
-                this.createCheckeredPattern(20, 20, "#DEDEDE", "#FFFFFF"),
+                this.createCheckeredPattern(20, 20, "#808080", "#AAAAAA"),
                 "repeat"
             );
             if (pattern) {
@@ -192,7 +193,10 @@ export class Renderer {
         return canvas;
     }
 
-    setBaseImage(image: HTMLImageElement) {
+    setBaseImage(
+        image: HTMLImageElement | HTMLCanvasElement,
+        updateSelectionOverlay = true
+    ) {
         const context = this.baseImageLayer.getContext("2d");
         if (context) {
             // set size of all layers
@@ -205,20 +209,22 @@ export class Renderer {
             this.baseImageLayer.height = image.height;
             this.editLayer.width = image.width;
             this.editLayer.height = image.height;
-            this.overlayLayer.width = image.width;
-            this.overlayLayer.height = image.height;
+            // this.overlayLayer.width = image.width;
+            // this.overlayLayer.height = image.height;
             // set canvas size
             this.canvas.width = image.width;
             this.canvas.height = image.height;
             context.drawImage(image, 0, 0);
 
-            // set 512x512 selection overlay at the center of the image
-            this.setSelectionOverlay({
-                x: (image.width - 512) / 2,
-                y: (image.height - 512) / 2,
-                width: 512,
-                height: 512,
-            });
+            if (updateSelectionOverlay) {
+                // set 512x512 selection overlay at the center of the image
+                this.setSelectionOverlay({
+                    x: (image.width - 512) / 2,
+                    y: (image.height - 512) / 2,
+                    width: 512,
+                    height: 512,
+                });
+            }
 
             this.render();
             this.snapshot();
@@ -245,32 +251,31 @@ export class Renderer {
             // edit image makes the selection rect and preview disappear
             // so redraw the overlay
             this.hasSelection = !!imageData;
-            this.drawOverlay();
+            this.render();
         }
         this.notifySnapshotListener();
     }
 
-    private drawOverlay() {
+    private drawOverlay(
+        context: CanvasRenderingContext2D,
+        width: number,
+        height: number
+    ) {
         const lineWidth = Math.max(
             this.canvas.width / 512,
             this.canvas.height / 512
         );
-        const context = this.overlayLayer.getContext("2d");
+        // const context = this.overlayLayer.getContext("2d");
         if (context) {
-            context.clearRect(
-                0,
-                0,
-                this.overlayLayer.width,
-                this.overlayLayer.height
-            );
+            // context.clearRect(
+            //     0,
+            //     0,
+            //     this.overlayLayer.width,
+            //     this.overlayLayer.height
+            // );
             context.strokeStyle = "gray";
             context.lineWidth = lineWidth;
-            context.strokeRect(
-                0,
-                0,
-                this.overlayLayer.width,
-                this.overlayLayer.height
-            );
+            context.strokeRect(0, 0, width, height);
 
             if (!this.hasSelection && this.selectionOverlay) {
                 context.strokeStyle = "white";
@@ -379,24 +384,22 @@ export class Renderer {
                     context.stroke();
                 }
             }
-
-            this.render();
         }
     }
 
     setSelectionOverlay(selectionOverlay: Rect | undefined) {
         this.selectionOverlay = selectionOverlay;
-        this.drawOverlay();
+        this.render();
     }
 
     setSelectionOverlayPreview(selectionOverlayPreview: Rect | undefined) {
         this.selectionOverlayPreview = selectionOverlayPreview;
-        this.drawOverlay();
+        this.render();
     }
 
     setCursor(cursor: Cursor | undefined) {
         this.cursor = cursor;
-        this.drawOverlay();
+        this.render();
     }
 
     getSelectionOverlay(): Rect | undefined {
@@ -734,6 +737,50 @@ export class Renderer {
         this.render();
         this.hasSelection = true;
         this.notifySnapshotListener();
+    }
+
+    expandToOverlay() {
+        if (!this.selectionOverlay) {
+            throw new Error("No selection overlay");
+        }
+        const minX = Math.min(0, this.selectionOverlay.x);
+        const minY = Math.min(0, this.selectionOverlay.y);
+        const maxX = Math.max(
+            this.selectionOverlay.x + this.selectionOverlay.width,
+            this.baseImageLayer.width
+        );
+        const maxY = Math.max(
+            this.selectionOverlay.y + this.selectionOverlay.height,
+            this.baseImageLayer.height
+        );
+        const width = maxX - minX;
+        const height = maxY - minY;
+
+        // create a new canvas with the expanded size
+        const newCanvas = document.createElement("canvas");
+        newCanvas.width = width;
+        newCanvas.height = height;
+        // draw the base image on the new canvas.
+        // if overlay.x is negative, image.x is overlay.x * -1
+        // if overlay.x is 0 or positive, image.x is 0
+        // if overlay.y is negative, image.y is overlay.y * -1
+        // if overlay.y is 0 or positive, image.y is 0
+        const context = newCanvas.getContext("2d");
+        if (context) {
+            context.drawImage(
+                this.baseImageLayer,
+                Math.max(0, this.selectionOverlay.x * -1),
+                Math.max(0, this.selectionOverlay.y * -1)
+            );
+        }
+        if (this.selectionOverlay.x < 0) {
+            this.selectionOverlay.x = 0;
+        }
+        if (this.selectionOverlay.y < 0) {
+            this.selectionOverlay.y = 0;
+        }
+        console.log(`new Canvas size: ${width} x ${height}`);
+        this.setBaseImage(newCanvas, false);
     }
 }
 

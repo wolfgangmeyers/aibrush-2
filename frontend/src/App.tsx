@@ -122,6 +122,15 @@ function App() {
                     {/* font awesome github icon */}
                     <i className="fab fa-github"></i>
                   </a>
+                  {/* Link to discord */}
+                  <a
+                    className="btn btn-primary top-button"
+                    href="https://discord.gg/VPYyAJBkhC"
+                    target="_blank"
+                  >
+                    {/* font awesome discord icon */}
+                    <i className="fab fa-discord"></i>
+                  </a>
                 </>
               )}
             </div>

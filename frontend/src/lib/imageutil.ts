@@ -4,7 +4,8 @@ export function featherEdges(
     selectionOverlay: Rect,
     imageWidth: number,
     imageHeight: number,
-    imageData: ImageData
+    imageData: ImageData,
+    featherWidth?: number,
 ) {
     const featherLeftEdge = selectionOverlay.x != 0;
     const featherRightEdge =
@@ -17,7 +18,9 @@ export function featherEdges(
         selectionOverlay.width,
         selectionOverlay.height
     );
-    const featherWidth = Math.floor(baseWidth / 8);
+    if (!featherWidth) {
+        featherWidth = Math.floor(baseWidth / 8);
+    }
 
     if (featherTopEdge) {
         for (let y = 0; y < featherWidth; y++) {

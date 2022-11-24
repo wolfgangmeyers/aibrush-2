@@ -19,6 +19,7 @@ import {
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
 import { getUpscaleLevel } from "../../lib/upscale";
+import { featherEdges } from "../../lib/imageutil";
 
 type InpaintToolState =
     | "select"
@@ -130,6 +131,9 @@ export class InpaintTool extends BaseTool implements Tool {
         this.selectionTool = new SelectionTool(renderer);
         if (this.selectSupported()) {
             this.state = "select";
+            this.selectionTool.updateArgs({
+                outpaint: this.getArgs().outpaint,
+            })
         } else {
             this.state = "erase";
         }
@@ -229,6 +233,11 @@ export class InpaintTool extends BaseTool implements Tool {
     }
 
     updateArgs(args: any) {
+        args = {
+            ...this.getArgs(),
+            ...args,
+        }
+        super.updateArgs(args);
         this.prompt = args.prompt || "";
         this.count = args.count || 4;
         this.variationStrength = args.variationStrength || 0.75;
@@ -238,6 +247,9 @@ export class InpaintTool extends BaseTool implements Tool {
             this.renderer.getWidth() / 2,
             this.renderer.getHeight() / 2
         );
+        this.selectionTool.updateArgs({
+            outpaint: args.outpaint,
+        })
     }
 
     onChangeState(handler: (state: InpaintToolState) => void) {
@@ -255,6 +267,7 @@ export class InpaintTool extends BaseTool implements Tool {
     private loadImageData(
         api: AIBrushApi,
         imageId: string,
+        baseImage: APIImage,
         selectionOverlay: Rect
     ): Promise<ImageData> {
         return new Promise((resolve, reject) => {
@@ -288,6 +301,15 @@ export class InpaintTool extends BaseTool implements Tool {
                         selectionOverlay.width,
                         selectionOverlay.height
                     );
+
+                    featherEdges(
+                        selectionOverlay,
+                        baseImage.width!,
+                        baseImage.height!,
+                        imageData,
+                        10
+                    );
+
                     resolve(imageData);
                     // remove canvas
                     canvas.remove();
@@ -312,11 +334,23 @@ export class InpaintTool extends BaseTool implements Tool {
 
     async submit(api: AIBrushApi, image: APIImage) {
         this.notifyError(null);
-        const selectionOverlay = this.renderer.getSelectionOverlay();
+        let selectionOverlay = this.renderer.getSelectionOverlay();
         if (!selectionOverlay) {
             console.error("No selection");
             return;
         }
+
+        console.log(`args: ${JSON.stringify(this.getArgs())}`);
+        if (this.getArgs().outpaint) {
+            console.log("Checking for overlay out of bounds")
+            // check if selection overlay is out of renderer bounds (width, height)
+            if (selectionOverlay.x < 0 || selectionOverlay.y < 0 || selectionOverlay.x + selectionOverlay.width > this.renderer.getWidth() || selectionOverlay.y + selectionOverlay.height > this.renderer.getHeight()) {
+                console.log("Expanding to overlay!")
+                this.renderer.expandToOverlay();
+                selectionOverlay = this.renderer.getSelectionOverlay()!;
+            }
+        }
+
         // get the erased area, then undo the erase to get the original image
         const encodedMask = this.renderer.getEncodedMask(selectionOverlay);
         // hack to restore the image
@@ -379,6 +413,7 @@ export class InpaintTool extends BaseTool implements Tool {
                         const imageData = await this.loadImageData(
                             api,
                             newImages![i].id,
+                            image,
                             selectionOverlay!
                         );
                         newImages![i].data = imageData;
@@ -490,6 +525,9 @@ export const InpaintControls: FC<ControlsProps> = ({
     const [error, setError] = useState<string | null>(null);
     const [brushSize, setBrushSize] = useState(10);
     const [dirty, setDirty] = useState(false);
+    const [outpaint, setoutpaint] = useState<boolean | undefined>(
+        tool.getArgs().outpaint
+    );
 
     useEffect(() => {
         tool.updateArgs({
@@ -556,7 +594,29 @@ export const InpaintControls: FC<ControlsProps> = ({
                         <i className="fa fa-info-circle"></i>&nbsp; Move the
                         selection rectangle to the area that you want to inpaint
                     </p>
-                    <div className="form-group"></div>
+                    <div className="form-group">
+                        {/* allow outpaint checkbox */}
+                        <div className="form-check">
+                            <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id="allowoutpaint"
+                                checked={!!outpaint}
+                                onChange={(e) => {
+                                    setoutpaint(e.target.checked);
+                                    tool.updateArgs({
+                                        outpaint: e.target.checked,
+                                    });
+                                }}
+                            />
+                            <label
+                                className="form-check-label"
+                                htmlFor="allowoutpaint"
+                            >
+                                Allow outpainting
+                            </label>
+                        </div>
+                    </div>
                 </>
             )}
 
@@ -636,7 +696,11 @@ export const InpaintControls: FC<ControlsProps> = ({
 
             {state === "confirm" && (
                 <>
-                    <p>Use the <i className="fa fa-arrow-left"></i> and <i className="fa fa-arrow-right"></i> buttons to navigate between the inpaint options</p>
+                    <p>
+                        Use the <i className="fa fa-arrow-left"></i> and{" "}
+                        <i className="fa fa-arrow-right"></i> buttons to
+                        navigate between the inpaint options
+                    </p>
                 </>
             )}
 

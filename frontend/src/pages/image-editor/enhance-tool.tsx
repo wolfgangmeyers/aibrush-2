@@ -87,7 +87,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             getUpscaleLevel(
                 this.renderer.getWidth(),
                 this.renderer.getHeight()
-            ) === 0
+            ) === 0 && this.renderer.getWidth()
         );
     }
 
@@ -99,6 +99,19 @@ export class EnhanceTool extends BaseTool implements Tool {
         } else {
             this.state = "default";
         }
+        let selectionArgs = this.selectionTool.getArgs();
+        if (!this.selectSupported()) {
+            selectionArgs = {
+                ...selectionArgs,
+                selectionOverlay: {
+                    x: 0,
+                    y: 0,
+                    width: this.renderer.getWidth(),
+                    height: this.renderer.getHeight(),
+                },
+            };
+        }
+        this.selectionTool.updateArgs(selectionArgs);
     }
 
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
@@ -302,10 +315,6 @@ export class EnhanceTool extends BaseTool implements Tool {
                         selectionOverlay.width,
                         selectionOverlay.height
                     );
-                    // Is there a better way to fix this? This often causes
-                    // a visible rectangle difference in coloring. :/
-
-                    // fixRedShift(baseImageData, imageData);
                     featherEdges(
                         selectionOverlay,
                         baseImage.width!,
@@ -566,6 +575,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     <SelectionControls
                         renderer={renderer}
                         tool={tool.selectionTool}
+                        lockAspectRatio={true}
                     />
                 </>
             )}
@@ -671,16 +681,15 @@ export const EnhanceControls: FC<ControlsProps> = ({
                         <i className="fa fa-times"></i>&nbsp; Revert
                     </button>
                 )}
-                {(state === "confirm" ||
-                    state === "erase") && (
-                        <button
-                            className="btn btn-primary btn-sm"
-                            onClick={() => tool.confirm()}
-                            style={{ marginRight: "8px" }}
-                        >
-                            <i className="fa fa-save"></i>&nbsp; Save
-                        </button>
-                    )}
+                {(state === "confirm" || state === "erase") && (
+                    <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => tool.confirm()}
+                        style={{ marginRight: "8px" }}
+                    >
+                        <i className="fa fa-save"></i>&nbsp; Save
+                    </button>
+                )}
                 {state === "confirm" && (
                     <>
                         <button

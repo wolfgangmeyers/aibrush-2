@@ -15,6 +15,7 @@ import { runInThisContext } from "vm";
 export class SelectionTool extends BaseTool implements Tool {
     private selectionOverlay: Rect | undefined;
     private selectionOverlayPreview: Rect | undefined;
+    private outpaint?: boolean;
 
     // private selectionWidth: number = 512;
     // private selectionHeight: number = 512;
@@ -28,6 +29,10 @@ export class SelectionTool extends BaseTool implements Tool {
     }
 
     updateArgs(args: any) {
+        args = {
+            ...this.getArgs(),
+            ...args,
+        }
         super.updateArgs(args);
         this.selectionOverlay = args.selectionOverlay || {
             x: 0,
@@ -35,7 +40,33 @@ export class SelectionTool extends BaseTool implements Tool {
             width: 512,
             height: 512,
         };
+        this.outpaint = args.outpaint;
+        if (!this.outpaint) {
+            this.selectionOverlay = this.clamp(this.selectionOverlay!);
+        }
         this.sync();
+    }
+
+    private clamp(rect: Rect): Rect {
+        const imageWidth = this.renderer.getWidth();
+        const imageHeight = this.renderer.getHeight();
+        let x = rect.x;
+        let y = rect.y;
+        let width = rect.width;
+        let height = rect.height;
+        // clamp to the canvas
+        x = Math.max(0, Math.min(x, imageWidth - this.selectionOverlay!.width));
+        y = Math.max(0, Math.min(y, imageHeight - rect.height));
+        x = Math.min(x, imageWidth - rect.width);
+        y = Math.min(y, imageHeight - rect.height);
+        width = Math.min(width, imageWidth);
+        height = Math.min(height, imageHeight);
+        return {
+            x: x,
+            y: y,
+            width: width,
+            height: height,
+        };
     }
 
     private sync(): void {
@@ -51,7 +82,6 @@ export class SelectionTool extends BaseTool implements Tool {
             this.selectionOverlayPreview = undefined;
             this.sync();
             this.updateArgs({
-                ...this.getArgs(),
                 selectionOverlay: this.selectionOverlay,
             });
         } else if (event.button === 1) {
@@ -76,17 +106,6 @@ export class SelectionTool extends BaseTool implements Tool {
             // offset by -256 to center the rect
             x -= 256;
             y -= 256;
-            // clamp to the canvas
-            x = Math.max(
-                0,
-                Math.min(x, imageWidth - this.selectionOverlay!.width)
-            );
-            y = Math.max(
-                0,
-                Math.min(y, imageHeight - this.selectionOverlay!.height)
-            );
-            x = Math.min(x, imageWidth - this.selectionOverlay!.width);
-            y = Math.min(y, imageHeight - this.selectionOverlay!.height);
 
             this.selectionOverlayPreview = {
                 x: x,
@@ -94,6 +113,23 @@ export class SelectionTool extends BaseTool implements Tool {
                 width: this.selectionOverlay!.width,
                 height: this.selectionOverlay!.height,
             };
+
+            if (!this.outpaint) {
+                // // clamp to the canvas
+                // x = Math.max(
+                //     0,
+                //     Math.min(x, imageWidth - this.selectionOverlay!.width)
+                // );
+                // y = Math.max(
+                //     0,
+                //     Math.min(y, imageHeight - this.selectionOverlay!.height)
+                // );
+                // x = Math.min(x, imageWidth - this.selectionOverlay!.width);
+                // y = Math.min(y, imageHeight - this.selectionOverlay!.height);
+                this.selectionOverlayPreview = this.clamp(this.selectionOverlayPreview);
+            }
+
+            
             this.sync();
         }
     }
@@ -104,7 +140,6 @@ export class SelectionTool extends BaseTool implements Tool {
             this.selectionOverlayPreview = undefined;
             this.sync();
             this.updateArgs({
-                ...this.getArgs(),
                 selectionOverlay: this.selectionOverlay,
             });
         }
@@ -131,9 +166,17 @@ export class SelectionTool extends BaseTool implements Tool {
 interface ControlsProps {
     renderer: Renderer;
     tool: Tool;
+    /** Lock aspect ratio for smaller images */
+    lockAspectRatio?: boolean;
+    outpaint?: boolean;
 }
 
-export const Controls: React.FC<ControlsProps> = ({ renderer, tool }) => {
+export const Controls: React.FC<ControlsProps> = ({
+    renderer,
+    tool,
+    lockAspectRatio,
+    outpaint,
+}) => {
     const upscaleLevel = getUpscaleLevel(
         renderer.getWidth(),
         renderer.getHeight()
@@ -146,28 +189,44 @@ export const Controls: React.FC<ControlsProps> = ({ renderer, tool }) => {
             renderer.getWidth(),
             renderer.getHeight()
         );
-        const args = tool.getArgs();
-        if (args.selectionOverlay) {
-            // restore args
+        // lock aspect ratio to image
+        if (upscaleLevel === 0 && lockAspectRatio) {
             const aspectRatio = getClosestAspectRatio(
-                args.selectionOverlay.width,
-                args.selectionOverlay.height
+                renderer.getWidth(),
+                renderer.getHeight()
             );
             setAspectRatio(aspectRatio.id);
-            setSize(args.selectionOverlay.width / aspectRatio.width);
-            onChange(
-                aspectRatio.id,
-                args.selectionOverlay.width / aspectRatio.width
-            );
+            tool.updateArgs({
+                selectionOverlay: {
+                    x: 0,
+                    y: 0,
+                    width: aspectRatio.width,
+                    height: aspectRatio.height,
+                },
+                outpaint,
+            });
         } else {
-            // set default args
-            args.selectionOverlay = {
-                x: 0,
-                y: 0,
-                width: aspectRatios[aspectRatio].width,
-                height: aspectRatios[aspectRatio].height,
-            };
-            tool.updateArgs(args);
+            const args = tool.getArgs();
+            if (args.selectionOverlay) {
+                // restore args
+                const aspectRatio = getClosestAspectRatio(
+                    args.selectionOverlay.width,
+                    args.selectionOverlay.height
+                );
+                setAspectRatio(aspectRatio.id);
+                setSize(args.selectionOverlay.width / aspectRatio.width);
+                tool.updateArgs(args);
+            } else {
+                // set default args
+                args.selectionOverlay = {
+                    x: 0,
+                    y: 0,
+                    width: aspectRatios[aspectRatio].width,
+                    height: aspectRatios[aspectRatio].height,
+                };
+                args.outpaint = outpaint;
+                tool.updateArgs(args);
+            }
         }
     }, [tool]);
 
@@ -185,25 +244,27 @@ export const Controls: React.FC<ControlsProps> = ({ renderer, tool }) => {
             );
             args.selectionOverlay.x += xDiff / 2;
             args.selectionOverlay.y += yDiff / 2;
-            // clamp to canvas
-            args.selectionOverlay.x = Math.round(
-                Math.max(
-                    0,
-                    Math.min(
-                        args.selectionOverlay.x,
-                        renderer.getWidth() - args.selectionOverlay.width
+            if (!outpaint) {
+                // clamp to canvas
+                args.selectionOverlay.x = Math.round(
+                    Math.max(
+                        0,
+                        Math.min(
+                            args.selectionOverlay.x,
+                            renderer.getWidth() - args.selectionOverlay.width
+                        )
                     )
-                )
-            );
-            args.selectionOverlay.y = Math.round(
-                Math.max(
-                    0,
-                    Math.min(
-                        args.selectionOverlay.y,
-                        renderer.getHeight() - args.selectionOverlay.height
+                );
+                args.selectionOverlay.y = Math.round(
+                    Math.max(
+                        0,
+                        Math.min(
+                            args.selectionOverlay.y,
+                            renderer.getHeight() - args.selectionOverlay.height
+                        )
                     )
-                )
-            );
+                );
+            }
         }
         tool.updateArgs({
             selectionOverlay: args.selectionOverlay,

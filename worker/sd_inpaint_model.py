@@ -185,8 +185,14 @@ class StableDiffusionInpaintingModel:
         # if mask.sum() > 0:
         assert os.path.isfile(args.image)
         args.image = Image.open(args.image)
+        # if not 512x512, resize
+        if args.image.width != 512 or args.image.height != 512:
+            args.image = args.image.resize((512, 512), Image.ANTIALIAS)
         assert os.path.isfile(args.mask)
         args.mask = Image.open(args.mask)
+        # if not 512x512, resize
+        if args.mask.width != 512 or args.mask.height != 512:
+            args.mask = args.mask.resize((512, 512), Image.ANTIALIAS)
 
         # Make args compatible with text2im version
         args.filename = os.path.join("images", args.filename)

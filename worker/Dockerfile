@@ -21,7 +21,7 @@ RUN pip install transformers==4.19.2 diffusers invisible-watermark
 RUN pip install cython
 RUN pip install omegaconf einops pytorch-lightning transformers pip install ftfy regex omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests cog timm numpy opencv-python-headless pillow
 
-RUN pip install -e git+https://github.com/CompVis/stable-diffusion#egg=latent-diffusion
+RUN pip install -e git+https://github.com/runwayml/stable-diffusion#egg=latent-diffusion
 RUN pip install -e git+https://github.com/openai/CLIP.git@main#egg=clip
 RUN pip install -e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers
 
