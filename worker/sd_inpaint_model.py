@@ -94,12 +94,12 @@ def make_batch_sd(
     return batch
 
 
-def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples, w, h, outfilename):
+def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples, W, H, filename):
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = sampler.model
 
     prng = np.random.RandomState(seed)
-    start_code = prng.randn(num_samples, 4, h//8, w//8)
+    start_code = prng.randn(num_samples, 4, H//8, W//8)
     start_code = torch.from_numpy(start_code).to(device=device, dtype=torch.float32)
 
     with torch.no_grad():
@@ -112,7 +112,7 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples, 
             for ck in model.concat_keys:
                 cc = batch[ck].float()
                 if ck != model.masked_image_key:
-                    bchw = [num_samples, 4, h//8, w//8]
+                    bchw = [num_samples, 4, H//8, W//8]
                     cc = torch.nn.functional.interpolate(cc, size=bchw[-2:])
                 else:
                     cc = model.get_first_stage_encoding(model.encode_first_stage(cc))
@@ -126,7 +126,7 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples, 
             uc_cross = model.get_unconditional_conditioning(num_samples, "")
             uc_full = {"c_concat": [c_cat], "c_crossattn": [uc_cross]}
 
-            shape = [model.channels, h//8, w//8]
+            shape = [model.channels, H//8, W//8]
             samples_cfg, intermediates = sampler.sample(
                     ddim_steps,
                     num_samples,
@@ -146,7 +146,7 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples, 
             result = result.cpu().numpy().transpose(0,2,3,1)
 
             img = put_watermark(Image.fromarray((result[0]*255).astype(np.uint8)))
-            img.save(outfilename)
+            img.save(filename)
 
             _, has_nsfw_concept = check_safety(result)
             if has_nsfw_concept[0]:
@@ -155,8 +155,8 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples, 
 
 _default_args = SimpleNamespace(
     prompt="a painting of a virus monster playing guitar",
-    h=512,
-    w=512,
+    H=512,
+    W=512,
     scale=7.5,
     ddim_steps=50,
     seed=42,
@@ -187,6 +187,9 @@ class StableDiffusionInpaintingModel:
         args.image = Image.open(args.image)
         assert os.path.isfile(args.mask)
         args.mask = Image.open(args.mask)
+
+        # Make args compatible with text2im version
+        args.filename = os.path.join("images", args.filename)
 
         inpaint(**args.__dict__)
 

@@ -157,7 +157,7 @@ class StableDiffusionText2ImageModel:
     def generate(self, args: SimpleNamespace | argparse.Namespace):
         has_nsfw_concept = False
         default_args = _default_args.__dict__
-        if args.init_img:
+        if args.image:
             default_args = {
                 **default_args,
                 "scale": 5.0,
@@ -179,9 +179,9 @@ class StableDiffusionText2ImageModel:
         start_code = None
         if args.fixed_code:
             start_code = torch.randn([1, args.C, args.H // args.f, args.W // args.f], device=self.device)
-        if args.init_img:
-            assert os.path.isfile(args.init_img)
-            init_image = load_img(args.init_img, args.W, args.H).to(self.device)
+        if args.image:
+            assert os.path.isfile(args.image)
+            init_image = load_img(args.image, args.W, args.H).to(self.device)
             #TODO: is this needed?
             init_image = repeat(init_image, '1 ... -> b ...', b=1)
             init_latent = self.model.get_first_stage_encoding(self.model.encode_first_stage(init_image))  # move to latent space
@@ -203,7 +203,7 @@ class StableDiffusionText2ImageModel:
                         if isinstance(prompts, tuple):
                             prompts = list(prompts)
                         c = self.model.get_learned_conditioning(prompts)
-                        if args.init_img:
+                        if args.image:
                             # encode (scaled latent)
                             z_enc = self.sampler.stochastic_encode(init_latent, torch.tensor([t_enc]*1).to(self.device))
                             # decode it

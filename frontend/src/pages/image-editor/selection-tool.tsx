@@ -27,11 +27,8 @@ export class SelectionTool extends BaseTool implements Tool {
         super(renderer, "select");
     }
 
-    // TODO: smaller/larger, aspect ratios?
     updateArgs(args: any) {
         super.updateArgs(args);
-        // this.selectionWidth = args.selectionWidth || 512;
-        // this.selectionHeight = args.selectionHeight || 512;
         this.selectionOverlay = args.selectionOverlay || {
             x: 0,
             y: 0,
@@ -149,44 +146,28 @@ export const Controls: React.FC<ControlsProps> = ({ renderer, tool }) => {
             renderer.getWidth(),
             renderer.getHeight()
         );
-        // lock aspect ratio to image
-        if (upscaleLevel === 0) {
+        const args = tool.getArgs();
+        if (args.selectionOverlay) {
+            // restore args
             const aspectRatio = getClosestAspectRatio(
-                renderer.getWidth(),
-                renderer.getHeight()
+                args.selectionOverlay.width,
+                args.selectionOverlay.height
             );
             setAspectRatio(aspectRatio.id);
-            tool.updateArgs({
-                // selectionWidth: aspectRatio.width,
-                // selectionHeight: aspectRatio.height,
-                selectionOverlay: {
-                    x: 0,
-                    y: 0,
-                    width: aspectRatio.width,
-                    height: aspectRatio.height,
-                },
-            });
+            setSize(args.selectionOverlay.width / aspectRatio.width);
+            onChange(
+                aspectRatio.id,
+                args.selectionOverlay.width / aspectRatio.width
+            );
         } else {
-            const args = tool.getArgs();
-            if (args.selectionOverlay) {
-                // restore args
-                const aspectRatio = getClosestAspectRatio(
-                    args.selectionOverlay.width,
-                    args.selectionOverlay.height
-                );
-                setAspectRatio(aspectRatio.id);
-                setSize(args.selectionOverlay.width / aspectRatio.width);
-                tool.updateArgs(args);
-            } else {
-                // set default args
-                args.selectionOverlay = {
-                    x: 0,
-                    y: 0,
-                    width: aspectRatios[aspectRatio].width,
-                    height: aspectRatios[aspectRatio].height,
-                };
-                tool.updateArgs(args);
-            }
+            // set default args
+            args.selectionOverlay = {
+                x: 0,
+                y: 0,
+                width: aspectRatios[aspectRatio].width,
+                height: aspectRatios[aspectRatio].height,
+            };
+            tool.updateArgs(args);
         }
     }, [tool]);
 
@@ -194,27 +175,35 @@ export const Controls: React.FC<ControlsProps> = ({ renderer, tool }) => {
         const args = tool.getArgs();
         const aspectRatio = aspectRatios[aspectRatioId];
         if (args.selectionOverlay) {
-            const xDiff = args.selectionOverlay.width - aspectRatio.width * size;
-            const yDiff = args.selectionOverlay.height - aspectRatio.height * size;
+            const xDiff =
+                args.selectionOverlay.width - aspectRatio.width * size;
+            const yDiff =
+                args.selectionOverlay.height - aspectRatio.height * size;
             args.selectionOverlay.width = Math.round(aspectRatio.width * size);
-            args.selectionOverlay.height = Math.round(aspectRatio.height * size);
+            args.selectionOverlay.height = Math.round(
+                aspectRatio.height * size
+            );
             args.selectionOverlay.x += xDiff / 2;
             args.selectionOverlay.y += yDiff / 2;
             // clamp to canvas
-            args.selectionOverlay.x = Math.round(Math.max(
-                0,
-                Math.min(
-                    args.selectionOverlay.x,
-                    renderer.getWidth() - args.selectionOverlay.width
+            args.selectionOverlay.x = Math.round(
+                Math.max(
+                    0,
+                    Math.min(
+                        args.selectionOverlay.x,
+                        renderer.getWidth() - args.selectionOverlay.width
+                    )
                 )
-            ));
-            args.selectionOverlay.y = Math.round(Math.max(
-                0,
-                Math.min(
-                    args.selectionOverlay.y,
-                    renderer.getHeight() - args.selectionOverlay.height
+            );
+            args.selectionOverlay.y = Math.round(
+                Math.max(
+                    0,
+                    Math.min(
+                        args.selectionOverlay.y,
+                        renderer.getHeight() - args.selectionOverlay.height
+                    )
                 )
-            ));
+            );
         }
         tool.updateArgs({
             selectionOverlay: args.selectionOverlay,
@@ -247,7 +236,7 @@ export const Controls: React.FC<ControlsProps> = ({ renderer, tool }) => {
                     type="range"
                     className="form-control-range"
                     id="size"
-                    min="0.2"
+                    min="0.5"
                     max="1"
                     step="0.1"
                     value={size}

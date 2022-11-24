@@ -1,10 +1,13 @@
 import React, { FC, useState, useEffect, useRef } from "react";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
+import ToggleButton from "react-bootstrap/ToggleButton";
 import { loadImageAsync } from "../../lib/loadImage";
 
 import { sleep } from "../../lib/sleep";
 import { defaultArgs } from "../../components/ImagePrompt";
 import { Tool, BaseTool } from "./tool";
 import { Renderer } from "./renderer";
+import { SelectionTool } from "./selection-tool";
 import { Cursor, Rect } from "./models";
 import {
     AIBrushApi,
@@ -15,28 +18,30 @@ import {
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
-import { featherEdges, fixRedShift } from "../../lib/imageutil";
-import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { getUpscaleLevel } from "../../lib/upscale";
 
-type EnhanceToolState = "select" | "default" | "busy" | "confirm" | "erase";
-
-// eraser width modifier adds a solid core with a feather edge
-// equal to the what is used on enhanced selections
-const eraserWidthModifier = 1.3;
+type InpaintToolState =
+    | "select"
+    | "erase"
+    | "inpaint"
+    | "busy"
+    | "confirm"
+    | undefined;
 
 interface ImageWithData extends APIImage {
     data?: ImageData;
 }
 
-export class EnhanceTool extends BaseTool implements Tool {
-    readonly selectionTool: SelectionTool;
+export class InpaintTool extends BaseTool implements Tool {
+    private selectionTool: SelectionTool;
     private prompt: string = "";
     private count: number = 4;
     private variationStrength: number = 0.35;
+    private brushSize: number = 10;
+    private _dirty = false;
 
-    private _state: EnhanceToolState = "default";
-    private stateHandler: (state: EnhanceToolState) => void = () => {};
+    private _state: InpaintToolState;
+    private stateHandler: (state: InpaintToolState) => void = () => {};
     private selectionControlsListener: (show: boolean) => void = () => {};
 
     private imageData: Array<ImageData> = [];
@@ -46,6 +51,18 @@ export class EnhanceTool extends BaseTool implements Tool {
     private erasing = false;
     private progressListener?: (progress: number) => void;
     private errorListener?: (error: string | null) => void;
+    private dirtyListener?: (dirty: boolean) => void;
+
+    set dirty(dirty: boolean) {
+        this._dirty = dirty;
+        if (this.dirtyListener) {
+            this.dirtyListener(dirty);
+        }
+    }
+
+    get dirty() {
+        return this._dirty;
+    }
 
     onError(handler: (error: string | null) => void) {
         this.errorListener = handler;
@@ -57,12 +74,12 @@ export class EnhanceTool extends BaseTool implements Tool {
         }
     }
 
-    get state(): EnhanceToolState {
+    get state(): InpaintToolState {
         return this._state;
     }
 
-    set state(state: EnhanceToolState) {
-        if (state !== this._state) {
+    set state(state: InpaintToolState) {
+        if (state != this._state) {
             if (this._state == "select") {
                 this.selectionTool.destroy();
             }
@@ -71,19 +88,36 @@ export class EnhanceTool extends BaseTool implements Tool {
             }
             this._state = state;
             this.stateHandler(state);
+
             if (state == "confirm") {
                 this.selectionControlsListener(true);
             } else {
                 this.selectionControlsListener(false);
                 if (state == "select") {
-                    this.selectionTool.updateArgs(this.selectionTool.getArgs());
+                    const imageWidth = this.renderer.getWidth();
+                    const imageHeight = this.renderer.getHeight();
+                    const selectionWidth = Math.min(
+                        imageWidth,
+                        imageHeight,
+                        512
+                    );
+                    this.selectionTool.updateArgs({
+                        selectionOverlay: {
+                            x: 0,
+                            y: 0,
+                            width: selectionWidth,
+                            height: selectionWidth,
+                        },
+                    });
                 }
             }
         }
     }
 
+    // TODO: support outpainting (remove this function)
     selectSupported(): boolean {
         return !(
+            this.renderer.getWidth() == this.renderer.getHeight() &&
             getUpscaleLevel(
                 this.renderer.getWidth(),
                 this.renderer.getHeight()
@@ -92,12 +126,12 @@ export class EnhanceTool extends BaseTool implements Tool {
     }
 
     constructor(renderer: Renderer) {
-        super(renderer, "enhance");
+        super(renderer, "inpaint");
         this.selectionTool = new SelectionTool(renderer);
         if (this.selectSupported()) {
             this.state = "select";
         } else {
-            this.state = "default";
+            this.state = "erase";
         }
     }
 
@@ -114,77 +148,25 @@ export class EnhanceTool extends BaseTool implements Tool {
             this.panning = true;
             return;
         }
-        if (this.state == "erase" && this.selectedImageData) {
+        if (this.state == "erase") {
             this.erasing = true;
-            // clone selected ImageData
-            this.selectedImageData = new ImageData(
-                this.selectedImageData.data.slice(),
-                this.selectedImageData.width,
-                this.selectedImageData.height
-            );
-
             this.erasePoint(x, y);
         }
     }
 
-    // TODO: on erase cancel and on erase confirm
-    // either restore the image data from the array
-    // or overwrite the array with the new image data
-
     private erasePoint(x: number, y: number) {
-        const selectionOverlay = this.renderer.getSelectionOverlay()!;
-        const baseWidth = Math.min(
-            selectionOverlay.width,
-            selectionOverlay.height
-        );
-        const eraserRadius = Math.floor((baseWidth / 8) * eraserWidthModifier);
-
-        const relX = x - selectionOverlay.x;
-        const relY = y - selectionOverlay.y;
-        const imageData = this.selectedImageData!;
-
-        const startX = Math.max(0, relX - eraserRadius);
-        const startY = Math.max(0, relY - eraserRadius);
-        const endX = Math.min(imageData.width, relX + eraserRadius);
-        const endY = Math.min(imageData.height, relY + eraserRadius);
-
-        // relX=64.28541697636388, relY=64.24464312259761, startX=0.28541697636387653, startY=0.24464312259760845, endX=128.28541697636388, endY=128.2446431225976
-
-        for (let i = startX; i < endX; i++) {
-            for (let j = startY; j < endY; j++) {
-                const index = (j * imageData.width + i) * 4;
-                const distance = Math.sqrt(
-                    Math.pow(i - relX, 2) + Math.pow(j - relY, 2)
-                );
-                if (distance < eraserRadius) {
-                    // set alpha to a linear gradient from the center,
-                    // 100% in the middle and 0% at the edge
-                    const alphaPct =
-                        (distance / eraserRadius) * eraserWidthModifier -
-                        (eraserWidthModifier - 1);
-
-                    const alpha = Math.min(
-                        Math.floor(alphaPct * 255),
-                        imageData.data[index + 3]
-                    );
-                    imageData.data[index + 3] = alpha;
-                }
-            }
+        if (!this.dirty) {
+            this.dirty = true;
         }
-        this.renderer.setEditImage(imageData);
+        this.renderer.erasePoint(x, y, this.brushSize);
+        this.renderer.render();
     }
 
     private updateCursor(x: number, y: number) {
-        if (this.state == "erase" && this.selectedImageData) {
-            const selectionOverlay = this.renderer.getSelectionOverlay()!;
-            const baseWidth = Math.min(
-                selectionOverlay.width,
-                selectionOverlay.height
-            );
-            const featherWidth = Math.floor(baseWidth / 8);
+        if (this.state == "erase") {
             this.renderer.setCursor({
                 color: "white",
-                radius: featherWidth * eraserWidthModifier,
+                radius: this.brushSize / 2,
                 type: "circle",
                 x,
                 y,
@@ -250,9 +232,15 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.prompt = args.prompt || "";
         this.count = args.count || 4;
         this.variationStrength = args.variationStrength || 0.75;
+        this.brushSize = args.brushSize || 10;
+
+        this.updateCursor(
+            this.renderer.getWidth() / 2,
+            this.renderer.getHeight() / 2
+        );
     }
 
-    onChangeState(handler: (state: EnhanceToolState) => void) {
+    onChangeState(handler: (state: InpaintToolState) => void) {
         this.stateHandler = handler;
     }
 
@@ -267,8 +255,6 @@ export class EnhanceTool extends BaseTool implements Tool {
     private loadImageData(
         api: AIBrushApi,
         imageId: string,
-        baseImage: APIImage,
-        baseImageData: ImageData,
         selectionOverlay: Rect
     ): Promise<ImageData> {
         return new Promise((resolve, reject) => {
@@ -302,16 +288,6 @@ export class EnhanceTool extends BaseTool implements Tool {
                         selectionOverlay.width,
                         selectionOverlay.height
                     );
-                    // Is there a better way to fix this? This often causes
-                    // a visible rectangle difference in coloring. :/
-
-                    // fixRedShift(baseImageData, imageData);
-                    featherEdges(
-                        selectionOverlay,
-                        baseImage.width!,
-                        baseImage.height!,
-                        imageData
-                    );
                     resolve(imageData);
                     // remove canvas
                     canvas.remove();
@@ -321,43 +297,45 @@ export class EnhanceTool extends BaseTool implements Tool {
     }
 
     cancel() {
-        if (this.state == "erase") {
-            this.state = "confirm";
-            this.selectedImageData =
-                this.imageData[this.selectedImageDataIndex];
-            this.renderer.setEditImage(this.selectedImageData);
+        if (this.selectSupported()) {
+            this.state = "select";
         } else {
-            if (this.selectSupported()) {
-                this.state = "select";
-            } else {
-                this.state = "default";
-            }
-            this.imageData = [];
-            this.renderer.setEditImage(null);
+            this.state = "erase";
         }
-    }
-
-    erase() {
-        this.state = "erase";
+        this.renderer.snapshot();
+        this.renderer.undo();
+        this.renderer.clearRedoStack();
+        this.imageData = [];
+        this.renderer.setEditImage(null);
+        this.dirty = false;
     }
 
     async submit(api: AIBrushApi, image: APIImage) {
         this.notifyError(null);
         const selectionOverlay = this.renderer.getSelectionOverlay();
-        const encodedImage = this.renderer.getEncodedImage(selectionOverlay!);
-        if (!encodedImage) {
+        if (!selectionOverlay) {
             console.error("No selection");
             return;
         }
-        const baseImageData = this.renderer.getImageData(selectionOverlay!)!;
+        // get the erased area, then undo the erase to get the original image
+        const encodedMask = this.renderer.getEncodedMask(selectionOverlay);
+        // hack to restore the image
+        this.renderer.snapshot();
+        this.renderer.undo();
+        this.renderer.clearRedoStack();
+
+        const encodedImage = this.renderer.getEncodedImage(selectionOverlay);
+
         const input: CreateImageInput = defaultArgs();
         input.label = "";
         input.encoded_image = encodedImage;
+        input.encoded_mask = encodedMask;
         input.parent = image.id;
         input.phrases = [this.prompt || image.phrases[0]];
         input.negative_phrases = image.negative_phrases;
         input.stable_diffusion_strength = this.variationStrength;
         input.count = this.count;
+        input.model = "stable_diffusion_inpainting";
 
         const closestAspectRatio = getClosestAspectRatio(
             selectionOverlay!.width,
@@ -374,12 +352,12 @@ export class EnhanceTool extends BaseTool implements Tool {
         } catch (err) {
             console.error("Error creating images", err);
             this.notifyError("Failed to create image");
-            this.state = "default";
+            this.state = "select";
             return;
         }
         let newImages: Array<ImageWithData> | undefined = resp.images;
         if (!newImages || newImages.length === 0) {
-            this.state = "default";
+            this.state = "select";
             throw new Error("No images returned");
         }
         let completed = false;
@@ -401,8 +379,6 @@ export class EnhanceTool extends BaseTool implements Tool {
                         const imageData = await this.loadImageData(
                             api,
                             newImages![i].id,
-                            image,
-                            baseImageData,
                             selectionOverlay!
                         );
                         newImages![i].data = imageData;
@@ -432,7 +408,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             }
         }
         if (this.imageData.length === 0) {
-            this.state = "default";
+            this.state = "select";
             this.notifyError("No images returned");
             return;
         }
@@ -440,6 +416,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.selectedImageDataIndex = 0;
         this.selectedImageData = this.imageData[0];
         this.state = "confirm";
+    }
+
+    onDirty(listener: (dirty: boolean) => void): void {
+        this.dirtyListener = listener;
     }
 
     select(direction: "left" | "right") {
@@ -470,7 +450,12 @@ export class EnhanceTool extends BaseTool implements Tool {
 
     confirm() {
         this.renderer.commitSelection();
-        this.state = "default";
+        if (this.selectSupported()) {
+            this.state = "select";
+        } else {
+            this.state = "erase";
+        }
+
         this.imageData = [];
         const encodedImage = this.renderer.getEncodedImage(null);
         if (encodedImage && this.saveListener) {
@@ -480,6 +465,7 @@ export class EnhanceTool extends BaseTool implements Tool {
 
     destroy(): boolean {
         this.renderer.setCursor(undefined);
+        this.renderer.setEditImage(null);
         return true;
     }
 }
@@ -488,30 +474,38 @@ interface ControlsProps {
     api: AIBrushApi;
     image: APIImage;
     renderer: Renderer;
-    tool: EnhanceTool;
+    tool: InpaintTool;
 }
 
-export const EnhanceControls: FC<ControlsProps> = ({
+export const InpaintControls: FC<ControlsProps> = ({
     api,
     image,
     renderer,
     tool,
 }) => {
     const [count, setCount] = useState(4);
-    const [variationStrength, setVariationStrength] = useState(0.35);
     const [prompt, setPrompt] = useState(image.phrases[0]);
-    const [state, setState] = useState<EnhanceToolState>(tool.state);
+    const [state, setState] = useState<InpaintToolState>(tool.state);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
+    const [brushSize, setBrushSize] = useState(10);
+    const [dirty, setDirty] = useState(false);
+
+    useEffect(() => {
+        tool.updateArgs({
+            brushSize,
+        });
+    }, [brushSize]);
 
     tool.onChangeState(setState);
     tool.onProgress(setProgress);
     tool.onError(setError);
+    tool.onDirty(setDirty);
 
     if (state == "busy") {
         return (
             <div style={{ marginTop: "16px" }}>
-                <i className="fa fa-spinner fa-spin"></i>&nbsp; Enhancing...
+                <i className="fa fa-spinner fa-spin"></i>&nbsp; Inpainting...
                 <br />
                 {/* bootstrap progress bar */}
                 <div
@@ -532,7 +526,6 @@ export const EnhanceControls: FC<ControlsProps> = ({
             </div>
         );
     }
-
     return (
         <div
             style={{
@@ -561,22 +554,50 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     <p>
                         {/* info icon */}
                         <i className="fa fa-info-circle"></i>&nbsp; Move the
-                        selection rectangle to the area that you want to enhance
+                        selection rectangle to the area that you want to inpaint
                     </p>
-                    <SelectionControls
-                        renderer={renderer}
-                        tool={tool.selectionTool}
-                    />
+                    <div className="form-group"></div>
                 </>
             )}
-            {state === "default" && (
+
+            {state === "erase" && (
+                <>
+                    <p>
+                        {/* info icon */}
+                        <i className="fa fa-info-circle"></i>&nbsp; Erase the
+                        area that you want to inpaint.
+                    </p>
+                    <div className="form-group">
+                        <label style={{ width: "100%" }}>
+                            Brush size
+                            <small
+                                className="form-text text-muted"
+                                style={{ float: "right" }}
+                            >
+                                {brushSize}px
+                            </small>
+                        </label>
+                        <input
+                            type="range"
+                            className="form-control-range"
+                            min="1"
+                            max="100"
+                            value={brushSize}
+                            onChange={(e) =>
+                                setBrushSize(parseInt(e.target.value))
+                            }
+                        />
+                    </div>
+                </>
+            )}
+
+            {state === "inpaint" && (
                 <>
                     <p>
                         {/* info icon */}
                         <i className="fa fa-info-circle"></i>&nbsp; Confirm the
                         parameters below and continue
                     </p>
-                    {/* prompt */}
                     <div className="form-group">
                         <label htmlFor="prompt">Prompt</label>
                         <input
@@ -607,105 +628,81 @@ export const EnhanceControls: FC<ControlsProps> = ({
                             }}
                         />
                         <small className="form-text text-muted">
-                            Number of enhancement options
-                        </small>
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="variation-strength">
-                            Variation Strength:{" "}
-                            {Math.round(variationStrength * 100)}%
-                        </label>
-                        <input
-                            type="range"
-                            className="form-control-range"
-                            id="variation-strength"
-                            min="0"
-                            max="1"
-                            step="0.05"
-                            value={variationStrength}
-                            onChange={(e) => {
-                                setVariationStrength(
-                                    parseFloat(e.target.value)
-                                );
-                            }}
-                        />
-                        <small className="form-text text-muted">
-                            How much variation to use
+                            Number of inpaint options
                         </small>
                     </div>
                 </>
             )}
-            {state === "erase" && (
-                <p>
-                    {/* info icon */}
-                    <i className="fa fa-info-circle"></i>&nbsp; Erase any
-                    undesired sections before saving
-                </p>
+
+            {state === "confirm" && (
+                <>
+                    <p>Use the <i className="fa fa-arrow-left"></i> and <i className="fa fa-arrow-right"></i> buttons to navigate between the inpaint options</p>
+                </>
             )}
 
             <div className="form-group">
-                {state === "select" && (
-                    <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        onClick={() => {
-                            tool.state = "default";
-                        }}
-                        style={{ marginRight: "8px" }}
-                    >
-                        {/* magic icon */}
-                        <i className="fa fa-magic"></i>&nbsp; Continue
-                    </button>
-                )}
-                {((state === "default" && tool.selectSupported()) ||
+                {(dirty ||
                     state === "confirm" ||
-                    state === "erase") && (
+                    (state == "erase" && tool.selectSupported()) ||
+                    state == "inpaint") && (
                     <button
+                        style={{ marginRight: "8px" }}
                         className="btn btn-primary btn-sm"
                         onClick={() => {
                             tool.cancel();
                         }}
-                        style={{ marginRight: "8px" }}
                     >
                         {/* cancel icon */}
                         <i className="fa fa-times"></i>&nbsp; Revert
                     </button>
                 )}
-                {(state === "confirm" ||
-                    state === "erase") && (
+
+                {state === "confirm" && (
+                    <>
                         <button
                             className="btn btn-primary btn-sm"
                             onClick={() => tool.confirm()}
                             style={{ marginRight: "8px" }}
                         >
+                            {/* save icon */}
                             <i className="fa fa-save"></i>&nbsp; Save
-                        </button>
-                    )}
-                {state === "confirm" && (
-                    <>
-                        <button
-                            className="btn btn-primary btn-sm"
-                            onClick={() => tool.erase()}
-                            style={{ marginRight: "8px" }}
-                        >
-                            <i className="fa fa-eraser"></i>&nbsp; Erase
                         </button>
                     </>
                 )}
-                {state === "default" && (
+                {state == "select" && (
                     <button
+                        style={{ marginRight: "8px" }}
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={() => (tool.state = "erase")}
+                    >
+                        <i className="fa fa-eraser"></i>&nbsp; Continue
+                    </button>
+                )}
+                {state == "erase" && (
+                    <button
+                        style={{ marginRight: "8px" }}
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={() => (tool.state = "inpaint")}
+                    >
+                        <i className="fa fa-paint-brush"></i>&nbsp; Continue
+                    </button>
+                )}
+                {state === "inpaint" && (
+                    <button
+                        style={{ marginRight: "8px" }}
                         className="btn btn-primary btn-sm"
                         onClick={() => {
                             tool.updateArgs({
                                 count,
-                                variationStrength,
                                 prompt,
                             });
                             tool.submit(api, image);
                         }}
-                        style={{ marginRight: "8px" }}
                     >
-                        <i className="fa fa-magic"></i>&nbsp; Enhance
+                        {/* paint icon */}
+                        <i className="fa fa-paint-brush"></i>&nbsp; Inpaint
                     </button>
                 )}
             </div>

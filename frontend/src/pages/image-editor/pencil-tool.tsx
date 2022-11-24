@@ -173,12 +173,10 @@ export class PencilTool extends BaseTool implements Tool {
     }
 
     destroy(): boolean {
-        if (!this.dirty || window.confirm("Are you sure you want to discard your changes?")) {
-            this.renderer.setCursor(undefined);
-            this.renderer.setEditImage(null);
-            return true;
+        if (this.dirty) {
+            this.renderer.commitSelection();
         }
-        return false;
+        return true;
     }
 
     beginColorpicker(): void {

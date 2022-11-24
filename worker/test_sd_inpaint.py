@@ -8,6 +8,6 @@ for i in range(0, 20):
         prompt="A portrait of a beautiful disney princess, highly detailed digital art, sharp focus, pixar, deviantart, artstation, unreal engine, raytracing, nude, erect nipples, perfect breasts",
         image="disney.jpg",
         mask="disney.mask.jpg",
-        outfilename=f"disney.result.{i}.jpg",
+        filename=f"disney.result.{i}.jpg",
         seed=random.randint(0, 1000000),
     ))

@@ -2,14 +2,12 @@ import { Cursor, Rect } from "./models";
 
 const maxSnapshots = 10;
 
-
-
 export class Renderer {
-    // private backgroundLayer: HTMLCanvasElement;
     private undoStack: ImageData[] = [];
     private redoStack: ImageData[] = [];
     private currentSnapshot: ImageData | undefined;
 
+    private backgroundLayer: HTMLCanvasElement;
     private baseImageLayer: HTMLCanvasElement;
     private editLayer: HTMLCanvasElement;
     private overlayLayer: HTMLCanvasElement;
@@ -27,7 +25,7 @@ export class Renderer {
 
     constructor(private readonly canvas: HTMLCanvasElement) {
         // invisible canvas elements
-        // this.backgroundLayer = document.createElement('canvas');
+        this.backgroundLayer = document.createElement("canvas");
         this.baseImageLayer = document.createElement("canvas");
         this.editLayer = document.createElement("canvas");
         this.overlayLayer = document.createElement("canvas");
@@ -37,10 +35,12 @@ export class Renderer {
         this.offsetY = 0;
     }
 
-    undo() {
+    undo(allowRedo: boolean = true) {
         if (this.undoStack.length > 0 && this.currentSnapshot) {
             const imageData = this.undoStack.pop()!;
-            this.redoStack.push(this.currentSnapshot);
+            if (allowRedo) {
+                this.redoStack.push(this.currentSnapshot);
+            }
             this.currentSnapshot = imageData;
             // set as base image
             const ctx = this.baseImageLayer.getContext("2d");
@@ -72,6 +72,11 @@ export class Renderer {
             }
             this.notifySnapshotListener();
         }
+    }
+
+    clearRedoStack() {
+        this.redoStack = [];
+        this.notifySnapshotListener();
     }
 
     canUndo(): boolean {
@@ -122,6 +127,7 @@ export class Renderer {
         const context = this.canvas.getContext("2d");
         if (context) {
             context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            context.drawImage(this.backgroundLayer, 0, 0);
             // apply zoom and offset
             context.setTransform(
                 this.zoom,
@@ -135,6 +141,7 @@ export class Renderer {
             context.drawImage(this.baseImageLayer, 0, 0);
             context.drawImage(this.editLayer, 0, 0);
             context.drawImage(this.overlayLayer, 0, 0);
+            context.setTransform(1, 0, 0, 1, 0, 0);
         }
     }
 
@@ -142,12 +149,58 @@ export class Renderer {
         return this.canvas;
     }
 
+    private initializeBackgroundLayer() {
+        // checkered background
+        // #DEDEDE
+        // #FFFFFF
+        // 10x10 pixel squares
+        const ctx = this.backgroundLayer.getContext("2d");
+        if (ctx) {
+            const pattern = ctx.createPattern(
+                this.createCheckeredPattern(20, 20, "#DEDEDE", "#FFFFFF"),
+                "repeat"
+            );
+            if (pattern) {
+                ctx.fillStyle = pattern;
+                ctx.fillRect(
+                    0,
+                    0,
+                    this.backgroundLayer.width,
+                    this.backgroundLayer.height
+                );
+            }
+        }
+    }
+
+    private createCheckeredPattern(
+        width: number,
+        height: number,
+        color1: string,
+        color2: string
+    ): HTMLCanvasElement {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+            ctx.fillStyle = color1;
+            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = color2;
+            ctx.fillRect(0, 0, width / 2, height / 2);
+            ctx.fillRect(width / 2, height / 2, width / 2, height / 2);
+        }
+        return canvas;
+    }
+
     setBaseImage(image: HTMLImageElement) {
         const context = this.baseImageLayer.getContext("2d");
         if (context) {
             // set size of all layers
-            // this.backgroundLayer.width = image.width;
-            // this.backgroundLayer.height = image.height;
+            // TODO: adapt for an always-square canvas
+            this.backgroundLayer.width = image.width;
+            this.backgroundLayer.height = image.height;
+            this.initializeBackgroundLayer();
+
             this.baseImageLayer.width = image.width;
             this.baseImageLayer.height = image.height;
             this.editLayer.width = image.width;
@@ -377,24 +430,53 @@ export class Renderer {
         return this.canvas.height;
     }
 
+    private imageDataToEncodedImage(imageData: ImageData): string | undefined {
+        // create a canvas and draw the image data on it
+        const canvas = document.createElement("canvas");
+        canvas.width = imageData.width;
+        canvas.height = imageData.height;
+        const context = canvas.getContext("2d");
+        if (context) {
+            context.putImageData(imageData, 0, 0);
+            // return the data url of the canvas
+            const result = canvas.toDataURL("image/jpeg");
+            // cleanup the canvas
+            canvas.remove();
+            // extract base64 data from data url
+            return result.split(",")[1];
+        }
+    }
+
     getEncodedImage(selection: Rect | null): string | undefined {
         const imageData = this.getImageData(selection);
         if (imageData) {
-            // create a canvas and draw the image data on it
-            const canvas = document.createElement("canvas");
-            canvas.width = imageData.width;
-            canvas.height = imageData.height;
-            const context = canvas.getContext("2d");
-            if (context) {
-                context.putImageData(imageData, 0, 0);
-                // return the data url of the canvas
-                const result = canvas.toDataURL("image/jpeg");
-                // cleanup the canvas
-                canvas.remove();
-                // extract base64 data from data url
-                return result.split(",")[1];
+            return this.imageDataToEncodedImage(imageData);
+        }
+    }
+
+    private convertErasureToMask(erasure: ImageData): ImageData {
+        // for each pixel, if alpha < 255, set to white, otherwise set to black
+        const mask = erasure;
+        for (let i = 0; i < erasure.data.length; i += 4) {
+            if (erasure.data[i + 3] < 255) {
+                mask.data[i] = 255;
+                mask.data[i + 1] = 255;
+                mask.data[i + 2] = 255;
+                mask.data[i + 3] = 255;
+            } else {
+                mask.data[i] = 0;
+                mask.data[i + 1] = 0;
+                mask.data[i + 2] = 0;
+                mask.data[i + 3] = 255;
             }
         }
+        return mask;
+    }
+
+    getEncodedMask(selection: Rect | null): string | undefined {
+        const imageData = this.getImageData(selection)!;
+        const mask = this.convertErasureToMask(imageData);
+        return this.imageDataToEncodedImage(mask);
     }
 
     getImageData(selection: Rect | null): ImageData | undefined {
@@ -439,6 +521,72 @@ export class Renderer {
             context.fill();
         }
         this.render();
+    }
+
+    erasePoint(brushx: number, brushy: number, brushSize: number): void {
+        if (!this.selectionOverlay) {
+            throw new Error("No selection overlay");
+        }
+        // get image data centered on x, y with brushSize width and height
+        const context = this.baseImageLayer.getContext("2d");
+        if (context) {
+            const imageData = context.getImageData(
+                brushx - brushSize / 2,
+                brushy - brushSize / 2,
+                brushSize,
+                brushSize
+            );
+            // set alpha to 0 in a circle centered on x, y with radius brushSize / 2
+            for (let i = 0; i < imageData.data.length; i += 4) {
+                const x = (i / 4) % brushSize;
+                const y = Math.floor(i / 4 / brushSize);
+
+                const absx = x - brushSize / 2 + brushx;
+                // three pixel barrier on each edge UNLESS the selection overlay borders that edge
+                let leftEdge = this.selectionOverlay.x;
+                if (leftEdge > 0) {
+                    leftEdge += 10;
+                }
+                let rightEdge =
+                    this.selectionOverlay.x + this.selectionOverlay.width;
+                if (rightEdge < this.canvas.width) {
+                    rightEdge -= 10;
+                }
+                let topEdge = this.selectionOverlay.y;
+                if (topEdge > 0) {
+                    topEdge += 10;
+                }
+                let bottomEdge =
+                    this.selectionOverlay.y + this.selectionOverlay.height;
+                if (bottomEdge < this.canvas.height) {
+                    bottomEdge -= 10;
+                }
+
+                const containsx = absx > leftEdge && absx < rightEdge;
+                const absy = y - brushSize / 2 + brushy;
+                const containsy = absy > topEdge && absy < bottomEdge;
+                const contains = containsx && containsy;
+
+                // check if x, y is within the selection overlay
+                if (this.selectionOverlay && !contains) {
+                    continue;
+                }
+
+                const distance = Math.sqrt(
+                    Math.pow(x - brushSize / 2, 2) +
+                        Math.pow(y - brushSize / 2, 2)
+                );
+                if (distance < brushSize / 2) {
+                    imageData.data[i + 3] = 0;
+                }
+            }
+            // draw the image data on the selection layer
+            context.putImageData(
+                imageData,
+                brushx - brushSize / 2,
+                brushy - brushSize / 2
+            );
+        }
     }
 
     drawLine(

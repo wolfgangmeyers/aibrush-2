@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useHistory } from "react-router-dom";
 
-import { AIBrushApi, Image as APIImage } from "../../client";
+import { AIBrushApi, CreateImageInputStatusEnum, Image as APIImage } from "../../client";
 import { getUpscaleLevel } from "../../lib/upscale";
 import "./ImageEditor.css";
 import { createRenderer, Renderer } from "./renderer";
@@ -11,6 +11,8 @@ import { EnhanceTool, EnhanceControls } from "./enhance-tool";
 import { PencilTool, Controls as PencilControls } from "./pencil-tool";
 import { SmudgeTool, SmudgeControls } from "./smudge-tool";
 import { ImportExportControls } from "./import-export";
+import { InpaintControls, InpaintTool } from "./inpaint-tool";
+import { defaultArgs } from "../../components/ImagePrompt";
 
 interface CanPreventDefault {
     preventDefault: () => void;
@@ -33,15 +35,20 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
     const [showSelectionControls, setShowSelectionControls] = useState(false);
     const tools: Array<ToolConfig> = [
         {
-            name: "select",
-            iconClass: "far fa-square",
-            constructor: (r: Renderer) => new SelectionTool(r),
+            name: "inpaint",
+            iconClass: "fas fa-paint-brush",
+            constructor: (r: Renderer) => new InpaintTool(r),
+            defaultArgs: {},
             renderControls: (t: Tool, renderer: Renderer) => {
-                return <SelectionControls tool={t} renderer={renderer} />;
-            },
-            defaultArgs: {
-                selectionWidth: 512,
-                selectionHeight: 512,
+                t.onShowSelectionControls(setShowSelectionControls);
+                return (
+                    <InpaintControls
+                        tool={t as InpaintTool}
+                        renderer={renderer}
+                        api={api}
+                        image={image!}
+                    />
+                )
             },
         },
         {
@@ -131,12 +138,30 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
             setTool(newTool);
             newTool.onSaveImage((encodedImage) => {
                 console.log("Saving image...");
-                api.updateImage(id, {
-                    encoded_image: encodedImage,
-                });
+                saveNewImage(encodedImage);
             });
         }
     };
+
+    const saveNewImage = async (encodedImage: string) => {
+        if (!image || !encodedImage) {
+            throw new Error("Cannot save new image without existing image");
+        }
+        const args = defaultArgs();
+        args.phrases = image.phrases;
+        args.negative_phrases = image.negative_phrases;
+        args.count = 1;
+        args.parent = image.id;
+        args.stable_diffusion_strength = image.stable_diffusion_strength;
+        args.status = CreateImageInputStatusEnum.Completed;
+        args.width = image.width as any;
+        args.height = image.height as any;
+        args.nsfw = image.nsfw;
+        args.encoded_image = encodedImage;
+        const newImage = (await api.createImage(args)).data!.images![0];
+        // history.push(`/image-editor/${newImage.id}`);
+        history.replace(`/image-editor/${newImage.id}`);
+    }
 
     useEffect(() => {
         api.getImage(id).then((image) => {
@@ -219,7 +244,7 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                     <h1 style={{ fontSize: "40px", textAlign: "left" }}>
                         <i
                             style={{ cursor: "pointer" }}
-                            onClick={() => history.goBack()}
+                            onClick={() => history.push(`/images/${id}`)}
                             className="fas fa-chevron-left"
                         ></i>
                         &nbsp; AI Edit

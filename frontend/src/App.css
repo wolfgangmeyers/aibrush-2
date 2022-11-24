@@ -117,6 +117,14 @@ hr {
   border-color: #ffffff !important;
 }
 
+.btn-group  input {
+  display: none !important;
+}
+
+.btn.active {
+  border: 1px solid #fff !important;
+}
+
 .container {
   min-height: 100vh;
   background-color: #000;

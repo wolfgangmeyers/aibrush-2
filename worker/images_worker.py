@@ -87,13 +87,19 @@ def _sd_args(image_data, mask_data, npy_data, image):
     args.seed = random.randint(0, 2**32)
     args.filename = image.id + ".jpg"
     args.ddim_steps = image.iterations
-    args.strength = image.stable_diffusion_strength
-    args.init_img = None
+    if image.model == "stable_diffusion_text2im":
+        args.strength = image.stable_diffusion_strength
+    args.image = None
     if image_data:
         # save image
         with open(os.path.join("images", image.id + "-init.jpg"), "wb") as f:
             f.write(image_data)
-        args.init_img = os.path.join("images", image.id + "-init.jpg")
+        args.image = os.path.join("images", image.id + "-init.jpg")
+    if mask_data:
+        # save mask
+        with open(os.path.join("images", image.id + "-mask.jpg"), "wb") as f:
+            f.write(mask_data)
+        args.mask = os.path.join("images", image.id + "-mask.jpg")
     return args
 
 model_lock = Lock()
@@ -114,6 +120,8 @@ def create_model(model_name: str, gpu: str):
             return ModelProcess("swinir_model.py", gpu)
         elif model_name == "stable_diffusion_text2im":
             return ModelProcess("sd_text2im_model.py", gpu)
+        elif model_name == "stable_diffusion_inpainting":
+            return ModelProcess("sd_inpaint_model.py", gpu)
         else:
             raise Exception(f"Unknown model name: {model_name}")
 
@@ -149,6 +157,9 @@ def poll_loop(process_queue: Queue, metrics_queue: Queue):
             if image:
                 backoff = 1
                 image.image_data = client.get_image_data(image.id)
+                image.mask_data = None
+                if image.model == "stable_diffusion_inpainting":
+                    image.mask_data = client.get_mask_data(image.id)
                 process_queue.put(image)
             else:
                 time.sleep(backoff)
@@ -174,6 +185,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
         id=warmup_id,
         iterations=10,
         stable_diffusion_strength=0.75,
+        model=model_name,
     ))
     print("Warming up model")
     model.generate(args)
@@ -192,6 +204,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
                 return
             start = time.time()
             image_data = image.image_data
+            mask_data = image.mask_data
 
             def update_image(iterations: int, status: str, nsfw: bool = False):
                 score = 0
@@ -244,6 +257,8 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
                 args = _swinir_args(image_data, image)
             elif image.model == "stable_diffusion_text2im":
                 args = _sd_args(image_data, None, None, image)
+            elif image.model == "stable_diffusion_inpainting":
+                args = _sd_args(image_data, mask_data, None, image)
 
             if image.model != model_name:
                 model_name = image.model
