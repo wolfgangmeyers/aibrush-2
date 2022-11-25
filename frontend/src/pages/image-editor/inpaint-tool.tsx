@@ -19,7 +19,7 @@ import {
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
 import { getUpscaleLevel } from "../../lib/upscale";
-import { featherEdges } from "../../lib/imageutil";
+import { applyAlphaMask, featherEdges } from "../../lib/imageutil";
 
 type InpaintToolState =
     | "select"
@@ -267,6 +267,7 @@ export class InpaintTool extends BaseTool implements Tool {
     private loadImageData(
         api: AIBrushApi,
         imageId: string,
+        alphaMask: ImageData,
         baseImage: APIImage,
         selectionOverlay: Rect
     ): Promise<ImageData> {
@@ -302,10 +303,12 @@ export class InpaintTool extends BaseTool implements Tool {
                         selectionOverlay.height
                     );
 
+                    applyAlphaMask(imageData, alphaMask);
+
                     featherEdges(
                         selectionOverlay,
-                        baseImage.width!,
-                        baseImage.height!,
+                        this.renderer.getWidth(),
+                        this.renderer.getHeight(),
                         imageData,
                         10
                     );
@@ -353,6 +356,7 @@ export class InpaintTool extends BaseTool implements Tool {
 
         // get the erased area, then undo the erase to get the original image
         const encodedMask = this.renderer.getEncodedMask(selectionOverlay);
+        const maskData = this.renderer.getImageData(selectionOverlay);
         // hack to restore the image
         this.renderer.snapshot();
         this.renderer.undo();
@@ -413,6 +417,7 @@ export class InpaintTool extends BaseTool implements Tool {
                         const imageData = await this.loadImageData(
                             api,
                             newImages![i].id,
+                            maskData!,
                             image,
                             selectionOverlay!
                         );

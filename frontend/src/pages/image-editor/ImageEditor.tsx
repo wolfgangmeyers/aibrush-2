@@ -159,11 +159,15 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
         args.nsfw = image.nsfw;
         args.encoded_image = encodedImage;
         const newImage = (await api.createImage(args)).data!.images![0];
+        setImage(newImage)
         // history.push(`/image-editor/${newImage.id}`);
         history.replace(`/image-editor/${newImage.id}`);
     }
 
     useEffect(() => {
+        if (image) {
+            return;
+        }
         api.getImage(id).then((image) => {
             setImage(image.data);
             api.getImageData(id, {
@@ -185,7 +189,7 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                 };
             });
         });
-    }, [id]);
+    }, [image, id]);
 
     useEffect(() => {
         if (renderer) {
@@ -394,7 +398,7 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                             }}
                             onClick={() => {
                                 if (renderer) {
-                                    renderer.updateZoomAndOffset(1, 0, 0);
+                                    renderer.resetView();
                                 }
                             }}
                         >

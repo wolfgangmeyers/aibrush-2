@@ -86,7 +86,34 @@ export function featherEdges(
     }
 }
 
-
+export function applyAlphaMask(imageData: ImageData, alphaMask: ImageData) {
+    if (imageData.width != alphaMask.width || imageData.height != alphaMask.height) {
+        throw new Error("imageData and alphaMask are not the same size");
+    }
+    const spread = 10;
+    for (let x = 0; x < imageData.width; x++) {
+        for (let y = 0; y < imageData.height; y++) {
+            // r, g, b, a
+            // if transparency within 10 pixels, set alpha to 1, otherwise to zero.
+            // binary alpha inversion with spread
+            let alpha = false;
+            for (let x2 = Math.max(0, x - spread); x2 < Math.min(imageData.width, x + spread); x2++) {
+                for (let y2 = Math.max(0, y - spread); y2 < Math.min(imageData.height, y + spread); y2++) {
+                    const alphaValue = alphaMask.data[y2 * alphaMask.width * 4 + x2 * 4 + 3];
+                    if (alphaValue < 255) {
+                        alpha = true;
+                    }
+                }
+            }
+            const alphaIndex = y * imageData.width * 4 + x * 4 + 3
+            if (alpha) {
+                imageData.data[alphaIndex] = 255;
+            } else {
+                imageData.data[alphaIndex] = 0;
+            }
+        }
+    }
+}
 
 function getAverageColor(imageData: ImageData) {
     let red = 0;

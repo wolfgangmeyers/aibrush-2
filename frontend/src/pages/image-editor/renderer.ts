@@ -20,12 +20,18 @@ export class Renderer {
     private zoom: number;
     private offsetX: number;
     private offsetY: number;
+    private width = 0;
+    private height = 0;
 
     private snapshotListener: (() => void) | null = null;
 
     constructor(private readonly canvas: HTMLCanvasElement) {
+        canvas.width = 512;
+        canvas.height = 512;
         // invisible canvas elements
         this.backgroundLayer = document.createElement("canvas");
+        this.backgroundLayer.width = 512;
+        this.backgroundLayer.height = 512;
         this.baseImageLayer = document.createElement("canvas");
         this.editLayer = document.createElement("canvas");
         // this.overlayLayer = document.createElement("canvas");
@@ -126,7 +132,7 @@ export class Renderer {
     render() {
         const context = this.canvas.getContext("2d");
         if (context) {
-            context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            context.clearRect(0, 0, this.width, this.height);
             context.drawImage(this.backgroundLayer, 0, 0);
             // apply zoom and offset
             context.setTransform(
@@ -141,7 +147,7 @@ export class Renderer {
             context.drawImage(this.baseImageLayer, 0, 0);
             context.drawImage(this.editLayer, 0, 0);
             // context.drawImage(this.overlayLayer, 0, 0);
-            this.drawOverlay(context, this.canvas.width, this.canvas.height);
+            this.drawOverlay(context, this.width, this.height);
             context.setTransform(1, 0, 0, 1, 0, 0);
         }
     }
@@ -201,19 +207,17 @@ export class Renderer {
         if (context) {
             // set size of all layers
             // TODO: adapt for an always-square canvas
-            this.backgroundLayer.width = image.width;
-            this.backgroundLayer.height = image.height;
             this.initializeBackgroundLayer();
 
             this.baseImageLayer.width = image.width;
             this.baseImageLayer.height = image.height;
             this.editLayer.width = image.width;
             this.editLayer.height = image.height;
-            // this.overlayLayer.width = image.width;
-            // this.overlayLayer.height = image.height;
-            // set canvas size
-            this.canvas.width = image.width;
-            this.canvas.height = image.height;
+            // set image size
+            this.width = image.width;
+            this.height = image.height;
+            // this.canvas.width = image.width;
+            // this.canvas.height = image.height;
             context.drawImage(image, 0, 0);
 
             if (updateSelectionOverlay) {
@@ -225,10 +229,27 @@ export class Renderer {
                     height: 512,
                 });
             }
-
-            this.render();
+            this.resetView();
+            // this.render(); // already called by updateZoomAndOffset
             this.snapshot();
         }
+    }
+
+    resetView() {
+        // determine zoom based on image difference from canvas size
+        const maxWidth = Math.max(this.width, this.height);
+        const zoom = this.canvas.width / maxWidth;
+
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (this.width > this.height) {
+            offsetY = (this.width - this.height) / 2;
+        } else if (this.height > this.width) {
+            offsetX = (this.height - this.width) / 2;
+        }
+
+        this.updateZoomAndOffset(zoom, offsetX, offsetY);
     }
 
     setEditImage(imageData: ImageData | null) {
@@ -261,19 +282,9 @@ export class Renderer {
         width: number,
         height: number
     ) {
-        const lineWidth = Math.max(
-            this.canvas.width / 512,
-            this.canvas.height / 512
-        );
-        // const context = this.overlayLayer.getContext("2d");
+        const lineWidth = Math.max(this.width / 512, this.height / 512);
         if (context) {
-            // context.clearRect(
-            //     0,
-            //     0,
-            //     this.overlayLayer.width,
-            //     this.overlayLayer.height
-            // );
-            context.strokeStyle = "gray";
+            context.strokeStyle = "white";
             context.lineWidth = lineWidth;
             context.strokeRect(0, 0, width, height);
 
@@ -419,6 +430,7 @@ export class Renderer {
     }
 
     updateZoomAndOffset(zoom: number, offsetX: number, offsetY: number) {
+        // console.log(`zoom: ${zoom}, offset: ${offsetX}, ${offsetY}`)
         this.zoom = zoom;
         this.offsetX = offsetX;
         this.offsetY = offsetY;
@@ -426,11 +438,11 @@ export class Renderer {
     }
 
     getWidth(): number {
-        return this.canvas.width;
+        return this.width;
     }
 
     getHeight(): number {
-        return this.canvas.height;
+        return this.height;
     }
 
     private imageDataToEncodedImage(imageData: ImageData): string | undefined {
@@ -487,8 +499,8 @@ export class Renderer {
             selection = {
                 x: 0,
                 y: 0,
-                width: this.canvas.width,
-                height: this.canvas.height,
+                width: this.width,
+                height: this.height,
             };
         }
         // get image data of the selection
@@ -552,7 +564,7 @@ export class Renderer {
                 }
                 let rightEdge =
                     this.selectionOverlay.x + this.selectionOverlay.width;
-                if (rightEdge < this.canvas.width) {
+                if (rightEdge < this.width) {
                     rightEdge -= 10;
                 }
                 let topEdge = this.selectionOverlay.y;

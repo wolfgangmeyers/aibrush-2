@@ -135,8 +135,11 @@ export class ZoomHelper {
         // translate offset to canvas coordinates
         let rect = this.renderer.getCanvas().getBoundingClientRect();
 
-        x = (x / rect.width) * this.renderer.getWidth();
-        y = (y / rect.height) * this.renderer.getHeight();
+        // x = (x / rect.width) * this.renderer.getWidth();
+        // y = (y / rect.height) * this.renderer.getHeight();
+
+        x = (x / rect.width) * 512;
+        y = (y / rect.height) * 512;
 
         x = Math.round(x - offsetX);
         y = Math.round(y - offsetY);
