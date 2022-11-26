@@ -18,6 +18,7 @@ import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
 import { getUpscaleLevel } from "../../lib/upscale";
 import { applyAlphaMask, featherEdges } from "../../lib/imageutil";
+import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 
 type InpaintToolState =
     | "select"
@@ -131,7 +132,7 @@ export class InpaintTool extends BaseTool implements Tool {
             this.state = "select";
             this.selectionTool.updateArgs({
                 outpaint: this.getArgs().outpaint,
-            })
+            });
         } else {
             this.state = "erase";
         }
@@ -234,7 +235,7 @@ export class InpaintTool extends BaseTool implements Tool {
         args = {
             ...this.getArgs(),
             ...args,
-        }
+        };
         super.updateArgs(args);
         this.prompt = args.prompt || "";
         this.count = args.count || 4;
@@ -247,7 +248,7 @@ export class InpaintTool extends BaseTool implements Tool {
         );
         this.selectionTool.updateArgs({
             outpaint: args.outpaint,
-        })
+        });
     }
 
     onChangeState(handler: (state: InpaintToolState) => void) {
@@ -333,7 +334,7 @@ export class InpaintTool extends BaseTool implements Tool {
         this.dirty = false;
     }
 
-    async submit(api: AIBrushApi, image: APIImage) {
+    async submit(api: AIBrushApi, apisocket: ApiSocket, image: APIImage) {
         this.notifyError(null);
         let selectionOverlay = this.renderer.getSelectionOverlay();
         if (!selectionOverlay) {
@@ -341,12 +342,16 @@ export class InpaintTool extends BaseTool implements Tool {
             return;
         }
 
-        console.log(`args: ${JSON.stringify(this.getArgs())}`);
         if (this.getArgs().outpaint) {
-            console.log("Checking for overlay out of bounds")
             // check if selection overlay is out of renderer bounds (width, height)
-            if (selectionOverlay.x < 0 || selectionOverlay.y < 0 || selectionOverlay.x + selectionOverlay.width > this.renderer.getWidth() || selectionOverlay.y + selectionOverlay.height > this.renderer.getHeight()) {
-                console.log("Expanding to overlay!")
+            if (
+                selectionOverlay.x < 0 ||
+                selectionOverlay.y < 0 ||
+                selectionOverlay.x + selectionOverlay.width >
+                    this.renderer.getWidth() ||
+                selectionOverlay.y + selectionOverlay.height >
+                    this.renderer.getHeight()
+            ) {
                 this.renderer.expandToOverlay();
                 selectionOverlay = this.renderer.getSelectionOverlay()!;
             }
@@ -398,20 +403,15 @@ export class InpaintTool extends BaseTool implements Tool {
         }
         let completed = false;
 
-        while (!completed) {
-            let completeCount = 0;
-            await sleep(1000);
-            // poll for completion
-            for (let i = 0; i < newImages!.length; i++) {
-                if (newImages![i].status === ImageStatusEnum.Completed) {
-                    completeCount++;
-                    continue;
-                }
-                try {
-                    const imageResp = await api.getImage(newImages![i].id);
-                    if (imageResp.data.status === ImageStatusEnum.Completed) {
-                        newImages![i] = imageResp.data;
-                        completeCount++;
+        apisocket.onMessage(async (msg: string) => {
+            console.log("inpaint onMessage", msg);
+            const img = JSON.parse(msg) as any;
+            if (
+                img.type === NOTIFICATION_IMAGE_UPDATED &&
+                img.status === ImageStatusEnum.Completed
+            ) {
+                for (let i = 0; i < newImages!.length; i++) {
+                    if (newImages![i].id === img.id) {
                         const imageData = await this.loadImageData(
                             api,
                             newImages![i].id,
@@ -420,20 +420,33 @@ export class InpaintTool extends BaseTool implements Tool {
                             selectionOverlay!
                         );
                         newImages![i].data = imageData;
+                        newImages![i].status = ImageStatusEnum.Completed;
                     }
-                } catch (err) {
-                    // gracefully leave out the result...
-                    console.error(err);
-                    completeCount++;
                 }
             }
-            if (completeCount === newImages!.length) {
-                completed = true;
+        });
+        try {
+            while (!completed) {
+                let completeCount = 0;
+                await sleep(100);
+                // poll for completion
+                for (let i = 0; i < newImages!.length; i++) {
+                    if (newImages![i].status === ImageStatusEnum.Completed) {
+                        completeCount++;
+                        continue;
+                    }
+                }
+                if (completeCount === newImages!.length) {
+                    completed = true;
+                }
+                if (this.progressListener) {
+                    this.progressListener(completeCount / newImages!.length);
+                }
             }
-            if (this.progressListener) {
-                this.progressListener(completeCount / newImages!.length);
-            }
+        } finally {
+            apisocket.onMessage(undefined);
         }
+
         // sort images by score descending
         newImages!.sort((a, b) => {
             return b.score - a.score;
@@ -516,6 +529,7 @@ export class InpaintTool extends BaseTool implements Tool {
 
 interface ControlsProps {
     api: AIBrushApi;
+    apisocket: ApiSocket;
     image: APIImage;
     renderer: Renderer;
     tool: InpaintTool;
@@ -523,6 +537,7 @@ interface ControlsProps {
 
 export const InpaintControls: FC<ControlsProps> = ({
     api,
+    apisocket,
     image,
     renderer,
     tool,
@@ -601,8 +616,8 @@ export const InpaintControls: FC<ControlsProps> = ({
                     <p>
                         {/* info icon */}
                         <i className="fa fa-info-circle"></i>&nbsp; Move the
-                        selection rectangle to the area that you want to inpaint.
-                        For outpainting, try zooming out.
+                        selection rectangle to the area that you want to
+                        inpaint. For outpainting, try zooming out.
                     </p>
                     <div className="form-group">
                         {/* allow outpaint checkbox */}
@@ -772,7 +787,7 @@ export const InpaintControls: FC<ControlsProps> = ({
                                 count,
                                 prompt,
                             });
-                            tool.submit(api, image);
+                            tool.submit(api, apisocket, image);
                         }}
                     >
                         {/* paint icon */}

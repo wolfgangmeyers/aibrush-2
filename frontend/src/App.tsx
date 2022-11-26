@@ -154,7 +154,7 @@ function App() {
               <Homepage api={client} apiSocket={apiSocket} assetsUrl={assetsUrl} />
             </Route>
             <Route path="/image-editor/:id">
-              <ImageEditor api={client} assetsUrl={assetsUrl} />
+              <ImageEditor api={client} apisocket={apiSocket} assetsUrl={assetsUrl} />
             </Route>
             <Route path="/worker-config">
               <WorkerConfigPage api={client} />

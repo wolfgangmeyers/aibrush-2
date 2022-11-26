@@ -13,6 +13,7 @@ import { SmudgeTool, SmudgeControls } from "./smudge-tool";
 import { ImportExportControls } from "./import-export";
 import { InpaintControls, InpaintTool } from "./inpaint-tool";
 import { defaultArgs } from "../../components/ImagePrompt";
+import { ApiSocket } from "../../lib/apisocket";
 
 interface CanPreventDefault {
     preventDefault: () => void;
@@ -20,6 +21,7 @@ interface CanPreventDefault {
 
 interface Props {
     api: AIBrushApi;
+    apisocket: ApiSocket;
     assetsUrl: string;
 }
 
@@ -31,7 +33,7 @@ interface ToolConfig {
     defaultArgs: any;
 }
 
-export const ImageEditor: React.FC<Props> = ({ api }) => {
+export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
     const [showSelectionControls, setShowSelectionControls] = useState(false);
     const tools: Array<ToolConfig> = [
         {
@@ -46,6 +48,7 @@ export const ImageEditor: React.FC<Props> = ({ api }) => {
                         tool={t as InpaintTool}
                         renderer={renderer}
                         api={api}
+                        apisocket={apisocket}
                         image={image!}
                     />
                 )
