@@ -823,6 +823,8 @@ components:
       properties:
         model:
           type: string
+        peek:
+          type: boolean
     LoginInput:
       type: object
       properties:

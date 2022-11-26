@@ -159,7 +159,7 @@ def poll_loop(process_queue: Queue, metrics_queue: Queue, websocket_queue: Queue
             
             # model stickiness
             if time.time() - last_model_check > 60:
-                image = client.process_image(None)
+                image = client.process_image(None, True)
                 if image and image.model != model_name:
                     model_name = image.model
                 last_model_check = time.time()
@@ -221,6 +221,8 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
             mask_data = image.mask_data
 
             def update_image(iterations: int, status: str, nsfw: bool = False):
+                if image.warmup:
+                    return
                 score = 0
                 negative_score = 0
                 image_data = None
@@ -232,17 +234,8 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
                     # resize image
                     img = img.resize((image.width, image.height), Image.ANTIALIAS)
                     img.save(image_path)
-                    
-                if os.path.exists(image_path):
-                    # TODO: dedicated clip workers? Add clip to stable diffusion model process?
-                    # the code below fails with "No GPUS available" if run from system startup using @reboot in crontab
 
-                    # free_memory = get_free_memory()
-                    
-                    # # during testing, clip ranking needs at most 4.4 GB of memory (2.4 is not enough)
-                    # if free_memory/1e9 < 4.4 and not clip_ranker:
-                    #     print("Clearing model to free up memory for clip ranking")
-                    #     clear_model()
+                if os.path.exists(image_path):
                     prompts = "|".join(image.phrases)
                     negative_prompts = "|".join(image.negative_phrases).strip()
                     print(f"Calculating clip ranking for '{prompts}'")

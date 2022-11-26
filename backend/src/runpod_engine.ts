@@ -422,7 +422,6 @@ export class RunpodEngine implements ScalingEngine {
         return Math.ceil(workerGpus / gpuMultiplier);
     }
 
-    // refactor to work on runpod
     async cleanup(): Promise<void> {
         const workers = (await this.backend.listWorkers()).filter(
             (worker) => worker.engine === TYPE_RUNPOD && worker.gpu_type === this.gpuType

@@ -25,6 +25,7 @@ import {
     WorkerStatusEnum,
     Order,
     CreateOrderInput,
+    ProcessImageInput,
 } from "./client/api";
 import { sleep } from "./sleep";
 import { EmailMessage } from "./email_message";
@@ -145,7 +146,6 @@ export class BackendService {
         });
         await this.notificationsClient.connect();
         this.notificationsClient.on("notification", async (message) => {
-            
             const listeners = this.notificationListeners[message.channel];
             console.log("notification", message);
             console.log("listeners", listeners);
@@ -400,11 +400,13 @@ export class BackendService {
                     `UPDATE images SET deleted_at=$1, updated_at=$1 WHERE id=$2`,
                     [now, id]
                 );
-                
             } finally {
                 client.release();
             }
-            this.notify(image.created_by, JSON.stringify({ type: NOTIFICATION_IMAGE_DELETED, id }));
+            this.notify(
+                image.created_by,
+                JSON.stringify({ type: NOTIFICATION_IMAGE_DELETED, id })
+            );
         }
     }
 
@@ -553,15 +555,21 @@ export class BackendService {
             }
             await Promise.all(promises);
             if (image.status == "pending") {
-                this.notify("WORKERS", JSON.stringify({
-                    type: NOTIFICATION_PENDING_IMAGE,
-                }))
+                this.notify(
+                    "WORKERS",
+                    JSON.stringify({
+                        type: NOTIFICATION_PENDING_IMAGE,
+                    })
+                );
             }
-            this.notify(image.created_by, JSON.stringify({
-                type: NOTIFICATION_IMAGE_UPDATED,
-                id: image.id,
-                status: image.status,
-            }))
+            this.notify(
+                image.created_by,
+                JSON.stringify({
+                    type: NOTIFICATION_IMAGE_UPDATED,
+                    id: image.id,
+                    status: image.status,
+                })
+            );
             return this.hydrateImage({
                 ...image,
             });
@@ -666,11 +674,14 @@ export class BackendService {
                     seconds_until_completion: duration_seconds,
                 });
             }
-            this.notify(image.created_by, JSON.stringify({
-                type: NOTIFICATION_IMAGE_UPDATED,
-                id: image.id,
-                status: image.status,
-            }));
+            this.notify(
+                image.created_by,
+                JSON.stringify({
+                    type: NOTIFICATION_IMAGE_UPDATED,
+                    id: image.id,
+                    status: image.status,
+                })
+            );
             return this.hydrateImage({
                 ...image,
             });
@@ -1040,7 +1051,7 @@ export class BackendService {
     }
 
     private async getUsersWithPendingImages(
-        model: string
+        model: string | null
     ): Promise<Array<string>> {
         const args = [];
         const client = await this.pool.connect();
@@ -1060,9 +1071,12 @@ export class BackendService {
         }
     }
 
-    async processImage(model?: string, user?: string): Promise<Image> {
+    async processImage(
+        user?: string,
+        input?: ProcessImageInput
+    ): Promise<Image> {
         // get all users with pending images
-        const users = await this.getUsersWithPendingImages(model);
+        const users = await this.getUsersWithPendingImages(input?.model);
         // if there are no users, return null
         if (users.length === 0) {
             return null;
@@ -1091,16 +1105,19 @@ export class BackendService {
         }
         const args = [user];
         let filter = " AND deleted_at IS NULL";
-        if (model) {
+        if (input?.model) {
             filter = " AND model = $2 AND deleted_at IS NULL";
-            args.push(model);
+            args.push(input?.model);
         }
 
         // get random image from user
         const client = await this.pool.connect();
         try {
-            // begin transaction
-            await client.query("BEGIN");
+            if (!input?.peek) {
+                // begin transaction
+                await client.query("BEGIN");
+            }
+
             const result = await client.query(
                 `SELECT * FROM images WHERE created_by=$1 AND status='pending'${filter} ORDER BY created_at ASC LIMIT 1`,
                 args
@@ -1109,19 +1126,23 @@ export class BackendService {
                 return null;
             }
             const image = result.rows[0];
-            // update image status to "processing"
-            await client.query(
-                `UPDATE images SET status='processing', updated_at=$2 WHERE id=$1`,
-                [image.id, new Date().getTime()]
-            );
-            // commit transaction
-            await client.query("COMMIT");
+            if (!input?.peek) {
+                // update image status to "processing"
+                await client.query(
+                    `UPDATE images SET status='processing', updated_at=$2 WHERE id=$1`,
+                    [image.id, new Date().getTime()]
+                );
+                // commit transaction
+                await client.query("COMMIT");
+            }
             return this.hydrateImage({
                 ...image,
-                status: "processing",
+                status: input?.peek ? "pending" : "processing",
             });
         } catch (err) {
-            await client.query("ROLLBACK");
+            if (!input?.peek) {
+                await client.query("ROLLBACK");
+            }
         } finally {
             client.release();
         }

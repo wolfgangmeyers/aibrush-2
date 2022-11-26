@@ -52,12 +52,21 @@ class AIBrushAPI(object):
             raise err
             return None
 
-    def process_image(self, model: str) -> SimpleNamespace:
+    def process_image(self, model: str, peek=False) -> SimpleNamespace:
         resp = self.http_request("/process-image", "PUT", body={
             "model": model,
+            "peek": peek,
         })
         print(resp.text)
-        return self.parse_json(resp.text)
+        # Use the "peek" parameter to peek at the next item without consuming it
+        # this allows the worker process to swap out models when needed without
+        # blocking pending images from being processed by other workers.
+        result = self.parse_json(resp.text)
+        if result and peek:
+            result.warmup = True
+        elif result:
+            result.warmup = False
+        return result
 
     def login(self, email: str) -> SimpleNamespace:
         body = {

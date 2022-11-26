@@ -817,6 +817,12 @@ export interface ProcessImageInput {
      * @memberof ProcessImageInput
      */
     'model'?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof ProcessImageInput
+     */
+    'peek'?: boolean;
 }
 /**
  * 

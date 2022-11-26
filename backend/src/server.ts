@@ -781,8 +781,8 @@ export class Server {
                     user = jwt.userId;
                 }
                 const image = await this.backendService.processImage(
-                    req.body.model,
-                    user
+                    user,
+                    req.body,
                 );
                 res.json(image);
                 if (jwt.serviceAccountConfig?.workerId) {

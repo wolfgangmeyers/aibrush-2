@@ -687,6 +687,28 @@ describe("server", () => {
                 })
             })
 
+            describe("when processing an image with peek=true", () => {
+                let processingImage: Image;
+
+                beforeEach(async () => {
+                    // authenticate as service account
+                    await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                })
+
+                beforeEach(async () => {
+                    // process the image
+                    const response = await client2.processImage({
+                        peek: true,
+                    })
+                    processingImage = response.data
+                })
+
+                it("should return the image with status=pending", () => {
+                    expect(processingImage.id).toBe(image.id)
+                    expect(processingImage.status).toBe(UpdateImageInputStatusEnum.Pending)
+                })
+            })
+
             describe("when processing an image with different model arg", () => {
                 let processingImage: Image;
 
