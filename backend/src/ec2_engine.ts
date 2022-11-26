@@ -124,6 +124,11 @@ export class Ec2Engine implements ScalingEngine {
         }
         return workers.length;
     }
+
+    async cleanup(): Promise<void> {
+        // unimplemented
+        return;
+    }
 }
 
 export interface EC2Client {

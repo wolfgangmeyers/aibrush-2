@@ -6,6 +6,7 @@ import { Logger } from "./logs";
 import { MetricsClient } from "./metrics";
 import { GpuTypesResult, RunpodClient } from "./runpod_client";
 import { ScalingEngine } from "./scaling_engine";
+import { sleep } from "./sleep";
 
 export const SCALEDOWN_COOLDOWN = moment.duration(10, "minutes");
 export const WORKER_TIMEOUT = moment.duration(10, "minutes");
@@ -419,5 +420,46 @@ export class RunpodEngine implements ScalingEngine {
             workerGpus += worker.num_gpus;
         }
         return Math.ceil(workerGpus / gpuMultiplier);
+    }
+
+    // refactor to work on runpod
+    async cleanup(): Promise<void> {
+        const workers = (await this.backend.listWorkers()).filter(
+            (worker) => worker.engine === TYPE_RUNPOD && worker.gpu_type === this.gpuType
+        );
+        const pods = await this.client.getMyPods();
+        await sleep(1000);
+        for (let worker of workers) {
+            if (!pods.myself.pods.find((pod) => pod.id.toString() === worker.cloud_instance_id)) {
+                await this.backend.deleteWorker(worker.id);
+                this.metricsClient.addMetric(
+                    "runpod_engine.cleanup_worker",
+                    1,
+                    "count",
+                    {
+                        gpu_type: this.gpuType,
+                    }
+                );
+            }
+        }
+        for (let pod of pods.myself.pods) {
+            if (pod.runtime.gpus[0].id !== this.gpuType) {
+                continue;
+            }
+            if (!workers.find((worker) => worker.cloud_instance_id === pod.id)) {
+                await this.client.terminatePod({
+                    podId: pod.id,
+                });
+                await sleep(1000);
+                this.metricsClient.addMetric(
+                    "runpod_engine.cleanup_instance",
+                    1,
+                    "count",
+                    {
+                        gpu_type: this.gpuType,
+                    },
+                );
+            }
+        }
     }
 }

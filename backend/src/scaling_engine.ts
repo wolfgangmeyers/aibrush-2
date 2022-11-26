@@ -2,6 +2,7 @@
 export interface ScalingEngine {
     capacity(): Promise<number>;
     scale(activeOrders: number): Promise<number>;
+    cleanup(): Promise<void>;
 }
 
 export class FakeScalingEngine implements ScalingEngine {
@@ -24,5 +25,9 @@ export class FakeScalingEngine implements ScalingEngine {
             return this.returnScale;
         }
         return activeOrders;
+    }
+
+    async cleanup(): Promise<void> {
+        return;
     }
 }

@@ -662,7 +662,11 @@ describe("VastEngine", () => {
         databaseName = await testHelper.createTestDatabase();
         await testHelper.cleanupTestFiles();
         const config = testHelper.createConfig(databaseName);
-        backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger());
+        backendService = new BackendService(
+            config,
+            new MetricsClient(""),
+            new ConsoleLogger()
+        );
         await backendService.init();
         mockVastClient = new MockVastAPI();
         clock = new FakeClock(moment());
@@ -785,7 +789,7 @@ describe("VastEngine", () => {
                 TYPE_VASTAI,
                 2,
                 "1",
-                "RTX 3090",
+                "RTX 3090"
             );
             expect(await vastEngine.scale(1)).toEqual(1);
             expect(mockVastClient.instances).toEqual([
@@ -823,7 +827,7 @@ describe("VastEngine", () => {
                 TYPE_VASTAI,
                 2,
                 "1",
-                "RTX 3090",
+                "RTX 3090"
             );
             // set the last scaling operation to 10 minutes ago
             await backendService.setLastEventTime(
@@ -853,7 +857,7 @@ describe("VastEngine", () => {
                 TYPE_VASTAI,
                 2,
                 "1",
-                "RTX 3090",
+                "RTX 3090"
             );
             // set the last scaling operation to 1 minute ago
             await backendService.setLastEventTime(
@@ -889,7 +893,7 @@ describe("VastEngine", () => {
                 TYPE_VASTAI,
                 2,
                 "1",
-                "RTX 3090",
+                "RTX 3090"
             );
             clock._now = moment().add(10, "minutes");
             expect(await vastEngine.scale(1)).toEqual(0);
@@ -966,9 +970,9 @@ describe("VastEngine", () => {
                     backendService,
                     clock,
                     new MetricsClient(""),
-                    "RTX 3090",
-                )
-            })
+                    "RTX 3090"
+                );
+            });
 
             // refactor for vast client
             it("should use 2 gpus", async () => {
@@ -998,8 +1002,8 @@ describe("VastEngine", () => {
                 const workerResult = await backendService.listWorkers();
                 expect(workerResult.length).toEqual(1);
                 expect(workerResult[0].num_gpus).toEqual(2);
-            })
-        })
+            });
+        });
 
         describe("RTX A5000, one order", () => {
             beforeEach(() => {
@@ -1008,9 +1012,9 @@ describe("VastEngine", () => {
                     backendService,
                     clock,
                     new MetricsClient(""),
-                    "RTX A5000",
-                )
-            })
+                    "RTX A5000"
+                );
+            });
 
             // refactor for vast client
             it("should use 2 gpus", async () => {
@@ -1040,8 +1044,8 @@ describe("VastEngine", () => {
                 const workerResult = await backendService.listWorkers();
                 expect(workerResult.length).toEqual(1);
                 expect(workerResult[0].num_gpus).toEqual(2);
-            })
-        })
+            });
+        });
 
         describe("RTX A6000, one order", () => {
             beforeEach(() => {
@@ -1050,9 +1054,9 @@ describe("VastEngine", () => {
                     backendService,
                     clock,
                     new MetricsClient(""),
-                    "RTX A6000",
-                )
-            })
+                    "RTX A6000"
+                );
+            });
 
             // refactor for vast client
             it("should use 1 gpus", async () => {
@@ -1082,7 +1086,161 @@ describe("VastEngine", () => {
                 const workerResult = await backendService.listWorkers();
                 expect(workerResult.length).toEqual(1);
                 expect(workerResult[0].num_gpus).toEqual(1);
-            })
+            });
         });
-    })
+    });
+
+    describe("cleanup", () => {
+        describe("cleanup with no instances and no workers", () => {
+            it("should not create any instances or workers", async () => {
+                const vastEngine = new VastEngine(
+                    mockVastClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "RTX 3090"
+                );
+                await vastEngine.cleanup();
+                expect(mockVastClient.instances).toHaveLength(0);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(0);
+            });
+        });
+
+        describe("cleanup with one dangling instance and no workers", () => {
+            it("should clean up instance", async () => {
+                const vastEngine = new VastEngine(
+                    mockVastClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "RTX 3090"
+                );
+                mockVastClient._instances = [
+                    {
+                        id: 1,
+                        gpu_name: "RTX 3090",
+                        num_gpus: 1,
+                        dph_total: 0.3,
+                    },
+                ];
+                await vastEngine.cleanup();
+                expect(mockVastClient.instances).toHaveLength(0);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(0);
+            });
+        });
+
+        describe("cleanup with instance of wrong type and no workers", () => {
+            it("should not clean up instance", async () => {
+                const vastEngine = new VastEngine(
+                    mockVastClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "RTX 3090"
+                );
+                mockVastClient._instances = [
+                    {
+                        id: 1,
+                        gpu_name: "RTX A5000",
+                        num_gpus: 1,
+                        dph_total: 0.3,
+                    },
+                ];
+                await vastEngine.cleanup();
+                expect(mockVastClient.instances).toHaveLength(1);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(0);
+            });
+        });
+
+        describe("cleanup with no instances and one worker", () => {
+            it("should clean up worker", async () => {
+                const vastEngine = new VastEngine(
+                    mockVastClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "RTX 3090"
+                );
+                const worker = await backendService.createWorker("existing");
+                await backendService.updateWorkerDeploymentInfo(
+                    worker.id,
+                    TYPE_VASTAI,
+                    2,
+                    "1",
+                    "RTX 3090"
+                );
+                await vastEngine.cleanup();
+                expect(mockVastClient.instances).toHaveLength(0);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(0);
+            });
+        });
+
+        describe("cleanup with one instance and one worker that match", () => {
+            it("should not clean up anything", async () => {
+                const vastEngine = new VastEngine(
+                    mockVastClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "RTX 3090"
+                );
+                mockVastClient._instances = [
+                    {
+                        id: 1,
+                        gpu_name: "RTX 3090",
+                        num_gpus: 1,
+                        dph_total: 0.3,
+                    },
+                ];
+                const worker = await backendService.createWorker("existing");
+                await backendService.updateWorkerDeploymentInfo(
+                    worker.id,
+                    TYPE_VASTAI,
+                    2,
+                    "1",
+                    "RTX 3090"
+                );
+                await vastEngine.cleanup();
+                expect(mockVastClient.instances).toHaveLength(1);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(1);
+            });
+        });
+
+        describe("cleanup with one instance and one worker that don't match", () => {
+            it("should clean up instance and worker", async () => {
+                const vastEngine = new VastEngine(
+                    mockVastClient,
+                    backendService,
+                    clock,
+                    new MetricsClient(""),
+                    "RTX 3090"
+                );
+                mockVastClient._instances = [
+                    {
+                        id: 1,
+                        gpu_name: "RTX 3090",
+                        num_gpus: 1,
+                        dph_total: 0.3,
+                    },
+                ];
+                const worker = await backendService.createWorker("existing");
+                await backendService.updateWorkerDeploymentInfo(
+                    worker.id,
+                    TYPE_VASTAI,
+                    2,
+                    "2",
+                    "RTX 3090"
+                );
+                await vastEngine.cleanup();
+                expect(mockVastClient.instances).toHaveLength(0);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(0);
+            });
+        });
+    });
 });

@@ -373,4 +373,42 @@ export class VastEngine implements ScalingEngine {
         }
         return Math.ceil(workerGpus / gpuMultiplier);
     }
+    
+    async cleanup(): Promise<void> {
+        const workers = (await this.backend.listWorkers()).filter(
+            (worker) => worker.engine === TYPE_VASTAI && worker.gpu_type === this.gpuType
+        );
+        const instances = await this.client.listInstances();
+        await sleep(1000);
+        for (let worker of workers) {
+            if (!instances.instances.find((instance) => instance.id.toString() === worker.cloud_instance_id)) {
+                await this.backend.deleteWorker(worker.id);
+                this.metricsClient.addMetric(
+                    "vast_engine.cleanup_worker",
+                    1,
+                    "count",
+                    {
+                        gpu_type: this.gpuType,
+                    }
+                );
+            }
+        }
+        for (let instance of instances.instances) {
+            if (instance.gpu_name !== this.gpuType) {
+                continue;
+            }
+            if (!workers.find((worker) => worker.cloud_instance_id === instance.id.toString())) {
+                await this.client.deleteInstance(instance.id.toString());
+                await sleep(1000);
+                this.metricsClient.addMetric(
+                    "vast_engine.cleanup_instance",
+                    1,
+                    "count",
+                    {
+                        gpu_type: this.gpuType,
+                    },
+                );
+            }
+        }
+    }
 }

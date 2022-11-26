@@ -1173,4 +1173,153 @@ describe("RunpodEngine", () => {
             });
         })
     });
+
+    describe("cleanup", () => {
+
+        describe("cleanup with no instances and no workers", () => {
+            it("should not create any instances or workers", async () => {
+                await runpodEngine.cleanup();
+                expect(mockRunpodClient._pods).toHaveLength(0);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(0);
+            });
+        })
+
+        describe("cleanup with one dangling instance and no workers", () => {
+            it("should clean up instance", async () => {
+                mockRunpodClient._pods = [
+                    {
+                        id: "pod-id",
+                        name: "AiBrush Worker",
+                        runtime: {
+                            container: {
+                                cpuPercent: 0,
+                                memoryPercent: 0,
+                            },
+                            gpus: [{
+                                id: "NVIDIA GeForce RTX 3090",
+                            }],
+                            ports: [],
+                            uptimeInSeconds: 0,
+                        },
+                    },
+                ];
+                await runpodEngine.cleanup();
+                expect(mockRunpodClient._pods).toHaveLength(0);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(0);
+            });
+        });
+
+        describe("cleanup with instance of wrong type and no workers", () => {
+            it("should not clean up instance", async () => {
+                mockRunpodClient._pods = [
+                    {
+                        id: "pod-id",
+                        name: "AiBrush Worker",
+                        runtime: {
+                            container: {
+                                cpuPercent: 0,
+                                memoryPercent: 0,
+                            },
+                            gpus: [{
+                                id: "NVIDIA RTX A6000",
+                            }],
+                            ports: [],
+                            uptimeInSeconds: 0,
+                        },
+                    },
+                ];
+                await runpodEngine.cleanup();
+                expect(mockRunpodClient._pods).toHaveLength(1);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(0);
+            });
+        })
+
+        describe("cleanup with no instances and one worker", () => {
+            it("should clean up worker", async () => {
+                const worker = await backendService.createWorker("existing");
+                await backendService.updateWorkerDeploymentInfo(
+                    worker.id,
+                    TYPE_RUNPOD,
+                    2,
+                    "pod-id",
+                    "NVIDIA GeForce RTX 3090"
+                );
+                await runpodEngine.cleanup();
+                expect(mockRunpodClient._pods).toHaveLength(0);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(0);
+            });
+        })
+
+        describe("cleanup with one instance and one worker that match", () => {
+            it("should not clean up anything", async () => {
+                mockRunpodClient._pods = [
+                    {
+                        id: "pod-id",
+                        name: "AiBrush Worker",
+                        runtime: {
+                            container: {
+                                cpuPercent: 0,
+                                memoryPercent: 0,
+                            },
+                            gpus: [{
+                                id: "NVIDIA GeForce RTX 3090",
+                            }],
+                            ports: [],
+                            uptimeInSeconds: 0,
+                        },
+                    },
+                ];
+                const worker = await backendService.createWorker("existing");
+                await backendService.updateWorkerDeploymentInfo(
+                    worker.id,
+                    TYPE_RUNPOD,
+                    2,
+                    "pod-id",
+                    "NVIDIA GeForce RTX 3090"
+                );
+                await runpodEngine.cleanup();
+                expect(mockRunpodClient._pods).toHaveLength(1);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(1);
+            });
+        });
+
+        describe("cleanup with one instance and one worker that don't match", () => {
+            it("should clean up instance and worker", async () => {
+                mockRunpodClient._pods = [
+                    {
+                        id: "pod-id",
+                        name: "AiBrush Worker",
+                        runtime: {
+                            container: {
+                                cpuPercent: 0,
+                                memoryPercent: 0,
+                            },
+                            gpus: [{
+                                id: "NVIDIA GeForce RTX 3090",
+                            }],
+                            ports: [],
+                            uptimeInSeconds: 0,
+                        },
+                    },
+                ];
+                const worker = await backendService.createWorker("existing");
+                await backendService.updateWorkerDeploymentInfo(
+                    worker.id,
+                    TYPE_RUNPOD,
+                    2,
+                    "pod-id-2",
+                    "NVIDIA GeForce RTX 3090"
+                );
+                await runpodEngine.cleanup();
+                expect(mockRunpodClient._pods).toHaveLength(0);
+                const workerResult = await backendService.listWorkers();
+                expect(workerResult.length).toEqual(0);
+            });
+        });
+    });
 });
