@@ -1,4 +1,5 @@
 import React, { FC, useState, useEffect, useRef } from "react";
+import { Prompt } from "react-router";
 import { loadImageAsync } from "../../lib/loadImage";
 
 import { sleep } from "../../lib/sleep";
@@ -34,6 +35,7 @@ export class EnhanceTool extends BaseTool implements Tool {
     private prompt: string = "";
     private count: number = 4;
     private variationStrength: number = 0.35;
+    private _dirty = false;
 
     private _state: EnhanceToolState = "default";
     private stateHandler: (state: EnhanceToolState) => void = () => {};
@@ -46,6 +48,22 @@ export class EnhanceTool extends BaseTool implements Tool {
     private erasing = false;
     private progressListener?: (progress: number) => void;
     private errorListener?: (error: string | null) => void;
+    private dirtyListener?: (dirty: boolean) => void;
+
+    set dirty(dirty: boolean) {
+        this._dirty = dirty;
+        if (this.dirtyListener) {
+            this.dirtyListener(dirty);
+        }
+    }
+
+    get dirty() {
+        return this._dirty;
+    }
+
+    onDirty(listener: (dirty: boolean) => void): void {
+        this.dirtyListener = listener;
+    }
 
     onError(handler: (error: string | null) => void) {
         this.errorListener = handler;
@@ -351,6 +369,7 @@ export class EnhanceTool extends BaseTool implements Tool {
     }
 
     async submit(api: AIBrushApi, image: APIImage) {
+        this.dirty = true;
         this.notifyError(null);
         const selectionOverlay = this.renderer.getSelectionOverlay();
         const encodedImage = this.renderer.getEncodedImage(selectionOverlay!);
@@ -485,6 +504,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         if (encodedImage && this.saveListener) {
             this.saveListener(encodedImage);
         }
+        this.dirty = false;
     }
 
     destroy(): boolean {
@@ -507,6 +527,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
     tool,
 }) => {
     const [count, setCount] = useState(4);
+    const [dirty, setDirty] = useState(false);
     const [variationStrength, setVariationStrength] = useState(0.35);
     const [prompt, setPrompt] = useState(image.phrases[0]);
     const [state, setState] = useState<EnhanceToolState>(tool.state);
@@ -516,6 +537,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
     tool.onChangeState(setState);
     tool.onProgress(setProgress);
     tool.onError(setError);
+    tool.onDirty(setDirty);
 
     if (state == "busy") {
         return (
@@ -718,6 +740,10 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     </button>
                 )}
             </div>
+            <Prompt
+                when={dirty}
+                message="Are you sure you want to leave? Your changes will be lost."
+            />
         </div>
     );
 };

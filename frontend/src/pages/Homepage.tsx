@@ -291,6 +291,9 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
             const payload = JSON.parse(message);
             if (payload.type === NOTIFICATION_IMAGE_UPDATED || payload.type === NOTIFICATION_IMAGE_DELETED) {
                 const updatedImage = await api.getImage(payload.id);
+                if (updatedImage.data.temporary) {
+                    return;
+                }
                 setImages((images) => {
                     const index = images.findIndex((image) => image.id === updatedImage.data.id);
                     let updatedImages = images;

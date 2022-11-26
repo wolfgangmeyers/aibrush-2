@@ -1,7 +1,5 @@
 import React, { FC, useState, useEffect, useRef } from "react";
-import ButtonGroup from "react-bootstrap/ButtonGroup";
-import ToggleButton from "react-bootstrap/ToggleButton";
-import { loadImageAsync } from "../../lib/loadImage";
+import { Prompt } from "react-router";
 
 import { sleep } from "../../lib/sleep";
 import { defaultArgs } from "../../components/ImagePrompt";
@@ -115,15 +113,15 @@ export class InpaintTool extends BaseTool implements Tool {
         }
     }
 
-    // TODO: support outpainting (remove this function)
     selectSupported(): boolean {
-        return !(
-            this.renderer.getWidth() == this.renderer.getHeight() &&
-            getUpscaleLevel(
-                this.renderer.getWidth(),
-                this.renderer.getHeight()
-            ) === 0
-        );
+        // return !(
+        //     this.renderer.getWidth() == this.renderer.getHeight() &&
+        //     getUpscaleLevel(
+        //         this.renderer.getWidth(),
+        //         this.renderer.getHeight()
+        //     ) === 0
+        // );
+        return true;
     }
 
     constructor(renderer: Renderer) {
@@ -501,9 +499,15 @@ export class InpaintTool extends BaseTool implements Tool {
         if (encodedImage && this.saveListener) {
             this.saveListener(encodedImage);
         }
+        this.dirty = false;
     }
 
     destroy(): boolean {
+        if (this.dirty) {
+            if (!window.confirm("Discard changes?")) {
+                return false;
+            }
+        }
         this.renderer.setCursor(undefined);
         this.renderer.setEditImage(null);
         return true;
@@ -597,7 +601,8 @@ export const InpaintControls: FC<ControlsProps> = ({
                     <p>
                         {/* info icon */}
                         <i className="fa fa-info-circle"></i>&nbsp; Move the
-                        selection rectangle to the area that you want to inpaint
+                        selection rectangle to the area that you want to inpaint.
+                        For outpainting, try zooming out.
                     </p>
                     <div className="form-group">
                         {/* allow outpaint checkbox */}
@@ -775,6 +780,10 @@ export const InpaintControls: FC<ControlsProps> = ({
                     </button>
                 )}
             </div>
+            <Prompt
+                when={dirty}
+                message="Are you sure you want to leave? Your changes will be lost."
+            />
         </div>
     );
 };
