@@ -68,6 +68,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
                         tool={t as EnhanceTool}
                         renderer={renderer}
                         api={api}
+                        apisocket={apisocket}
                         image={image!}
                     />
                 );

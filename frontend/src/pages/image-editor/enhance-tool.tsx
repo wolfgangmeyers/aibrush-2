@@ -19,6 +19,7 @@ import { getClosestAspectRatio } from "../../lib/aspecRatios";
 import { featherEdges, fixRedShift } from "../../lib/imageutil";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { getUpscaleLevel } from "../../lib/upscale";
+import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 
 type EnhanceToolState = "select" | "default" | "busy" | "confirm" | "erase";
 
@@ -361,6 +362,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             }
             this.imageData = [];
             this.renderer.setEditImage(null);
+            this.dirty = false;
         }
     }
 
@@ -368,7 +370,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.state = "erase";
     }
 
-    async submit(api: AIBrushApi, image: APIImage) {
+    async submit(api: AIBrushApi, apisocket: ApiSocket, image: APIImage) {
         this.dirty = true;
         this.notifyError(null);
         const selectionOverlay = this.renderer.getSelectionOverlay();
@@ -412,20 +414,14 @@ export class EnhanceTool extends BaseTool implements Tool {
         }
         let completed = false;
 
-        while (!completed) {
-            let completeCount = 0;
-            await sleep(1000);
-            // poll for completion
-            for (let i = 0; i < newImages!.length; i++) {
-                if (newImages![i].status === ImageStatusEnum.Completed) {
-                    completeCount++;
-                    continue;
-                }
-                try {
-                    const imageResp = await api.getImage(newImages![i].id);
-                    if (imageResp.data.status === ImageStatusEnum.Completed) {
-                        newImages![i] = imageResp.data;
-                        completeCount++;
+        apisocket.onMessage(async (msg: string) => {
+            const img = JSON.parse(msg) as any;
+            if (
+                img.type === NOTIFICATION_IMAGE_UPDATED &&
+                img.status === ImageStatusEnum.Completed
+            ) {
+                for (let i = 0; i < newImages!.length; i++) {
+                    if (newImages![i].id === img.id) {
                         const imageData = await this.loadImageData(
                             api,
                             newImages![i].id,
@@ -434,20 +430,33 @@ export class EnhanceTool extends BaseTool implements Tool {
                             selectionOverlay!
                         );
                         newImages![i].data = imageData;
+                        newImages![i].status = ImageStatusEnum.Completed;
                     }
-                } catch (err) {
-                    // gracefully leave out the result...
-                    console.error(err);
-                    completeCount++;
                 }
             }
-            if (completeCount === newImages!.length) {
-                completed = true;
+        });
+        try {
+            while (!completed) {
+                let completeCount = 0;
+                await sleep(1000);
+                // poll for completion
+                for (let i = 0; i < newImages!.length; i++) {
+                    if (newImages![i].status === ImageStatusEnum.Completed) {
+                        completeCount++;
+                        continue;
+                    }
+                }
+                if (completeCount === newImages!.length) {
+                    completed = true;
+                }
+                if (this.progressListener) {
+                    this.progressListener(completeCount / newImages!.length);
+                }
             }
-            if (this.progressListener) {
-                this.progressListener(completeCount / newImages!.length);
-            }
+        } finally {
+            apisocket.onMessage(undefined);
         }
+
         // sort images by score descending
         newImages!.sort((a, b) => {
             return b.score - a.score;
@@ -515,6 +524,7 @@ export class EnhanceTool extends BaseTool implements Tool {
 
 interface ControlsProps {
     api: AIBrushApi;
+    apisocket: ApiSocket;
     image: APIImage;
     renderer: Renderer;
     tool: EnhanceTool;
@@ -522,6 +532,7 @@ interface ControlsProps {
 
 export const EnhanceControls: FC<ControlsProps> = ({
     api,
+    apisocket,
     image,
     renderer,
     tool,
@@ -732,7 +743,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                                 variationStrength,
                                 prompt,
                             });
-                            tool.submit(api, image);
+                            tool.submit(api, apisocket, image);
                         }}
                         style={{ marginRight: "8px" }}
                     >
