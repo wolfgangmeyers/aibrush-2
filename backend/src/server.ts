@@ -1,5 +1,6 @@
 import { Server as HTTPServer } from "http";
 import express, { Express } from "express";
+import ws from "ws";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
@@ -40,6 +41,7 @@ import { Logger } from "./logs";
 
 export class Server {
     private server: HTTPServer;
+    private wsServer: ws.Server;
     private app: Express;
     private terminator: HttpTerminator;
     private authHelper: AuthHelper;
@@ -57,10 +59,15 @@ export class Server {
         private scalingService: ScalingService
     ) {
         this.app = express();
-        this.authHelper = new AuthHelper(config, () => moment().valueOf(), logger);
+        this.authHelper = new AuthHelper(
+            config,
+            () => moment().valueOf(),
+            logger
+        );
         for (let serviceAccount of this.config.serviceAccounts || []) {
             this.hashedServiceAccounts[hash(serviceAccount)] = true;
         }
+        this.wsServer = new ws.Server({ noServer: true });
     }
 
     private serviceAccountType(
@@ -83,6 +90,58 @@ export class Server {
         this.logger.log("Backend service initializing");
         await this.backendService.init();
         this.logger.log("Backend service initialized");
+
+        // TODO: move this into another object
+        // Set up a headless websocket server that prints any
+        // events that come in.
+        this.wsServer.on("connection", (socket, request) => {
+
+            let userId: string;
+            let workerId: string;
+
+            const handler = (message: string) => {
+                console.log("handler called")
+                if (socket.readyState === ws.OPEN) {
+                    console.log("sending message")
+                    socket.send(message);
+                }
+            }
+
+            socket.onmessage = async buf => {
+                try {
+                    const message = buf.data.toString("utf-8")
+                    if (!userId && !workerId) {
+                        const authResult = this.authHelper.verifyToken(message, "access");
+                        if (!authResult) {
+                            throw new Error("bad token")
+                        }
+                        console.log("Socket authenticated");
+                        if (authResult.serviceAccountConfig) {
+                            workerId = authResult.serviceAccountConfig.workerId;
+                            await this.backendService.listen("WORKERS", handler);
+                        } else {
+                            userId = authResult.userId;
+                            await this.backendService.listen(userId, handler);
+                        }
+                        socket.send(JSON.stringify({
+                            connected: true,
+                        }))
+                    }
+                } catch (err) {
+                    console.error(err)
+                    socket.close();
+                }
+            }
+
+            socket.onclose = async () => {
+                console.log("socket closed");
+                if (workerId) {
+                    await this.backendService.unlisten("WORKERS", handler);
+                } else if (userId) {
+                    await this.backendService.unlisten(userId, handler);
+                }
+            }
+        });
 
         let middleware: any;
 
@@ -371,6 +430,7 @@ export class Server {
             "/api/images",
             withMetrics("/api/images", async (req, res) => {
                 try {
+                    console.log("Getting jwt from request")
                     const jwt = this.authHelper.getJWTFromRequest(req);
                     // service accounts can't list images
                     let cursor: number | undefined;
@@ -385,7 +445,7 @@ export class Server {
                         limit = parseInt(req.query.limit as string);
                     } catch (err) {}
                     let filter: string | undefined = req.query.filter as any;
-    
+
                     let query = {
                         userId: jwt.userId,
                         status: req.query.status as ImageStatusEnum,
@@ -394,13 +454,12 @@ export class Server {
                         limit,
                         filter,
                     };
-    
+
                     const images = await this.backendService.listImages(query);
                     res.json(images);
                 } catch (err) {
                     console.error(err);
                 }
-                
             })
         );
 
@@ -851,6 +910,14 @@ export class Server {
                     resolve();
                 }
             );
+
+            this.server.on("upgrade", (request, socket, head) => {
+                this.wsServer.handleUpgrade(request, socket, head, socket => {
+                    this.wsServer.emit("connection", socket, request);
+                })
+                
+            })
+            
             this.terminator = createHttpTerminator({
                 server: this.server,
                 gracefulTerminationTimeout: 100,

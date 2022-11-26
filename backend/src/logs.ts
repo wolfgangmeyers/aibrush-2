@@ -65,6 +65,7 @@ export class LogsClient {
     }
 
     public log(message: string, attributes?: any) {
+        console.log(message, attributes);
         if (this.enabled) {
             this.logs.push({
                 timestamp: moment().unix(),
@@ -72,7 +73,7 @@ export class LogsClient {
                 attributes,
             });
         } else {
-            // console.log("Log: ", message, attributes);
+            
         }
     }
 

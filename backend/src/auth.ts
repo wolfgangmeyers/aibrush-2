@@ -117,7 +117,6 @@ export function authMiddleware(config: Config, logger: Logger) {
     const helper = new AuthHelper(config, () => moment().valueOf(), logger);
 
     return (req: Request, res: Response, next: NextFunction) => {
-
         const jwt = helper.getJWTFromRequest(req);
 
         if (!jwt) {

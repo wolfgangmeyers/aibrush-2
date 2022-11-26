@@ -46,13 +46,31 @@ export const SCALING_KEY = 5;
 
 const BLOCK_DURATION_DAYS = 7;
 
+export type NotificationListener = (payload: string) => void;
+
+export const NOTIFICATION_IMAGE_UPDATED = "image_updated";
+export const NOTIFICATION_IMAGE_DELETED = "image_deleted";
+export const NOTIFICATION_PENDING_IMAGE = "pending_image";
+
 export class BackendService {
     private pool: Pool;
     private authHelper: AuthHelper;
     private filestore: Filestore;
+    private notificationsClient: Client;
 
-    constructor(private config: Config, private metrics: MetricsClient, private logger: Logger) {
-        this.authHelper = new AuthHelper(config, () => moment().valueOf(), logger);
+    private notificationListeners: { [key: string]: NotificationListener[] } =
+        {};
+
+    constructor(
+        private config: Config,
+        private metrics: MetricsClient,
+        private logger: Logger
+    ) {
+        this.authHelper = new AuthHelper(
+            config,
+            () => moment().valueOf(),
+            logger
+        );
         if (config.s3Bucket) {
             this.filestore = new S3Filestore(config.s3Bucket, config.s3Region);
         } else {
@@ -103,9 +121,9 @@ export class BackendService {
                 status: "error",
                 error: error.message,
             });
-            Bugsnag.notify(error, evt => {
+            Bugsnag.notify(error, (evt) => {
                 evt.context = "backend.init";
-            })
+            });
             throw error;
         } finally {
             if (client && lock) {
@@ -118,6 +136,27 @@ export class BackendService {
             status: "success",
         });
 
+        this.notificationsClient = new Client({
+            connectionString: this.config.databaseUrl,
+            ssl: this.config.databaseSsl && { rejectUnauthorized: false },
+        });
+        this.notificationsClient.on("error", (error) => {
+            console.error(error);
+        });
+        await this.notificationsClient.connect();
+        this.notificationsClient.on("notification", async (message) => {
+            
+            const listeners = this.notificationListeners[message.channel];
+            console.log("notification", message);
+            console.log("listeners", listeners);
+            console.log("channel", message.channel);
+            console.log("all listeners", this.notificationListeners);
+            if (listeners) {
+                for (const listener of listeners) {
+                    listener(message.payload);
+                }
+            }
+        });
         // emergency cleanup logic...
         // const images = await this.listImages({limit: 100000});
         // for (let image of images.images) {
@@ -133,6 +172,7 @@ export class BackendService {
             status: "success",
         });
         await this.pool.end();
+        await this.notificationsClient.end();
     }
 
     private hydrateImage(image: Image): Image {
@@ -152,6 +192,54 @@ export class BackendService {
             created_at: parseInt(worker.created_at || ("0" as any)),
             last_ping: parseInt(worker.last_ping || ("0" as any)),
         };
+    }
+
+    private sanitizeChannel(channel: string): string {
+        // replace any non-alphanumeric characters
+        // with underscores
+        return channel.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+    }
+
+    async listen(channel: string, listener: NotificationListener) {
+        channel = this.sanitizeChannel(channel);
+        let listeners = this.notificationListeners[channel];
+        if (!listeners) {
+            listeners = [];
+            this.notificationListeners[channel] = listeners;
+        }
+        const newChannel = listeners.length == 0;
+        listeners.push(listener);
+        if (newChannel) {
+            console.log("LISTENING to channel", channel);
+            console.log(this.notificationListeners);
+            await this.notificationsClient.query(`LISTEN ${channel}`);
+        }
+    }
+
+    async unlisten(channel: string, listener: NotificationListener) {
+        channel = this.sanitizeChannel(channel);
+        const listeners = this.notificationListeners[channel];
+        if (listeners) {
+            const index = listeners.indexOf(listener);
+            if (index >= 0) {
+                listeners.splice(index, 1);
+            }
+            if (listeners.length == 0) {
+                await this.notificationsClient.query(`UNLISTEN ${channel}`);
+                delete this.notificationListeners[channel];
+            }
+        }
+    }
+
+    async notify(channel: string, payload: string) {
+        channel = this.sanitizeChannel(channel);
+        console.log("NOTIFYING channel", channel);
+        const client = await this.pool.connect();
+        try {
+            await client.query(`NOTIFY ${channel}, '${payload}'`);
+        } finally {
+            client.release();
+        }
     }
 
     // list images
@@ -273,8 +361,7 @@ export class BackendService {
                     `${id}.thumbnail.jpg`
                 );
                 return thumbnail;
-            } catch (_) {
-            }
+            } catch (_) {}
         }
         return null;
     }
@@ -286,8 +373,7 @@ export class BackendService {
                 // load image data from file and convert from base64 to buffer
                 const npy = await this.filestore.readBinaryFile(`${id}.npy`);
                 return npy;
-            } catch (_) {
-            }
+            } catch (_) {}
         }
         return null;
     }
@@ -298,9 +384,7 @@ export class BackendService {
                 // load image data from file and convert from base64 to buffer
                 const mask = this.filestore.readBinaryFile(`${id}.mask.jpg`);
                 return mask;
-            } catch (_) {
-                
-            }
+            } catch (_) {}
         }
         return null;
     }
@@ -309,13 +393,18 @@ export class BackendService {
         const now = moment().valueOf();
         // set deleted_at to now
         const client = await this.pool.connect();
-        try {
-            await client.query(
-                `UPDATE images SET deleted_at=$1, updated_at=$1 WHERE id=$2`,
-                [now, id]
-            );
-        } finally {
-            client.release();
+        const image = await this.getImage(id);
+        if (image) {
+            try {
+                await client.query(
+                    `UPDATE images SET deleted_at=$1, updated_at=$1 WHERE id=$2`,
+                    [now, id]
+                );
+                
+            } finally {
+                client.release();
+            }
+            this.notify(image.created_by, JSON.stringify({ type: NOTIFICATION_IMAGE_DELETED, id }));
         }
     }
 
@@ -463,6 +552,15 @@ export class BackendService {
                 );
             }
             await Promise.all(promises);
+            if (image.status == "pending") {
+                this.notify("WORKERS", JSON.stringify({
+                    type: NOTIFICATION_PENDING_IMAGE,
+                }))
+            }
+            this.notify(image.created_by, JSON.stringify({
+                type: NOTIFICATION_IMAGE_UPDATED,
+                id: image.id,
+            }))
             return this.hydrateImage({
                 ...image,
             });
@@ -525,7 +623,7 @@ export class BackendService {
                 ]
             );
 
-            const image = result.rows[0];
+            const image = result.rows[0] as Image;
             const promises: Promise<void>[] = [];
             // if encoded_image is set, save it
             if (body.encoded_image) {
@@ -567,6 +665,10 @@ export class BackendService {
                     seconds_until_completion: duration_seconds,
                 });
             }
+            this.notify(image.created_by, JSON.stringify({
+                type: NOTIFICATION_IMAGE_UPDATED,
+                id: image.id,
+            }));
             return this.hydrateImage({
                 ...image,
             });
@@ -1312,10 +1414,10 @@ export class BackendService {
     private async backfillUserEmail(email: string): Promise<void> {
         const client = await this.pool.connect();
         try {
-            await client.query(
-                `UPDATE users SET email=$1 WHERE id=$2`,
-                [email, hash(email)]
-            );
+            await client.query(`UPDATE users SET email=$1 WHERE id=$2`, [
+                email,
+                hash(email),
+            ]);
         } finally {
             client.release();
         }

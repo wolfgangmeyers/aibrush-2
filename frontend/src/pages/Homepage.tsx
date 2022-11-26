@@ -14,13 +14,15 @@ import { ImagePopup } from "../components/ImagePopup";
 import { BusyModal } from "../components/BusyModal";
 import { PendingImagesThumbnail } from "../components/PendingImagesThumbnail";
 import { PendingImages } from "../components/PendingImages";
+import { ApiSocket, NOTIFICATION_IMAGE_DELETED, NOTIFICATION_IMAGE_UPDATED } from "../lib/apisocket";
 
 interface Props {
     api: AIBrushApi;
+    apiSocket: ApiSocket;
     assetsUrl: string;
 }
 
-export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
+export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
     const [creating, setCreating] = useState(false);
     const [selectedImage, setSelectedImage] = useState<Image | null>(null);
     const [parentImage, setParentImage] = useState<Image | null>(null);
@@ -257,9 +259,10 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             }
         };
 
+        // polling is now a fallback for when the websocket connection fails
         const timerHandle = setInterval(() => {
             pollImages(images);
-        }, 5000);
+        }, 60 * 1000);
         return () => {
             clearInterval(timerHandle);
         };
@@ -282,6 +285,33 @@ export const Homepage: FC<Props> = ({ api, assetsUrl }) => {
             });
         }
     }, [images]);
+
+    useEffect(() => {
+        apiSocket.onMessage(async message => {
+            const payload = JSON.parse(message);
+            if (payload.type === NOTIFICATION_IMAGE_UPDATED || payload.type === NOTIFICATION_IMAGE_DELETED) {
+                const updatedImage = await api.getImage(payload.id);
+                setImages((images) => {
+                    const index = images.findIndex((image) => image.id === updatedImage.data.id);
+                    let updatedImages = images;
+                    if (index >= 0) {
+                        updatedImages = images.map((image) => {
+                            if (image.id === updatedImage.data.id) {
+                                return updatedImage.data;
+                            }
+                            return image;
+                        });
+                    } else {
+                        updatedImages = [...images, updatedImage.data];
+                    }
+                    return updatedImages.sort(sortImages);
+                });
+            }
+        });
+        return () => {
+            apiSocket.onMessage(undefined);
+        }
+    }, [apiSocket]);
 
     const isPendingOrProcessing = (image: Image) => {
         return (

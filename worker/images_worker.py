@@ -4,7 +4,7 @@ import os
 from types import SimpleNamespace
 import time
 import json
-from queue import Queue
+from queue import Queue, Empty
 from threading import Thread, Lock
 from uuid import uuid4
 
@@ -24,7 +24,8 @@ from model_process import ModelProcess
 # from glid_3_xl_model import generate_model_signature
 from memutil import get_free_memory
 from torch import device
-
+from apisocket import ApiSocket
+import asyncio
 
 api_url = "https://www.aibrush.art"
 if len(sys.argv) > 1:
@@ -40,6 +41,8 @@ elif os.environ.get("WORKER_LOGIN_CODE"):
     client = AIBrushAPI(api_url, None, os.environ["WORKER_LOGIN_CODE"])
 else:
     raise Exception("No credentials.json or WORKER_LOGIN_CODE environment variable found")
+
+
 
 # create an 'images' folder if it doesn't exist
 for folder in ["images", "output", "output_npy"]:
@@ -136,39 +139,50 @@ def metric(name: str, type: str, value: any, attributes: dict = None) -> SimpleN
             attribute_list.append({"name": key, "value": v})
     return SimpleNamespace(name=name, type=type, value=value, attributes=attribute_list)
 
-def poll_loop(process_queue: Queue, metrics_queue: Queue):
-    backoff = 1
+def poll_loop(process_queue: Queue, metrics_queue: Queue, websocket_queue: Queue):
     model_name = "stable_diffusion_text2im"
     last_model_check = time.time()
+    image = None
     while True:
         try:
             start = time.time()
+            message = None
+            try:
+                message = websocket_queue.get(timeout=0.1)
+            except Empty:
+                pass
+            if message:
+                # worker jitter. All workers are notified at once,
+                # so we wait a random amount of time before trying to process
+                # the next image
+                time.sleep(random.random() * 0.5)
+            
             # model stickiness
             if time.time() - last_model_check > 60:
                 image = client.process_image(None)
                 if image and image.model != model_name:
                     model_name = image.model
                 last_model_check = time.time()
-            else:
+                metrics_queue.put(metric("worker.poll", "count", 1, {
+                    "duration_seconds": time.time() - start,
+                    "sticky": False,
+                }))
+            elif message or image:
                 image = client.process_image(model_name)
-            metrics_queue.put(metric("worker.poll", "count", 1, {
-                "duration_seconds": time.time() - start
-            }))
+                metrics_queue.put(metric("worker.poll", "count", 1, {
+                    "duration_seconds": time.time() - start,
+                    "sticky": True,
+                }))
+            
             if image:
-                backoff = 1
                 image.image_data = client.get_image_data(image.id)
                 image.mask_data = None
                 if image.model == "stable_diffusion_inpainting":
                     image.mask_data = client.get_mask_data(image.id)
                 process_queue.put(image)
-            else:
-                time.sleep(backoff)
-                backoff = min(backoff * 2, 10)
         except Exception as err:
             print(f"Pool Loop Error: {err}")
             traceback.print_exc()
-            time.sleep(backoff)
-            backoff = min(backoff * 2, 10)
             continue
 
 def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, gpu: str):
@@ -334,6 +348,7 @@ def metrics_loop(metrics_queue: Queue):
 class ImagesWorker:
     def __init__(self, gpu: str):
         # create queues
+        self.websocket_queue = Queue(maxsize=1)
         self.process_queue = Queue(maxsize=1)
         self.update_queue = Queue(maxsize=1)
         self.cleanup_queue = Queue(maxsize=1)
@@ -341,7 +356,10 @@ class ImagesWorker:
         self.ready_queue = Queue(maxsize=1)
 
         # start threads
-        self.poll_thread = Thread(target=poll_loop, args=(self.process_queue, self.metrics_queue))
+        self.apisocket = ApiSocket(api_url, client.token, self.websocket_queue)
+        # self.websocket_thread = Thread(target=self.apisocket.run)
+        self.websocket_thread = Thread(target=asyncio.run, args=(self.apisocket.run(),))
+        self.poll_thread = Thread(target=poll_loop, args=(self.process_queue, self.metrics_queue, self.websocket_queue))
         self.process_thread = Thread(target=process_loop, args=(self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue, gpu))
         self.update_thread = Thread(target=update_loop, args=(self.update_queue, self.cleanup_queue, self.metrics_queue))
         self.cleanup_thread = Thread(target=cleanup_loop, args=(self.cleanup_queue,))
@@ -352,10 +370,19 @@ class ImagesWorker:
         self.process_thread.start()
         self.ready_queue.get() # allow warmup to complete
 
+        self.websocket_thread.start()
         self.poll_thread.start()
         self.update_thread.start()
         self.cleanup_thread.start()
         self.metrics_thread.start()
+    
+    def wait(self):
+        self.process_thread.join()
+        self.websocket_thread.join()
+        self.poll_thread.join()
+        self.update_thread.join()
+        self.cleanup_thread.join()
+        self.metrics_thread.join()
 
 if __name__ == "__main__":
     device_count = torch.cuda.device_count()
@@ -363,5 +390,4 @@ if __name__ == "__main__":
         print(f"Device {i}: {torch.cuda.get_device_name(i)}")
         worker = ImagesWorker(f"cuda:{i}")
         worker.start()
-    while True:
-        time.sleep(1)
+    worker.wait()

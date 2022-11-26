@@ -16,6 +16,7 @@ import { DeletedImages } from "./pages/DeletedImages";
 // V2 UI
 import { Homepage } from "./pages/Homepage";
 import { Orders } from "./pages/admin/Orders";
+import { ApiSocket } from "./lib/apisocket";
 
 const config = getConfig();
 const httpClient = axios.default;
@@ -24,6 +25,7 @@ const client = new AIBrushApi(
   localStorage.getItem("apiUrl") || config.apiUrl,
   httpClient
 );
+const apiSocket: ApiSocket = new ApiSocket();
 
 function updateHttpClient(loginResult: LoginResult) {
   if (loginResult.accessToken) {
@@ -60,11 +62,14 @@ function App() {
           refreshToken: credentials.refreshToken,
         });
         setCredentials(result.data);
+        
         // save to storage
         localStorage.setItem("credentials", JSON.stringify(result.data));
         updateHttpClient(result.data);
         const isAdmin = await client.isAdmin();
         setIsAdmin(!!isAdmin.data.is_admin);
+        apiSocket.updateToken(result.data.accessToken!);
+        apiSocket.connect();
       } catch (e) {
         console.log(e);
       }
@@ -75,6 +80,8 @@ function App() {
     localStorage.setItem("credentials", JSON.stringify(credentials));
     setCredentials(credentials);
     updateHttpClient(credentials);
+    apiSocket.updateToken(credentials.accessToken!);
+    apiSocket.connect();
   };
 
   useEffect(() => {
@@ -141,10 +148,10 @@ function App() {
           <Switch>
             <Route path="/" exact={true}>
               {/* <MainMenu isAdmin={isAdmin} /> */}
-              <Homepage api={client} assetsUrl={assetsUrl} />
+              <Homepage api={client} apiSocket={apiSocket} assetsUrl={assetsUrl} />
             </Route>
             <Route path="/images/:id">
-              <Homepage api={client} assetsUrl={assetsUrl} />
+              <Homepage api={client} apiSocket={apiSocket} assetsUrl={assetsUrl} />
             </Route>
             <Route path="/image-editor/:id">
               <ImageEditor api={client} assetsUrl={assetsUrl} />
