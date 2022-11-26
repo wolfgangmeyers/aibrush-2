@@ -560,6 +560,7 @@ export class BackendService {
             this.notify(image.created_by, JSON.stringify({
                 type: NOTIFICATION_IMAGE_UPDATED,
                 id: image.id,
+                status: image.status,
             }))
             return this.hydrateImage({
                 ...image,
