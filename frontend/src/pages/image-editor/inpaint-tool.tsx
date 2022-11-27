@@ -442,7 +442,8 @@ export class InpaintTool extends BaseTool implements Tool {
                 for (let i = 0; i < newImages!.length; i++) {
                     if (
                         newImages![i].status === ImageStatusEnum.Completed ||
-                        newImages![i].status === ImageStatusEnum.Error) {
+                        newImages![i].status === ImageStatusEnum.Error
+                    ) {
                         completeCount++;
                         continue;
                     }
@@ -454,17 +455,17 @@ export class InpaintTool extends BaseTool implements Tool {
                     completed = true;
                     continue;
                 }
-                
+
                 // fallback if sockets don't catch one
                 if (moment().diff(lastCheck, "seconds") > 10) {
                     // get list of ids that aren't completed and batch get them.
-                    const pendingIds = newImages.filter(
-                        (img) => img.status === ImageStatusEnum.Pending
-                    ).map((img) => img.id);
+                    const pendingIds = newImages
+                        .filter((img) => img.status === ImageStatusEnum.Pending)
+                        .map((img) => img.id);
                     console.log("Checking pending images", pendingIds);
                     const updatedImagesResult = await api.batchGetImages({
                         ids: pendingIds,
-                    })
+                    });
                     const updatedImages = updatedImagesResult.data.images;
                     const byId = updatedImages!.reduce((acc, img) => {
                         acc[img.id] = img;
@@ -475,7 +476,9 @@ export class InpaintTool extends BaseTool implements Tool {
                             const updated = byId[newImages![i].id];
                             if (updated) {
                                 newImages![i].status = updated.status;
-                                if (updated.status === ImageStatusEnum.Completed) {
+                                if (
+                                    updated.status === ImageStatusEnum.Completed
+                                ) {
                                     const imageData = await this.loadImageData(
                                         api,
                                         newImages![i].id,
