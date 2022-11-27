@@ -19,6 +19,7 @@ import { getClosestAspectRatio } from "../../lib/aspecRatios";
 import { getUpscaleLevel } from "../../lib/upscale";
 import { applyAlphaMask, featherEdges } from "../../lib/imageutil";
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
+import moment from "moment";
 
 type InpaintToolState =
     | "select"
@@ -423,24 +424,75 @@ export class InpaintTool extends BaseTool implements Tool {
                         newImages![i].status = ImageStatusEnum.Completed;
                     }
                 }
+            } else if (img.status === ImageStatusEnum.Error) {
+                for (let i = 0; i < newImages!.length; i++) {
+                    if (newImages![i].id === img.id) {
+                        newImages![i].status = ImageStatusEnum.Error;
+                    }
+                }
             }
         });
         try {
+            let startTime = moment();
+            let lastCheck = moment();
             while (!completed) {
                 let completeCount = 0;
                 await sleep(100);
                 // poll for completion
                 for (let i = 0; i < newImages!.length; i++) {
-                    if (newImages![i].status === ImageStatusEnum.Completed) {
+                    if (
+                        newImages![i].status === ImageStatusEnum.Completed ||
+                        newImages![i].status === ImageStatusEnum.Error) {
                         completeCount++;
                         continue;
                     }
                 }
-                if (completeCount === newImages!.length) {
-                    completed = true;
-                }
                 if (this.progressListener) {
                     this.progressListener(completeCount / newImages!.length);
+                }
+                if (completeCount === newImages!.length) {
+                    completed = true;
+                    continue;
+                }
+                
+                // fallback if sockets don't catch one
+                if (moment().diff(lastCheck, "seconds") > 10) {
+                    // get list of ids that aren't completed and batch get them.
+                    const pendingIds = newImages.filter(
+                        (img) => img.status === ImageStatusEnum.Pending
+                    ).map((img) => img.id);
+                    console.log("Checking pending images", pendingIds);
+                    const updatedImagesResult = await api.batchGetImages({
+                        ids: pendingIds,
+                    })
+                    const updatedImages = updatedImagesResult.data.images;
+                    const byId = updatedImages!.reduce((acc, img) => {
+                        acc[img.id] = img;
+                        return acc;
+                    }, {} as Record<string, APIImage>);
+                    for (let i = 0; i < newImages!.length; i++) {
+                        if (newImages![i].status === ImageStatusEnum.Pending) {
+                            const updated = byId[newImages![i].id];
+                            if (updated) {
+                                newImages![i].status = updated.status;
+                                if (updated.status === ImageStatusEnum.Completed) {
+                                    const imageData = await this.loadImageData(
+                                        api,
+                                        newImages![i].id,
+                                        maskData!,
+                                        image,
+                                        selectionOverlay!
+                                    );
+                                    newImages![i].data = imageData;
+                                }
+                            }
+                        }
+                    }
+                    lastCheck = moment();
+                }
+                // timeout of 2 minutes
+                if (moment().diff(startTime, "minutes") > 2) {
+                    completed = true;
                 }
             }
         } finally {
@@ -450,6 +502,9 @@ export class InpaintTool extends BaseTool implements Tool {
         // sort images by score descending
         newImages!.sort((a, b) => {
             return b.score - a.score;
+        });
+        newImages = newImages!.filter((img) => {
+            return img.status === ImageStatusEnum.Completed;
         });
 
         this.imageData = [];

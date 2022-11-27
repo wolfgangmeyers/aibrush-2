@@ -91,6 +91,19 @@ export interface AssetsUrl {
 /**
  * 
  * @export
+ * @interface BatchGetImagesInput
+ */
+export interface BatchGetImagesInput {
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof BatchGetImagesInput
+     */
+    ids: Array<string>;
+}
+/**
+ * 
+ * @export
  * @interface CreateImageInput
  */
 export interface CreateImageInput {
@@ -835,10 +848,16 @@ export interface OrderList {
 export interface ProcessImageInput {
     /**
      * 
+     * @type {string}
+     * @memberof ProcessImageInput
+     */
+    model?: string;
+    /**
+     * 
      * @type {boolean}
      * @memberof ProcessImageInput
      */
-    zoom_supported: boolean;
+    peek?: boolean;
 }
 /**
  * 
@@ -1057,6 +1076,12 @@ export interface Worker {
      * @memberof Worker
      */
     cloud_instance_id?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Worker
+     */
+    gpu_type?: string;
 }
 
 /**
@@ -1155,6 +1180,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(addMetricsInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get a list of saved images by id
+         * @param {BatchGetImagesInput} [batchGetImagesInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        batchGetImages: async (batchGetImagesInput?: BatchGetImagesInput, options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/batch-get-images`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(batchGetImagesInput, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2242,6 +2300,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Get a list of saved images by id
+         * @param {BatchGetImagesInput} [batchGetImagesInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async batchGetImages(batchGetImagesInput?: BatchGetImagesInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.batchGetImages(batchGetImagesInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Create a new image
          * @param {CreateImageInput} [createImageInput] 
          * @param {*} [options] Override http request option.
@@ -2581,6 +2649,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.addMetrics(addMetricsInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Get a list of saved images by id
+         * @param {BatchGetImagesInput} [batchGetImagesInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        batchGetImages(batchGetImagesInput?: BatchGetImagesInput, options?: any): AxiosPromise<ImageList> {
+            return localVarFp.batchGetImages(batchGetImagesInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Create a new image
          * @param {CreateImageInput} [createImageInput] 
          * @param {*} [options] Override http request option.
@@ -2887,6 +2964,17 @@ export class AIBrushApi extends BaseAPI {
      */
     public addMetrics(addMetricsInput?: AddMetricsInput, options?: any) {
         return AIBrushApiFp(this.configuration).addMetrics(addMetricsInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get a list of saved images by id
+     * @param {BatchGetImagesInput} [batchGetImagesInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public batchGetImages(batchGetImagesInput?: BatchGetImagesInput, options?: any) {
+        return AIBrushApiFp(this.configuration).batchGetImages(batchGetImagesInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

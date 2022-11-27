@@ -805,6 +805,73 @@ describe("server", () => {
             })
         })
 
+        describe("batch get images", () => {
+            // before each - create 2 images
+            let image1: Image;
+            let image2: Image;
+
+            beforeEach(async () => {
+                // create image
+                const response = await client.createImage({
+                    label: "test",
+                    iterations: 1,
+                    status: UpdateImageInputStatusEnum.Pending,
+                    count: 2,
+                    phrases: ["test"],
+                })
+                image1 = response.data.images[0]
+                image2 = response.data.images[1]
+            });
+
+            describe("when getting images", () => {
+                let images: ImageList;
+
+                beforeEach(async () => {
+                    const response = await client.batchGetImages({ids: [image1.id, image2.id]})
+                    images = response.data
+                })
+
+                it("should return the images", () => {
+                    expect(images.images).toHaveLength(2)
+                    expect(images.images[0].id).toBe(image1.id)
+                    expect(images.images[1].id).toBe(image2.id)
+                })
+            });
+
+            describe("when getting images that don't exist", () => {
+                let images: ImageList;
+
+                beforeEach(async () => {
+                    const response = await client.batchGetImages({ids: [image1.id, image2.id, "does-not-exist"]})
+                    images = response.data
+                })
+
+                it("should return only existent images images", () => {
+                    expect(images.images).toHaveLength(2)
+                    expect(images.images[0].id).toBe(image1.id)
+                    expect(images.images[1].id).toBe(image2.id)
+                })
+            });
+
+            describe("when getting images as another user", () => {
+                let images: ImageList;
+
+                beforeEach(async () => {
+                    // authenticate second user
+                    await authenticateUser(backendService, httpClient2, "test2@test")
+                })
+
+                beforeEach(async () => {
+                    const response = await client2.batchGetImages({ids: [image1.id, image2.id]})
+                    images = response.data
+                })
+
+                it("should return no images", () => {
+                    expect(images.images).toHaveLength(0)
+                })
+            })
+        })
+
         describe("when creating an image with enable_video=true", () => {
             let image: Image;
 

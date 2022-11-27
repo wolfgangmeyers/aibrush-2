@@ -158,8 +158,8 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         args.parent = image.id;
         args.stable_diffusion_strength = image.stable_diffusion_strength;
         args.status = CreateImageInputStatusEnum.Completed;
-        args.width = image.width as any;
-        args.height = image.height as any;
+        args.width = renderer!.getWidth() as any;
+        args.height = renderer!.getHeight() as any;
         args.nsfw = image.nsfw;
         args.encoded_image = encodedImage;
         const newImage = (await api.createImage(args)).data!.images![0];

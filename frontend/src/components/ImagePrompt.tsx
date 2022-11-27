@@ -63,6 +63,8 @@ export const ImagePrompt: FC<Props> = ({
     const defaultAspectRatio = aspectRatios[DEFAULT_ASPECT_RATIO];
     
     const [aspectRatioDetails, setAspectRatioDetails] = useState<AspectRatio>(aspectRatios[DEFAULT_ASPECT_RATIO]);
+    let [originalWidth, setOriginalWidth] = useState<number>(defaultAspectRatio.width);
+    let [originalHeight, setOriginalHeight] = useState<number>(defaultAspectRatio.height);
 
     // const aspectRatioDetails = aspectRatios[aspectRatio];
 
@@ -115,8 +117,8 @@ export const ImagePrompt: FC<Props> = ({
         args.parent = parentId || undefined;
         args.stable_diffusion_strength = variationStrength;
         args.status = CreateImageInputStatusEnum.Completed;
-        args.width = aspectRatioDetails.width;
-        args.height = aspectRatioDetails.height;
+        args.width = originalWidth;
+        args.height = originalHeight;
         if (parent) {
             args.nsfw = parent.nsfw;
         }
@@ -158,8 +160,10 @@ export const ImagePrompt: FC<Props> = ({
 
 
                 const canvas = document.createElement("canvas");
-                canvas.width = bestMatch.width;
-                canvas.height = bestMatch.height;
+                // canvas.width = bestMatch.width;
+                // canvas.height = bestMatch.height;
+                canvas.width = width;
+                canvas.height = height;
                 const ctx = canvas.getContext("2d");
                 if (!ctx) {
                     return;
@@ -178,6 +182,8 @@ export const ImagePrompt: FC<Props> = ({
                     )
                 );
                 setAspectRatioDetails(bestMatch);
+                setOriginalWidth(width);
+                setOriginalHeight(height);
                 // remove canvas
                 canvas.remove();
             },

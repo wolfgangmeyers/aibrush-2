@@ -86,7 +86,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Image"
-
     # update image
     patch:
       description: Update a saved image
@@ -125,6 +124,24 @@ paths:
       responses:
         "204":
           description: Success
+  /api/batch-get-images:
+    post:
+      description: Get a list of saved images by id
+      operationId: batchGetImages
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchGetImagesInput"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageList"
   /api/images/{id}.image.jpg:
     get:
       description: Get the binary image data
@@ -819,6 +836,15 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Image"
+    BatchGetImagesInput:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+      required:
+        - ids
     ProcessImageInput:
       properties:
         model:

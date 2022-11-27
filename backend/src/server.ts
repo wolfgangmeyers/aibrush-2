@@ -183,6 +183,7 @@ export class Server {
                 } catch (e) {
                     err = e;
                     Bugsnag.notify(e);
+                    res.sendStatus(400);
                 } finally {
                     const end = moment();
                     const duration = end.diff(start, "milliseconds");
@@ -567,6 +568,20 @@ export class Server {
                 }
 
                 res.sendStatus(204);
+            })
+        );
+
+        this.app.post(
+            "/api/batch-get-images",
+            withMetrics("/api/batch-get-images", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                const images = await this.backendService.batchGetImages(
+                    jwt.userId,
+                    req.body.ids
+                );
+                res.json({
+                    images,
+                });
             })
         );
 

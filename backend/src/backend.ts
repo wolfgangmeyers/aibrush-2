@@ -339,6 +339,19 @@ export class BackendService {
         }
     }
 
+    async batchGetImages(userId: string, ids: string[]): Promise<Image[]> {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `SELECT * FROM images WHERE created_by=$1 AND id=ANY($2)`,
+                [userId, ids]
+            );
+            return result.rows.map((i: any) => this.hydrateImage(i));
+        } finally {
+            client.release();
+        }
+    }
+
     // get image data
     async getImageData(id: string): Promise<Buffer> {
         try {
