@@ -182,7 +182,7 @@ export class Server {
                     await fn(req, res);
                 } catch (e) {
                     err = e;
-                    throw e;
+                    Bugsnag.notify(e);
                 } finally {
                     const end = moment();
                     const duration = end.diff(start, "milliseconds");
