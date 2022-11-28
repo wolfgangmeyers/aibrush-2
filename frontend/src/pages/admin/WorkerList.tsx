@@ -27,12 +27,25 @@ export const WorkerList: FC<Props> = ({ api }) => {
     };
 
     const onCreateWorker = async () => {
-        const displayName = `Worker ${workers.length + 1}`;
-        const worker = await api.createWorker({
-            display_name: displayName,
-        });
-        setWorkers([...workers, worker.data]);
+        const displayName = window.prompt(`Worker ${workers.length + 1}`);
+        if (displayName) {
+            const worker = await api.createWorker({
+                display_name: displayName,
+            });
+            setWorkers([...workers, worker.data]);
+        }
     };
+
+    const onRenameWorker = async (worker: Worker) => {
+        const displayName = window.prompt(worker.display_name, `Worker ${workers.length + 1}`);
+        if (displayName) {
+            await api.updateWorker(worker.id, {
+                display_name: displayName,
+            });
+            setWorkers(workers.map((w) => (w.id === worker.id ? { ...w, display_name: displayName } : w)));
+        }
+    };
+
 
     // for each worker, render a row
     // show id, display name, and status. actions = delete, generate code
@@ -58,7 +71,7 @@ export const WorkerList: FC<Props> = ({ api }) => {
                                 <tr>
                                     <th>ID</th>
                                     <th>Display Name</th>
-                                    <th>Status</th>
+                                    <th>GPU Count</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -67,7 +80,7 @@ export const WorkerList: FC<Props> = ({ api }) => {
                                     <tr key={worker.id}>
                                         <td>{worker.id}</td>
                                         <td>{worker.display_name}</td>
-                                        <td>{worker.status}</td>
+                                        <td>{worker.num_gpus || 1}</td>
                                         <td>
                                             <button
                                                 className="btn btn-danger btn-sm"
@@ -85,6 +98,15 @@ export const WorkerList: FC<Props> = ({ api }) => {
                                                 }
                                             >
                                                 Generate Code
+                                            </button>
+                                            &nbsp;
+                                            <button
+                                                className="btn btn-primary btn-sm"
+                                                onClick={() =>
+                                                    onRenameWorker(worker)
+                                                }
+                                            >
+                                                Rename
                                             </button>
                                         </td>
                                     </tr>
