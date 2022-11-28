@@ -183,7 +183,11 @@ export class Server {
                 } catch (e) {
                     err = e;
                     Bugsnag.notify(e);
-                    res.sendStatus(400);
+                    console.error(e);
+                    try {
+                        res.sendStatus(400);
+                    } catch (_) {}
+                    
                 } finally {
                     const end = moment();
                     const duration = end.diff(start, "milliseconds");
@@ -688,7 +692,7 @@ export class Server {
                 const input = req.body as UpsertWorkerInput;
                 const worker = await this.backendService.updateWorker(
                     req.params.worker_id,
-                    input.display_name
+                    input,
                 );
                 if (worker) {
                     res.json(worker);
@@ -746,10 +750,9 @@ export class Server {
                 const workerId = req.params.worker_id;
                 const input = req.body as UpsertWorkerConfigInput;
                 const workerConfig =
-                    await this.backendService.updateWorkerConfig(
+                    await this.backendService.upsertWorkerConfig(
                         workerId,
-                        input.model,
-                        input.pool_assignment
+                        input,
                     );
                 res.json(workerConfig);
             })
@@ -791,20 +794,23 @@ export class Server {
                     res.sendStatus(403);
                     return;
                 }
+                // TODO: this may or may not be used in the future...
                 let user: string = undefined;
                 if (jwt.serviceAccountConfig?.type == "private") {
                     user = jwt.userId;
                 }
+                const workerId = jwt.serviceAccountConfig.workerId;
                 const image = await this.backendService.processImage(
                     user,
                     req.body,
+                    workerId,
                 );
-                res.json(image);
                 if (jwt.serviceAccountConfig?.workerId) {
-                    this.backendService.workerPing(
-                        jwt.serviceAccountConfig.workerId
-                    );
+                    await this.backendService.updateWorker(jwt.serviceAccountConfig.workerId, {
+                        status: image ? "active" : "idle",
+                    })
                 }
+                res.json(image);
             })
         );
 

@@ -977,7 +977,7 @@ components:
           type: integer
         status:
           type: string
-          enum: [inactive, active, offline, error]
+          enum: [idle, active]
         login_code:
           type: string
         engine:
@@ -1011,28 +1011,37 @@ components:
       properties:
         display_name:
           type: string
+        status:
+          type: string
+          enum: [idle, active]
+    WorkerGpuConfig:
+      type: object
+      properties:
+        gpu_num:
+          type: integer
+        model:
+          type: string
       required:
-        - display_name
+        - gpu_num
+        - model
     WorkerConfig:
       type: object
       properties:
         worker_id:
           type: string
-        model:
-          type: string
-        pool_assignment:
-          type: string
+        gpu_configs:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkerGpuConfig"
       required:
         - worker_id
-        - model
-        - pool_assignment
     UpsertWorkerConfigInput:
       type: object
       properties:
-        model:
-          type: string
-        pool_assignment:
-          type: string
+        gpu_configs:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkerGpuConfig"
       required:
         - worker_id
         - model

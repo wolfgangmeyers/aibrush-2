@@ -26,6 +26,9 @@ import {
     Order,
     CreateOrderInput,
     ProcessImageInput,
+    UpsertWorkerInput,
+    WorkerGpuConfig,
+    UpsertWorkerConfigInput,
 } from "./client/api";
 import { sleep } from "./sleep";
 import { EmailMessage } from "./email_message";
@@ -815,17 +818,12 @@ export class BackendService {
         const id = uuid.v4();
         const now = moment().valueOf();
         const login_code = "";
-        const status = WorkerStatusEnum.Inactive;
+        const status = WorkerStatusEnum.Idle;
         const client = await this.pool.connect();
         try {
             const result = await client.query(
                 `INSERT INTO workers (id, created_at, display_name, login_code, status) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
                 [id, now, displayName, login_code, status]
-            );
-            await this.createWorkerConfig(
-                id,
-                "stable_diffusion_text2im",
-                "public"
             );
             return result.rows[0];
         } finally {
@@ -833,16 +831,49 @@ export class BackendService {
         }
     }
 
-    private async createWorkerConfig(
-        workerId: string,
-        model: string,
-        poolAssignment: string
-    ): Promise<WorkerConfig> {
+    async getWorkerConfig(workerId: string): Promise<WorkerConfig> {
         const client = await this.pool.connect();
         try {
             const result = await client.query(
-                `INSERT INTO worker_configs (worker_id, model, pool_assignment) VALUES ($1, $2, $3) RETURNING *`,
-                [workerId, model, poolAssignment]
+                `SELECT * FROM worker_configs WHERE worker_id = $1`,
+                [workerId]
+            );
+            if (result.rows.length === 0) {
+                return {
+                    worker_id: workerId,
+                    gpu_configs: [
+                        {
+                            gpu_num: 0,
+                            model: "stable_diffusion_text2im",
+                        },
+                    ],
+                };
+            }
+            let cfg: any = result.rows[0];
+            cfg = JSON.parse(cfg.config_json);
+            return {
+                worker_id: workerId,
+                gpu_configs: cfg.gpu_configs,
+            };
+        } finally {
+            client.release();
+        }
+    }
+
+    async upsertWorkerConfig(
+        workerId: string,
+        config: UpsertWorkerConfigInput
+    ): Promise<WorkerConfig> {
+        const configJson = JSON.stringify({
+            gpu_configs: config.gpu_configs,
+        });
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `INSERT INTO worker_configs (worker_id, config_json)
+                VALUES ($1, $2)
+                ON CONFLICT (worker_id) DO UPDATE SET config_json = $2 RETURNING *`,
+                [workerId, configJson]
             );
             return result.rows[0];
         } finally {
@@ -876,26 +907,18 @@ export class BackendService {
         }
     }
 
-    async updateWorker(workerId: string, displayName: string): Promise<Worker> {
+    async updateWorker(
+        workerId: string,
+        upsertWorkerInput: UpsertWorkerInput
+    ): Promise<Worker> {
+        const existingWorker = await this.getWorker(workerId);
+        upsertWorkerInput.display_name =
+            upsertWorkerInput.display_name || existingWorker.display_name;
         const client = await this.pool.connect();
         try {
             const result = await client.query(
-                `UPDATE workers SET display_name = $1 WHERE id = $2 RETURNING *`,
-                [displayName, workerId]
-            );
-            return result.rows[0];
-        } finally {
-            client.release();
-        }
-    }
-
-    async workerPing(workerId: string): Promise<Worker> {
-        this.metrics.addMetric("backend.worker_ping", 1, "count", {});
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `UPDATE workers SET last_ping = $1 WHERE id = $2 RETURNING *`,
-                [moment().valueOf(), workerId]
+                `UPDATE workers SET display_name = $1, status=$2, last_ping=$3 WHERE id = $4 RETURNING *`,
+                [upsertWorkerInput.display_name, upsertWorkerInput.status, moment().valueOf(), workerId]
             );
             return result.rows[0];
         } finally {
@@ -997,40 +1020,6 @@ export class BackendService {
         }
     }
 
-    async getWorkerConfig(workerId: string): Promise<WorkerConfig> {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `SELECT * FROM worker_configs WHERE worker_id = $1`,
-                [workerId]
-            );
-            if (result.rows.length === 0) {
-                return null;
-            }
-            return result.rows[0];
-        } finally {
-            client.release();
-        }
-    }
-
-    async updateWorkerConfig(
-        workerId: string,
-        model: string,
-        poolAssignment: string
-    ): Promise<WorkerConfig> {
-        this.metrics.addMetric("backend.update_worker_config", 1, "count", {});
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `INSERT INTO worker_configs (worker_id, model, pool_assignment) VALUES ($1, $2, $3) ON CONFLICT (worker_id) DO UPDATE SET model = $2, pool_assignment = $3 RETURNING *`,
-                [workerId, model, poolAssignment]
-            );
-            return result.rows[0];
-        } finally {
-            client.release();
-        }
-    }
-
     async getLastEventTime(eventName: string): Promise<number> {
         const client = await this.pool.connect();
         try {
@@ -1085,8 +1074,9 @@ export class BackendService {
     }
 
     async processImage(
-        user?: string,
-        input?: ProcessImageInput
+        user: string,
+        input: ProcessImageInput | null,
+        workerId: string | null
     ): Promise<Image> {
         // get all users with pending images
         const users = await this.getUsersWithPendingImages(input?.model);

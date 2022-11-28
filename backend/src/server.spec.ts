@@ -17,6 +17,8 @@ import {
     LoginResult,
     UpdateImageInputStatusEnum,
     CreateServiceAccountInputTypeEnum,
+    Worker,
+    WorkerStatusEnum,
 } from "./client/api"
 
 // import { Mailcatcher, MailcatcherMessage } from './mailcatcher'
@@ -37,6 +39,13 @@ async function authenticateUser(backendService: BackendService, httpClient: Axio
     // add the access token to the http client
     httpClient.defaults.headers['Authorization'] = `Bearer ${verifyResponse.accessToken}`
     return verifyResponse
+}
+
+async function authenticateWorker(backendService: BackendService, httpClient: AxiosInstance, worker: Worker): Promise<Authentication> {
+    const code = await backendService.generateWorkerLoginCode(worker.id);
+    const authResult = await backendService.loginAsWorker(code.login_code);
+    httpClient.defaults.headers['Authorization'] = `Bearer ${authResult.accessToken}`;
+    return authResult;
 }
 
 async function refreshUser(client: AIBrushApi, httpClient: AxiosInstance, refreshToken: string) {
@@ -254,9 +263,11 @@ describe("server", () => {
     describe("functional tests", () => {
 
         let verifyResult: Authentication;
+        let worker: Worker;
 
         beforeEach(async () => {
             verifyResult = await authenticateUser(backendService, httpClient, "test@test.test")
+            worker = await backendService.createWorker("test worker");
         })
 
         describe("when listing images", () => {
@@ -364,7 +375,8 @@ describe("server", () => {
 
                 beforeEach(async () => {
                     // authenticate as service account
-                    await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    await authenticateWorker(backendService, httpClient2, worker)
                 })
 
                 beforeEach(async () => {
@@ -372,6 +384,7 @@ describe("server", () => {
                     img = response.data
                 })
 
+            
                 it("should return the image", () => {
                     expect(img.id).toBeDefined()
                     expect(img.phrases).toEqual(["test"])
@@ -598,7 +611,8 @@ describe("server", () => {
 
                 beforeEach(async () => {
                     // authenticate the service account
-                    await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    await authenticateWorker(backendService, httpClient2, worker);
 
                     const response = await client2.listImages()
                     images = response.data
@@ -630,7 +644,8 @@ describe("server", () => {
 
                 beforeEach(async () => {
                     // authenticate as service account
-                    await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    await authenticateWorker(backendService, httpClient2, worker);
                 })
 
                 beforeEach(async () => {
@@ -644,6 +659,11 @@ describe("server", () => {
                     expect(processingImage.status).toBe(UpdateImageInputStatusEnum.Processing)
                 })
 
+                it("should update the worker to active", async () => {
+                    const updatedWorker = await backendService.getWorker(worker.id);
+                    expect(updatedWorker.status).toBe(WorkerStatusEnum.Active);
+                });
+
                 describe("when processing again with no pending images", () => {
                     beforeEach(async () => {
                         // process the image
@@ -655,6 +675,11 @@ describe("server", () => {
                         expect(processingImage).toBeNull()
                     })
 
+                    it("should update the worker to idle", async () => {
+                        const updatedWorker = await backendService.getWorker(worker.id);
+                        expect(updatedWorker.status).toBe(WorkerStatusEnum.Idle);
+                    });
+
                 })
 
                 describe("when updating a processing image with a service account", () => {
@@ -663,7 +688,8 @@ describe("server", () => {
 
                     beforeEach(async () => {
                         // authenticate service account
-                        await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                        // await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                        await authenticateWorker(backendService, httpClient2, worker);
                     })
 
                     beforeEach(async () => {
@@ -692,7 +718,8 @@ describe("server", () => {
 
                 beforeEach(async () => {
                     // authenticate as service account
-                    await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    await authenticateWorker(backendService, httpClient2, worker);
                 })
 
                 beforeEach(async () => {
@@ -714,7 +741,8 @@ describe("server", () => {
 
                 beforeEach(async () => {
                     // authenticate as service account
-                    await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    await authenticateWorker(backendService, httpClient2, worker);
                 })
 
                 beforeEach(async () => {
@@ -790,7 +818,8 @@ describe("server", () => {
             describe("when deleting an image with a service account", () => {
                 beforeEach(async () => {
                     // authenticate as service account
-                    await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    await authenticateWorker(backendService, httpClient2, worker);
                 })
 
                 it("should reject the request with not found error", async () => {
@@ -919,7 +948,8 @@ describe("server", () => {
 
                 beforeEach(async () => {
                     // authenticate as service account
-                    await authenticateUser(backendService, httpClient, "service-account@test.test")
+                    // await authenticateUser(backendService, httpClient, "service-account@test.test")
+                    await authenticateWorker(backendService, httpClient, worker);
                 })
 
                 beforeEach(async () => {
