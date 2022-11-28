@@ -55,6 +55,7 @@ export type NotificationListener = (payload: string) => void;
 export const NOTIFICATION_IMAGE_UPDATED = "image_updated";
 export const NOTIFICATION_IMAGE_DELETED = "image_deleted";
 export const NOTIFICATION_PENDING_IMAGE = "pending_image";
+export const NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated";
 
 export class BackendService {
     private pool: Pool;
@@ -832,6 +833,7 @@ export class BackendService {
     }
 
     async getWorkerConfig(workerId: string): Promise<WorkerConfig> {
+        const worker = await this.getWorker(workerId);
         const client = await this.pool.connect();
         try {
             const result = await client.query(
@@ -839,14 +841,16 @@ export class BackendService {
                 [workerId]
             );
             if (result.rows.length === 0) {
+                const gpuConfigs: WorkerGpuConfig[] = [];
+                for (let i = 0; i < (worker.num_gpus || 1); i++) {
+                    gpuConfigs.push({
+                        gpu_num: i,
+                        model: "stable_diffusion_text2im",
+                    });
+                }
                 return {
                     worker_id: workerId,
-                    gpu_configs: [
-                        {
-                            gpu_num: 0,
-                            model: "stable_diffusion_text2im",
-                        },
-                    ],
+                    gpu_configs: gpuConfigs,
                 };
             }
             let cfg: any = result.rows[0];
@@ -875,6 +879,13 @@ export class BackendService {
                 ON CONFLICT (worker_id) DO UPDATE SET config_json = $2 RETURNING *`,
                 [workerId, configJson]
             );
+            this.notify(
+                workerId,
+                JSON.stringify({
+                    type: NOTIFICATION_WORKER_CONFIG_UPDATED,
+                    config: config,
+                })
+            )
             return result.rows[0];
         } finally {
             client.release();
@@ -920,6 +931,7 @@ export class BackendService {
                 `UPDATE workers SET display_name = $1, status=$2, last_ping=$3 WHERE id = $4 RETURNING *`,
                 [upsertWorkerInput.display_name, upsertWorkerInput.status, moment().valueOf(), workerId]
             );
+            
             return result.rows[0];
         } finally {
             client.release();

@@ -119,6 +119,7 @@ export class Server {
                         if (authResult.serviceAccountConfig) {
                             workerId = authResult.serviceAccountConfig.workerId;
                             await this.backendService.listen("WORKERS", handler);
+                            await this.backendService.listen(workerId, handler);
                         } else {
                             userId = authResult.userId;
                             await this.backendService.listen(userId, handler);
@@ -137,6 +138,7 @@ export class Server {
                 console.log("socket closed");
                 if (workerId) {
                     await this.backendService.unlisten("WORKERS", handler);
+                    await this.backendService.unlisten(workerId, handler);
                 } else if (userId) {
                     await this.backendService.unlisten(userId, handler);
                 }

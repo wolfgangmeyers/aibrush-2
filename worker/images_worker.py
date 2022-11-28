@@ -155,6 +155,11 @@ def poll_loop(process_queue: Queue, metrics_queue: Queue, websocket_queue: Queue
                 # worker jitter. All workers are notified at once,
                 # so we wait a random amount of time before trying to process
                 # the next image
+
+                # export const NOTIFICATION_PENDING_IMAGE = "pending_image";
+                # export const NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated";
+                # TODO: handle worker config update
+                # TODO: self-sufficient warmup for all model types
                 time.sleep(random.random() * 0.5)
             
             # model stickiness
