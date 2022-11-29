@@ -469,7 +469,7 @@ export class EnhanceTool extends BaseTool implements Tool {
                 if (moment().diff(lastCheck, "seconds") > 10) {
                     // get list of ids that aren't completed and batch get them.
                     const pendingIds = newImages
-                        .filter((img) => img.status === ImageStatusEnum.Pending)
+                        .filter((img) => img.status === ImageStatusEnum.Pending || img.status === ImageStatusEnum.Processing)
                         .map((img) => img.id);
                     console.log("Checking pending images", pendingIds);
                     const updatedImagesResult = await api.batchGetImages({

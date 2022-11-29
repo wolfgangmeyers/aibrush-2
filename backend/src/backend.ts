@@ -57,6 +57,12 @@ export const NOTIFICATION_IMAGE_DELETED = "image_deleted";
 export const NOTIFICATION_PENDING_IMAGE = "pending_image";
 export const NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated";
 
+// map of model name -> score
+export interface PendingImages {
+    model: string;
+    score: number; // count * (now - created_at)
+}
+
 export class BackendService {
     private pool: Pool;
     private authHelper: AuthHelper;
@@ -216,7 +222,7 @@ export class BackendService {
         if (newChannel) {
             console.log("LISTENING to channel", channel);
             console.log(this.notificationListeners);
-            await this.notificationsClient.query(`LISTEN ${channel}`);
+            await this.notificationsClient.query(`LISTEN "${channel}"`);
         }
     }
 
@@ -229,7 +235,7 @@ export class BackendService {
                 listeners.splice(index, 1);
             }
             if (listeners.length == 0) {
-                await this.notificationsClient.query(`UNLISTEN ${channel}`);
+                await this.notificationsClient.query(`UNLISTEN "${channel}"`);
                 delete this.notificationListeners[channel];
             }
         }
@@ -240,7 +246,7 @@ export class BackendService {
         console.log("NOTIFYING channel", channel);
         const client = await this.pool.connect();
         try {
-            await client.query(`NOTIFY ${channel}, '${payload}'`);
+            await client.query(`NOTIFY "${channel}", '${payload}'`);
         } finally {
             client.release();
         }
@@ -318,6 +324,24 @@ export class BackendService {
             return {
                 images: dedupedImages.map((i: any) => this.hydrateImage(i)),
             };
+        } finally {
+            client.release();
+        }
+    }
+
+    async getPendingImageScores(): Promise<PendingImages[]> {
+        // aggregate images that are pending by model
+        // calculate score as sum of (now - created_at) for each image
+        const now = moment().valueOf();
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `SELECT model, SUM(${now} - created_at) score FROM images WHERE status='pending' GROUP BY model ORDER BY score DESC`
+            );
+            return result.rows.map(row => ({
+                model: row.model,
+                score: parseInt(row.score),
+            }));
         } finally {
             client.release();
         }
@@ -885,7 +909,7 @@ export class BackendService {
                     type: NOTIFICATION_WORKER_CONFIG_UPDATED,
                     config: config,
                 })
-            )
+            );
             return result.rows[0];
         } finally {
             client.release();
@@ -929,9 +953,14 @@ export class BackendService {
         try {
             const result = await client.query(
                 `UPDATE workers SET display_name = $1, status=$2, last_ping=$3 WHERE id = $4 RETURNING *`,
-                [upsertWorkerInput.display_name, upsertWorkerInput.status, moment().valueOf(), workerId]
+                [
+                    upsertWorkerInput.display_name,
+                    upsertWorkerInput.status,
+                    moment().valueOf(),
+                    workerId,
+                ]
             );
-            
+
             return result.rows[0];
         } finally {
             client.release();
