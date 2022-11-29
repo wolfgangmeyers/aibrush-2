@@ -286,6 +286,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
             metrics_queue.put(metric("worker.process", "count", 1, {
                 "duration_seconds": time.time() - start,
                 "nsfw": nsfw,
+                "model": image.model,
             }))
         except Exception as e:
             print(f"Process Loop Error: {e}")
