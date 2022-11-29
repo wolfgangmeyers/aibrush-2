@@ -897,10 +897,10 @@ export class BackendService {
         });
         const client = await this.pool.connect();
         try {
-            const result = await client.query(
+            await client.query(
                 `INSERT INTO worker_configs (worker_id, config_json)
                 VALUES ($1, $2)
-                ON CONFLICT (worker_id) DO UPDATE SET config_json = $2 RETURNING *`,
+                ON CONFLICT (worker_id) DO UPDATE SET config_json = $2`,
                 [workerId, configJson]
             );
             this.notify(
@@ -910,7 +910,10 @@ export class BackendService {
                     config: config,
                 })
             );
-            return result.rows[0];
+            return {
+                worker_id: workerId,
+                gpu_configs: config.gpu_configs,
+            };
         } finally {
             client.release();
         }
@@ -949,6 +952,7 @@ export class BackendService {
         const existingWorker = await this.getWorker(workerId);
         upsertWorkerInput.display_name =
             upsertWorkerInput.display_name || existingWorker.display_name;
+        upsertWorkerInput.status = upsertWorkerInput.status || existingWorker.status;
         const client = await this.pool.connect();
         try {
             const result = await client.query(

@@ -106,7 +106,7 @@ describe("workers", () => {
                 expect(worker.data.display_name).toEqual("test");
                 expect(worker.data.created_at).toBeDefined();
                 expect(worker.data.last_ping).toBeNull();
-                expect(worker.data.status).toEqual(WorkerStatusEnum.Inactive);
+                expect(worker.data.status).toEqual(WorkerStatusEnum.Idle);
                 expect(worker.data.login_code).toEqual("");
             });
 
@@ -198,8 +198,12 @@ describe("workers", () => {
 
                 it("should return a valid config", () => {
                     // check defaults
-                    expect(workerConfig.data.model).toEqual("stable_diffusion_text2im");
-                    expect(workerConfig.data.pool_assignment).toEqual("public");
+                    expect(workerConfig.data.gpu_configs).toEqual([
+                        {
+                            gpu_num: 0,
+                            model: "stable_diffusion_text2im",
+                        }
+                    ]);
                     expect(workerConfig.data.worker_id).toEqual(worker.data.id);
                 });  
             })
@@ -210,15 +214,24 @@ describe("workers", () => {
                     workerConfig = await adminSession.client.updateWorkerConfig(
                         worker.data.id,
                         {
-                            model: "stable_diffusion_1.5",
-                            pool_assignment: "lightning",
+                            gpu_configs: [
+                                {
+                                    gpu_num: 0,
+                                    model: "stable_diffusion_inpainting",
+                                },
+                            ]
                         }
                     );
                 });
 
                 it("should return a valid config", () => {
-                    expect(workerConfig.data.model).toEqual("stable_diffusion_1.5");
-                    expect(workerConfig.data.pool_assignment).toEqual("lightning");
+                    expect(workerConfig.data.gpu_configs).toEqual([
+                        {
+                            gpu_num: 0,
+                            model: "stable_diffusion_inpainting",
+                        }
+                    ]);
+                    expect(workerConfig.data.worker_id).toEqual(worker.data.id);
                 });
 
                 describe("when getting worker config", () => {
@@ -230,9 +243,14 @@ describe("workers", () => {
                     });
 
                     it("should return a valid config", () => {
-                        expect(workerConfig.data.model).toEqual("stable_diffusion_1.5");
-                        expect(workerConfig.data.pool_assignment).toEqual("lightning");
-                    });  
+                        expect(workerConfig.data.gpu_configs).toEqual([
+                            {
+                                gpu_num: 0,
+                                model: "stable_diffusion_inpainting",
+                            }
+                        ]);
+                        expect(workerConfig.data.worker_id).toEqual(worker.data.id);
+                    });
                 })
 
                 describe("after deleting the worker", () => {
@@ -253,8 +271,12 @@ describe("workers", () => {
                 it("should return a 403", async () => {
                     await expect(
                         session.client.updateWorkerConfig(worker.data.id, {
-                            model: "stable_diffusion_1.5",
-                            pool_assignment: "lightning",
+                            gpu_configs: [
+                                {
+                                    gpu_num: 0,
+                                    model: "stable_diffusion_inpainting",
+                                },
+                            ]
                         })
                     ).rejects.toThrow(/Request failed with status code 403/);
                 });
