@@ -1039,6 +1039,8 @@ export class Server {
         if (this.config.enableScalingService) {
             this.scalingService.stop();
         }
-        this.workDistributor.stop();
+        if (this.workDistributor) {
+            this.workDistributor.stop();
+        }
     }
 }
