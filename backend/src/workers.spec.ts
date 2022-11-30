@@ -48,6 +48,7 @@ describe("workers", () => {
             new MetricsClient(""),
             new ConsoleLogger(),
             null,
+            null,
         );
         await server.init();
         await server.start();

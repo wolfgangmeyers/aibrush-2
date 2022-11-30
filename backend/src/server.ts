@@ -1020,8 +1020,10 @@ export class Server {
                 this.scalingService.scale();
             }
 
-            this.workDistributor.start();
-            this.workDistributor.distributeWork();
+            if (this.workDistributor) {
+                this.workDistributor.start();
+                this.workDistributor.distributeWork();
+            }
         });
     }
 
