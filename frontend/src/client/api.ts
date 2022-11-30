@@ -954,16 +954,10 @@ export enum UpdateImageInputStatusEnum {
 export interface UpsertWorkerConfigInput {
     /**
      * 
-     * @type {string}
+     * @type {Array<WorkerGpuConfig>}
      * @memberof UpsertWorkerConfigInput
      */
-    model: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof UpsertWorkerConfigInput
-     */
-    pool_assignment: string;
+    gpu_configs?: Array<WorkerGpuConfig>;
 }
 /**
  * 
@@ -976,8 +970,24 @@ export interface UpsertWorkerInput {
      * @type {string}
      * @memberof UpsertWorkerInput
      */
-    display_name: string;
+    display_name?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpsertWorkerInput
+     */
+    status?: UpsertWorkerInputStatusEnum;
 }
+
+/**
+    * @export
+    * @enum {string}
+    */
+export enum UpsertWorkerInputStatusEnum {
+    Idle = 'idle',
+    Active = 'active'
+}
+
 /**
  * 
  * @export
@@ -1089,10 +1099,8 @@ export interface Worker {
     * @enum {string}
     */
 export enum WorkerStatusEnum {
-    Inactive = 'inactive',
-    Active = 'active',
-    Offline = 'offline',
-    Error = 'error'
+    Idle = 'idle',
+    Active = 'active'
 }
 
 /**
@@ -1109,16 +1117,29 @@ export interface WorkerConfig {
     worker_id: string;
     /**
      * 
-     * @type {string}
+     * @type {Array<WorkerGpuConfig>}
      * @memberof WorkerConfig
      */
-    model: string;
+    gpu_configs?: Array<WorkerGpuConfig>;
+}
+/**
+ * 
+ * @export
+ * @interface WorkerGpuConfig
+ */
+export interface WorkerGpuConfig {
+    /**
+     * 
+     * @type {number}
+     * @memberof WorkerGpuConfig
+     */
+    gpu_num: number;
     /**
      * 
      * @type {string}
-     * @memberof WorkerConfig
+     * @memberof WorkerGpuConfig
      */
-    pool_assignment: string;
+    model: string;
 }
 /**
  * 

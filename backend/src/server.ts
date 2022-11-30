@@ -38,6 +38,7 @@ import {
 import { MetricsClient } from "./metrics";
 import { ScalingService } from "./scaling_service";
 import { Logger } from "./logs";
+import { WorkDistributor } from "./work_distributor";
 
 export class Server {
     private server: HTTPServer;
@@ -56,7 +57,8 @@ export class Server {
         private port: string | number,
         private metricsClient: MetricsClient,
         private logger: Logger,
-        private scalingService: ScalingService
+        private scalingService: ScalingService,
+        private workDistributor: WorkDistributor,
     ) {
         this.app = express();
         this.authHelper = new AuthHelper(
@@ -1017,6 +1019,9 @@ export class Server {
                 this.scalingService.start();
                 this.scalingService.scale();
             }
+
+            this.workDistributor.start();
+            this.workDistributor.distributeWork();
         });
     }
 
@@ -1032,5 +1037,6 @@ export class Server {
         if (this.config.enableScalingService) {
             this.scalingService.stop();
         }
+        this.workDistributor.stop();
     }
 }

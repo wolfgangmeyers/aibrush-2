@@ -27,6 +27,9 @@ from torch import device
 from apisocket import ApiSocket
 import asyncio
 
+NOTIFICATION_PENDING_IMAGE = "pending_image"
+NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated"
+
 api_url = "https://www.aibrush.art"
 if len(sys.argv) > 1:
     api_url = sys.argv[1]
@@ -42,7 +45,16 @@ elif os.environ.get("WORKER_LOGIN_CODE"):
 else:
     raise Exception("No credentials.json or WORKER_LOGIN_CODE environment variable found")
 
+def get_worker_id():
+    token = client.token
+    parts = token.split(".")
+    if len(parts) != 3:
+        raise Exception("Invalid token")
+    payload = json.loads(base64.b64decode(parts[1] + "=="))
+    print(payload)
+    return payload["serviceAccountConfig"]["workerId"]
 
+WORKER_ID = get_worker_id()
 
 # create an 'images' folder if it doesn't exist
 for folder in ["images", "output", "output_npy"]:
@@ -139,83 +151,107 @@ def metric(name: str, type: str, value: any, attributes: dict = None) -> SimpleN
             attribute_list.append({"name": key, "value": v})
     return SimpleNamespace(name=name, type=type, value=value, attributes=attribute_list)
 
-def poll_loop(process_queue: Queue, metrics_queue: Queue, websocket_queue: Queue):
-    model_name = "stable_diffusion_text2im"
+def get_model_assignment(gpu: str)-> str:
+    gpu_num = int(gpu.split(":")[1])
+    worker_config = client.get_worker_config(WORKER_ID)
+    gpu_config = worker_config.gpu_configs[gpu_num]
+    model_name = gpu_config.model
+    return model_name
+
+def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, websocket_queue: Queue, gpu: str):
     last_model_check = time.time()
     image = None
+
+    model_name = get_model_assignment(gpu)
+
+    image = warmup_image(model_name, str(uuid4()))
+    process_queue.put(image)
+    ready_queue.get()
+
     while True:
         try:
             start = time.time()
             message = None
+            pending_image = False
+            config_updated = False
             try:
                 message = websocket_queue.get(timeout=0.1)
             except Empty:
                 pass
             if message:
-                # worker jitter. All workers are notified at once,
-                # so we wait a random amount of time before trying to process
-                # the next image
-
-                # export const NOTIFICATION_PENDING_IMAGE = "pending_image";
-                # export const NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated";
-                # TODO: handle worker config update
-                # TODO: self-sufficient warmup for all model types
-                time.sleep(random.random() * 0.5)
-            
-            # model stickiness
-            if time.time() - last_model_check > 60:
-                image = client.process_image(None, True)
-                if image and image.model != model_name:
-                    model_name = image.model
+                message = json.loads(message)
+                if "connected" in message and message["connected"]:
+                    print("Connected to websocket")
+                else:
+                    message = SimpleNamespace(**message)
+                    if message.type == NOTIFICATION_PENDING_IMAGE:
+                        pending_image = True
+                        # worker jitter. All workers are notified at once,
+                        # so we wait a random amount of time before trying to process
+                        # the next image
+                        time.sleep(random.random() * 0.5)
+                    elif message.type == NOTIFICATION_WORKER_CONFIG_UPDATED:
+                        config_updated = True
+            if config_updated or time.time() - last_model_check > 60:
                 last_model_check = time.time()
-                metrics_queue.put(metric("worker.poll", "count", 1, {
-                    "duration_seconds": time.time() - start,
-                    "sticky": False,
-                }))
-            elif message or image:
+                current_model_name = get_model_assignment(gpu)
+                if current_model_name != model_name:
+                    print("Model changed from", model_name, "to", current_model_name)
+                    model_name = current_model_name
+                    image = warmup_image(model_name, str(uuid4()))
+            elif image or pending_image:
                 image = client.process_image(model_name)
                 metrics_queue.put(metric("worker.poll", "count", 1, {
                     "duration_seconds": time.time() - start,
                     "sticky": True,
                 }))
-            
             if image:
-                image.image_data = client.get_image_data(image.id)
-                image.mask_data = None
-                if image.model == "stable_diffusion_inpainting":
-                    image.mask_data = client.get_mask_data(image.id)
+                if not image.warmup:
+                    image.image_data = client.get_image_data(image.id)
+                    image.mask_data = None
+                    if image.model == "stable_diffusion_inpainting":
+                        image.mask_data = client.get_mask_data(image.id)
                 process_queue.put(image)
+                if image.warmup:
+                    ready_queue.get()
         except Exception as err:
             print(f"Pool Loop Error: {err}")
             traceback.print_exc()
             continue
 
-def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, gpu: str):
-    print("process loop started")
-    model_name = "stable_diffusion_text2im"
-    model = create_model(model_name, gpu)
-    print("process loop: model created")
-    # warmup
-    warmup_id = str(uuid4())
-    args = _sd_args(None, None, None, SimpleNamespace(
+def blank_image_data():
+    img = Image.new("RGB", (512, 512), (255, 255, 255))
+    # convert to base64 encoded jpg
+    buf = BytesIO()
+    img.save(buf, format="JPEG")
+    return buf.getvalue()
+
+def warmup_image(model_name: str, image_id: str):
+    image_data = None
+    mask_data = None
+    if model_name == "stable_diffusion_inpainting":
+        mask_data = blank_image_data()
+        image_data = blank_image_data()
+    elif model_name == "swinir":
+        image_data = blank_image_data()
+    return SimpleNamespace(
+        id=image_id,
         phrases=["a cat"],
         height=512,
         width=512,
-        id=warmup_id,
         iterations=10,
         stable_diffusion_strength=0.75,
         model=model_name,
-    ))
-    print("Warming up model")
-    model.generate(args)
-    print("warmup step 1 completed")
+        image_data=image_data,
+        mask_data=mask_data,
+        warmup=True,
+        nsfw=False,
+    )
+
+def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, gpu: str):
+    print("process loop started")
+    model_name = None
     clip_ranker = get_clip_ranker(gpu)
-    print("process loop: clip ranker created")
-    clip_ranker.rank(argparse.Namespace(text="a cat", image=f"images/{warmup_id}.jpg", cpu=False))
-    print("process loop: ranker warmed up")
-    cleanup(warmup_id)
-    print("warmup complete")
-    ready_queue.put(True)
     while True:
         try:
             image = process_queue.get()
@@ -288,6 +324,8 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
                 "nsfw": nsfw,
                 "model": image.model,
             }))
+            if image.warmup:
+                ready_queue.put(True)
         except Exception as e:
             print(f"Process Loop Error: {e}")
             traceback.print_exc()
@@ -358,7 +396,7 @@ class ImagesWorker:
         self.apisocket = ApiSocket(api_url, client.token, self.websocket_queue)
         # self.websocket_thread = Thread(target=self.apisocket.run)
         self.websocket_thread = Thread(target=asyncio.run, args=(self.apisocket.run(),))
-        self.poll_thread = Thread(target=poll_loop, args=(self.process_queue, self.metrics_queue, self.websocket_queue))
+        self.poll_thread = Thread(target=poll_loop, args=(self.ready_queue, self.process_queue, self.metrics_queue, self.websocket_queue, gpu))
         self.process_thread = Thread(target=process_loop, args=(self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue, gpu))
         self.update_thread = Thread(target=update_loop, args=(self.update_queue, self.cleanup_queue, self.metrics_queue))
         self.cleanup_thread = Thread(target=cleanup_loop, args=(self.cleanup_queue,))
@@ -366,14 +404,12 @@ class ImagesWorker:
 
     def start(self):
         # start threads
-        self.process_thread.start()
-        self.ready_queue.get() # allow warmup to complete
-
         self.websocket_thread.start()
         self.poll_thread.start()
         self.update_thread.start()
         self.cleanup_thread.start()
         self.metrics_thread.start()
+        self.process_thread.start()
     
     def wait(self):
         self.process_thread.join()

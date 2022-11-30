@@ -1,6 +1,11 @@
+import Bugsnag from "@bugsnag/js";
 import moment from "moment";
-import { BackendService } from "./backend";
+import { BackendService, WORK_DISTRIBUTION_KEY } from "./backend";
 import { WorkerConfig, WorkerGpuConfig, WorkerStatusEnum } from "./client";
+
+export const WORK_DISTRIBUTION_EVENT = "work_distribution_event";
+const DEFAULT_WORK_DISTRIBUTION_COOLDOWN = 60 * 1000;
+const QUICK_WORK_DISTRIBUTION_COOLDOWN = 10 * 1000;
 
 // map of model name -> count
 export interface PendingImages {
@@ -58,10 +63,11 @@ function calculateDesiredState(
     }
     let workerGpuCount = 0;
     for (let worker of workers) {
-        workerGpuCount += worker.num_gpus;
+        workerGpuCount += (worker.num_gpus || 1);
     }
 
     if (pending.length > 0) {
+        console.log("pending", pending);
         // if there are at least 3 gpus, assign at least one to each model
         // TODO: maybe in the future, make it a percentage of total gpus instead of just one
         if (workerGpuCount >= MODELS.length) {
@@ -139,6 +145,9 @@ export function calculateWorkDistribution(
     );
     const actualState = calculateActualState(workers, configsByWorker);
 
+    console.log("desired state", desiredState);
+    console.log("actual state", actualState);
+
     let updatedWorkerIds: { [key: string]: boolean } = {};
     // first unassign gpu models, then reassign
     for (let model of MODELS) {
@@ -193,31 +202,67 @@ export function calculateWorkDistribution(
 }
 
 export class WorkDistributor {
+    private runningHandle: NodeJS.Timer;
+
     constructor(private backendService: BackendService) {}
 
+    start() {
+        if (this.runningHandle) {
+            clearInterval(this.runningHandle);
+        }
+        this.runningHandle = setInterval(() => {
+            this.distributeWork();
+        }, 1000 * 10);
+    }
+
+    stop() {
+        if (this.runningHandle) {
+            clearInterval(this.runningHandle);
+        }
+    }
+
     async distributeWork() {
-        const pending = await this.backendService.getPendingImageScores();
-        // filter out workers with last_ping > 30s
-        const workers = (await this.backendService.listWorkers()).filter(
-            (worker) => {
-                return moment().diff(moment(worker.last_ping), "seconds") < 30;
-            }
-        );
-        const configs = await Promise.all(
-            workers.map((worker) =>
-                this.backendService.getWorkerConfig(worker.id)
-            )
-        );
-        const workerAssignments = calculateWorkDistribution(
-            pending,
-            workers,
-            configs
-        );
-        for (let workerAssignment of workerAssignments) {
-            await this.backendService.upsertWorkerConfig(
-                workerAssignment.worker_id,
-                workerAssignment
-            );
+        try {
+            await this.backendService.withLock(WORK_DISTRIBUTION_KEY, async () => {
+                const lastEvent = await this.backendService.getLastEventTime(
+                    WORK_DISTRIBUTION_EVENT
+                );
+                // filter out workers with old ping
+                const workers = (await this.backendService.listWorkers());
+                // calculate cooldown
+                let totalGpus = 0;
+                for (let worker of workers) {
+                    totalGpus += (worker.num_gpus || 1);
+                }
+                const cooldown = totalGpus >= MODELS.length ? DEFAULT_WORK_DISTRIBUTION_COOLDOWN : QUICK_WORK_DISTRIBUTION_COOLDOWN;
+                if (lastEvent && moment().diff(moment(lastEvent), "milliseconds") < cooldown) {
+                    console.log("Work distributor not running because cooldown has not expired");
+                    return;
+                }
+                await this.backendService.setLastEventTime(WORK_DISTRIBUTION_EVENT, moment().valueOf());
+                console.log("Running work distributor");
+                const pending = await this.backendService.getPendingImageScores();
+                const configs = await Promise.all(
+                    workers.map((worker) =>
+                        this.backendService.getWorkerConfig(worker.id)
+                    )
+                );
+                const workerAssignments = calculateWorkDistribution(
+                    pending,
+                    workers,
+                    configs
+                );
+                console.log("worker assignments", workerAssignments);
+                for (let workerAssignment of workerAssignments) {
+                    await this.backendService.upsertWorkerConfig(
+                        workerAssignment.worker_id,
+                        workerAssignment
+                    );
+                }
+            });
+            
+        } catch (e) {
+            Bugsnag.notify(e);
         }
     }
 }

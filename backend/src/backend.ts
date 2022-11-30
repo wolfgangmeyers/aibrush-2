@@ -47,6 +47,7 @@ export const TEMPORARY_IMAGES_KEY = 2;
 export const DELETED_IMAGES_KEY = 3;
 export const MIGRATIONS_KEY = 4;
 export const SCALING_KEY = 5;
+export const WORK_DISTRIBUTION_KEY = 6;
 
 const BLOCK_DURATION_DAYS = 7;
 
@@ -907,7 +908,6 @@ export class BackendService {
                 workerId,
                 JSON.stringify({
                     type: NOTIFICATION_WORKER_CONFIG_UPDATED,
-                    config: config,
                 })
             );
             return {

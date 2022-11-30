@@ -50,7 +50,6 @@ class AIBrushAPI(object):
         except Exception as err:
             print(f"Error parsing json: {err}")
             raise err
-            return None
 
     def process_image(self, model: str, peek=False) -> SimpleNamespace:
         resp = self.http_request("/process-image", "PUT", body={
@@ -230,3 +229,7 @@ class AIBrushAPI(object):
             "metrics": [m.__dict__ for m in metrics]
         }
         self.http_request("/metrics", "POST", body)
+
+    def get_worker_config(self, worker_id: str) -> SimpleNamespace:
+        resp = self.http_request(f"/workers/{worker_id}/config", "GET")
+        return self.parse_json(resp.text)
