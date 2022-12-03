@@ -375,7 +375,9 @@ export class BackendService {
                 `SELECT * FROM images WHERE created_by=$1 AND id=ANY($2)`,
                 [userId, ids]
             );
-            return result.rows.map((i: any) => this.hydrateImage(i));
+            return result.rows.map((i: any) => this.hydrateImage(i)).sort(
+                (a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)
+            );
         } finally {
             client.release();
         }
