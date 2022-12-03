@@ -442,6 +442,14 @@ export class Server {
                     console.log("Getting jwt from request")
                     const jwt = this.authHelper.getJWTFromRequest(req);
                     // service accounts can't list images
+                    if (jwt.serviceAccountConfig) {
+                        res.status(403).send("Forbidden");
+                        this.logger.log(
+                            "Service account tried to list images",
+                            jwt
+                        );
+                        return;
+                    }
                     let cursor: number | undefined;
                     try {
                         cursor = parseInt(req.query.cursor as string);
@@ -477,6 +485,14 @@ export class Server {
             "/api/images",
             withMetrics("/api/images", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to create image",
+                        jwt
+                    );
+                    return;
+                }
                 const images = await this.backendService.createImages(
                     jwt.userId,
                     req.body
@@ -520,6 +536,8 @@ export class Server {
         this.app.patch(
             "/api/images/:id",
             withMetrics("/api/images/:id", async (req, res) => {
+                // TODO: worker must own the image in order to update it.
+                // TODO: set worker to null if completed
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id);
@@ -554,6 +572,14 @@ export class Server {
             withMetrics("/api/images/:id", async (req, res) => {
                 // get image first and check created_by
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to delete image",
+                        jwt,
+                    );
+                    return;
+                }
                 let image = await this.backendService.getImage(req.params.id);
                 if (!image) {
                     this.logger.log(
@@ -623,6 +649,14 @@ export class Server {
             "/api/workers",
             withMetrics("/api/workers", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to get workers",
+                        jwt
+                    );
+                    return;
+                }
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
                     this.logger.log(
@@ -642,6 +676,14 @@ export class Server {
             "/api/workers",
             withMetrics("/api/workers", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to create worker",
+                        jwt
+                    );
+                    return;
+                }
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
                     this.logger.log(
@@ -662,6 +704,14 @@ export class Server {
             "/api/workers/:worker_id",
             withMetrics("/api/workers/:worker_id", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to get worker",
+                        jwt
+                    );
+                    return;
+                }
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
                     this.logger.log(
@@ -685,6 +735,14 @@ export class Server {
             "/api/workers/:worker_id",
             withMetrics("/api/workers/:worker_id", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to update worker",
+                        jwt
+                    );
+                    return;
+                }
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
                     this.logger.log(
@@ -710,6 +768,14 @@ export class Server {
             "/api/workers/:worker_id",
             withMetrics("/api/workers/:worker_id", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to delete worker",
+                        jwt
+                    );
+                    return;
+                }
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
                     this.logger.log(
@@ -743,6 +809,14 @@ export class Server {
             "/api/workers/:worker_id/config",
             withMetrics("/api/workers/:worker_id/config", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to update worker config",
+                        jwt
+                    );
+                    return;
+                }
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
                     this.logger.log(
@@ -768,6 +842,14 @@ export class Server {
                 "/api/workers/:worker_id/login-code",
                 async (req, res) => {
                     const jwt = this.authHelper.getJWTFromRequest(req);
+                    if (jwt.serviceAccountConfig) {
+                        res.status(403).send("Forbidden");
+                        this.logger.log(
+                            "Service account tried to create worker login code",
+                            jwt
+                        );
+                        return;
+                    }
                     // check admin
                     if (!(await this.backendService.isUserAdmin(jwt.userId))) {
                         this.logger.log(
@@ -822,6 +904,14 @@ export class Server {
             "/api/orders",
             withMetrics("/api/orders", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to get orders",
+                        jwt
+                    );
+                    return;
+                }
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
                     this.logger.log(
@@ -839,6 +929,14 @@ export class Server {
             "/api/orders",
             withMetrics("/api/orders", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to create order",
+                        jwt
+                    );
+                    return;
+                }
                 // check admin
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
                     this.logger.log(
@@ -862,6 +960,14 @@ export class Server {
             "/api/auth/service-accounts",
             withMetrics("/api/auth/service-accounts", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to create service account",
+                        jwt
+                    );
+                    return;
+                }
                 // service accounts can't create new service accounts
                 if (this.serviceAccountType(jwt)) {
                     res.sendStatus(403);
@@ -885,6 +991,14 @@ export class Server {
             "/api/invite-codes",
             withMetrics("/api/invite-codes", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to create invite code",
+                        jwt
+                    );
+                    return;
+                }
                 // service accounts can't create invite codes
                 if (this.serviceAccountType(jwt)) {
                     res.sendStatus(403);

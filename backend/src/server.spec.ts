@@ -607,20 +607,15 @@ describe("server", () => {
 
             describe("when listing images as a service account", () => {
 
-                let images: ImageList;
-
                 beforeEach(async () => {
                     // authenticate the service account
                     // await authenticateUser(backendService, httpClient2, "service-account@test.test")
                     await authenticateWorker(backendService, httpClient2, worker);
-
-                    const response = await client2.listImages()
-                    images = response.data
                 })
 
-                it("should return an empty list", async () => {
-                    expect(images.images).toHaveLength(0)
-                })
+                it("should reject the request with forbidden error", async () => {
+                    await expect(client2.listImages()).rejects.toThrow(/Request failed with status code 403/)
+                });
             })
 
             describe("when updating an image belonging to a different user", () => {
@@ -822,8 +817,8 @@ describe("server", () => {
                     await authenticateWorker(backendService, httpClient2, worker);
                 })
 
-                it("should reject the request with not found error", async () => {
-                    await expect(client2.deleteImage(image.id)).rejects.toThrow(/Request failed with status code 404/)
+                it("should reject the request with forbidden error", async () => {
+                    await expect(client2.deleteImage(image.id)).rejects.toThrow(/Request failed with status code 403/)
                 })
             })
 
