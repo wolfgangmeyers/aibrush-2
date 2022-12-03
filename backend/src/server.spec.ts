@@ -264,10 +264,12 @@ describe("server", () => {
 
         let verifyResult: Authentication;
         let worker: Worker;
+        let worker2: Worker;
 
         beforeEach(async () => {
             verifyResult = await authenticateUser(backendService, httpClient, "test@test.test")
             worker = await backendService.createWorker("test worker");
+            worker2 = await backendService.createWorker("test worker 2");
         })
 
         describe("when listing images", () => {
@@ -634,6 +636,23 @@ describe("server", () => {
                 })
             })
 
+            describe("when updating a pending image with a service account", () => {
+                // should fail with not found
+                beforeEach(async () => {
+                    // authenticate as service account
+                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
+                    await authenticateWorker(backendService, httpClient2, worker);
+                })
+
+                it("should reject the request with not found error", async () => {
+                    await expect(client2.updateImage(image.id, {
+                        label: "test2",
+                        current_iterations: 1,
+                        status: UpdateImageInputStatusEnum.Processing
+                    })).rejects.toThrow(/Request failed with status code 404/)
+                });
+            })
+
             describe("when processing an image as a service account", () => {
                 let processingImage: Image;
 
@@ -659,6 +678,21 @@ describe("server", () => {
                     expect(updatedWorker.status).toBe(WorkerStatusEnum.Active);
                 });
 
+                describe("when updating a processing image with the wrong service account", () => {
+                    beforeEach(async () => {
+                        // authenticate as second service account
+                        await authenticateWorker(backendService, httpClient2, worker2);
+                    });
+
+                    it("should reject the request with not found error", async () => {
+                        await expect(client2.updateImage(image.id, {
+                            label: "test2",
+                            current_iterations: 1,
+                            status: UpdateImageInputStatusEnum.Processing
+                        })).rejects.toThrow(/Request failed with status code 404/)
+                    });
+                })
+
                 describe("when processing again with no pending images", () => {
                     beforeEach(async () => {
                         // process the image
@@ -677,7 +711,7 @@ describe("server", () => {
 
                 })
 
-                describe("when updating a processing image with a service account", () => {
+                describe("when updating a processing image to completed with a service account", () => {
 
                     let updatedImage: Image;
 
@@ -692,7 +726,7 @@ describe("server", () => {
                         const response = await client2.updateImage(image.id, {
                             label: "test2",
                             current_iterations: 1,
-                            status: UpdateImageInputStatusEnum.Processing
+                            status: UpdateImageInputStatusEnum.Completed
                         })
                         updatedImage = response.data
                     })
@@ -701,8 +735,19 @@ describe("server", () => {
                         expect(updatedImage.id).toBe(image.id)
                         expect(updatedImage.label).toBe("test2")
                         expect(updatedImage.iterations).toBe(1)
-                        expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Processing)
+                        expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Completed)
                         expect(updatedImage.current_iterations).toBe(1)
+                    })
+
+                    describe("when updating the image again as a service account", () => {
+                        // it will fail with not found
+                        it("should reject the request with not found error", async () => {
+                            await expect(client2.updateImage(image.id, {
+                                label: "test2",
+                                current_iterations: 1,
+                                status: UpdateImageInputStatusEnum.Completed
+                            })).rejects.toThrow(/Request failed with status code 404/)
+                        });
                     })
 
                 })
