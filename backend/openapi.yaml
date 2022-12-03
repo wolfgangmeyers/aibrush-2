@@ -809,6 +809,8 @@ components:
           type: boolean
         deleted_at:
           type: integer
+        worker_id:
+          type: string
       required:
         - id
         - created_at

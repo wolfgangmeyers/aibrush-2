@@ -1,0 +1,1 @@
+ALTER TABLE images ADD COLUMN worker_id CHAR(36) NULL;

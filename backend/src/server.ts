@@ -536,8 +536,6 @@ export class Server {
         this.app.patch(
             "/api/images/:id",
             withMetrics("/api/images/:id", async (req, res) => {
-                // TODO: worker must own the image in order to update it.
-                // TODO: set worker to null if completed
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id);
@@ -560,8 +558,13 @@ export class Server {
                 }
                 image = await this.backendService.updateImage(
                     req.params.id,
-                    req.body
+                    req.body,
+                    jwt.serviceAccountConfig?.workerId,
                 );
+                if (image == null) {
+                    res.status(404).send("not found");
+                    return;
+                }
                 res.json(image);
             })
         );

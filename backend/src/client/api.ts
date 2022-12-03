@@ -574,6 +574,12 @@ export interface Image {
      * @memberof Image
      */
     'deleted_at'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof Image
+     */
+    'worker_id'?: string;
 }
 
 export const ImageStatusEnum = {

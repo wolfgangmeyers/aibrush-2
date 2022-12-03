@@ -631,10 +631,14 @@ export class BackendService {
         return Promise.all(promises);
     }
 
-    async updateImage(id: string, body: UpdateImageInput): Promise<Image> {
+    async updateImage(id: string, body: UpdateImageInput, workerId: string | null): Promise<Image> {
         const existingImage = await this.getImage(id);
         if (!existingImage) {
             this.logger.log("Existing image not found: " + id);
+            return null;
+        }
+        if (workerId && existingImage.worker_id != workerId) {
+            this.logger.log(`Worker ${workerId} tried to update image ${id} but it is owned by ${existingImage.worker_id}`);
             return null;
         }
         let completed =
@@ -645,6 +649,10 @@ export class BackendService {
             existingImage[key] = body[key];
         });
 
+        let assignedWorkerId = existingImage.worker_id;
+        if (body.status === UpdateImageInputStatusEnum.Completed) {
+            assignedWorkerId = null;
+        }
         const client = await this.pool.connect();
         try {
             const result = await client.query(
@@ -658,8 +666,9 @@ export class BackendService {
                     score=$6,
                     negative_score=$7,
                     nsfw=$8,
-                    deleted_at=$9
-                WHERE id=$10 RETURNING *`,
+                    deleted_at=$9,
+                    worker_id=$10
+                WHERE id=$11 RETURNING *`,
                 [
                     existingImage.label,
                     existingImage.current_iterations,
@@ -670,6 +679,7 @@ export class BackendService {
                     existingImage.negative_score,
                     existingImage.nsfw,
                     existingImage.deleted_at,
+                    assignedWorkerId,
                     id,
                 ]
             );
@@ -1177,8 +1187,8 @@ export class BackendService {
             if (!input?.peek) {
                 // update image status to "processing"
                 await client.query(
-                    `UPDATE images SET status='processing', updated_at=$2 WHERE id=$1`,
-                    [image.id, new Date().getTime()]
+                    `UPDATE images SET status='processing', updated_at=$2, worker_id=$3 WHERE id=$1`,
+                    [image.id, new Date().getTime(), workerId]
                 );
                 // commit transaction
                 await client.query("COMMIT");
