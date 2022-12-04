@@ -217,7 +217,6 @@ export class Server {
                     const token = await this.backendService.login(
                         req.body.email,
                         true,
-                        req.body.invite_code
                     );
                     res.sendStatus(204);
                 } catch (err) {
@@ -257,6 +256,43 @@ export class Server {
                 } else {
                     res.send(result);
                 }
+            })
+        );
+
+
+// # DiscordLogin:
+// #   type: object
+// #   properties:
+// #     code:
+// #       type: string
+// #   required:
+// #     - code
+//   /api/discord-login:
+//     post:
+//       description: Log in with Discord
+//       operationId: discordLogin
+//       tags:
+//         - AIBrush
+//       requestBody:
+//         content:
+//           application/json:
+//             schema:
+//               $ref: "#/components/schemas/DiscordLogin"
+//       responses:
+//         "200":
+//           description: Success
+//           content:
+//             application/json:
+//               schema:
+//                 $ref: "#/components/schemas/LoginResult"
+        this.app.post("/api/discord-login",
+            withMetrics("/api/discord-login", async (req, res) => {
+                const result = await this.backendService.discordLogin(req.body.code);
+                if (result) {
+                    res.send(result);
+                    return;
+                }
+                res.sendStatus(400);
             })
         );
 

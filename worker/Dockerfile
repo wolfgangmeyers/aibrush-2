@@ -18,7 +18,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 RUN pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 RUN pip install transformers==4.19.2 diffusers invisible-watermark
-RUN pip install cython websockets
+RUN pip install cython websockets accelerate
 RUN pip install omegaconf einops pytorch-lightning transformers pip install ftfy regex omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests cog timm numpy opencv-python-headless pillow
 
 RUN pip install -e git+https://github.com/runwayml/stable-diffusion#egg=latent-diffusion

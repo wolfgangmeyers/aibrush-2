@@ -24,6 +24,9 @@ export interface Config {
     disableCleanupJob?: bool;
     newRelicLicenseKey?: string;
     enableScalingService?: bool;
+    discordClientId?: string;
+    discordClientSecret?: string;
+    discordRedirectUri?: string;
 }
 
 export const loadConfig = (): Config => {
@@ -48,6 +51,9 @@ export const loadConfig = (): Config => {
         assetsBaseUrl: process.env.ASSETS_BASE_URL || "/api/images",
         newRelicLicenseKey: process.env.NEW_RELIC_LICENSE_KEY,
         enableScalingService: process.env.ENABLE_SCALING_SERVICE === "true",
+        discordClientId: process.env.DISCORD_CLIENT_ID,
+        discordClientSecret: process.env.DISCORD_CLIENT_SECRET,
+        discordRedirectUri: process.env.DISCORD_REDIRECT_URI,
     };
     return config;
 }

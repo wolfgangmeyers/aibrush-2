@@ -564,6 +564,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WorkerConfig"
+  /api/discord-login:
+    post:
+      description: Log in with Discord
+      operationId: discordLogin
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiscordLogin"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResult"
   /api/features:
     get:
       description: Get the features
@@ -1092,3 +1110,10 @@ components:
             $ref: "#/components/schemas/Order"
       required:
         - orders
+    DiscordLogin:
+      type: object
+      properties:
+        code:
+          type: string
+      required:
+        - code

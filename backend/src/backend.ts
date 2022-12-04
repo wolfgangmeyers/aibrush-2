@@ -1,4 +1,5 @@
 import { Client, ClientBase, Pool, PoolClient } from "pg";
+import axios from "axios";
 import os from "os";
 import { createDb, migrate } from "postgres-migrations";
 import * as uuid from "uuid";
@@ -57,6 +58,32 @@ export const NOTIFICATION_IMAGE_UPDATED = "image_updated";
 export const NOTIFICATION_IMAGE_DELETED = "image_deleted";
 export const NOTIFICATION_PENDING_IMAGE = "pending_image";
 export const NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated";
+
+interface DiscordLoginResult {
+    access_token: string;
+    token_type: string;
+    expires_in: number;
+    refresh_token: string;
+    scope: string;
+}
+
+interface DiscordUser {
+    id: string;
+    username: string;
+    avatar: string;
+    avatar_decoration: string;
+    discriminator: string;
+    public_flags: number;
+    flags: number;
+    banner: string;
+    banner_color: string;
+    accent_color: string;
+    locale: string;
+    mfa_enabled: boolean;
+    premium_type: number;
+    email: string;
+    verified: boolean;
+}
 
 // map of model name -> score
 export interface PendingImages {
@@ -339,7 +366,7 @@ export class BackendService {
             const result = await client.query(
                 `SELECT model, SUM(${now} - created_at) score FROM images WHERE status='pending' GROUP BY model ORDER BY score DESC`
             );
-            return result.rows.map(row => ({
+            return result.rows.map((row) => ({
                 model: row.model,
                 score: parseInt(row.score),
             }));
@@ -375,9 +402,9 @@ export class BackendService {
                 `SELECT * FROM images WHERE created_by=$1 AND id=ANY($2)`,
                 [userId, ids]
             );
-            return result.rows.map((i: any) => this.hydrateImage(i)).sort(
-                (a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)
-            );
+            return result.rows
+                .map((i: any) => this.hydrateImage(i))
+                .sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
         } finally {
             client.release();
         }
@@ -633,14 +660,20 @@ export class BackendService {
         return Promise.all(promises);
     }
 
-    async updateImage(id: string, body: UpdateImageInput, workerId: string | null): Promise<Image> {
+    async updateImage(
+        id: string,
+        body: UpdateImageInput,
+        workerId: string | null
+    ): Promise<Image> {
         const existingImage = await this.getImage(id);
         if (!existingImage) {
             this.logger.log("Existing image not found: " + id);
             return null;
         }
         if (workerId && existingImage.worker_id != workerId) {
-            this.logger.log(`Worker ${workerId} tried to update image ${id} but it is owned by ${existingImage.worker_id}`);
+            this.logger.log(
+                `Worker ${workerId} tried to update image ${id} but it is owned by ${existingImage.worker_id}`
+            );
             return null;
         }
         let completed =
@@ -964,7 +997,8 @@ export class BackendService {
         const existingWorker = await this.getWorker(workerId);
         upsertWorkerInput.display_name =
             upsertWorkerInput.display_name || existingWorker.display_name;
-        upsertWorkerInput.status = upsertWorkerInput.status || existingWorker.status;
+        upsertWorkerInput.status =
+            upsertWorkerInput.status || existingWorker.status;
         const client = await this.pool.connect();
         try {
             const result = await client.query(
@@ -1388,13 +1422,13 @@ export class BackendService {
     }
 
     async isUserAllowed(email: string): Promise<boolean> {
-        if (await this.isUserAdmin(email)) {
-            return true;
-        }
-        const user: User = await this.getUser(hash(email));
-        if (!user || !user.active) {
-            return false;
-        }
+        // if (await this.isUserAdmin(email)) {
+        //     return true;
+        // }
+        // const user: User = await this.getUser(hash(email));
+        // if (!user || !user.active) {
+        //     return false;
+        // }
         return true;
     }
 
@@ -1443,39 +1477,6 @@ export class BackendService {
         }
     }
 
-    async activateUser(email: string, inviteCode: string): Promise<boolean> {
-        await this.deleteExpiredInviteCodes();
-        const existingUser = await this.getUser(hash(email));
-        if (existingUser) {
-            this.metrics.addMetric("backend.activate_user", 1, "count", {
-                status: "failed",
-                reason: "user_exists",
-            });
-            return false;
-        }
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `DELETE FROM invite_codes WHERE id=$1`,
-                [inviteCode]
-            );
-            if (result.rowCount === 0) {
-                return false;
-            }
-            // create the new user and then delete the invite code
-            await client.query(
-                `INSERT INTO users (id, email, active) VALUES ($1, $2, true)`,
-                [hash(email), email]
-            );
-            this.metrics.addMetric("backend.activate_user", 1, "count", {
-                status: "success",
-            });
-            return true;
-        } finally {
-            client.release();
-        }
-    }
-
     // this is only for testing
     async createUser(email: string): Promise<boolean> {
         const existingUser = await this.getUser(hash(email));
@@ -1509,16 +1510,16 @@ export class BackendService {
     async login(
         email: string,
         sendEmail = true,
-        inviteCode: string = undefined
+        // inviteCode: string = undefined
     ): Promise<string> {
         if (!(await this.isUserAllowed(email))) {
-            if (inviteCode && !(await this.activateUser(email, inviteCode))) {
-                this.metrics.addMetric("backend.login", 1, "count", {
-                    status: "failed",
-                    reason: "invalid_invite_code",
-                });
-                throw new Error("User not allowed");
-            }
+            // if (inviteCode && !(await this.activateUser(email, inviteCode))) {
+            //     this.metrics.addMetric("backend.login", 1, "count", {
+            //         status: "failed",
+            //         reason: "invalid_invite_code",
+            //     });
+            //     throw new Error("User not allowed");
+            // }
             if (!(await this.isUserAllowed(email))) {
                 this.metrics.addMetric("backend.login", 1, "count", {
                     status: "failed",
@@ -1585,6 +1586,9 @@ export class BackendService {
                 return null;
             }
 
+            // create user if they don't yet exist
+            await this.createUser(loginCode.user_email);
+
             // generate auth tokens
             const auth = this.authHelper.createTokens(loginCode.user_email);
             this.backfillUserEmail(loginCode.user_email);
@@ -1612,6 +1616,44 @@ export class BackendService {
             user.userId,
             user.serviceAccountConfig
         );
+    }
+
+    async discordLogin(code: string): Promise<Authentication> {
+        const result = await axios.post(
+            "https://discord.com/api/oauth2/token",
+            new URLSearchParams({
+                client_id: this.config.discordClientId,
+                client_secret: this.config.discordClientSecret,
+                code,
+                grant_type: "authorization_code",
+                redirect_uri: this.config.discordRedirectUri,
+                scope: "identify email",
+            }).toString(),
+            {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json",
+                },
+            }
+        );
+        const discordLoginResult = (result.data as any) as DiscordLoginResult;
+        if (discordLoginResult.access_token) {
+            const result2 = await axios.get(
+                "https://discord.com/api/users/@me",
+                {
+                    headers: {
+                        "Authorization": `Bearer ${discordLoginResult.access_token}`,
+                    },
+                },
+            );
+            const discordUser = (result2.data as any) as DiscordUser;
+            if (discordUser.email && await this.isUserAllowed(discordUser.email)) {
+                await this.createUser(discordUser.email);
+                return this.authHelper.createTokens(discordUser.email)
+            }
+            
+        }
+        return null;
     }
 
     // list databases for testing

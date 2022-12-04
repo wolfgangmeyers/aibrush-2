@@ -346,6 +346,19 @@ export type CreateServiceAccountInputTypeEnum = typeof CreateServiceAccountInput
 /**
  * 
  * @export
+ * @interface DiscordLogin
+ */
+export interface DiscordLogin {
+    /**
+     * 
+     * @type {string}
+     * @memberof DiscordLogin
+     */
+    'code': string;
+}
+/**
+ * 
+ * @export
  * @interface FeatureList
  */
 export interface FeatureList {
@@ -1446,6 +1459,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Log in with Discord
+         * @param {DiscordLogin} [discordLogin] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        discordLogin: async (discordLogin?: DiscordLogin, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/discord-login`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(discordLogin, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Generate a login code for a worker
          * @param {string} workerId 
          * @param {*} [options] Override http request option.
@@ -2378,6 +2424,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Log in with Discord
+         * @param {DiscordLogin} [discordLogin] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async discordLogin(discordLogin?: DiscordLogin, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.discordLogin(discordLogin, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Generate a login code for a worker
          * @param {string} workerId 
          * @param {*} [options] Override http request option.
@@ -2719,6 +2775,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.deleteWorker(workerId, options).then((request) => request(axios, basePath));
         },
         /**
+         * Log in with Discord
+         * @param {DiscordLogin} [discordLogin] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        discordLogin(discordLogin?: DiscordLogin, options?: any): AxiosPromise<LoginResult> {
+            return localVarFp.discordLogin(discordLogin, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Generate a login code for a worker
          * @param {string} workerId 
          * @param {*} [options] Override http request option.
@@ -3050,6 +3115,17 @@ export class AIBrushApi extends BaseAPI {
      */
     public deleteWorker(workerId: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).deleteWorker(workerId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Log in with Discord
+     * @param {DiscordLogin} [discordLogin] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public discordLogin(discordLogin?: DiscordLogin, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).discordLogin(discordLogin, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

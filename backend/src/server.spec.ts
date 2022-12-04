@@ -10,7 +10,6 @@ import {
     FeatureList,
     ImageList,
     Image,
-    InviteCode,
     IsAdminResponse,
     CreateImageInput,
     UpdateImageInput,
@@ -30,11 +29,8 @@ import { ConsoleLogger } from './logs'
 
 jest.setTimeout(60000);
 
-async function authenticateUser(backendService: BackendService, httpClient: AxiosInstance, emailAddress: string, inviteCode: string=undefined): Promise<Authentication> {
-    if (!inviteCode && !await backendService.isUserAllowed(emailAddress)) {
-        inviteCode = (await backendService.createInviteCode()).id
-    }
-    const code = await backendService.login(emailAddress, false, inviteCode)
+async function authenticateUser(backendService: BackendService, httpClient: AxiosInstance, emailAddress: string): Promise<Authentication> {
+    const code = await backendService.login(emailAddress, false)
     const verifyResponse = await backendService.verify(code)
     // add the access token to the http client
     httpClient.defaults.headers['Authorization'] = `Bearer ${verifyResponse.accessToken}`
@@ -1463,45 +1459,6 @@ describe("server", () => {
             })
 
         }) // end create service account test
-
-        // invite code tests
-        describe("when an admin user creates an invite code", () => {
-            let inviteResponse: AxiosResponse<InviteCode>;
-
-            beforeEach(async () => {
-                await authenticateUser(backendService, httpClient, "admin@test.test");
-                inviteResponse = await client.createInviteCode();
-            })
-
-            it("should return the invite code", () => {
-                expect(inviteResponse.status).toBe(201);
-                expect(inviteResponse.data.id).not.toBeNull();
-            })
-
-            describe("when a new user tries to sign up using the invite code", () => {
-                let response: Authentication;
-
-                beforeEach(async () => {
-                    response = await authenticateUser(backendService, httpClient2, "new-user@test.test", inviteResponse.data.id)
-                })
-
-                it("should return the authentication token", async () => {
-                    expect(response.accessToken).not.toBeNull();
-                    expect(response.refreshToken).not.toBeNull();
-                })
-            })
-        })
-
-        describe("when a non-admin user tries to create an invite code", () => {
-            beforeEach(async () => {
-                await authenticateUser(backendService, httpClient, "test@test.test")
-            })
-
-            it("should fail with 403", async () => {
-                await expect(client.createInviteCode()).rejects.toThrow(/Request failed with status code 404/);
-            })
-        })
-        // end invite code tests
 
         // is admin tests
         describe("when an admin user checks if they are an admin", () => {

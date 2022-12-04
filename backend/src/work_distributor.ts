@@ -67,7 +67,7 @@ function calculateDesiredState(
     }
 
     if (pending.length > 0) {
-        console.log("pending", pending);
+        // console.log("pending", pending);
         // if there are at least 3 gpus, assign at least one to each model
         // TODO: maybe in the future, make it a percentage of total gpus instead of just one
         if (workerGpuCount >= MODELS.length) {
@@ -145,8 +145,8 @@ export function calculateWorkDistribution(
     );
     const actualState = calculateActualState(workers, configsByWorker);
 
-    console.log("desired state", desiredState);
-    console.log("actual state", actualState);
+    // console.log("desired state", desiredState);
+    // console.log("actual state", actualState);
 
     let updatedWorkerIds: { [key: string]: boolean } = {};
     // first unassign gpu models, then reassign
@@ -236,11 +236,11 @@ export class WorkDistributor {
                 }
                 const cooldown = totalGpus >= MODELS.length ? DEFAULT_WORK_DISTRIBUTION_COOLDOWN : QUICK_WORK_DISTRIBUTION_COOLDOWN;
                 if (lastEvent && moment().diff(moment(lastEvent), "milliseconds") < cooldown) {
-                    console.log("Work distributor not running because cooldown has not expired");
+                    // console.log("Work distributor not running because cooldown has not expired");
                     return;
                 }
                 await this.backendService.setLastEventTime(WORK_DISTRIBUTION_EVENT, moment().valueOf());
-                console.log("Running work distributor");
+                // console.log("Running work distributor");
                 const pending = await this.backendService.getPendingImageScores();
                 const configs = await Promise.all(
                     workers.map((worker) =>
@@ -252,7 +252,7 @@ export class WorkDistributor {
                     workers,
                     configs
                 );
-                console.log("worker assignments", workerAssignments);
+                // console.log("worker assignments", workerAssignments);
                 for (let workerAssignment of workerAssignments) {
                     await this.backendService.upsertWorkerConfig(
                         workerAssignment.worker_id,

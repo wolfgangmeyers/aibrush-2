@@ -29,7 +29,7 @@ pip install torch torchvision torchaudio --extra-index-url https://download.pyto
 pip install transformers==4.19.2 diffusers invisible-watermark
 pip install -e git+https://github.com/CompVis/stable-diffusion#egg=latent-diffusion
 
-pip install cython websockets
+pip install cython websockets accelerate
 pip install dalle_pytorch albumentations opencv-python imageio imageio-ffmpeg pytorch-lightning omegaconf test-tube streamlit einops torch-fidelity transformers
 
 pip install ftfy regex omegaconf pytorch-lightning IPython kornia imageio imageio-ffmpeg einops torch_optimizer requests cog timm numpy opencv-python-headless pillow
