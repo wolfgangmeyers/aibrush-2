@@ -2,7 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import axios, { AxiosInstance } from "axios";
 
-import { AIBrushApi, CreateImageInputStatusEnum, Image as APIImage } from "../../client";
+import {
+    AIBrushApi,
+    CreateImageInputStatusEnum,
+    Image as APIImage,
+} from "../../client";
 import { getUpscaleLevel } from "../../lib/upscale";
 import "./ImageEditor.css";
 import { createRenderer, Renderer } from "./renderer";
@@ -36,6 +40,7 @@ interface ToolConfig {
 }
 
 const anonymousClient = axios.create();
+anonymousClient.defaults.headers.common["Authorization"] = undefined;
 
 export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
     const [showSelectionControls, setShowSelectionControls] = useState(false);
@@ -55,7 +60,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
                         apisocket={apisocket}
                         image={image!}
                     />
-                )
+                );
             },
         },
         {
@@ -170,7 +175,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         const uploadUrls = (await api.getImageUploadUrls(newImage.id)).data;
         // base64 decode image data and upload
         const imageData = Buffer.from(encodedImage, "base64");
-        
+
         await anonymousClient.put(uploadUrls.image_url!, imageData, {
             headers: {
                 "Content-Type": "image/png",
@@ -183,16 +188,16 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         // return thumbnail;
         const encodedThumbnail = await createEncodedThumbnail(encodedImage);
         const thumbnailData = Buffer.from(encodedThumbnail, "base64");
-        
+
         await anonymousClient.put(uploadUrls.thumbnail_url!, thumbnailData, {
             headers: {
                 "Content-Type": "image/png",
             },
         });
-        setImage(newImage)
+        setImage(newImage);
         // history.push(`/image-editor/${newImage.id}`);
         history.replace(`/image-editor/${newImage.id}`);
-    }
+    };
 
     useEffect(() => {
         if (image) {
@@ -358,7 +363,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
                                     preventDefault(e) &&
                                     tool &&
                                     // (() => {
-                                        
+
                                     //     const rect = canvasRef.current!.getBoundingClientRect();
                                     //     const touch = e.touches[0];
                                     //     if (touch) {
@@ -374,7 +379,6 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
                                     // })()
                                     tool.onTouchStart(e)
                                 }
-
                                 onTouchMove={(e) =>
                                     preventDefault(e) &&
                                     tool &&
@@ -392,7 +396,6 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
                                     // })()
                                     tool.onTouchMove(e)
                                 }
-
                                 onTouchEnd={(e) =>
                                     preventDefault(e) &&
                                     tool &&
@@ -401,8 +404,6 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
                                     // } as any)
                                     tool.onTouchEnd(e)
                                 }
-                                
-
                             ></canvas>
                             {showSelectionControls && (
                                 <>
