@@ -35,11 +35,8 @@ export class TestHelper {
         return newSession
     }
 
-    async authenticateUser(backendService: BackendService, httpClient: AxiosInstance, emailAddress: string, inviteCode: string=undefined): Promise<Authentication> {
-        if (!inviteCode && !await backendService.isUserAllowed(emailAddress)) {
-            inviteCode = (await backendService.createInviteCode()).id
-        }
-        const code = await backendService.login(emailAddress, false, inviteCode)
+    async authenticateUser(backendService: BackendService, httpClient: AxiosInstance, emailAddress: string): Promise<Authentication> {
+        const code = await backendService.login(emailAddress, false)
         const verifyResponse = await backendService.verify(code)
         // add the access token to the http client
         httpClient.defaults.headers['Authorization'] = `Bearer ${verifyResponse.accessToken}`
