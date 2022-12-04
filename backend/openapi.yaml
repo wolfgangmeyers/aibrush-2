@@ -124,6 +124,44 @@ paths:
       responses:
         "204":
           description: Success
+  /api/images/{id}/upload-urls:
+    get:
+      description: Get upload urls for image assets
+      operationId: getImageUploadUrls
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageUrls"
+  /api/images/{id}/download-urls:
+    get:
+      description: Get download urls for image assets
+      operationId: getImageDownloadUrls
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageUrls"
   /api/batch-get-images:
     post:
       description: Get a list of saved images by id
@@ -142,7 +180,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ImageList"
-  /api/images/{id}.image.jpg:
+  /api/images/{id}.image.png:
     get:
       description: Get the binary image data
       operationId: getImageData
@@ -158,12 +196,12 @@ paths:
         "200":
           description: Success
           content:
-            image/jpeg:
+            image/png:
               schema:
                 type: string
                 format: binary
-  # get image mask.jpg
-  /api/images/{id}.mask.jpg:
+  # get image mask.png
+  /api/images/{id}.mask.png:
     get:
       description: Get the binary mask data
       operationId: getMaskData
@@ -179,11 +217,11 @@ paths:
         "200":
           description: Success
           content:
-            image/jpeg:
+            image/png:
               schema:
                 type: string
                 format: binary
-  /api/images/{id}.thumbnail.jpg:
+  /api/images/{id}.thumbnail.png:
     get:
       description: Get the binary thumbnail data
       operationId: getThumbnailData
@@ -199,7 +237,7 @@ paths:
         "200":
           description: Success
           content:
-            image/jpeg:
+            image/png:
               schema:
                 type: string
                 format: binary
@@ -871,6 +909,14 @@ components:
           type: string
         peek:
           type: boolean
+    ImageUrls:
+      properties:
+        image_url:
+          type: string
+        mask_url:
+          type: string
+        thumbnail_url:
+          type: string
     LoginInput:
       type: object
       properties:

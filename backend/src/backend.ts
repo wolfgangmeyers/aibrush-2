@@ -30,6 +30,7 @@ import {
     UpsertWorkerInput,
     WorkerGpuConfig,
     UpsertWorkerConfigInput,
+    ImageUrls,
 } from "./client/api";
 import { sleep } from "./sleep";
 import { EmailMessage } from "./email_message";
@@ -195,6 +196,8 @@ export class BackendService {
                 }
             }
         });
+
+        await this.migrateAllImagesFromJpgToPng();
         // emergency cleanup logic...
         // const images = await this.listImages({limit: 100000});
         // for (let image of images.images) {
@@ -387,12 +390,40 @@ export class BackendService {
             if (!imageData) {
                 return null;
             }
-            return this.hydrateImage({
+            const img = this.hydrateImage({
                 ...imageData,
             });
+
+            return img;
         } finally {
             client.release();
         }
+    }
+
+    async getImageUploadUrls(id: string): Promise<ImageUrls> {
+        const imagePromise = this.filestore.getUploadUrl(`${id}.png`);
+        const maskPromise = this.filestore.getUploadUrl(`${id}.mask.png`);
+        const thumbnailPromise = this.filestore.getUploadUrl(
+            `${id}.thumbnail.png`
+        );
+
+        return {
+            image_url: await imagePromise,
+            mask_url: await maskPromise,
+            thumbnail_url: await thumbnailPromise,
+        };
+    }
+
+    async getImageDownloadUrls(id: string): Promise<ImageUrls> {
+        const imagePromise = this.filestore.getDownloadUrl(`${id}.png`);
+        const maskPromise = this.filestore.getDownloadUrl(`${id}.mask.png`);
+        const thumbnailPromise = this.filestore.getDownloadUrl(`${id}.thumbnail.png`);
+
+        return {
+            image_url: await imagePromise,
+            mask_url: await maskPromise,
+            thumbnail_url: await thumbnailPromise,
+        };
     }
 
     async batchGetImages(userId: string, ids: string[]): Promise<Image[]> {
@@ -415,7 +446,7 @@ export class BackendService {
         try {
             // load image data from file and convert from base64 to buffer
             const image = await this.filestore.readBinaryFile(
-                `${id}.image.jpg`
+                `${id}.image.png`
             );
             return image;
         } catch (_) {
@@ -425,11 +456,11 @@ export class BackendService {
 
     // get thumbnail data
     async getThumbnailData(id: string): Promise<Buffer> {
-        if (await this.filestore.exists(`${id}.thumbnail.jpg`)) {
+        if (await this.filestore.exists(`${id}.thumbnail.png`)) {
             try {
                 // load image data from file and convert from base64 to buffer
                 const thumbnail = await this.filestore.readBinaryFile(
-                    `${id}.thumbnail.jpg`
+                    `${id}.thumbnail.png`
                 );
                 return thumbnail;
             } catch (_) {}
@@ -450,10 +481,10 @@ export class BackendService {
     }
 
     async getMaskData(id: string) {
-        if (await this.filestore.exists(`${id}.mask.jpg`)) {
+        if (await this.filestore.exists(`${id}.mask.png`)) {
             try {
                 // load image data from file and convert from base64 to buffer
-                const mask = this.filestore.readBinaryFile(`${id}.mask.jpg`);
+                const mask = this.filestore.readBinaryFile(`${id}.mask.png`);
                 return mask;
             } catch (_) {}
         }
@@ -487,9 +518,9 @@ export class BackendService {
         try {
             await client.query(`DELETE FROM images WHERE id=$1`, [id]);
             const filesToCheck = [
-                `${id}.image.jpg`,
-                `${id}.thumbnail.jpg`,
-                `${id}.mask.jpg`,
+                `${id}.image.png`,
+                `${id}.thumbnail.png`,
+                `${id}.mask.png`,
                 `${id}.mp4`,
                 `${id}.npy`,
             ];
@@ -569,7 +600,7 @@ export class BackendService {
             if (!encoded_image && body.parent) {
                 try {
                     const parentImageData = await this.filestore.readBinaryFile(
-                        `${body.parent}.image.jpg`
+                        `${body.parent}.image.png`
                     );
                     encoded_image = parentImageData.toString("base64");
                 } catch (err) {
@@ -584,7 +615,7 @@ export class BackendService {
                 const binary_image = Buffer.from(encoded_image, "base64");
                 promises.push(
                     this.filestore.writeFile(
-                        `${image.id}.image.jpg`,
+                        `${image.id}.image.png`,
                         binary_image
                     )
                 );
@@ -597,7 +628,7 @@ export class BackendService {
                 );
                 promises.push(
                     this.filestore.writeFile(
-                        `${image.id}.thumbnail.jpg`,
+                        `${image.id}.thumbnail.png`,
                         binary_thumbnail
                     )
                 );
@@ -619,7 +650,7 @@ export class BackendService {
                 const binary_mask = Buffer.from(encoded_mask, "base64");
                 promises.push(
                     this.filestore.writeFile(
-                        `${image.id}.mask.jpg`,
+                        `${image.id}.mask.png`,
                         binary_mask
                     )
                 );
@@ -726,7 +757,7 @@ export class BackendService {
                 const binaryImage = Buffer.from(body.encoded_image, "base64");
                 promises.push(
                     this.filestore.writeFile(
-                        `${image.id}.image.jpg`,
+                        `${image.id}.image.png`,
                         binaryImage
                     )
                 );
@@ -739,7 +770,7 @@ export class BackendService {
                 );
                 promises.push(
                     this.filestore.writeFile(
-                        `${image.id}.thumbnail.jpg`,
+                        `${image.id}.thumbnail.png`,
                         binaryThumbnail
                     )
                 );
@@ -1509,7 +1540,7 @@ export class BackendService {
 
     async login(
         email: string,
-        sendEmail = true,
+        sendEmail = true
         // inviteCode: string = undefined
     ): Promise<string> {
         if (!(await this.isUserAllowed(email))) {
@@ -1632,26 +1663,28 @@ export class BackendService {
             {
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
-                    "Accept": "application/json",
+                    Accept: "application/json",
                 },
             }
         );
-        const discordLoginResult = (result.data as any) as DiscordLoginResult;
+        const discordLoginResult = result.data as any as DiscordLoginResult;
         if (discordLoginResult.access_token) {
             const result2 = await axios.get(
                 "https://discord.com/api/users/@me",
                 {
                     headers: {
-                        "Authorization": `Bearer ${discordLoginResult.access_token}`,
+                        Authorization: `Bearer ${discordLoginResult.access_token}`,
                     },
-                },
+                }
             );
-            const discordUser = (result2.data as any) as DiscordUser;
-            if (discordUser.email && await this.isUserAllowed(discordUser.email)) {
+            const discordUser = result2.data as any as DiscordUser;
+            if (
+                discordUser.email &&
+                (await this.isUserAllowed(discordUser.email))
+            ) {
                 await this.createUser(discordUser.email);
-                return this.authHelper.createTokens(discordUser.email)
+                return this.authHelper.createTokens(discordUser.email);
             }
-            
         }
         return null;
     }
@@ -1712,6 +1745,49 @@ export class BackendService {
                 item.type,
                 attributes
             );
+        }
+    }
+
+    async migrateAllImagesFromJpgToPng() {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(`SELECT * FROM images`);
+            for (let row of result.rows) {
+                const image = row as Image;
+                try {
+                    const jpg = await this.filestore.readBinaryFile(
+                        `${image.id}.image.jpg`
+                    );
+                    const png = await sharp(jpg).png().toBuffer();
+                    await this.filestore.writeFile(
+                        `${image.id}.image.png`,
+                        png
+                    );
+                    await this.filestore.deleteFile(`${image.id}.image.jpg`);
+                    console.log(`migrated ${image.id} image to png`);
+                } catch (_) {
+                    console.log("image already migrated: " + image.id);
+                }
+                // now do the thumbnail
+                try {
+                    const jpg = await this.filestore.readBinaryFile(
+                        `${image.id}.thumbnail.jpg`
+                    );
+                    const png = await sharp(jpg).png().toBuffer();
+                    await this.filestore.writeFile(
+                        `${image.id}.thumbnail.png`,
+                        png
+                    );
+                    await this.filestore.deleteFile(
+                        `${image.id}.thumbnail.jpg`
+                    );
+                    console.log(`migrated ${image.id} thumbnail to png`);
+                } catch (_) {
+                    console.log("thumbnail already migrated: " + image.id);
+                }
+            }
+        } finally {
+            client.release();
         }
     }
 }

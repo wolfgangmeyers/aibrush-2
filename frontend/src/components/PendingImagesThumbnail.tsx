@@ -33,7 +33,7 @@ export const PendingImagesThumbnail: FC<Props> = ({
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             style={{
-                backgroundImage: `url(/images/default.jpg)`,
+                backgroundImage: `url(/images/default.png)`,
                 backgroundSize: "contain",
                 width: "128px",
                 height: "128px",

@@ -42,8 +42,8 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
             for (let i = 0; i < byteString.length; i++) {
                 intArray[i] = byteString.charCodeAt(i);
             }
-            const blob = new Blob([intArray], { type: "image/jpeg" });
-            saveAs(blob, "image.jpg");
+            const blob = new Blob([intArray], { type: "image/png" });
+            saveAs(blob, "image.png");
         }
     };
 

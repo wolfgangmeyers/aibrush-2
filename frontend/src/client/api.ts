@@ -1652,7 +1652,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getImageData: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getImageData', 'id', id)
-            const localVarPath = `/api/images/{id}.image.jpg`
+            const localVarPath = `/api/images/{id}.image.png`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1685,7 +1685,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getMaskData: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getMaskData', 'id', id)
-            const localVarPath = `/api/images/{id}.mask.jpg`
+            const localVarPath = `/api/images/{id}.mask.png`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1780,7 +1780,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getThumbnailData: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getThumbnailData', 'id', id)
-            const localVarPath = `/api/images/{id}.thumbnail.jpg`
+            const localVarPath = `/api/images/{id}.thumbnail.png`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);

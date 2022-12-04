@@ -18,6 +18,7 @@ import {
     CreateServiceAccountInputTypeEnum,
     Worker,
     WorkerStatusEnum,
+    ImageUrls,
 } from "./client/api"
 
 // import { Mailcatcher, MailcatcherMessage } from './mailcatcher'
@@ -368,6 +369,55 @@ describe("server", () => {
                 })
             })
 
+            describe("when getting image download urls", () => {
+                let urls: ImageUrls;
+
+                beforeEach(async () => {
+                    const response = await client.getImageDownloadUrls(image.id)
+                    urls = response.data
+                })
+
+                it("should return the image download urls", () => {
+                    expect(urls).toBeDefined()
+                })
+            })
+
+            describe("when getting image upload urls", () => {
+                let urls: ImageUrls;
+
+                beforeEach(async () => {
+                    const response = await client.getImageUploadUrls(image.id)
+                    urls = response.data
+                })
+
+                it("should return the image upload urls", () => {
+                    expect(urls).toBeDefined()
+                })
+            })
+
+            describe("when getting image upload urls as another user", () => {
+
+                beforeEach(async () => {
+                    await authenticateUser(backendService, httpClient2, "test2@test.test");
+                })
+                
+                // it should fail with 404
+                it("should fail", async () => {
+                    await expect(client2.getImageUploadUrls(image.id)).rejects.toThrow(/404/)
+                });
+            })
+
+            describe("when getting image upload urls as a service account", () => {
+                // it should fail with 404
+                beforeEach(async () => {
+                    await authenticateWorker(backendService, httpClient2, worker);
+                });
+
+                it("should fail", async () => {
+                    await expect(client2.getImageUploadUrls(image.id)).rejects.toThrow(/404/)
+                });
+            })
+
             describe("when getting the image with a service account", () => {
                 let img: Image;
 
@@ -481,8 +531,8 @@ describe("server", () => {
                 let savedThumbnailData: Buffer;
 
                 beforeEach(async () => {
-                    // read 512.jpg from file and base64 encode it
-                    const imageData = fs.readFileSync("512.jpg")
+                    // read 512.png from file and base64 encode it
+                    const imageData = fs.readFileSync("512.png")
                     const base64Image = Buffer.from(imageData).toString('base64')
                     await client.updateImage(image.id, {
                         encoded_image: base64Image
@@ -689,6 +739,19 @@ describe("server", () => {
                     });
                 })
 
+                describe("when getting image upload urls after processing", () => {
+                    let uploadUrls: ImageUrls;
+
+                    beforeEach(async () => {
+                        const response = await client2.getImageUploadUrls(processingImage.id)
+                        uploadUrls = response.data
+                    })
+
+                    it("should return the upload urls", () => {
+                        expect(uploadUrls).toBeDefined()
+                    })
+                });
+
                 describe("when processing again with no pending images", () => {
                     beforeEach(async () => {
                         // process the image
@@ -746,6 +809,12 @@ describe("server", () => {
                         });
                     })
 
+                    describe("when getting image upload urls as a service account", () => {
+                        // fails with 404
+                        it("should reject the request with not found error", async () => {
+                            await expect(client2.getImageUploadUrls(image.id)).rejects.toThrow(/Request failed with status code 404/)
+                        });
+                    })
                 })
             })
 
@@ -1157,8 +1226,8 @@ describe("server", () => {
             let image: Image;
 
             beforeEach(async () => {
-                // read 512.jpg from file and base64 encode it
-                const imageData = fs.readFileSync("512.jpg")
+                // read 512.png from file and base64 encode it
+                const imageData = fs.readFileSync("512.png")
                 const base64Image = Buffer.from(imageData).toString('base64')
                 const response = await client.createImage({
                     encoded_image: base64Image,
@@ -1188,8 +1257,8 @@ describe("server", () => {
             let image: Image;
 
             beforeEach(async () => {
-                // read 512.jpg from file and base64 encode it
-                const imageData = fs.readFileSync("512.jpg")
+                // read 512.png from file and base64 encode it
+                const imageData = fs.readFileSync("512.png")
                 const base64Image = Buffer.from(imageData).toString('base64')
                 const response = await client.createImage({
                     encoded_image: base64Image,

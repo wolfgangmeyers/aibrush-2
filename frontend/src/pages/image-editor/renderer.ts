@@ -454,7 +454,7 @@ export class Renderer {
         if (context) {
             context.putImageData(imageData, 0, 0);
             // return the data url of the canvas
-            const result = canvas.toDataURL("image/jpeg");
+            const result = canvas.toDataURL("image/png");
             // cleanup the canvas
             canvas.remove();
             // extract base64 data from data url

@@ -85,10 +85,10 @@ export const Login: FC<LoginProps> = (props) => {
                 }}
             >
                 <div className="col-md-6 login-splash">
-                    {/* <div className="center-cropped" style={{backgroundImage: "url(/images/scifi-dreamland.jpg)"}}></div> */}
+                    {/* <div className="center-cropped" style={{backgroundImage: "url(/images/scifi-dreamland.png)"}}></div> */}
                     <img
                         className="center-cropped"
-                        src="/images/scifi-dreamland.jpg"
+                        src="/images/scifi-dreamland.png"
                     />
                 </div>
                 <div className="col-md-6">

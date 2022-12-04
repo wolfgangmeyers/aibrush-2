@@ -301,8 +301,8 @@ export class Server {
 
         // get image data by id
         this.app.get(
-            "/api/images/:id.image.jpg",
-            withMetrics("/api/images/:id.image.jpg", async (req, res) => {
+            "/api/images/:id.image.png",
+            withMetrics("/api/images/:id.image.png", async (req, res) => {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id);
                 if (!image) {
@@ -312,15 +312,15 @@ export class Server {
                 const imageData = await this.backendService.getImageData(
                     req.params.id
                 );
-                res.setHeader("Content-Type", "image/jpeg");
+                res.setHeader("Content-Type", "image/png");
                 res.send(imageData);
             })
         );
 
         // get thumbnail data by id
         this.app.get(
-            "/api/images/:id.thumbnail.jpg",
-            withMetrics("/api/images/:id.thumbnail.jpg", async (req, res) => {
+            "/api/images/:id.thumbnail.png",
+            withMetrics("/api/images/:id.thumbnail.png", async (req, res) => {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id);
                 if (!image) {
@@ -330,7 +330,7 @@ export class Server {
                 const imageData = await this.backendService.getThumbnailData(
                     req.params.id
                 );
-                res.setHeader("Content-Type", "image/jpeg");
+                res.setHeader("Content-Type", "image/png");
                 res.send(imageData);
             })
         );
@@ -357,8 +357,8 @@ export class Server {
         );
 
         this.app.get(
-            "/api/images/:id.mask.jpg",
-            withMetrics("/api/images/:id.mask.jpg", async (req, res) => {
+            "/api/images/:id.mask.png",
+            withMetrics("/api/images/:id.mask.png", async (req, res) => {
                 // get image first and check created_by
                 let image = await this.backendService.getImage(req.params.id);
                 if (!image) {
@@ -372,7 +372,7 @@ export class Server {
                     res.status(404).send("not found");
                     return;
                 }
-                res.setHeader("Content-Type", "image/jpeg");
+                res.setHeader("Content-Type", "image/png");
                 res.send(maskData);
             })
         );
@@ -641,6 +641,109 @@ export class Server {
                 }
 
                 res.sendStatus(204);
+            })
+        );
+
+        // image urls
+           // ImageUrls:
+    //   properties:
+    //     image_url:
+    //       type: string
+    //     mask_url:
+    //       type: string
+    //     thumbnail_url:
+    //       type: string
+    //   /api/images/{id}/upload-urls:
+    //   get:
+    //     description: Get upload urls for image assets
+    //     operationId: getImageUrls
+    //     tags:
+    //       - AIBrush
+    //     parameters:
+    //       - name: id
+    //         in: path
+    //         required: true
+    //         schema:
+    //           type: string
+    //     responses:
+    //       "200":
+    //         description: Success
+    //         content:
+    //           application/json:
+    //             schema:
+    //               $ref: "#/components/schemas/ImageUrls"
+    // /api/images/{id}/download-urls:
+    //   get:
+    //     description: Get download urls for image assets
+    //     operationId: getImageUrls
+    //     tags:
+    //       - AIBrush
+    //     parameters:
+    //       - name: id
+    //         in: path
+    //         required: true
+    //         schema:
+    //           type: string
+    //     responses:
+    //       "200":
+    //         description: Success
+    //         content:
+    //           application/json:
+    //             schema:
+    //               $ref: "#/components/schemas/ImageUrls"
+        this.app.get(
+            "/api/images/:id/download-urls",
+            withMetrics("/api/images/:id/download-urls", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                const image = await this.backendService.getImage(req.params.id);
+                if (!image) {
+                    this.logger.log(
+                        `user ${jwt.userId} tried to get image ${req.params.id} which does not exist`
+                    );
+                    res.status(404).send("not found");
+                    return;
+                }
+                const urls = await this.backendService.getImageDownloadUrls(
+                    req.params.id,
+                );
+                res.json(urls);
+            })
+        );
+
+        this.app.get(
+            "/api/images/:id/upload-urls",
+            withMetrics("/api/images/:id/upload-urls", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                const image = await this.backendService.getImage(req.params.id);
+                if (!image) {
+                    this.logger.log(
+                        `user ${jwt.userId} tried to get image ${req.params.id} which does not exist`
+                    );
+                    res.status(404).send("not found");
+                    return;
+                }
+                if (jwt.serviceAccountConfig) {
+                    if (jwt.serviceAccountConfig.workerId != image.worker_id) {
+                        res.status(404).send("not found");
+                        this.logger.log(
+                            `Service account ${jwt.serviceAccountConfig.workerId} tried to get upload urls for image ${req.params.id} but not authorized`,
+                            jwt,
+                        );
+                        return;
+                    }
+                } else {
+                    if (image.created_by !== jwt.userId) {
+                        this.logger.log(
+                            `user ${jwt.userId} tried to get image ${req.params.id} but not authorized`
+                        );
+                        res.status(404).send("not found");
+                        return;
+                    }
+                }
+                const urls = await this.backendService.getImageUploadUrls(
+                    req.params.id,
+                );
+                res.json(urls);
             })
         );
 

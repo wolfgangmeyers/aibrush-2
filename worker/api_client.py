@@ -97,14 +97,14 @@ class AIBrushAPI(object):
         return self.parse_json(resp.text)
 
     def get_image_data(self, image_id: str) -> bytes:
-        resp = self.http_request(f"/images/{image_id}.image.jpg", "GET")
+        resp = self.http_request(f"/images/{image_id}.image.png", "GET")
         if resp.status_code != 200:
             return None
         # read binary data
         return resp.content
 
     def get_mask_data(self, image_id: str) -> bytes:
-        resp = self.http_request(f"/images/{image_id}.mask.jpg", "GET")
+        resp = self.http_request(f"/images/{image_id}.mask.png", "GET")
         if resp.status_code != 200:
             return None
         # read binary data

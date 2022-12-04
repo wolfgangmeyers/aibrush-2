@@ -25,7 +25,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     onNSFW,
 }) => {
     const img = useRef<HTMLImageElement>(null);
-    const src = `${assetsUrl}/${image.id}.image.jpg?updated_at=${image.updated_at}`;
+    const src = `${assetsUrl}/${image.id}.image.png?updated_at=${image.updated_at}`;
     let score = image.score;
     if (
         image.negative_phrases.join("").trim() !== "" &&
@@ -77,7 +77,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
             if (!img.current) {
                 return;
             }
-            img.current.src = "/images/default.jpg";
+            img.current.src = "/images/default.png";
         };
     }, [img]);
 

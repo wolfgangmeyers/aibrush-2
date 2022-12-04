@@ -1,3 +1,7 @@
+body {
+  background-color: #000;
+}
+
 .App {
   text-align: center;
   font-family: Futura;
@@ -357,4 +361,24 @@ hr {
     margin-top: 16px;
   }
 
+}
+
+/* pulse */
+.pulse {
+  background-color: #3D3BB5;
+  animation-name: color;
+  animation-duration: 30s;
+  animation-iteration-count: infinite;
+}
+
+@keyframes color {
+  0% {
+    background-color: #3D3BB5;
+  }
+  1% {
+    background-color: #26D6E1;
+  }
+  100% {
+    background-color: #3D3BB5;
+  }
 }

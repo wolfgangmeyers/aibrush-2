@@ -172,7 +172,7 @@ export const ImagePrompt: FC<Props> = ({
 
                 // convert image to base64
                 // const canvas = img as HTMLCanvasElement
-                const dataUrl = canvas.toDataURL("image/jpeg");
+                const dataUrl = canvas.toDataURL("image/png");
                 const base64 = dataUrl.split(",")[1];
                 setEncodedImage(base64);
                 // get the index of the best match
@@ -265,7 +265,7 @@ export const ImagePrompt: FC<Props> = ({
                         {parent && !encodedImage && (
                             <div className="form-group">
                                 <label>Parent Image</label>
-                                {/* ${assetsUrl}/${image.id}.image.jpg?updated_at=${image.updated_at} */}
+                                {/* ${assetsUrl}/${image.id}.image.png?updated_at=${image.updated_at} */}
                                 <img
                                     style={{
                                         display: "block",
@@ -273,7 +273,7 @@ export const ImagePrompt: FC<Props> = ({
                                         marginRight: "auto",
                                         maxWidth: "100%",
                                     }}
-                                    src={`${assetsUrl}/${parentId}.image.jpg?updated_at=${parent.updated_at}`}
+                                    src={`${assetsUrl}/${parentId}.image.png?updated_at=${parent.updated_at}`}
                                 />
                             </div>
                         )}
@@ -287,7 +287,7 @@ export const ImagePrompt: FC<Props> = ({
                                         marginRight: "auto",
                                         maxWidth: "100%",
                                     }}
-                                    src={`data:image/jpeg;base64,${encodedImage}`}
+                                    src={`data:image/png;base64,${encodedImage}`}
                                 />
                             </div>
                         )}

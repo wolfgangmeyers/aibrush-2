@@ -113,6 +113,10 @@ function App() {
                         <Route path="/discord-login">
                             <DiscordLogin client={client} onLogin={onLogin} />
                         </Route>
+                        {/* fallback route is login page */}
+                        <Route path="*">
+                            <Login client={client} onLogin={onLogin} />
+                        </Route>
                     </Switch>
                 )}
                 {credentials && (
@@ -137,15 +141,6 @@ function App() {
                                             {/* font awesome home icon */}
                                             <i className="fas fa-home"></i>
                                         </Link>
-                                        {/* Link to github project at https://github.com/wolfgangmeyers/aibrush-2 */}
-                                        <a
-                                            className="btn btn-primary top-button"
-                                            href="https://github.com/wolfgangmeyers/aibrush-2"
-                                            target="_blank"
-                                        >
-                                            {/* font awesome github icon */}
-                                            <i className="fab fa-github"></i>
-                                        </a>
                                         {/* Link to discord */}
                                         <a
                                             className="btn btn-primary top-button"
@@ -155,6 +150,19 @@ function App() {
                                             {/* font awesome discord icon */}
                                             <i className="fab fa-discord"></i>
                                         </a>
+                                        <Link
+                                            className="btn top-button pulse"
+                                            to="/"
+                                            style={{
+                                                width: "47px"
+                                            }}
+                                            onClick={
+                                                () => alert("Coming soon!")
+                                            }
+                                        >
+                                            {/* font awesome bolt icon */}
+                                            <i className="fas fa-bolt"></i>
+                                        </Link>
                                     </>
                                 )}
                             </div>
@@ -206,10 +214,19 @@ function App() {
                             )}
                         </Switch>
                         <div
-                            className="row"
-                            style={{ marginTop: "100px", padding: "50px" }}
+                            // style={{ marginTop: "100px", padding: "50px" }}
+
+                            // use position:fixed to make the footer stick to the bottom of the page
+                            style={{
+                                position: "fixed",
+                                bottom: "0",
+                                left: "0",
+                                width: "100%",
+                                height: "50px",
+                                paddingTop: "16px",
+                                backgroundColor: "#000000",
+                            }}
                         >
-                            <div className="col-lg-12">
                                 {/* show external popout pages to terms and privacy policy, if they are present in the features */}
                                 {features && features.privacy_uri && (
                                     <a
@@ -228,7 +245,6 @@ function App() {
                                         Terms of Service
                                     </a>
                                 )}
-                            </div>
                         </div>
                     </div>
                 )}

@@ -7,7 +7,7 @@ checkpoints
 credentials.json
 local_credentials.json
 remote_credentials.json
-*.jpg
+*.png
 *.png
 __pycache__
 glid-3-xl

@@ -7,6 +7,8 @@ export interface Filestore {
     writeFile(filename: string, data: string |  Buffer, downloadAs?: string): Promise<void>;
     readBinaryFile(filename: string): Promise<Buffer>;
     deleteFile(filename: string): Promise<void>;
+    getDownloadUrl(filename: string): Promise<string>;
+    getUploadUrl(filename: string): Promise<string>;
 }
 
 export class S3Filestore implements Filestore {
@@ -18,6 +20,22 @@ export class S3Filestore implements Filestore {
             region: region,
         });
         this.bucket = bucket;
+    }
+
+    getDownloadUrl(filename: string): Promise<string> {
+        return this.s3.getSignedUrlPromise('getObject', {
+            Bucket: this.bucket,
+            Key: filename,
+            Expires: 60 * 60 * 1
+        });
+    }
+
+    getUploadUrl(filename: string): Promise<string> {
+        return this.s3.getSignedUrlPromise('putObject', {
+            Bucket: this.bucket,
+            Key: filename,
+            Expires: 60 * 60 * 1
+        });
     }
 
     async exists(filename: string): Promise<boolean> {
@@ -77,6 +95,14 @@ export class LocalFilestore implements Filestore {
         if (!fs.existsSync(dataFolderName)) {
             fs.mkdirSync(dataFolderName);
         }
+    }
+
+    getDownloadUrl(filename: string): Promise<string> {
+        return null;
+    }
+
+    getUploadUrl(filename: string): Promise<string> {
+        return null;
     }
 
     async exists(filename: string): Promise<boolean> {

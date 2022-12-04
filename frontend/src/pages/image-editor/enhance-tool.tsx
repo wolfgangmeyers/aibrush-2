@@ -310,7 +310,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             }).then((resp) => {
                 const binaryImageData = Buffer.from(resp.data, "binary");
                 const base64ImageData = binaryImageData.toString("base64");
-                const src = `data:image/jpeg;base64,${base64ImageData}`;
+                const src = `data:image/png;base64,${base64ImageData}`;
                 const imageElement = new Image();
                 imageElement.src = src;
                 imageElement.onload = () => {

@@ -86,8 +86,8 @@ def _swinir_args(image_data, image):
     # downsampling to 256 width yields better results
     buf = BytesIO(image_data)
     img = Image.open(buf)
-    init_image_path = os.path.join("images", image.id + "-init.jpg")
-    output_image_path = os.path.join("images", image.id + ".jpg")
+    init_image_path = os.path.join("images", image.id + "-init.png")
+    output_image_path = os.path.join("images", image.id + ".png")
     img.save(init_image_path)
     args.init_image = init_image_path
     args.output_image = output_image_path
@@ -100,21 +100,21 @@ def _sd_args(image_data, mask_data, npy_data, image):
     args.W = image.width
     # TODO: support reusing previous seeds
     args.seed = random.randint(0, 2**32)
-    args.filename = image.id + ".jpg"
+    args.filename = image.id + ".png"
     args.ddim_steps = image.iterations
     if image.model == "stable_diffusion_text2im":
         args.strength = image.stable_diffusion_strength
     args.image = None
     if image_data:
         # save image
-        with open(os.path.join("images", image.id + "-init.jpg"), "wb") as f:
+        with open(os.path.join("images", image.id + "-init.png"), "wb") as f:
             f.write(image_data)
-        args.image = os.path.join("images", image.id + "-init.jpg")
+        args.image = os.path.join("images", image.id + "-init.png")
     if mask_data:
         # save mask
-        with open(os.path.join("images", image.id + "-mask.jpg"), "wb") as f:
+        with open(os.path.join("images", image.id + "-mask.png"), "wb") as f:
             f.write(mask_data)
-        args.mask = os.path.join("images", image.id + "-mask.jpg")
+        args.mask = os.path.join("images", image.id + "-mask.png")
     return args
 
 model_lock = Lock()
@@ -221,9 +221,9 @@ def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, we
 
 def blank_image_data():
     img = Image.new("RGB", (512, 512), (255, 255, 255))
-    # convert to base64 encoded jpg
+    # convert to base64 encoded png
     buf = BytesIO()
-    img.save(buf, format="JPEG")
+    img.save(buf, format="png")
     return buf.getvalue()
 
 def warmup_image(model_name: str, image_id: str):
@@ -269,7 +269,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
                 image_data = None
                 npy_data = None
                 # get output image
-                image_path = os.path.join("images", image.id + ".jpg")
+                image_path = os.path.join("images", image.id + ".png")
                 if image.model == "swinir" and os.path.exists(image_path):
                     img = Image.open(image_path)
                     # resize image

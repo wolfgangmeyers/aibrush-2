@@ -683,6 +683,31 @@ export interface ImageList {
 /**
  * 
  * @export
+ * @interface ImageUrls
+ */
+export interface ImageUrls {
+    /**
+     * 
+     * @type {string}
+     * @memberof ImageUrls
+     */
+    'image_url'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ImageUrls
+     */
+    'mask_url'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ImageUrls
+     */
+    'thumbnail_url'?: string;
+}
+/**
+ * 
+ * @export
  * @interface InviteCode
  */
 export interface InviteCode {
@@ -1624,7 +1649,73 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getImageData: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getImageData', 'id', id)
-            const localVarPath = `/api/images/{id}.image.jpg`
+            const localVarPath = `/api/images/{id}.image.png`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get download urls for image assets
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getImageDownloadUrls: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getImageDownloadUrls', 'id', id)
+            const localVarPath = `/api/images/{id}/download-urls`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get upload urls for image assets
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getImageUploadUrls: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('getImageUploadUrls', 'id', id)
+            const localVarPath = `/api/images/{id}/upload-urls`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1657,7 +1748,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getMaskData: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getMaskData', 'id', id)
-            const localVarPath = `/api/images/{id}.mask.jpg`
+            const localVarPath = `/api/images/{id}.mask.png`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1752,7 +1843,7 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         getThumbnailData: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getThumbnailData', 'id', id)
-            const localVarPath = `/api/images/{id}.thumbnail.jpg`
+            const localVarPath = `/api/images/{id}.thumbnail.png`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2482,6 +2573,26 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Get download urls for image assets
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getImageDownloadUrls(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageUrls>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getImageDownloadUrls(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get upload urls for image assets
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getImageUploadUrls(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageUrls>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getImageUploadUrls(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Get the binary mask data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2825,6 +2936,24 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         getImageData(id: string, options?: any): AxiosPromise<any> {
             return localVarFp.getImageData(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get download urls for image assets
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getImageDownloadUrls(id: string, options?: any): AxiosPromise<ImageUrls> {
+            return localVarFp.getImageDownloadUrls(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get upload urls for image assets
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getImageUploadUrls(id: string, options?: any): AxiosPromise<ImageUrls> {
+            return localVarFp.getImageUploadUrls(id, options).then((request) => request(axios, basePath));
         },
         /**
          * Get the binary mask data
@@ -3179,6 +3308,28 @@ export class AIBrushApi extends BaseAPI {
      */
     public getImageData(id: string, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getImageData(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get download urls for image assets
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getImageDownloadUrls(id: string, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).getImageDownloadUrls(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get upload urls for image assets
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getImageUploadUrls(id: string, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).getImageUploadUrls(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

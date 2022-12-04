@@ -10,7 +10,7 @@ interface Props {
 }
 
 export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, bulkDelete, onClick }) => {
-    const src = `${assetsUrl}/${image.id}.thumbnail.jpg?updated_at=${image.updated_at}`;
+    const src = `${assetsUrl}/${image.id}.thumbnail.png?updated_at=${image.updated_at}`;
     const [retry, setRetry] = useState("");
 
     useEffect(() => {
@@ -39,7 +39,7 @@ export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, bulkDelete, onClic
         <div
             className={className}
             style={{
-                backgroundImage: `url(${src}${retry}), url(/images/default.jpg)`,
+                backgroundImage: `url(${src}${retry}), url(/images/default.png)`,
                 filter: image.nsfw ? "blur(8px)" : undefined,
             }}
             onClick={() => onClick && onClick(image)}

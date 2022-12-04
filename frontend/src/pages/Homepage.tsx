@@ -480,7 +480,7 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
             />
             <hr />
 
-            <div className="homepage-images" style={{ marginTop: "48px" }}>
+            <div className="homepage-images" style={{ marginTop: "48px", paddingBottom: "48px" }}>
                 <div style={{ textAlign: "left" }}>
                     <div
                         className="input-group"

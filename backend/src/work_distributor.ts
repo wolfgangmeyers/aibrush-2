@@ -227,8 +227,15 @@ export class WorkDistributor {
                 const lastEvent = await this.backendService.getLastEventTime(
                     WORK_DISTRIBUTION_EVENT
                 );
-                // filter out workers with old ping
-                const workers = (await this.backendService.listWorkers());
+                // filter out workers with ping > 10 minutes old
+                const workers = (await this.backendService.listWorkers()).filter(
+                    (worker) => {
+                        return (
+                            worker.last_ping &&
+                            worker.last_ping > moment().subtract(10, "minutes").valueOf()
+                        );
+                    }
+                );
                 // calculate cooldown
                 let totalGpus = 0;
                 for (let worker of workers) {
