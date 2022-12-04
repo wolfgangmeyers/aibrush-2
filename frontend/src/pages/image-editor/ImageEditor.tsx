@@ -40,7 +40,7 @@ interface ToolConfig {
 }
 
 const anonymousClient = axios.create();
-anonymousClient.defaults.headers.common["Authorization"] = undefined;
+delete anonymousClient.defaults.headers.common["Authorization"];
 
 export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
     const [showSelectionControls, setShowSelectionControls] = useState(false);
