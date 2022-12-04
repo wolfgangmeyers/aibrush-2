@@ -193,7 +193,6 @@ export class BackendService {
             }
         });
 
-        this.migrateAllImagesFromJpgToPng();
         // emergency cleanup logic...
         // const images = await this.listImages({limit: 100000});
         // for (let image of images.images) {
@@ -1743,62 +1742,6 @@ export class BackendService {
                 item.type,
                 attributes
             );
-        }
-    }
-
-    async migrateAllImagesFromJpgToPng() {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(`SELECT * FROM images`);
-            const images: Image[] = [];
-            for (let row of result.rows) {
-                images.push(row as Image);
-            }
-            const migrate = async (image: Image) => {
-                try {
-                    const jpg = await this.filestore.readBinaryFile(
-                        `${image.id}.image.jpg`
-                    );
-                    const png = await sharp(jpg).png().toBuffer();
-                    await this.filestore.writeFile(
-                        `${image.id}.image.png`,
-                        png
-                    );
-                    await this.filestore.deleteFile(`${image.id}.image.jpg`);
-                    console.log(`migrated ${image.id} image to png`);
-                } catch (_) {
-                    console.log("image already migrated: " + image.id);
-                }
-                // now do the thumbnail
-                try {
-                    const jpg = await this.filestore.readBinaryFile(
-                        `${image.id}.thumbnail.jpg`
-                    );
-                    const png = await sharp(jpg).png().toBuffer();
-                    await this.filestore.writeFile(
-                        `${image.id}.thumbnail.png`,
-                        png
-                    );
-                    await this.filestore.deleteFile(
-                        `${image.id}.thumbnail.jpg`
-                    );
-                    console.log(`migrated ${image.id} thumbnail to png`);
-                } catch (_) {
-                    console.log("thumbnail already migrated: " + image.id);
-                }
-            };
-            while (images.length > 0) {
-                const promises: Promise<void>[] = [];
-                for (let i = 0; i < 20; i++) {
-                    if (images.length > 0) {
-                        promises.push(migrate(images.pop()));
-                    }
-                }
-                await Promise.all(promises);
-                console.log("progress%: " + (((result.rows.length - images.length) / result.rows.length) * 100).toFixed(2));
-            }
-        } finally {
-            client.release();
         }
     }
 }
