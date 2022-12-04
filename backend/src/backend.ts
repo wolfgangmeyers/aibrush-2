@@ -1751,19 +1751,7 @@ export class BackendService {
             const promises = result.rows.map(async row => {
                 const image = row as Image;
                 try {
-                    const thumbnailJpg = await this.filestore.readBinaryFile(
-                        `${image.id}.thumbnail.jpg`
-                    );
-                    const thumbnailPng = await sharp(thumbnailJpg)
-                        .png()
-                        .toBuffer();
-                    await this.filestore.writeFile(
-                        `${image.id}.thumbnail.png`,
-                        thumbnailPng
-                    );
-                    await this.filestore.deleteFile(
-                        `${image.id}.thumbnail.jpg`
-                    );
+                    
 
                     const imageJpg = await this.filestore.readBinaryFile(
                         `${image.id}.image.jpg`
@@ -1779,6 +1767,24 @@ export class BackendService {
                     
                 } catch (_) {
                     console.log("image already migrated: " + image.id);
+                }
+
+                try {
+                    const thumbnailJpg = await this.filestore.readBinaryFile(
+                        `${image.id}.thumbnail.jpg`
+                    );
+                    const thumbnailPng = await sharp(thumbnailJpg)
+                        .png()
+                        .toBuffer();
+                    await this.filestore.writeFile(
+                        `${image.id}.thumbnail.png`,
+                        thumbnailPng
+                    );
+                    await this.filestore.deleteFile(
+                        `${image.id}.thumbnail.jpg`
+                    );
+                } catch (_) {
+                    console.log("thumbnail already migrated: " + image.id);
                 }
             })
             await Promise.all(promises);
