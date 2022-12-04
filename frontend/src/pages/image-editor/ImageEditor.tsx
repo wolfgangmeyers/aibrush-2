@@ -210,7 +210,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
             const download_urls = await api.getImageDownloadUrls(id);
             // Loading up data as binary, base64 encoding into image url
             // bypasses browser security nonsense about cross-domain images
-            const resp = await axios.get(download_urls.data.image_url!, {
+            const resp = await anonymousClient.get(download_urls.data.image_url!, {
                 responseType: "arraybuffer",
             });
             const binaryImageData = Buffer.from(resp.data, "binary");
