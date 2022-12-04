@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useHistory } from "react-router-dom";
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
 
 import { AIBrushApi, CreateImageInputStatusEnum, Image as APIImage } from "../../client";
 import { getUpscaleLevel } from "../../lib/upscale";
@@ -34,6 +34,8 @@ interface ToolConfig {
     renderControls: (t: Tool, renderer: Renderer) => JSX.Element;
     defaultArgs: any;
 }
+
+const anonymousClient = axios.create();
 
 export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
     const [showSelectionControls, setShowSelectionControls] = useState(false);
@@ -169,7 +171,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         // base64 decode image data and upload
         const imageData = Buffer.from(encodedImage, "base64");
         
-        await axios.put(uploadUrls.image_url!, imageData, {
+        await anonymousClient.put(uploadUrls.image_url!, imageData, {
             headers: {
                 "Content-Type": "image/png",
             },
@@ -182,7 +184,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         const encodedThumbnail = await createEncodedThumbnail(encodedImage);
         const thumbnailData = Buffer.from(encodedThumbnail, "base64");
         
-        await axios.put(uploadUrls.thumbnail_url!, thumbnailData, {
+        await anonymousClient.put(uploadUrls.thumbnail_url!, thumbnailData, {
             headers: {
                 "Content-Type": "image/png",
             },
