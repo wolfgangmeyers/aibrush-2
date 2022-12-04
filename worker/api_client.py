@@ -5,6 +5,7 @@ from typing import List
 import time
 import json
 import traceback
+import base64
 
 class AIBrushAPI(object):
     def __init__(self, api_url: str, token: str, login_code: str=None):
@@ -25,7 +26,10 @@ class AIBrushAPI(object):
     def http_request(self, path, method, body=None, content_type=None) -> requests.Response:
         if not content_type:
             content_type = "application/json"
-        url = f"{self.api_url}/api{path}"
+        if path.startswith("http"):
+            url = path
+        else:
+            url = f"{self.api_url}/api{path}"
         print(f"{method} {url}")
         backoff = 2
         for _ in range(5):
@@ -81,7 +85,8 @@ class AIBrushAPI(object):
         resp = self.http_request("/auth/verify", "POST", body)
         return self.parse_json(resp.text)
 
-    def update_image(self, image_id: str, encoded_image: str, encoded_npy: str, current_iterations: int, status: str, score: float, negative_score: float, nsfw: bool = False) -> SimpleNamespace:
+    def update_image(self, image_id: str, encoded_image: str, current_iterations: int, status: str, score: float, negative_score: float, nsfw: bool = False) -> SimpleNamespace:
+        image_upload_urls = self.get_image_upload_urls(image_id)
         body = {
             "current_iterations": current_iterations,
             "status": status,
@@ -90,21 +95,23 @@ class AIBrushAPI(object):
             "nsfw": nsfw,
         }
         if encoded_image:
-            body["encoded_image"] = encoded_image
-        if encoded_npy:
-            body["encoded_npy"] = encoded_npy
+            # body["encoded_image"] = encoded_image
+            # base64 decode image
+            image_data = base64.b64decode(encoded_image)
+            self.http_request(image_upload_urls.image_url, "PUT", image_data, "image/png")
         resp = self.http_request(f"/images/{image_id}", "PATCH", body)
         return self.parse_json(resp.text)
 
-    def get_image_data(self, image_id: str) -> bytes:
-        resp = self.http_request(f"/images/{image_id}.image.png", "GET")
+    def get_image_data(self, image_id: str, url: str=None) -> bytes:
+        resp = self.http_request(url or f"/images/{image_id}.image.png", "GET")
+        print("response", resp)
         if resp.status_code != 200:
             return None
         # read binary data
         return resp.content
 
-    def get_mask_data(self, image_id: str) -> bytes:
-        resp = self.http_request(f"/images/{image_id}.mask.png", "GET")
+    def get_mask_data(self, image_id: str, url: str=None) -> bytes:
+        resp = self.http_request(url or f"/images/{image_id}.mask.png", "GET")
         if resp.status_code != 200:
             return None
         # read binary data
@@ -232,4 +239,12 @@ class AIBrushAPI(object):
 
     def get_worker_config(self, worker_id: str) -> SimpleNamespace:
         resp = self.http_request(f"/workers/{worker_id}/config", "GET")
+        return self.parse_json(resp.text)
+
+    def get_image_download_urls(self, image_id: str) -> SimpleNamespace:
+        resp = self.http_request(f"/images/{image_id}/download-urls", "GET")
+        return self.parse_json(resp.text)
+    
+    def get_image_upload_urls(self, image_id: str) -> SimpleNamespace:
+        resp = self.http_request(f"/images/{image_id}/upload-urls", "GET")
         return self.parse_json(resp.text)

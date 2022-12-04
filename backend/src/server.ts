@@ -165,6 +165,12 @@ export class Server {
                 limit: "1024mb",
             })
         );
+        this.app.use(
+            express.raw({
+                type: "image/png",
+                limit: "1024mb",
+            })
+        );
         this.app.use(cors());
 
         const spec = fs.readFileSync("./openapi.yaml");
@@ -259,32 +265,6 @@ export class Server {
             })
         );
 
-
-// # DiscordLogin:
-// #   type: object
-// #   properties:
-// #     code:
-// #       type: string
-// #   required:
-// #     - code
-//   /api/discord-login:
-//     post:
-//       description: Log in with Discord
-//       operationId: discordLogin
-//       tags:
-//         - AIBrush
-//       requestBody:
-//         content:
-//           application/json:
-//             schema:
-//               $ref: "#/components/schemas/DiscordLogin"
-//       responses:
-//         "200":
-//           description: Success
-//           content:
-//             application/json:
-//               schema:
-//                 $ref: "#/components/schemas/LoginResult"
         this.app.post("/api/discord-login",
             withMetrics("/api/discord-login", async (req, res) => {
                 const result = await this.backendService.discordLogin(req.body.code);
@@ -605,6 +585,60 @@ export class Server {
             })
         );
 
+        this.app.put(
+            "/api/images/:id.image.png",
+            withMetrics("/api/images/:id.image.png", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                // get image first and check created_by
+                let image = await this.backendService.getImage(req.params.id);
+                if (!image) {
+                    this.logger.log(
+                        `user ${jwt.userId} tried to update image ${req.params.id} which does not exist`
+                    );
+                    res.status(404).send("not found");
+                    return;
+                }
+                if (jwt.serviceAccountConfig) {
+                    if (image.worker_id !== jwt.serviceAccountConfig.workerId) {
+                        this.logger.log(
+                            `worker ${jwt.serviceAccountConfig.workerId} tried to update image ${req.params.id} but not authorized`
+                        );
+                        res.status(404).send("not found");
+                        return;
+                    }
+                } else if (image.created_by !== jwt.userId) {
+                    this.logger.log(
+                        `user ${jwt.userId} tried to update image ${req.params.id} but not authorized`
+                    );
+                    res.status(404).send("not found");
+                    return;
+                }
+                // base64 encode binary image data from request
+                const data = Buffer.from(req.body).toString("base64");
+                image = await this.backendService.updateImage(
+                    req.params.id,
+                    {
+                        encoded_image: data,
+                    },
+                    jwt.serviceAccountConfig?.workerId,
+                );
+                if (image == null) {
+                    res.status(404).send("not found");
+                    return;
+                }
+                res.sendStatus(201);
+            })
+        )
+
+        // no-op. This is handled by updating the image data...
+        // in production these will be S3 calls
+        this.app.put(
+            "/api/images/:id.thumbnail.png",
+            withMetrics("/api/images/:id.thumbnail.png", async (req, res) => {
+                res.sendStatus(201);
+            })
+        );
+
         // delete image
         this.app.delete(
             "/api/images/:id",
@@ -644,53 +678,6 @@ export class Server {
             })
         );
 
-        // image urls
-           // ImageUrls:
-    //   properties:
-    //     image_url:
-    //       type: string
-    //     mask_url:
-    //       type: string
-    //     thumbnail_url:
-    //       type: string
-    //   /api/images/{id}/upload-urls:
-    //   get:
-    //     description: Get upload urls for image assets
-    //     operationId: getImageUrls
-    //     tags:
-    //       - AIBrush
-    //     parameters:
-    //       - name: id
-    //         in: path
-    //         required: true
-    //         schema:
-    //           type: string
-    //     responses:
-    //       "200":
-    //         description: Success
-    //         content:
-    //           application/json:
-    //             schema:
-    //               $ref: "#/components/schemas/ImageUrls"
-    // /api/images/{id}/download-urls:
-    //   get:
-    //     description: Get download urls for image assets
-    //     operationId: getImageUrls
-    //     tags:
-    //       - AIBrush
-    //     parameters:
-    //       - name: id
-    //         in: path
-    //         required: true
-    //         schema:
-    //           type: string
-    //     responses:
-    //       "200":
-    //         description: Success
-    //         content:
-    //           application/json:
-    //             schema:
-    //               $ref: "#/components/schemas/ImageUrls"
         this.app.get(
             "/api/images/:id/download-urls",
             withMetrics("/api/images/:id/download-urls", async (req, res) => {

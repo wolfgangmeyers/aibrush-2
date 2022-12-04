@@ -186,10 +186,6 @@ export class BackendService {
         await this.notificationsClient.connect();
         this.notificationsClient.on("notification", async (message) => {
             const listeners = this.notificationListeners[message.channel];
-            console.log("notification", message);
-            console.log("listeners", listeners);
-            console.log("channel", message.channel);
-            console.log("all listeners", this.notificationListeners);
             if (listeners) {
                 for (const listener of listeners) {
                     listener(message.payload);
@@ -251,8 +247,8 @@ export class BackendService {
         const newChannel = listeners.length == 0;
         listeners.push(listener);
         if (newChannel) {
-            console.log("LISTENING to channel", channel);
-            console.log(this.notificationListeners);
+            // console.log("LISTENING to channel", channel);
+            // console.log(this.notificationListeners);
             await this.notificationsClient.query(`LISTEN "${channel}"`);
         }
     }
@@ -274,7 +270,7 @@ export class BackendService {
 
     async notify(channel: string, payload: string) {
         channel = this.sanitizeChannel(channel);
-        console.log("NOTIFYING channel", channel);
+        // console.log("NOTIFYING channel", channel);
         const client = await this.pool.connect();
         try {
             await client.query(`NOTIFY "${channel}", '${payload}'`);
@@ -367,7 +363,7 @@ export class BackendService {
         const client = await this.pool.connect();
         try {
             const result = await client.query(
-                `SELECT model, SUM(${now} - created_at) score FROM images WHERE status='pending' GROUP BY model ORDER BY score DESC`
+                `SELECT model, SUM(${now} - created_at) score FROM images WHERE status='pending' AND deleted_at IS NULL GROUP BY model ORDER BY score DESC`
             );
             return result.rows.map((row) => ({
                 model: row.model,
@@ -401,7 +397,7 @@ export class BackendService {
     }
 
     async getImageUploadUrls(id: string): Promise<ImageUrls> {
-        const imagePromise = this.filestore.getUploadUrl(`${id}.png`);
+        const imagePromise = this.filestore.getUploadUrl(`${id}.image.png`);
         const maskPromise = this.filestore.getUploadUrl(`${id}.mask.png`);
         const thumbnailPromise = this.filestore.getUploadUrl(
             `${id}.thumbnail.png`
@@ -415,7 +411,7 @@ export class BackendService {
     }
 
     async getImageDownloadUrls(id: string): Promise<ImageUrls> {
-        const imagePromise = this.filestore.getDownloadUrl(`${id}.png`);
+        const imagePromise = this.filestore.getDownloadUrl(`${id}.image.png`);
         const maskPromise = this.filestore.getDownloadUrl(`${id}.mask.png`);
         const thumbnailPromise = this.filestore.getDownloadUrl(`${id}.thumbnail.png`);
 

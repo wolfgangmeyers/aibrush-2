@@ -2383,6 +2383,43 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Upload the binary image data
+         * @param {string} id 
+         * @param {any} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        uploadImageData: async (id: string, body?: any, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('uploadImageData', 'id', id)
+            const localVarPath = `/api/images/{id}.image.png`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'image/png';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Verify Login code
          * @param {VerifyLoginInput} [verifyLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2786,6 +2823,17 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Upload the binary image data
+         * @param {string} id 
+         * @param {any} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async uploadImageData(id: string, body?: any, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadImageData(id, body, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Verify Login code
          * @param {VerifyLoginInput} [verifyLoginInput] 
          * @param {*} [options] Override http request option.
@@ -3128,6 +3176,16 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         updateWorkerConfig(workerId: string, upsertWorkerConfigInput?: UpsertWorkerConfigInput, options?: any): AxiosPromise<WorkerConfig> {
             return localVarFp.updateWorkerConfig(workerId, upsertWorkerConfigInput, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Upload the binary image data
+         * @param {string} id 
+         * @param {any} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        uploadImageData(id: string, body?: any, options?: any): AxiosPromise<void> {
+            return localVarFp.uploadImageData(id, body, options).then((request) => request(axios, basePath));
         },
         /**
          * Verify Login code
@@ -3542,6 +3600,18 @@ export class AIBrushApi extends BaseAPI {
      */
     public updateWorkerConfig(workerId: string, upsertWorkerConfigInput?: UpsertWorkerConfigInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).updateWorkerConfig(workerId, upsertWorkerConfigInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Upload the binary image data
+     * @param {string} id 
+     * @param {any} [body] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public uploadImageData(id: string, body?: any, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).uploadImageData(id, body, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -200,6 +200,26 @@ paths:
               schema:
                 type: string
                 format: binary
+    put:
+      description: Upload the binary image data
+      operationId: uploadImageData
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Success
   # get image mask.png
   /api/images/{id}.mask.png:
     get:
@@ -241,6 +261,26 @@ paths:
               schema:
                 type: string
                 format: binary
+    put:
+      description: Upload the binary thumbnail data
+      operationId: uploadThumbnailData
+      tags:
+        - AIBrush
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Success
   # handle image .npy files
   /api/images/{id}.npy:
     get:

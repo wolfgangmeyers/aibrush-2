@@ -207,10 +207,12 @@ def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, we
                 }))
             if image:
                 if not image.warmup:
-                    image.image_data = client.get_image_data(image.id)
+                    image_download_urls = client.get_image_download_urls(image.id)
+                    print("image urls", image_download_urls)
+                    image.image_data = client.get_image_data(image.id, image_download_urls.image_url)
                     image.mask_data = None
                     if image.model == "stable_diffusion_inpainting":
-                        image.mask_data = client.get_mask_data(image.id)
+                        image.mask_data = client.get_mask_data(image.id, image_download_urls.mask_url)
                 process_queue.put(image)
                 if image.warmup:
                     ready_queue.get()
@@ -339,7 +341,7 @@ def update_loop(update_queue: Queue, cleanup_queue: Queue, metrics_queue: Queue)
             if not image:
                 return
             start = time.time()
-            client.update_image(image.id, image.image_data, image.npy_data, image.iterations, image.status, image.score, image.negative_score, image.nsfw)
+            client.update_image(image.id, image.image_data, image.iterations, image.status, image.score, image.negative_score, image.nsfw)
             metrics_queue.put(metric("worker.update", "count", 1, {
                 "duration_seconds": time.time() - start
             }))

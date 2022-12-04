@@ -97,12 +97,12 @@ export class LocalFilestore implements Filestore {
         }
     }
 
-    getDownloadUrl(filename: string): Promise<string> {
-        return null;
+    async getDownloadUrl(filename: string): Promise<string> {
+        return `http://localhost:3000/api/images/${filename}`;
     }
 
-    getUploadUrl(filename: string): Promise<string> {
-        return null;
+    async getUploadUrl(filename: string): Promise<string> {
+        return `http://localhost:3000/api/images/${filename}`;
     }
 
     async exists(filename: string): Promise<boolean> {

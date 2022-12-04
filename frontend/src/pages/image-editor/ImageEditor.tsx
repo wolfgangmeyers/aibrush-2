@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useHistory } from "react-router-dom";
+import axios from "axios";
 
 import { AIBrushApi, CreateImageInputStatusEnum, Image as APIImage } from "../../client";
 import { getUpscaleLevel } from "../../lib/upscale";
@@ -14,6 +15,7 @@ import { ImportExportControls } from "./import-export";
 import { InpaintControls, InpaintTool } from "./inpaint-tool";
 import { defaultArgs } from "../../components/ImagePrompt";
 import { ApiSocket } from "../../lib/apisocket";
+import { createEncodedThumbnail } from "../../lib/imageutil";
 
 interface CanPreventDefault {
     preventDefault: () => void;
@@ -161,8 +163,30 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         args.width = renderer!.getWidth() as any;
         args.height = renderer!.getHeight() as any;
         args.nsfw = image.nsfw;
-        args.encoded_image = encodedImage;
+        // args.encoded_image = encodedImage;
         const newImage = (await api.createImage(args)).data!.images![0];
+        const uploadUrls = (await api.getImageUploadUrls(newImage.id)).data;
+        // base64 decode image data and upload
+        const imageData = Buffer.from(encodedImage, "base64");
+        
+        await axios.put(uploadUrls.image_url!, imageData, {
+            headers: {
+                "Content-Type": "image/png",
+            },
+        });
+        // const thumbnail = await sharp(Buffer.from(encoded_image, "base64"))
+        //     .resize(128, 128)
+        //     .toBuffer()
+        //     .then((buffer) => buffer.toString("base64"));
+        // return thumbnail;
+        const encodedThumbnail = await createEncodedThumbnail(encodedImage);
+        const thumbnailData = Buffer.from(encodedThumbnail, "base64");
+        
+        await axios.put(uploadUrls.thumbnail_url!, thumbnailData, {
+            headers: {
+                "Content-Type": "image/png",
+            },
+        });
         setImage(newImage)
         // history.push(`/image-editor/${newImage.id}`);
         history.replace(`/image-editor/${newImage.id}`);
@@ -172,27 +196,32 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         if (image) {
             return;
         }
-        api.getImage(id).then((image) => {
-            setImage(image.data);
-            api.getImageData(id, {
+
+        async function loadImage() {
+            const image = (await api.getImage(id)).data;
+            setImage(image);
+            const download_urls = await api.getImageDownloadUrls(id);
+            // Loading up data as binary, base64 encoding into image url
+            // bypasses browser security nonsense about cross-domain images
+            const resp = await axios.get(download_urls.data.image_url!, {
                 responseType: "arraybuffer",
-            }).then((resp) => {
-                const binaryImageData = Buffer.from(resp.data, "binary");
-                const base64ImageData = binaryImageData.toString("base64");
-                const src = `data:image/png;base64,${base64ImageData}`;
-                const imageElement = new Image();
-                imageElement.src = src;
-                imageElement.onload = () => {
-                    if (!canvasRef.current) {
-                        console.error("Failed to get canvas");
-                        return;
-                    }
-                    const renderer = createRenderer(canvasRef.current);
-                    renderer.setBaseImage(imageElement);
-                    setRenderer(renderer);
-                };
             });
-        });
+            const binaryImageData = Buffer.from(resp.data, "binary");
+            const base64ImageData = binaryImageData.toString("base64");
+            const src = `data:image/png;base64,${base64ImageData}`;
+            const imageElement = new Image();
+            imageElement.src = src;
+            imageElement.onload = () => {
+                if (!canvasRef.current) {
+                    console.error("Failed to get canvas");
+                    return;
+                }
+                const renderer = createRenderer(canvasRef.current);
+                renderer.setBaseImage(imageElement);
+                setRenderer(renderer);
+            };
+        }
+        loadImage();
     }, [image, id]);
 
     useEffect(() => {
