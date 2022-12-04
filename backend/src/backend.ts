@@ -1795,6 +1795,7 @@ export class BackendService {
                     }
                 }
                 await Promise.all(promises);
+                console.log("progress%: " + (((result.rows.length - images.length) / result.rows.length) * 100).toFixed(2));
             }
         } finally {
             client.release();
