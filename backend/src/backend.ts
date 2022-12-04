@@ -413,7 +413,9 @@ export class BackendService {
     async getImageDownloadUrls(id: string): Promise<ImageUrls> {
         const imagePromise = this.filestore.getDownloadUrl(`${id}.image.png`);
         const maskPromise = this.filestore.getDownloadUrl(`${id}.mask.png`);
-        const thumbnailPromise = this.filestore.getDownloadUrl(`${id}.thumbnail.png`);
+        const thumbnailPromise = this.filestore.getDownloadUrl(
+            `${id}.thumbnail.png`
+        );
 
         return {
             image_url: await imagePromise,
@@ -1748,8 +1750,11 @@ export class BackendService {
         const client = await this.pool.connect();
         try {
             const result = await client.query(`SELECT * FROM images`);
+            const images: Image[] = [];
             for (let row of result.rows) {
-                const image = row as Image;
+                images.push(row as Image);
+            }
+            const migrate = async (image: Image) => {
                 try {
                     const jpg = await this.filestore.readBinaryFile(
                         `${image.id}.image.jpg`
@@ -1781,6 +1786,15 @@ export class BackendService {
                 } catch (_) {
                     console.log("thumbnail already migrated: " + image.id);
                 }
+            };
+            while (images.length > 0) {
+                const promises: Promise<void>[] = [];
+                for (let i = 0; i < 10; i++) {
+                    if (images.length > 0) {
+                        promises.push(migrate(images.pop()));
+                    }
+                }
+                await Promise.all(promises);
             }
         } finally {
             client.release();
