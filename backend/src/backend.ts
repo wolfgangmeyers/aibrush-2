@@ -193,7 +193,7 @@ export class BackendService {
             }
         });
 
-        await this.migrateAllImagesFromJpgToPng();
+        this.migrateAllImagesFromJpgToPng();
         // emergency cleanup logic...
         // const images = await this.listImages({limit: 100000});
         // for (let image of images.images) {
@@ -1748,46 +1748,40 @@ export class BackendService {
         const client = await this.pool.connect();
         try {
             const result = await client.query(`SELECT * FROM images`);
-            const promises = result.rows.map(async row => {
+            for (let row of result.rows) {
                 const image = row as Image;
                 try {
-                    
-
-                    const imageJpg = await this.filestore.readBinaryFile(
+                    const jpg = await this.filestore.readBinaryFile(
                         `${image.id}.image.jpg`
                     );
-                    const png = await sharp(imageJpg).png().toBuffer();
+                    const png = await sharp(jpg).png().toBuffer();
                     await this.filestore.writeFile(
                         `${image.id}.image.png`,
                         png
                     );
                     await this.filestore.deleteFile(`${image.id}.image.jpg`);
                     console.log(`migrated ${image.id} image to png`);
-
-                    
                 } catch (_) {
                     console.log("image already migrated: " + image.id);
                 }
-
+                // now do the thumbnail
                 try {
-                    const thumbnailJpg = await this.filestore.readBinaryFile(
+                    const jpg = await this.filestore.readBinaryFile(
                         `${image.id}.thumbnail.jpg`
                     );
-                    const thumbnailPng = await sharp(thumbnailJpg)
-                        .png()
-                        .toBuffer();
+                    const png = await sharp(jpg).png().toBuffer();
                     await this.filestore.writeFile(
                         `${image.id}.thumbnail.png`,
-                        thumbnailPng
+                        png
                     );
                     await this.filestore.deleteFile(
                         `${image.id}.thumbnail.jpg`
                     );
+                    console.log(`migrated ${image.id} thumbnail to png`);
                 } catch (_) {
                     console.log("thumbnail already migrated: " + image.id);
                 }
-            })
-            await Promise.all(promises);
+            }
         } finally {
             client.release();
         }
