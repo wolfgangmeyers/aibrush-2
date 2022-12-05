@@ -176,8 +176,12 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         // base64 decode image data and upload
         const imageData = Buffer.from(encodedImage, "base64");
 
-        await anonymousClient.put(uploadUrls.image_url!, imageData, {
-            headers: {},
+        // await anonymousClient.put(uploadUrls.image_url!, imageData, {
+        //     headers: {},
+        // });
+        fetch(uploadUrls.image_url!, {
+            method: "PUT",
+            body: imageData,
         });
         // const thumbnail = await sharp(Buffer.from(encoded_image, "base64"))
         //     .resize(128, 128)
