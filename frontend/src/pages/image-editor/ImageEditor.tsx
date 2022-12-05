@@ -170,32 +170,8 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         args.width = renderer!.getWidth() as any;
         args.height = renderer!.getHeight() as any;
         args.nsfw = image.nsfw;
-        // args.encoded_image = encodedImage;
+        args.encoded_image = encodedImage;
         const newImage = (await api.createImage(args)).data!.images![0];
-        const uploadUrls = (await api.getImageUploadUrls(newImage.id)).data;
-        // base64 decode image data and upload
-        const imageData = Buffer.from(encodedImage, "base64");
-
-        // await anonymousClient.put(uploadUrls.image_url!, imageData, {
-        //     headers: {},
-        // });
-        fetch(uploadUrls.image_url!, {
-            method: "PUT",
-            body: imageData,
-        });
-        // const thumbnail = await sharp(Buffer.from(encoded_image, "base64"))
-        //     .resize(128, 128)
-        //     .toBuffer()
-        //     .then((buffer) => buffer.toString("base64"));
-        // return thumbnail;
-        const encodedThumbnail = await createEncodedThumbnail(encodedImage);
-        const thumbnailData = Buffer.from(encodedThumbnail, "base64");
-
-        await anonymousClient.put(uploadUrls.thumbnail_url!, thumbnailData, {
-            headers: {
-                "Content-Type": "image/png",
-            },
-        });
         setImage(newImage);
         // history.push(`/image-editor/${newImage.id}`);
         history.replace(`/image-editor/${newImage.id}`);
