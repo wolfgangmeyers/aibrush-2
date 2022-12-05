@@ -206,9 +206,9 @@ def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, we
                     "sticky": True,
                 }))
             if image:
+                image.thumbnail_data = None
                 if not image.warmup:
                     image_download_urls = client.get_image_download_urls(image.id)
-                    print("image urls", image_download_urls)
                     image.image_data = client.get_image_data(image.id, image_download_urls.image_url)
                     image.mask_data = None
                     if image.model == "stable_diffusion_inpainting":
@@ -269,6 +269,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
                 score = 0
                 negative_score = 0
                 image_data = None
+                thumbnail_data = None
                 npy_data = None
                 # get output image
                 image_path = os.path.join("images", image.id + ".png")
@@ -288,6 +289,14 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
                         negative_score = clip_ranker.rank(argparse.Namespace(text=negative_prompts, image=image_path, cpu=False))
                     with open(image_path, "rb") as f:
                         image_data = f.read()
+                    # use PIL to resize image
+                    thumbnail = Image.open(image_path)
+                    # resize image
+                    thumbnail = thumbnail.resize((128, 128), Image.ANTIALIAS)
+                    # thumbnail = Image.lo(image_data).resize((128, 128), Image.ANTIALIAS)
+                    buf = BytesIO()
+                    thumbnail.save(buf, format="png")
+                    thumbnail_data = base64.b64encode(buf.getvalue()).decode("utf-8")
                     # base64 encode image
                     image_data = base64.encodebytes(image_data).decode("utf-8")
                 # update image
@@ -295,6 +304,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
                 update_queue.put(SimpleNamespace(
                     id=image.id,
                     image_data=image_data,
+                    thumbnail_data=thumbnail_data,
                     npy_data=npy_data,
                     iterations=iterations,
                     status=status,
@@ -341,7 +351,7 @@ def update_loop(update_queue: Queue, cleanup_queue: Queue, metrics_queue: Queue)
             if not image:
                 return
             start = time.time()
-            client.update_image(image.id, image.image_data, image.iterations, image.status, image.score, image.negative_score, image.nsfw)
+            client.update_image(image.id, image.image_data, image.thumbnail_data, image.iterations, image.status, image.score, image.negative_score, image.nsfw)
             metrics_queue.put(metric("worker.update", "count", 1, {
                 "duration_seconds": time.time() - start
             }))

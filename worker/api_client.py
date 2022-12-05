@@ -23,22 +23,24 @@ class AIBrushAPI(object):
         resp = self.http_request("/worker-login", "POST", body)
         return self.parse_json(resp.text)
 
-    def http_request(self, path, method, body=None, content_type=None) -> requests.Response:
-        if not content_type:
+    def http_request(self, path, method, body=None, content_type=None, auth=True) -> requests.Response:
+        # hacky: auth=False means S3 call, which really doesn't like content-type headers.
+        if not content_type and auth:
             content_type = "application/json"
         if path.startswith("http"):
             url = path
         else:
             url = f"{self.api_url}/api{path}"
-        print(f"{method} {url}")
+        
         backoff = 2
         for _ in range(5):
             try:
-                headers = {
-                    "Content-Type": content_type,
-                }
-                if self.token:
+                headers = {}
+                if content_type:
+                    headers["Content-Type"] = content_type
+                if self.token and auth:
                     headers["Authorization"] = f"Bearer {self.token}"
+                # print(f"method: {method} url: {url} headers: {headers}")
                 if isinstance(body, bytes):
                     return requests.request(method, url, data=body, headers=headers, timeout=10)
                 return requests.request(method, url, json=body, headers=headers, timeout=30)
@@ -60,7 +62,7 @@ class AIBrushAPI(object):
             "model": model,
             "peek": peek,
         })
-        print(resp.text)
+        # print(resp.text)
         # Use the "peek" parameter to peek at the next item without consuming it
         # this allows the worker process to swap out models when needed without
         # blocking pending images from being processed by other workers.
@@ -85,7 +87,7 @@ class AIBrushAPI(object):
         resp = self.http_request("/auth/verify", "POST", body)
         return self.parse_json(resp.text)
 
-    def update_image(self, image_id: str, encoded_image: str, current_iterations: int, status: str, score: float, negative_score: float, nsfw: bool = False) -> SimpleNamespace:
+    def update_image(self, image_id: str, encoded_image: str, encoded_thumbnail: str, current_iterations: int, status: str, score: float, negative_score: float, nsfw: bool = False) -> SimpleNamespace:
         image_upload_urls = self.get_image_upload_urls(image_id)
         body = {
             "current_iterations": current_iterations,
@@ -98,27 +100,27 @@ class AIBrushAPI(object):
             # body["encoded_image"] = encoded_image
             # base64 decode image
             image_data = base64.b64decode(encoded_image)
-            self.http_request(image_upload_urls.image_url, "PUT", image_data, "image/png")
+            resp = self.http_request(image_upload_urls.image_url, "PUT", image_data, content_type=None, auth=False)
+            # print("Update image response", resp)
+        if encoded_thumbnail:
+            # body["encoded_thumbnail"] = encoded_thumbnail
+            # base64 decode image
+            thumbnail_data = base64.b64decode(encoded_thumbnail)
+            resp = self.http_request(image_upload_urls.thumbnail_url, "PUT", thumbnail_data, content_type=None, auth=False)
+            # print("Update thumbnail response", resp)
         resp = self.http_request(f"/images/{image_id}", "PATCH", body)
         return self.parse_json(resp.text)
 
     def get_image_data(self, image_id: str, url: str=None) -> bytes:
-        resp = self.http_request(url or f"/images/{image_id}.image.png", "GET")
-        print("response", resp)
+        resp = self.http_request(url or f"/images/{image_id}.image.png", "GET", auth=False)
+        # print("response", resp)
         if resp.status_code != 200:
             return None
         # read binary data
         return resp.content
 
     def get_mask_data(self, image_id: str, url: str=None) -> bytes:
-        resp = self.http_request(url or f"/images/{image_id}.mask.png", "GET")
-        if resp.status_code != 200:
-            return None
-        # read binary data
-        return resp.content
-
-    def get_npy_data(self, image_id: str) -> bytes:
-        resp = self.http_request(f"/images/{image_id}.npy", "GET")
+        resp = self.http_request(url or f"/images/{image_id}.mask.png", "GET", auth=False)
         if resp.status_code != 200:
             return None
         # read binary data
