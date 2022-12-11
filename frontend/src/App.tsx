@@ -245,6 +245,13 @@ function App() {
                                         Terms of Service
                                     </a>
                                 )}
+                                {/* link to mail to admin@aibrush.art */}
+                                <a
+                                    href="mailto:admin@aibrush.art"
+                                    style={{ marginLeft: "20px" }}
+                                >
+                                    Contact
+                                </a>
                         </div>
                     </div>
                 )}

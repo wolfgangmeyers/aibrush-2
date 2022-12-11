@@ -34,7 +34,8 @@ export class S3Filestore implements Filestore {
         return this.s3.getSignedUrlPromise('putObject', {
             Bucket: this.bucket,
             Key: filename,
-            Expires: 60 * 60 * 1
+            Expires: 60 * 60 * 1,
+            ContentType: "image/png",
         });
     }
 

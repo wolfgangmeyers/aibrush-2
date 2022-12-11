@@ -58,7 +58,7 @@ export class Server {
         private metricsClient: MetricsClient,
         private logger: Logger,
         private scalingService: ScalingService,
-        private workDistributor: WorkDistributor,
+        private workDistributor: WorkDistributor
     ) {
         this.app = express();
         this.authHelper = new AuthHelper(
@@ -97,44 +97,51 @@ export class Server {
         // Set up a headless websocket server that prints any
         // events that come in.
         this.wsServer.on("connection", (socket, request) => {
-
             let userId: string;
             let workerId: string;
 
             const handler = (message: string) => {
-                console.log("handler called")
+                console.log("handler called");
                 if (socket.readyState === ws.OPEN) {
-                    console.log("sending message")
+                    console.log("sending message");
                     socket.send(message);
                 }
-            }
+            };
 
-            socket.onmessage = async buf => {
+            socket.onmessage = async (buf) => {
                 try {
-                    const message = buf.data.toString("utf-8")
+                    const message = buf.data.toString("utf-8");
                     if (!userId && !workerId) {
-                        const authResult = this.authHelper.verifyToken(message, "access");
+                        const authResult = this.authHelper.verifyToken(
+                            message,
+                            "access"
+                        );
                         if (!authResult) {
-                            throw new Error("bad token")
+                            throw new Error("bad token");
                         }
                         console.log("Socket authenticated");
                         if (authResult.serviceAccountConfig) {
                             workerId = authResult.serviceAccountConfig.workerId;
-                            await this.backendService.listen("WORKERS", handler);
+                            await this.backendService.listen(
+                                "WORKERS",
+                                handler
+                            );
                             await this.backendService.listen(workerId, handler);
                         } else {
                             userId = authResult.userId;
                             await this.backendService.listen(userId, handler);
                         }
-                        socket.send(JSON.stringify({
-                            connected: true,
-                        }))
+                        socket.send(
+                            JSON.stringify({
+                                connected: true,
+                            })
+                        );
                     }
                 } catch (err) {
-                    console.error(err)
+                    console.error(err);
                     socket.close();
                 }
-            }
+            };
 
             socket.onclose = async () => {
                 console.log("socket closed");
@@ -144,7 +151,7 @@ export class Server {
                 } else if (userId) {
                     await this.backendService.unlisten(userId, handler);
                 }
-            }
+            };
         });
 
         let middleware: any;
@@ -197,7 +204,6 @@ export class Server {
                     try {
                         res.sendStatus(400);
                     } catch (_) {}
-                    
                 } finally {
                     const end = moment();
                     const duration = end.diff(start, "milliseconds");
@@ -222,7 +228,7 @@ export class Server {
                 try {
                     const token = await this.backendService.login(
                         req.body.email,
-                        true,
+                        true
                     );
                     res.sendStatus(204);
                 } catch (err) {
@@ -265,9 +271,12 @@ export class Server {
             })
         );
 
-        this.app.post("/api/discord-login",
+        this.app.post(
+            "/api/discord-login",
             withMetrics("/api/discord-login", async (req, res) => {
-                const result = await this.backendService.discordLogin(req.body.code);
+                const result = await this.backendService.discordLogin(
+                    req.body.code
+                );
                 if (result) {
                     res.send(result);
                     return;
@@ -447,6 +456,51 @@ export class Server {
             })
         );
 
+        // only open these routes in dev mode
+        if (process.env.AIBRUSH_DEV_MODE === "true") {
+            console.log("Dev routes enabled");
+            this.app.put(
+                "/api/images/:id.image.png",
+                withMetrics("/api/images/:id.image.png", async (req, res) => {
+                    // get image first and check created_by
+                    let image = await this.backendService.getImage(
+                        req.params.id
+                    );
+                    if (!image) {
+                        res.status(404).send("not found");
+                        return;
+                    }
+                    // base64 encode binary image data from request
+                    const data = Buffer.from(req.body).toString("base64");
+                    image = await this.backendService.updateImage(
+                        req.params.id,
+                        {
+                            encoded_image: data,
+                        },
+                        null,
+                    );
+                    if (image == null) {
+                        res.status(404).send("not found");
+                        return;
+                    }
+                    res.sendStatus(201);
+                })
+            );
+
+            // no-op. This is handled by updating the image data...
+            // in production these will be S3 calls
+            this.app.put(
+                "/api/images/:id.thumbnail.png",
+                withMetrics(
+                    "/api/images/:id.thumbnail.png",
+                    async (req, res) => {
+                        res.sendStatus(201);
+                    }
+                )
+            );
+        }
+        // end dev-only routes
+
         // authenticated routes only past this point
         this.app.use(authMiddleware(this.config, this.logger));
 
@@ -455,7 +509,7 @@ export class Server {
             "/api/images",
             withMetrics("/api/images", async (req, res) => {
                 try {
-                    console.log("Getting jwt from request")
+                    console.log("Getting jwt from request");
                     const jwt = this.authHelper.getJWTFromRequest(req);
                     // service accounts can't list images
                     if (jwt.serviceAccountConfig) {
@@ -575,67 +629,13 @@ export class Server {
                 image = await this.backendService.updateImage(
                     req.params.id,
                     req.body,
-                    jwt.serviceAccountConfig?.workerId,
+                    jwt.serviceAccountConfig?.workerId
                 );
                 if (image == null) {
                     res.status(404).send("not found");
                     return;
                 }
                 res.json(image);
-            })
-        );
-
-        this.app.put(
-            "/api/images/:id.image.png",
-            withMetrics("/api/images/:id.image.png", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                // get image first and check created_by
-                let image = await this.backendService.getImage(req.params.id);
-                if (!image) {
-                    this.logger.log(
-                        `user ${jwt.userId} tried to update image ${req.params.id} which does not exist`
-                    );
-                    res.status(404).send("not found");
-                    return;
-                }
-                if (jwt.serviceAccountConfig) {
-                    if (image.worker_id !== jwt.serviceAccountConfig.workerId) {
-                        this.logger.log(
-                            `worker ${jwt.serviceAccountConfig.workerId} tried to update image ${req.params.id} but not authorized`
-                        );
-                        res.status(404).send("not found");
-                        return;
-                    }
-                } else if (image.created_by !== jwt.userId) {
-                    this.logger.log(
-                        `user ${jwt.userId} tried to update image ${req.params.id} but not authorized`
-                    );
-                    res.status(404).send("not found");
-                    return;
-                }
-                // base64 encode binary image data from request
-                const data = Buffer.from(req.body).toString("base64");
-                image = await this.backendService.updateImage(
-                    req.params.id,
-                    {
-                        encoded_image: data,
-                    },
-                    jwt.serviceAccountConfig?.workerId,
-                );
-                if (image == null) {
-                    res.status(404).send("not found");
-                    return;
-                }
-                res.sendStatus(201);
-            })
-        )
-
-        // no-op. This is handled by updating the image data...
-        // in production these will be S3 calls
-        this.app.put(
-            "/api/images/:id.thumbnail.png",
-            withMetrics("/api/images/:id.thumbnail.png", async (req, res) => {
-                res.sendStatus(201);
             })
         );
 
@@ -649,7 +649,7 @@ export class Server {
                     res.status(403).send("Forbidden");
                     this.logger.log(
                         "Service account tried to delete image",
-                        jwt,
+                        jwt
                     );
                     return;
                 }
@@ -691,7 +691,7 @@ export class Server {
                     return;
                 }
                 const urls = await this.backendService.getImageDownloadUrls(
-                    req.params.id,
+                    req.params.id
                 );
                 res.json(urls);
             })
@@ -714,7 +714,7 @@ export class Server {
                         res.status(404).send("not found");
                         this.logger.log(
                             `Service account ${jwt.serviceAccountConfig.workerId} tried to get upload urls for image ${req.params.id} but not authorized`,
-                            jwt,
+                            jwt
                         );
                         return;
                     }
@@ -728,7 +728,7 @@ export class Server {
                     }
                 }
                 const urls = await this.backendService.getImageUploadUrls(
-                    req.params.id,
+                    req.params.id
                 );
                 res.json(urls);
             })
@@ -835,10 +835,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 if (jwt.serviceAccountConfig) {
                     res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to get worker",
-                        jwt
-                    );
+                    this.logger.log("Service account tried to get worker", jwt);
                     return;
                 }
                 // check admin
@@ -883,7 +880,7 @@ export class Server {
                 const input = req.body as UpsertWorkerInput;
                 const worker = await this.backendService.updateWorker(
                     req.params.worker_id,
-                    input,
+                    input
                 );
                 if (worker) {
                     res.json(worker);
@@ -959,7 +956,7 @@ export class Server {
                 const workerConfig =
                     await this.backendService.upsertWorkerConfig(
                         workerId,
-                        input,
+                        input
                     );
                 res.json(workerConfig);
             })
@@ -1018,12 +1015,15 @@ export class Server {
                 const image = await this.backendService.processImage(
                     user,
                     req.body,
-                    workerId,
+                    workerId
                 );
                 if (jwt.serviceAccountConfig?.workerId) {
-                    await this.backendService.updateWorker(jwt.serviceAccountConfig.workerId, {
-                        status: image ? "active" : "idle",
-                    })
+                    await this.backendService.updateWorker(
+                        jwt.serviceAccountConfig.workerId,
+                        {
+                            status: image ? "active" : "idle",
+                        }
+                    );
                 }
                 res.json(image);
             })
@@ -1035,10 +1035,7 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 if (jwt.serviceAccountConfig) {
                     res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to get orders",
-                        jwt
-                    );
+                    this.logger.log("Service account tried to get orders", jwt);
                     return;
                 }
                 // check admin
@@ -1180,12 +1177,11 @@ export class Server {
             );
 
             this.server.on("upgrade", (request, socket, head) => {
-                this.wsServer.handleUpgrade(request, socket, head, socket => {
+                this.wsServer.handleUpgrade(request, socket, head, (socket) => {
                     this.wsServer.emit("connection", socket, request);
-                })
-                
-            })
-            
+                });
+            });
+
             this.terminator = createHttpTerminator({
                 server: this.server,
                 gracefulTerminationTimeout: 100,

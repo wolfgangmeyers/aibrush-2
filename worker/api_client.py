@@ -40,7 +40,7 @@ class AIBrushAPI(object):
                     headers["Content-Type"] = content_type
                 if self.token and auth:
                     headers["Authorization"] = f"Bearer {self.token}"
-                # print(f"method: {method} url: {url} headers: {headers}")
+                print(f"method: {method} url: {url} headers: {headers}")
                 if isinstance(body, bytes):
                     return requests.request(method, url, data=body, headers=headers, timeout=10)
                 return requests.request(method, url, json=body, headers=headers, timeout=30)
@@ -100,14 +100,14 @@ class AIBrushAPI(object):
             # body["encoded_image"] = encoded_image
             # base64 decode image
             image_data = base64.b64decode(encoded_image)
-            resp = self.http_request(image_upload_urls.image_url, "PUT", image_data, content_type=None, auth=False)
-            # print("Update image response", resp)
+            resp = self.http_request(image_upload_urls.image_url, "PUT", image_data, content_type="image/png", auth=False)
+            print("Update image response", resp)
         if encoded_thumbnail:
             # body["encoded_thumbnail"] = encoded_thumbnail
             # base64 decode image
             thumbnail_data = base64.b64decode(encoded_thumbnail)
-            resp = self.http_request(image_upload_urls.thumbnail_url, "PUT", thumbnail_data, content_type=None, auth=False)
-            # print("Update thumbnail response", resp)
+            resp = self.http_request(image_upload_urls.thumbnail_url, "PUT", thumbnail_data, content_type="image/png", auth=False)
+            print("Update thumbnail response", resp)
         resp = self.http_request(f"/images/{image_id}", "PATCH", body)
         return self.parse_json(resp.text)
 

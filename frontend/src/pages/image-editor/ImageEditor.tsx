@@ -20,6 +20,7 @@ import { InpaintControls, InpaintTool } from "./inpaint-tool";
 import { defaultArgs } from "../../components/ImagePrompt";
 import { ApiSocket } from "../../lib/apisocket";
 import { createEncodedThumbnail } from "../../lib/imageutil";
+import { BusyModal } from "../../components/BusyModal";
 
 interface CanPreventDefault {
     preventDefault: () => void;
@@ -134,6 +135,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
     const [tool, setTool] = useState<Tool | null>(null);
     const [canUndo, setCanUndo] = useState(false);
     const [canRedo, setCanRedo] = useState(false);
+    const [busyMessage, setBusyMessage] = useState<string | null>(null);
 
     const { id } = useParams<{ id: string }>();
     const history = useHistory();
@@ -160,6 +162,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         if (!image || !encodedImage) {
             throw new Error("Cannot save new image without existing image");
         }
+        setBusyMessage("Saving image...");
         const args = defaultArgs();
         args.phrases = image.phrases;
         args.negative_phrases = image.negative_phrases;
@@ -175,6 +178,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         setImage(newImage);
         // history.push(`/image-editor/${newImage.id}`);
         history.replace(`/image-editor/${newImage.id}`);
+        setBusyMessage(null);
     };
 
     useEffect(() => {
@@ -188,9 +192,12 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
             const download_urls = await api.getImageDownloadUrls(id);
             // Loading up data as binary, base64 encoding into image url
             // bypasses browser security nonsense about cross-domain images
-            const resp = await anonymousClient.get(download_urls.data.image_url!, {
-                responseType: "arraybuffer",
-            });
+            const resp = await anonymousClient.get(
+                download_urls.data.image_url!,
+                {
+                    responseType: "arraybuffer",
+                }
+            );
             const binaryImageData = Buffer.from(resp.data, "binary");
             const base64ImageData = binaryImageData.toString("base64");
             const src = `data:image/png;base64,${base64ImageData}`;
@@ -273,7 +280,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
                     </h1>
                 </div>
             </div>
-            <div className="row" style={{ marginTop: "32px" }}>
+            <div className="row" style={{ marginTop: "32px", paddingBottom: "120px" }}>
                 <div className="col-lg-3">
                     {renderer && (
                         <>
@@ -425,6 +432,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
                     {/* vertically center button within the div */}
                 </div>
             </div>
+            {busyMessage && <BusyModal show={true} title="Please Wait">{busyMessage}</BusyModal>}
         </>
     );
 };

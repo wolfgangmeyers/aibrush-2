@@ -367,7 +367,7 @@ hr {
 .pulse {
   background-color: #3D3BB5;
   animation-name: color;
-  animation-duration: 30s;
+  animation-duration: 10s;
   animation-iteration-count: infinite;
 }
 
@@ -375,7 +375,7 @@ hr {
   0% {
     background-color: #3D3BB5;
   }
-  1% {
+  50% {
     background-color: #26D6E1;
   }
   100% {

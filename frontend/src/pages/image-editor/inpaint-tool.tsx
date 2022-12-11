@@ -403,6 +403,7 @@ export class InpaintTool extends BaseTool implements Tool {
             throw new Error("No images returned");
         }
         let completed = false;
+        let lastUpdate = moment();
 
         apisocket.onMessage(async (msg: string) => {
             console.log("inpaint onMessage", msg);
@@ -411,6 +412,7 @@ export class InpaintTool extends BaseTool implements Tool {
                 img.type === NOTIFICATION_IMAGE_UPDATED &&
                 img.status === ImageStatusEnum.Completed
             ) {
+                lastUpdate = moment();
                 for (let i = 0; i < newImages!.length; i++) {
                     if (newImages![i].id === img.id) {
                         const imageData = await this.loadImageData(
@@ -472,13 +474,14 @@ export class InpaintTool extends BaseTool implements Tool {
                         return acc;
                     }, {} as Record<string, APIImage>);
                     for (let i = 0; i < newImages!.length; i++) {
-                        if (newImages![i].status === ImageStatusEnum.Pending) {
+                        if (newImages![i].status === ImageStatusEnum.Pending || newImages![i].status === ImageStatusEnum.Processing) {
                             const updated = byId[newImages![i].id];
                             if (updated) {
                                 newImages![i].status = updated.status;
                                 if (
                                     updated.status === ImageStatusEnum.Completed
                                 ) {
+                                    lastUpdate = moment();
                                     const imageData = await this.loadImageData(
                                         api,
                                         newImages![i].id,
@@ -494,7 +497,7 @@ export class InpaintTool extends BaseTool implements Tool {
                     lastCheck = moment();
                 }
                 // timeout of 2 minutes
-                if (moment().diff(startTime, "minutes") > 2) {
+                if ((lastUpdate.isAfter(startTime) && moment().diff(lastUpdate, "seconds") > 30) ||  moment().diff(startTime, "minutes") > 2) {
                     completed = true;
                 }
             }

@@ -96,7 +96,10 @@ export class EnhanceTool extends BaseTool implements Tool {
             } else {
                 this.selectionControlsListener(false);
                 if (state == "select") {
-                    this.selectionTool.updateArgs(this.selectionTool.getArgs());
+                    this.selectionTool.updateArgs({
+                        ...this.selectionTool.getArgs(),
+                        outpaint: false,
+                    });
                 }
             }
         }
@@ -415,12 +418,15 @@ export class EnhanceTool extends BaseTool implements Tool {
         }
         let completed = false;
 
+        let lastUpdate = moment();
+
         apisocket.onMessage(async (msg: string) => {
             const img = JSON.parse(msg) as any;
             if (
                 img.type === NOTIFICATION_IMAGE_UPDATED &&
                 img.status === ImageStatusEnum.Completed
             ) {
+                lastUpdate = moment();
                 for (let i = 0; i < newImages!.length; i++) {
                     if (newImages![i].id === img.id) {
                         const imageData = await this.loadImageData(
@@ -445,6 +451,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         try {
             let startTime = moment();
             let lastCheck = moment();
+            
             while (!completed) {
                 let completeCount = 0;
                 await sleep(1000);
@@ -481,13 +488,14 @@ export class EnhanceTool extends BaseTool implements Tool {
                         return acc;
                     }, {} as Record<string, APIImage>);
                     for (let i = 0; i < newImages!.length; i++) {
-                        if (newImages![i].status === ImageStatusEnum.Pending) {
+                        if (newImages![i].status === ImageStatusEnum.Pending || newImages![i].status === ImageStatusEnum.Processing) {
                             const updated = byId[newImages![i].id];
                             if (updated) {
                                 newImages![i].status = updated.status;
                                 if (
                                     updated.status === ImageStatusEnum.Completed
                                 ) {
+                                    lastUpdate = moment();
                                     const imageData = await this.loadImageData(
                                         api,
                                         newImages![i].id,
@@ -503,7 +511,7 @@ export class EnhanceTool extends BaseTool implements Tool {
                     lastCheck = moment();
                 }
                 // timeout of 2 minutes
-                if (moment().diff(startTime, "minutes") > 2) {
+                if ((lastUpdate.isAfter(startTime) && moment().diff(lastUpdate, "seconds") > 30) || moment().diff(startTime, "minutes") > 2) {
                     completed = true;
                 }
             }

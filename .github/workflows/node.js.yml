@@ -31,5 +31,5 @@ jobs:
       working-directory: backend
     - run: docker-compose up -d
       working-directory: backend
-    - run: yarn test
+    - run: AIBRUSH_DEV_MODE=true yarn test
       working-directory: backend
