@@ -129,7 +129,7 @@ export const WorkerList: FC<Props> = ({ api }) => {
                                                 ))}
                                         </td>
                                         <td>{worker.status}</td>
-                                        <td>{!!worker.last_ping && moment(worker.last_ping).format()}</td>
+                                        <td>{!!worker.last_ping && moment(worker.last_ping).fromNow()}</td>
                                         <td>
                                             <button
                                                 className="btn btn-danger btn-sm"
