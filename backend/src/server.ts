@@ -180,6 +180,18 @@ export class Server {
         );
         this.app.use(cors());
 
+        // implement and add middleware to force https only when the host is not localhost
+        this.app.use((req, res, next) => {
+            if (
+                req.headers["x-forwarded-proto"] === "http" &&
+                req.hostname !== "localhost"
+            ) {
+                res.redirect("https://" + req.headers.host + req.url);
+            } else {
+                next();
+            }
+        });
+
         const spec = fs.readFileSync("./openapi.yaml");
 
         this.app.get("/api/healthcheck", async (req, res) => {
