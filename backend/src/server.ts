@@ -1005,6 +1005,39 @@ export class Server {
             )
         );
 
+    //     /api/worker-ping:
+    // post:
+    //   description: Ping a worker
+    //   operationId: pingWorker
+    //   tags:
+    //     - AIBrush
+    //   responses:
+    //     "201":
+    //       description: Success
+
+    // on ping, update the worker with an empty payload
+        this.app.post(
+            "/api/worker-ping",
+            withMetrics("/api/worker-ping", async (req, res) => {
+                console.log("******** worker ping **********")
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                if (!jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log("Non-service account tried to ping", jwt);
+                    return;
+                }
+                const worker = await this.backendService.updateWorker(
+                    jwt.serviceAccountConfig.workerId,
+                    {}
+                );
+                if (worker) {
+                    res.sendStatus(201);
+                } else {
+                    res.sendStatus(404);
+                }
+            })
+        );
+
         this.app.put(
             "/api/process-image",
             withMetrics("/api/process-image", async (req, res) => {
@@ -1173,6 +1206,7 @@ export class Server {
                 res.sendStatus(200);
             })
         );
+
         if (process.env.BUGSNAG_API_KEY) {
             this.app.use(middleware.errorHandler);
         }

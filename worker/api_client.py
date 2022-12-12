@@ -40,7 +40,7 @@ class AIBrushAPI(object):
                     headers["Content-Type"] = content_type
                 if self.token and auth:
                     headers["Authorization"] = f"Bearer {self.token}"
-                print(f"method: {method} url: {url} headers: {headers}")
+                # print(f"method: {method} url: {url} headers: {headers}")
                 if isinstance(body, bytes):
                     return requests.request(method, url, data=body, headers=headers, timeout=10)
                 return requests.request(method, url, json=body, headers=headers, timeout=30)
@@ -242,6 +242,9 @@ class AIBrushAPI(object):
     def get_worker_config(self, worker_id: str) -> SimpleNamespace:
         resp = self.http_request(f"/workers/{worker_id}/config", "GET")
         return self.parse_json(resp.text)
+
+    def worker_ping(self):
+        self.http_request("/worker-ping", "POST")
 
     def get_image_download_urls(self, image_id: str) -> SimpleNamespace:
         resp = self.http_request(f"/images/{image_id}/download-urls", "GET")

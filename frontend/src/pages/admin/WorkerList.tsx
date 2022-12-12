@@ -1,3 +1,4 @@
+import moment from "moment";
 import React, { FC, useEffect, useState } from "react";
 import { Modal } from "react-bootstrap";
 import { AIBrushApi, Worker, WorkerConfig } from "../../client";
@@ -101,6 +102,8 @@ export const WorkerList: FC<Props> = ({ api }) => {
                                     <th>Display Name</th>
                                     <th>GPU Count</th>
                                     <th>GPU Configurations</th>
+                                    <th>Status</th>
+                                    <th>Last Ping</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -125,6 +128,8 @@ export const WorkerList: FC<Props> = ({ api }) => {
                                                     </div>
                                                 ))}
                                         </td>
+                                        <td>{worker.status}</td>
+                                        <td>{!!worker.last_ping && moment(worker.last_ping).format()}</td>
                                         <td>
                                             <button
                                                 className="btn btn-danger btn-sm"

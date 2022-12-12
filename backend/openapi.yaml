@@ -642,6 +642,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WorkerConfig"
+  /api/worker-ping:
+    post:
+      description: Ping a worker
+      operationId: pingWorker
+      tags:
+        - AIBrush
+      responses:
+        "201":
+          description: Success
   /api/discord-login:
     post:
       description: Log in with Discord
