@@ -94,7 +94,7 @@ def make_batch_sd(
     return batch
 
 
-def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples, W, H, filename):
+def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples, W, H, filename, negative_prompt):
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = sampler.model
 
@@ -123,7 +123,7 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples, 
             cond={"c_concat": [c_cat], "c_crossattn": [c]}
 
             # uncond cond
-            uc_cross = model.get_unconditional_conditioning(num_samples, "")
+            uc_cross = model.get_unconditional_conditioning(num_samples, negative_prompt)
             uc_full = {"c_concat": [c_cat], "c_crossattn": [uc_cross]}
 
             shape = [model.channels, H//8, W//8]

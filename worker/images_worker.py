@@ -96,6 +96,7 @@ def _swinir_args(image_data, image):
 def _sd_args(image_data, mask_data, npy_data, image):
     args = SimpleNamespace()
     args.prompt = ",".join(image.phrases)
+    args.negative_prompt = ",".join(image.negative_phrases)
     args.H = image.height
     args.W = image.width
     # TODO: support reusing previous seeds
@@ -248,6 +249,7 @@ def warmup_image(model_name: str, image_id: str):
         mask_data=mask_data,
         warmup=True,
         nsfw=False,
+        negative_phrases=[],
     )
 
 def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, gpu: str):

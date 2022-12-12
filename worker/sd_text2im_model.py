@@ -172,6 +172,8 @@ class StableDiffusionText2ImageModel:
         assert prompt is not None
         data = [[prompt]]
 
+        negative_prompt = args.negative_prompt
+
         sample_path = self.outpath
         os.makedirs(sample_path, exist_ok=True)
         base_count = len(os.listdir(sample_path))
@@ -199,7 +201,7 @@ class StableDiffusionText2ImageModel:
                     for prompts in tqdm(data, desc="data"):
                         uc = None
                         if args.scale != 1.0:
-                            uc = self.model.get_learned_conditioning(1 * [""])
+                            uc = self.model.get_learned_conditioning(1 * [negative_prompt])
                         if isinstance(prompts, tuple):
                             prompts = list(prompts)
                         c = self.model.get_learned_conditioning(prompts)
