@@ -324,6 +324,7 @@ export class Renderer {
                     context.stroke();
                 } else if (this.cursor.type === "circle-fill") {
                     context.fillStyle = this.cursor.color;
+                    context.strokeStyle = this.cursor.color;
                     // context.lineWidth = lineWidth;
                     // context.globalAlpha = 0.5;
                     context.beginPath();
@@ -334,7 +335,19 @@ export class Renderer {
                         0,
                         2 * Math.PI
                     );
+                    context.stroke();
+                    // set alpha to 0.5 and fill
+                    context.globalAlpha = 0.5;
+                    context.beginPath();
+                    context.arc(
+                        this.cursor.x,
+                        this.cursor.y,
+                        this.cursor.radius,
+                        0,
+                        2 * Math.PI
+                    );
                     context.fill();
+                    context.globalAlpha = 1;
                 } else if (this.cursor.type == "crosshairs") {
                     // draw crosshairs based on cursor radius
                     context.strokeStyle = this.cursor.color;

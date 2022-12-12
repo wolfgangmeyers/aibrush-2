@@ -11,7 +11,6 @@ export class ZoomHelper {
         this.startTouches = null;
     }
 
-    
     onWheel(event: WheelEvent) {
         const originalZoom = this.renderer.getZoom();
         let zoom = this.renderer.getZoom();
@@ -88,7 +87,6 @@ export class ZoomHelper {
                 Math.pow(touch1.clientY - touch2.clientY, 2)
             );
             const zoom = this.startZoom * (distance / startDistance);
-            // alert(`zoom: ${zoom}, startZoom: ${this.startZoom} startDistance: ${startDistance}, distance: ${distance}`);
 
             const startCenterX = (startTouch1.clientX + startTouch2.clientX) / 2;
             const startCenterY = (startTouch1.clientY + startTouch2.clientY) / 2;
@@ -104,14 +102,17 @@ export class ZoomHelper {
                 centerY - canvasRect.top
             );
 
-            let offsetX = this.renderer.getOffsetX();
-            let offsetY = this.renderer.getOffsetY();
+            let offsetX = this.startOffsetX;
+            let offsetY = this.startOffsetY;
 
             let xDiff = canvasPoint.x - startCanvasPoint.x;
             let yDiff = canvasPoint.y - startCanvasPoint.y;
 
-            offsetX = this.startOffsetX + xDiff * (zoom / this.startZoom);
-            offsetY = this.startOffsetY + yDiff * (zoom / this.startZoom);
+            let xDiff2 = canvasPoint.x - -this.renderer.getOffsetX();
+            let yDiff2 = canvasPoint.y - -this.renderer.getOffsetY();
+
+            offsetX -= xDiff2 * (zoom / this.startZoom) - xDiff2 - (xDiff * (distance / startDistance));
+            offsetY -= yDiff2 * (zoom / this.startZoom) - yDiff2 - (yDiff * (distance / startDistance));
 
             this.renderer.updateZoomAndOffset(zoom, offsetX, offsetY);
         }
