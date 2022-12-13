@@ -31,7 +31,7 @@ image_args = SimpleNamespace(
     filename=f"{uuid.uuid4()}.png",
     ddim_steps=50,
     strength=0.75,
-    init_img=None,
+    image=None,
 )
 model.generate(image_args)
 
