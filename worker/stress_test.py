@@ -25,6 +25,7 @@ model = StableDiffusionText2ImageModel()
 
 image_args = SimpleNamespace(
     prompt="A cat",
+    negative_prompt="",
     H=512,
     W=512,
     seed=1,
