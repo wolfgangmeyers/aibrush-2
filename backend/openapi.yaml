@@ -743,6 +743,63 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+  /api/boost:
+    get:
+      description: Get the boost for the current user
+      operationId: getBoost
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Boost"
+  /api/boost/{user_id}:
+    get:
+      description: Get the boost for a user
+      operationId: getBoostForUser
+      tags:
+        - AIBrush
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Boost"
+  /api/boost/{user_id}/deposit:
+    post:
+      description: Deposit to a user's boost
+      operationId: depositBoost
+      tags:
+        - AIBrush
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepositRequest"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Boost"
+
 components:
   schemas:
     CreateImageInput:
@@ -1212,3 +1269,28 @@ components:
           type: string
       required:
         - code
+    Boost:
+      type: object
+      properties:
+        user_id:
+          type: string
+        activated_at:
+          type: integer
+        balance:
+          type: integer
+          description: "Balance in 1/2 gpu milliseconds (.1 cents)"
+        level:
+          type: integer
+      required:
+        - user_id
+        - activated_at
+        - balance
+        - level
+    DepositRequest:
+      type: object
+      properties:
+        amount:
+          type: integer
+          description: "Amount in 1/2 gpu milliseconds (.1 cents)"
+      required:
+        - amount

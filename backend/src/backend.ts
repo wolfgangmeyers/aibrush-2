@@ -31,6 +31,7 @@ import {
     WorkerGpuConfig,
     UpsertWorkerConfigInput,
     ImageUrls,
+    Boost,
 } from "./client/api";
 import { sleep } from "./sleep";
 import { EmailMessage } from "./email_message";
@@ -1518,6 +1519,99 @@ export class BackendService {
                 [hash(email), email]
             );
             return true;
+        } finally {
+            client.release();
+        }
+    }
+
+    private hydrateBoost(row: any): Boost {
+        return {
+            user_id: row.user_id,
+            activated_at: parseInt(row.activated_at),
+            balance: parseInt(row.balance),
+            level: parseInt(row.level),
+        };
+    }
+
+    async getBoost(user_id: string): Promise<Boost> {
+        // default is activated_at=0, balance=0, level=0
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `SELECT * FROM boost WHERE user_id=$1`,
+                [user_id]
+            );
+            if (result.rowCount === 0) {
+                return {
+                    user_id,
+                    activated_at: 0,
+                    balance: 0,
+                    level: 0,
+                };
+            }
+            return this.hydrateBoost(result.rows[0]);
+        } finally {
+            client.release();
+        }
+    }
+
+    async depositBoost(user_id: string, amount: number, level: number): Promise<Boost> {
+        const existingBoost = await this.getBoost(user_id);
+        if (existingBoost.level > 0) {
+            // force balance deduction before potentially changing level
+            this.setBoostLevel(user_id, 0, false);
+        }
+        // upsert
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `INSERT INTO boost (user_id, activated_at, balance, level) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET balance = boost.balance + $3, level = $4 RETURNING *`,
+                [user_id, moment().valueOf(), amount, level]
+            );
+            return this.hydrateBoost(result.rows[0]);
+        } finally {
+            client.release();
+        }
+    }
+
+    async listActiveBoosts(): Promise<Boost[]> {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `SELECT * FROM boost WHERE level > 0 AND $1 - activated_at < balance`,
+                [moment().valueOf()]
+            );
+            return result.rows.map((row: any) => this.hydrateBoost(row));
+        } finally {
+            client.release();
+        }
+    }
+
+    async setBoostLevel(user_id: string, level: number, cooldownCheck=true): Promise<Boost> {
+        // if level > 0, activated_at must be at least 10 minutes in the past
+        // if level > 0, set activated_at to now
+        const existingBoost = await this.getBoost(user_id);
+        if (cooldownCheck && level > 0 && level !== existingBoost.level && moment().valueOf() - existingBoost.activated_at < 10 * 60 * 1000) {
+            throw new Error("Cannot change boost level yet");
+        }
+        
+        // if existing level > 0, deduct balance
+        if (existingBoost.level > 0) {
+            existingBoost.balance -= (moment().valueOf() - existingBoost.activated_at) * existingBoost.level;
+            if (existingBoost.balance < 0) {
+                existingBoost.balance = 0;
+            }
+        }
+        if (level > 0 && existingBoost.balance === 0) {
+            throw new Error("Cannot activate boost with zero balance");
+        }
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `INSERT INTO boost (user_id, activated_at, balance, level) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET level = $4, balance = $3, activated_at = $2 RETURNING *`,
+                [user_id, moment().valueOf(), existingBoost.balance, level]
+            );
+            return this.hydrateBoost(result.rows[0]);
         } finally {
             client.release();
         }
