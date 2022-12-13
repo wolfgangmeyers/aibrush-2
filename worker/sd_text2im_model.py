@@ -140,7 +140,7 @@ class StableDiffusionText2ImageModel:
     def __init__(self):
         args = _default_args
         self.device = torch.device("cuda")
-        self.model = load_model()
+        self.model = torch.compile(load_model())
         self.model = self.model.to(self.device)
         if args.plms:
             raise NotImplementedError("PLMS sampler not (yet) supported")
