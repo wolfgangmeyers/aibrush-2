@@ -247,6 +247,12 @@ hr {
   margin-left: 120px;
   margin-right: 120px;
   margin-top: 88px;
+  padding-bottom: 16px;
+}
+
+.boost-widget {
+  margin-left: 120px;
+  margin-right: 120px;
 }
 
 .homepage-prompt-advanced {
@@ -322,6 +328,11 @@ hr {
     margin-top: 88px;
   }
 
+  .boost-widget {
+    margin-left: 80px;
+    margin-right: 80px;
+  }
+
   .homepage-images {
     margin-left: 120px;
     margin-right: 120px;
@@ -361,6 +372,11 @@ hr {
     margin-top: 16px;
   }
 
+  .boost-widget {
+    margin-left: 0px;
+    margin-right: 0px;
+  }
+
 }
 
 /* pulse */
@@ -380,5 +396,30 @@ hr {
   }
   100% {
     background-color: #3D3BB5;
+  }
+}
+
+/* https://codepen.io/P1N2O/pen/pyBNzX */
+@keyframes boost {
+  0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+@keyframes cooldown {
+  0% {
+    color: #FFFFFF;
+  }
+  50% {
+    color: #26D6E1;
+  }
+  100% {
+    color: #FFFFFF;
   }
 }

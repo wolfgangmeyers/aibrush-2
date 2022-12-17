@@ -2,6 +2,7 @@
 export const NOTIFICATION_IMAGE_UPDATED = "image_updated";
 export const NOTIFICATION_IMAGE_DELETED = "image_deleted";
 export const NOTIFICATION_PENDING_IMAGE = "pending_image";
+export const NOTIFICATION_BOOST_UPDATED = "boost_updated";
 
 export class ApiSocket {
     private client?: WebSocket;

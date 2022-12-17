@@ -39,7 +39,8 @@ describe("backend boost", () => {
                 user_id: "user1",
                 activated_at: 0,
                 balance: 0,
-                level: 0,
+                level: 1,
+                is_active: false,
             });
         });
     })
@@ -57,12 +58,21 @@ describe("backend boost", () => {
             expect(boost.activated_at).toBeGreaterThan(0);
             expect(boost.balance).toEqual(100);
             expect(boost.level).toEqual(1);
+            expect(boost.is_active).toEqual(true);
         });
 
         describe("Getting the boost", () => {
             it("should return the same boost", async () => {
                 const boost2 = await backendService.getBoost("user1");
                 expect(boost2).toEqual(boost);
+            });
+        });
+
+        describe("listing active boosts", () => {
+            it("should return the boost", async () => {
+                const boosts = await backendService.listActiveBoosts();
+                expect(boosts).toHaveLength(1);
+                expect(boosts[0]).toEqual(boost);
             });
         });
     })
@@ -87,7 +97,7 @@ describe("backend boost", () => {
 
             beforeEach(async () => {
                 await sleep(100);
-                boost2 = await backendService.setBoostLevel("user1", 0);
+                boost2 = await backendService.updateBoost("user1", 1, false);
             });
 
             it("should return a boost with the correct balance and level", async () => {
@@ -95,13 +105,14 @@ describe("backend boost", () => {
                 expect(boost2.user_id).toEqual("user1");
                 expect(boost2.activated_at).toBeGreaterThan(0);
                 expect(boost2.balance).toEqual(0);
-                expect(boost2.level).toEqual(0);
+                expect(boost2.level).toEqual(1);
+                expect(boost2.is_active).toEqual(false);
             });
 
             describe("Reactivate boost", () => {
                 // should raise an error
                 it("should throw an error", async () => {
-                    await expect(backendService.setBoostLevel("user1", 1)).rejects.toThrow(/Cannot change boost level yet/);
+                    await expect(backendService.updateBoost("user1", 1, true)).rejects.toThrow(/Cannot activate boost yet/);
                 });
             });
 
@@ -113,6 +124,7 @@ describe("backend boost", () => {
                     expect(boost2.activated_at).toBeGreaterThan(0);
                     expect(boost2.balance).toEqual(100);
                     expect(boost2.level).toEqual(1);
+                    expect(boost2.is_active).toEqual(true);
                 });
             })
         });
@@ -162,11 +174,14 @@ describe("backend boost", () => {
     describe("List active boosts", () => {
         let boost1: Boost;
         let boost2: Boost;
+        let boost3: Boost;
 
         beforeEach(async () => {
             boost1 = await backendService.depositBoost("user1", 100, 1);
             boost2 = await backendService.depositBoost("user2", 1000, 2);
+            boost3 = await backendService.depositBoost("user3", 10000, 3);
 
+            await backendService.updateBoost("user3", 3, false);
             const boosts = await backendService.listActiveBoosts();
         });
 
@@ -181,7 +196,7 @@ describe("backend boost", () => {
 
     describe("Activate boost with zero balance", () => {
         it("should throw an error", async () => {
-            await expect(backendService.setBoostLevel("user1", 1)).rejects.toThrow(/Cannot activate boost with zero balance/);
+            await expect(backendService.updateBoost("user1", 1, true)).rejects.toThrow(/Cannot activate boost with zero balance/);
         });
     })
 })

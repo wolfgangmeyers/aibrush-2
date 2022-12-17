@@ -129,6 +129,25 @@ export interface Boost {
      * @memberof Boost
      */
     'level': number;
+    /**
+     * Whether the boost is active
+     * @type {boolean}
+     * @memberof Boost
+     */
+    'is_active'?: boolean;
+}
+/**
+ * 
+ * @export
+ * @interface BoostList
+ */
+export interface BoostList {
+    /**
+     * 
+     * @type {Array<Boost>}
+     * @memberof BoostList
+     */
+    'boosts': Array<Boost>;
 }
 /**
  * 
@@ -386,6 +405,12 @@ export interface DepositRequest {
      * @memberof DepositRequest
      */
     'amount': number;
+    /**
+     * Boost level to activate after deposit
+     * @type {number}
+     * @memberof DepositRequest
+     */
+    'level': number;
 }
 /**
  * 
@@ -941,6 +966,56 @@ export interface RefreshLoginInput {
 /**
  * 
  * @export
+ * @interface UpdateBoostRequest
+ */
+export interface UpdateBoostRequest {
+    /**
+     * Boost level to set for current user
+     * @type {number}
+     * @memberof UpdateBoostRequest
+     */
+    'level'?: number;
+    /**
+     * Whether to activate or deactivate the boost
+     * @type {boolean}
+     * @memberof UpdateBoostRequest
+     */
+    'is_active'?: boolean;
+}
+/**
+ * 
+ * @export
+ * @interface UpdateBoostResponse
+ */
+export interface UpdateBoostResponse {
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateBoostResponse
+     */
+    'level'?: number;
+    /**
+     * Balance in 1/2 gpu milliseconds (.1 cents)
+     * @type {number}
+     * @memberof UpdateBoostResponse
+     */
+    'balance'?: number;
+    /**
+     * Whether the boost is active
+     * @type {boolean}
+     * @memberof UpdateBoostResponse
+     */
+    'is_active'?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateBoostResponse
+     */
+    'error'?: string;
+}
+/**
+ * 
+ * @export
  * @interface UpdateImageInput
  */
 export interface UpdateImageInput {
@@ -1356,39 +1431,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Create a new order
-         * @param {CreateOrderInput} [createOrderInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createOrder: async (createOrderInput?: CreateOrderInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/orders`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createOrderInput, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1949,35 +1991,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Get the list of orders
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getOrders: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/orders`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2174,6 +2187,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          */
         isAdmin: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/is-admin`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get the boost for all users
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listBoosts: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/boosts`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2400,6 +2442,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(refreshLoginInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Update the boost level for the current user
+         * @param {UpdateBoostRequest} [updateBoostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateBoost: async (updateBoostRequest?: UpdateBoostRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/boost`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateBoostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2711,16 +2786,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Create a new order
-         * @param {CreateOrderInput} [createOrderInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createOrder(createOrderInput?: CreateOrderInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Order>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createOrder(createOrderInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Create a service account
          * @param {CreateServiceAccountInput} [createServiceAccountInput] 
          * @param {*} [options] Override http request option.
@@ -2889,15 +2954,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Get the list of orders
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getOrders(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<OrderList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getOrders(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2965,6 +3021,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Get the boost for all users
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async listBoosts(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<BoostList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listBoosts(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {string} [filter] 
@@ -3024,6 +3089,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async refresh(refreshLoginInput?: RefreshLoginInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.refresh(refreshLoginInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Update the boost level for the current user
+         * @param {UpdateBoostRequest} [updateBoostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UpdateBoostResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateBoost(updateBoostRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3146,15 +3221,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         createInviteCode(options?: any): AxiosPromise<InviteCode> {
             return localVarFp.createInviteCode(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Create a new order
-         * @param {CreateOrderInput} [createOrderInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createOrder(createOrderInput?: CreateOrderInput, options?: any): AxiosPromise<Order> {
-            return localVarFp.createOrder(createOrderInput, options).then((request) => request(axios, basePath));
         },
         /**
          * Create a service account
@@ -3308,14 +3374,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getNpyData(id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get the list of orders
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getOrders(options?: any): AxiosPromise<OrderList> {
-            return localVarFp.getOrders(options).then((request) => request(axios, basePath));
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -3376,6 +3434,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.isAdmin(options).then((request) => request(axios, basePath));
         },
         /**
+         * Get the boost for all users
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listBoosts(options?: any): AxiosPromise<BoostList> {
+            return localVarFp.listBoosts(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {string} [filter] 
@@ -3430,6 +3496,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         refresh(refreshLoginInput?: RefreshLoginInput, options?: any): AxiosPromise<LoginResult> {
             return localVarFp.refresh(refreshLoginInput, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Update the boost level for the current user
+         * @param {UpdateBoostRequest} [updateBoostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: any): AxiosPromise<UpdateBoostResponse> {
+            return localVarFp.updateBoost(updateBoostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * Update a saved image
@@ -3551,17 +3626,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public createInviteCode(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).createInviteCode(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Create a new order
-     * @param {CreateOrderInput} [createOrderInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createOrder(createOrderInput?: CreateOrderInput, options?: AxiosRequestConfig) {
-        return AIBrushApiFp(this.configuration).createOrder(createOrderInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3750,16 +3814,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Get the list of orders
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getOrders(options?: AxiosRequestConfig) {
-        return AIBrushApiFp(this.configuration).getOrders(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Get the binary thumbnail data
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -3834,6 +3888,16 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Get the boost for all users
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public listBoosts(options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).listBoosts(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Get a list of saved images
      * @param {number} [cursor] 
      * @param {string} [filter] 
@@ -3899,6 +3963,17 @@ export class AIBrushApi extends BaseAPI {
      */
     public refresh(refreshLoginInput?: RefreshLoginInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).refresh(refreshLoginInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update the boost level for the current user
+     * @param {UpdateBoostRequest} [updateBoostRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).updateBoost(updateBoostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

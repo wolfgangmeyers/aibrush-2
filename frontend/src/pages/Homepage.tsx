@@ -5,9 +5,10 @@ import { useParams, useHistory, Link } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
-import { CreateImageInput, Image, ImageStatusEnum } from "../client/api";
+import { CreateImageInput, Image, ImageStatusEnum, Boost } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
+import { BoostWidget } from "../components/BoostWidget";
 
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ImagePopup } from "../components/ImagePopup";
@@ -40,6 +41,8 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
     const [bulkDeleteIds, setBulkDeleteIds] = useState<{
         [key: string]: boolean;
     }>({});
+
+    const [boost, setBoost] = useState<Boost | null>(null);
 
     const { id } = useParams<{ id?: string }>();
     const history = useHistory();
@@ -316,6 +319,12 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
         }
     }, [apiSocket]);
 
+    useEffect(() => {
+        api.getBoost().then((resp) => {
+            setBoost(resp.data);
+        });
+    }, [api])
+
     const isPendingOrProcessing = (image: Image) => {
         return (
             image.status === ImageStatusEnum.Pending ||
@@ -464,6 +473,32 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
         (image) => image.status === ImageStatusEnum.Processing
     );
 
+    const onUpdateBoostActive = async (active: boolean) => {
+        if (!boost) return;
+        const resp = await api.updateBoost({
+            is_active: active,
+            level: boost.level,
+        });
+        if (resp.data.error) {
+            alert(resp.data.error);
+        } else {
+            setBoost((await api.getBoost()).data);
+        }
+    }
+
+    const onUpdateBoostLevel = async (level: number) => {
+        if (!boost) return;
+        const resp = await api.updateBoost({
+            is_active: boost.is_active,
+            level: level,
+        });
+        if (resp.data.error) {
+            alert(resp.data.error);
+        } else {
+            setBoost((await api.getBoost()).data);
+        }
+    }
+
     return (
         <>
             <h1 style={{ fontSize: "40px", textAlign: "left" }}>
@@ -478,6 +513,11 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                 parent={parentImage}
                 onCancel={() => handleCancelFork()}
             />
+            {boost && <BoostWidget
+                boost={boost}
+                onUpdateActive={onUpdateBoostActive}
+                onUpdateBoostLevel={onUpdateBoostLevel}
+            />}
             <hr />
 
             <div className="homepage-images" style={{ marginTop: "48px", paddingBottom: "48px" }}>

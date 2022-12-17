@@ -38,13 +38,10 @@ describe("ScalingService", () => {
         await backendService.destroy();
     });
 
-    describe("4 gpu-1 orders, engine 1 underflow", () => {
+    describe("4 gpu-1 boosts, engine 1 underflow", () => {
         beforeEach(async () => {
             for (let i = 0; i < 4; i++) {
-                await backendService.createOrder(adminId, {
-                    gpu_count: 1,
-                    hours: 1,
-                }, true, 0);
+                await backendService.depositBoost(`user-${i}`, 1000, 2);
             }
             await scalingService.scale();
         })
@@ -58,15 +55,9 @@ describe("ScalingService", () => {
     describe("3 gpu-1 1 gpu-2 orders, engine 1 at capacity", () => {
         beforeEach(async () => {
             for (let i = 0; i < 3; i++) {
-                await backendService.createOrder(adminId, {
-                    gpu_count: 1,
-                    hours: 1,
-                }, true, 0);
+                await backendService.depositBoost(`user-${i}`, 1000, 2);
             }
-            await backendService.createOrder(adminId, {
-                gpu_count: 2,
-                hours: 1,
-            }, true, 0);
+            await backendService.depositBoost(`user-3`, 1000, 4);
             await scalingService.scale();
         })
 
@@ -78,15 +69,9 @@ describe("ScalingService", () => {
 
     describe("1 gpu-4 2 gpu-1, engine 1 at capacity, engine 2 at 1", () => {
         beforeEach(async () => {
-            await backendService.createOrder(adminId, {
-                gpu_count: 4,
-                hours: 1,
-            }, true, 0);
+            await backendService.depositBoost(`user-999`, 1000, 8);
             for (let i = 0; i < 2; i++) {
-                await backendService.createOrder(adminId, {
-                    gpu_count: 1,
-                    hours: 1,
-                }, true, 0);
+                await backendService.depositBoost(`user-${i}`, 1000, 2);
             }
             await scalingService.scale();
         })
@@ -100,10 +85,7 @@ describe("ScalingService", () => {
     describe("all at capacity", () => {
         beforeEach(async () => {
             for (let i = 0; i < 15; i++) {
-                await backendService.createOrder(adminId, {
-                    gpu_count: 1,
-                    hours: 1,
-                }, true, 0);
+                await backendService.depositBoost(`user-${i}`, 1000, 2);
             }
             await scalingService.scale();
         })
@@ -117,10 +99,7 @@ describe("ScalingService", () => {
     describe("above capacity", () => {
         beforeEach(async () => {
             for (let i = 0; i < 20; i++) {
-                await backendService.createOrder(adminId, {
-                    gpu_count: 1,
-                    hours: 1,
-                }, true, 0);
+                await backendService.depositBoost(`user-${i}`, 1000, 2);
             }
             await scalingService.scale();
         })
@@ -136,10 +115,7 @@ describe("ScalingService", () => {
         // requested scale, the scaling service will adjust.
         beforeEach(async () => {
             for (let i = 0; i < 4; i++) {
-                await backendService.createOrder(adminId, {
-                    gpu_count: 1,
-                    hours: 1,
-                }, true, 0);
+                await backendService.depositBoost(`user-${i}`, 1000, 2);
             }
             scalingEngine1.returnScale = 3;
             await scalingService.scale();
@@ -154,10 +130,7 @@ describe("ScalingService", () => {
     describe("scaling synchronization cooldown (before)", () => {
         beforeEach(async () => {
             for (let i = 0; i < 15; i++) {
-                await backendService.createOrder(adminId, {
-                    gpu_count: 1,
-                    hours: 1,
-                }, true, 0);
+                await backendService.depositBoost(`user-${i}`, 1000, 2);
             }
             await scalingService.scale();
         })
@@ -173,10 +146,7 @@ describe("ScalingService", () => {
     describe("scaling synchronization cooldown (after)", () => {
         beforeEach(async () => {
             for (let i = 0; i < 5; i++) {
-                await backendService.createOrder(adminId, {
-                    gpu_count: 1,
-                    hours: 1,
-                }, true, 0);
+                await backendService.depositBoost(`user-${i}`, 1000, 2);
             }
             await backendService.setLastEventTime(SCALING_SERVICE_EVENT, moment().valueOf())
             await scalingService.scale();
@@ -191,10 +161,7 @@ describe("ScalingService", () => {
     describe("scaling synchronization cooldown (after 1 minute)", () => {
         beforeEach(async () => {
             for (let i = 0; i < 15; i++) {
-                await backendService.createOrder(adminId, {
-                    gpu_count: 1,
-                    hours: 1,
-                }, true, 0);
+                await backendService.depositBoost(`user-${i}`, 1000, 2);
             }
             await backendService.setLastEventTime(SCALING_SERVICE_EVENT, moment().subtract(1, "minutes").valueOf())
             await scalingService.scale();
