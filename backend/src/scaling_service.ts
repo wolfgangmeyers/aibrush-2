@@ -105,13 +105,19 @@ export class ScalingService {
                     SCALING_SERVICE_EVENT,
                     moment().valueOf()
                 );
-                const activeOrders = await this.backend.listOrders(true);
+                // const activeOrders = await this.backend.listOrders(true);
+                const boosts = await this.backend.listActiveBoosts();
                 let unallocated = 0;
-                for (let order of activeOrders) {
-                    unallocated += order.gpu_count;
+                // for (let order of activeOrders) {
+                //     unallocated += order.gpu_count;
+                // }
+                for (let boost of boosts) {
+                    unallocated += boost.level;
                 }
+                // Each unit of "boost" is equivalent to 1/2 GPU
+                unallocated /= 2;
                 this.logger.log("ScalingService.scale", {
-                    activeOrders: activeOrders.length,
+                    boosts: boosts.length,
                     gpuCount: unallocated,
                 });
                 

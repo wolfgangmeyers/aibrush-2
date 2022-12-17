@@ -1,6 +1,7 @@
 import React, { FC, useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { AIBrushApi } from "../../client/api";
+import { BoostList } from "./BoostList";
 import { WorkerList } from "./WorkerList";
 
 interface Props {
@@ -16,7 +17,7 @@ export const Admin: FC<Props> = ({ api }) => {
     };
 
     return (
-        <>
+        <div style={{paddingBottom: "48px"}}>
             {/* Header: Create new image */}
             <div className="row">
                 <div className="col-12">
@@ -66,15 +67,9 @@ export const Admin: FC<Props> = ({ api }) => {
                 </div>
             </div>
             <hr />
-            <div className="row">
-                <div className="col-12">
-                    <Link className="btn btn-primary" to="/orders">
-                        Orders
-                    </Link>
-                </div>
-            </div>
+            <BoostList api={api} />
             <hr />
             <WorkerList api={api} />
-        </>
+        </div>
     );
 };

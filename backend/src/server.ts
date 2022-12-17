@@ -19,7 +19,7 @@ if (process.env.BUGSNAG_API_KEY) {
 }
 
 import { sleep } from "./sleep";
-import { BackendService } from "./backend";
+import { BackendService, UserError } from "./backend";
 import { Config } from "./config";
 import {
     AuthHelper,
@@ -31,6 +31,7 @@ import {
 import {
     AddMetricsInput,
     CreateOrderInput,
+    DepositRequest,
     ImageStatusEnum,
     UpsertWorkerConfigInput,
     UpsertWorkerInput,
@@ -168,14 +169,8 @@ export class Server {
         );
         this.app.use(
             express.raw({
-                type: "video/mp4",
-                limit: "1024mb",
-            })
-        );
-        this.app.use(
-            express.raw({
                 type: "image/png",
-                limit: "1024mb",
+                limit: "50mb",
             })
         );
         this.app.use(cors());
@@ -489,7 +484,7 @@ export class Server {
                         {
                             encoded_image: data,
                         },
-                        null,
+                        null
                     );
                     if (image == null) {
                         res.status(404).send("not found");
@@ -1005,21 +1000,21 @@ export class Server {
             )
         );
 
-    //     /api/worker-ping:
-    // post:
-    //   description: Ping a worker
-    //   operationId: pingWorker
-    //   tags:
-    //     - AIBrush
-    //   responses:
-    //     "201":
-    //       description: Success
+        //     /api/worker-ping:
+        // post:
+        //   description: Ping a worker
+        //   operationId: pingWorker
+        //   tags:
+        //     - AIBrush
+        //   responses:
+        //     "201":
+        //       description: Success
 
-    // on ping, update the worker with an empty payload
+        // on ping, update the worker with an empty payload
         this.app.post(
             "/api/worker-ping",
             withMetrics("/api/worker-ping", async (req, res) => {
-                console.log("******** worker ping **********")
+                console.log("******** worker ping **********");
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 if (!jwt.serviceAccountConfig) {
                     res.status(403).send("Forbidden");
@@ -1071,59 +1066,6 @@ export class Server {
                     );
                 }
                 res.json(image);
-            })
-        );
-
-        this.app.get(
-            "/api/orders",
-            withMetrics("/api/orders", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log("Service account tried to get orders", jwt);
-                    return;
-                }
-                // check admin
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    this.logger.log(
-                        `${jwt.userId} attempted to get orders but is not an admin`
-                    );
-                    res.sendStatus(403);
-                    return;
-                }
-                const orders = await this.backendService.listOrders(true);
-                res.json({ orders });
-            })
-        );
-
-        this.app.post(
-            "/api/orders",
-            withMetrics("/api/orders", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to create order",
-                        jwt
-                    );
-                    return;
-                }
-                // check admin
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    this.logger.log(
-                        `${jwt.userId} attempted to create an order but is not an admin`
-                    );
-                    res.sendStatus(403);
-                    return;
-                }
-                const input = req.body as CreateOrderInput;
-                const order = await this.backendService.createOrder(
-                    jwt.userId,
-                    input,
-                    true,
-                    0
-                );
-                res.json(order);
             })
         );
 
@@ -1184,6 +1126,125 @@ export class Server {
                 }
                 const inviteCode = await this.backendService.createInviteCode();
                 res.status(201).json(inviteCode);
+            })
+        );
+
+        this.app.get(
+            "/api/boost",
+            withMetrics("/api/boost", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log("Service account tried to get boost", jwt);
+                    return;
+                }
+                const boost = await this.backendService.getBoost(jwt.userId);
+                res.json(boost);
+            })
+        );
+
+        this.app.put(
+            "/api/boost",
+            withMetrics("/api/boost", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log("Service account tried to update boost level", jwt);
+                    return;
+                }
+                const level = req.body.level;
+                if (!level || level < 0 || level > 4) {
+                    res.status(400).send("Invalid level");
+                    return;
+                }
+                try {
+                    const boost = await this.backendService.updateBoost(
+                        jwt.userId,
+                        req.body.level,
+                        req.body.is_active,
+                    );
+                    res.json({
+                        level: boost.level,
+                        balance: boost.balance,
+                        is_active: boost.is_active,
+                    })
+                } catch (e) {
+                    if (e instanceof UserError) {
+                        res.json({
+                            error: e.message,
+                        })
+                    } else {
+                        throw e;
+                    }
+                }
+            })
+        );
+
+        this.app.get(
+            "/api/boost/:userId",
+            withMetrics("/api/boost/:userId", async (req, res) => {
+                // admin only
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log("Service account tried to get boost", jwt);
+                    return;
+                }
+                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
+                    res.sendStatus(404);
+                    return;
+                }
+                const boost = await this.backendService.getBoost(
+                    req.params.userId
+                );
+                res.json(boost);
+            })
+        );
+
+        // admin only
+        this.app.post(
+            "/api/boost/:userId/deposit",
+            withMetrics("/api/boost/:userId/deposit", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to deposit to boost",
+                        jwt
+                    );
+                    return;
+                }
+                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
+                    res.sendStatus(404);
+                    return;
+                }
+                const depositRequest = req.body as DepositRequest;
+                const boost = await this.backendService.depositBoost(
+                    req.params.userId,
+                    depositRequest.amount,
+                    depositRequest.level
+                );
+                res.json(boost);
+            })
+        );
+
+        this.app.get(
+            "/api/boosts",
+            withMetrics("/api/boosts", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log("Service account tried to list boosts", jwt);
+                    return;
+                }
+                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
+                    res.sendStatus(404);
+                    return;
+                }
+                const boosts = await this.backendService.listActiveBoosts();
+                res.json({
+                    boosts,
+                });
             })
         );
 

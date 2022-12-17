@@ -104,6 +104,56 @@ export interface BatchGetImagesInput {
 /**
  * 
  * @export
+ * @interface Boost
+ */
+export interface Boost {
+    /**
+     * 
+     * @type {string}
+     * @memberof Boost
+     */
+    user_id: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof Boost
+     */
+    activated_at: number;
+    /**
+     * Balance in 1/2 gpu milliseconds (.1 cents)
+     * @type {number}
+     * @memberof Boost
+     */
+    balance: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Boost
+     */
+    level: number;
+    /**
+     * Whether the boost is active
+     * @type {boolean}
+     * @memberof Boost
+     */
+    is_active?: boolean;
+}
+/**
+ * 
+ * @export
+ * @interface BoostList
+ */
+export interface BoostList {
+    /**
+     * 
+     * @type {Array<Boost>}
+     * @memberof BoostList
+     */
+    boosts: Array<Boost>;
+}
+/**
+ * 
+ * @export
  * @interface CreateImageInput
  */
 export interface CreateImageInput {
@@ -314,25 +364,6 @@ export enum CreateImageInputWidthEnum {
 /**
  * 
  * @export
- * @interface CreateOrderInput
- */
-export interface CreateOrderInput {
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateOrderInput
-     */
-    gpu_count: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateOrderInput
-     */
-    hours: number;
-}
-/**
- * 
- * @export
  * @interface CreateServiceAccountInput
  */
 export interface CreateServiceAccountInput {
@@ -353,6 +384,25 @@ export enum CreateServiceAccountInputTypeEnum {
     Private = 'private'
 }
 
+/**
+ * 
+ * @export
+ * @interface DepositRequest
+ */
+export interface DepositRequest {
+    /**
+     * Amount in 1/2 gpu milliseconds (.1 cents)
+     * @type {number}
+     * @memberof DepositRequest
+     */
+    amount: number;
+    /**
+     * Boost level to activate after deposit
+     * @type {number}
+     * @memberof DepositRequest
+     */
+    level: number;
+}
 /**
  * 
  * @export
@@ -874,19 +924,6 @@ export interface Order {
 /**
  * 
  * @export
- * @interface OrderList
- */
-export interface OrderList {
-    /**
-     * 
-     * @type {Array<Order>}
-     * @memberof OrderList
-     */
-    orders: Array<Order>;
-}
-/**
- * 
- * @export
  * @interface ProcessImageInput
  */
 export interface ProcessImageInput {
@@ -915,6 +952,56 @@ export interface RefreshLoginInput {
      * @memberof RefreshLoginInput
      */
     refreshToken?: string;
+}
+/**
+ * 
+ * @export
+ * @interface UpdateBoostRequest
+ */
+export interface UpdateBoostRequest {
+    /**
+     * Boost level to set for current user
+     * @type {number}
+     * @memberof UpdateBoostRequest
+     */
+    level?: number;
+    /**
+     * Whether to activate or deactivate the boost
+     * @type {boolean}
+     * @memberof UpdateBoostRequest
+     */
+    is_active?: boolean;
+}
+/**
+ * 
+ * @export
+ * @interface UpdateBoostResponse
+ */
+export interface UpdateBoostResponse {
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateBoostResponse
+     */
+    level?: number;
+    /**
+     * Balance in 1/2 gpu milliseconds (.1 cents)
+     * @type {number}
+     * @memberof UpdateBoostResponse
+     */
+    balance?: number;
+    /**
+     * Whether the boost is active
+     * @type {boolean}
+     * @memberof UpdateBoostResponse
+     */
+    is_active?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateBoostResponse
+     */
+    error?: string;
 }
 /**
  * 
@@ -1347,39 +1434,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Create a new order
-         * @param {CreateOrderInput} [createOrderInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createOrder: async (createOrderInput?: CreateOrderInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/orders`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createOrderInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Create a service account
          * @param {CreateServiceAccountInput} [createServiceAccountInput] 
          * @param {*} [options] Override http request option.
@@ -1512,6 +1566,43 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Deposit to a user\'s boost
+         * @param {string} userId 
+         * @param {DepositRequest} [depositRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        depositBoost: async (userId: string, depositRequest?: DepositRequest, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'userId' is not null or undefined
+            assertParamExists('depositBoost', 'userId', userId)
+            const localVarPath = `/api/boost/{user_id}/deposit`
+                .replace(`{${"user_id"}}`, encodeURIComponent(String(userId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(depositRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Log in with Discord
          * @param {DiscordLogin} [discordLogin] 
          * @param {*} [options] Override http request option.
@@ -1584,6 +1675,68 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          */
         getAssetsUrl: async (options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/assets-url`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get the boost for the current user
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getBoost: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/boost`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get the boost for a user
+         * @param {string} userId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getBoostForUser: async (userId: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'userId' is not null or undefined
+            assertParamExists('getBoostForUser', 'userId', userId)
+            const localVarPath = `/api/boost/{user_id}`
+                .replace(`{${"user_id"}}`, encodeURIComponent(String(userId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1834,35 +1987,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Get the list of orders
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getOrders: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/orders`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2082,6 +2206,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Get the boost for all users
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listBoosts: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/boosts`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {string} [filter] 
@@ -2197,6 +2350,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Ping a worker
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        pingWorker: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/worker-ping`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Get the next pending image and set its status to processing.
          * @param {ProcessImageInput} [processImageInput] 
          * @param {*} [options] Override http request option.
@@ -2256,6 +2438,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(refreshLoginInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Update the boost level for the current user
+         * @param {UpdateBoostRequest} [updateBoostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateBoost: async (updateBoostRequest?: UpdateBoostRequest, options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/boost`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateBoostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2448,6 +2663,43 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Upload the binary thumbnail data
+         * @param {string} id 
+         * @param {any} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        uploadThumbnailData: async (id: string, body?: any, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('uploadThumbnailData', 'id', id)
+            const localVarPath = `/api/images/{id}.thumbnail.png`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'image/png';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Verify Login code
          * @param {VerifyLoginInput} [verifyLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2530,16 +2782,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Create a new order
-         * @param {CreateOrderInput} [createOrderInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createOrder(createOrderInput?: CreateOrderInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Order>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createOrder(createOrderInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Create a service account
          * @param {CreateServiceAccountInput} [createServiceAccountInput] 
          * @param {*} [options] Override http request option.
@@ -2580,6 +2822,17 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Deposit to a user\'s boost
+         * @param {string} userId 
+         * @param {DepositRequest} [depositRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async depositBoost(userId: string, depositRequest?: DepositRequest, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Boost>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.depositBoost(userId, depositRequest, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Log in with Discord
          * @param {DiscordLogin} [discordLogin] 
          * @param {*} [options] Override http request option.
@@ -2606,6 +2859,25 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async getAssetsUrl(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AssetsUrl>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getAssetsUrl(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get the boost for the current user
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getBoost(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Boost>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getBoost(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get the boost for a user
+         * @param {string} userId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getBoostForUser(userId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Boost>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getBoostForUser(userId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2678,15 +2950,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Get the list of orders
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getOrders(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<OrderList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getOrders(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2754,6 +3017,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Get the boost for all users
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async listBoosts(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<BoostList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listBoosts(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {string} [filter] 
@@ -2787,6 +3059,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Ping a worker
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async pingWorker(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.pingWorker(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Get the next pending image and set its status to processing.
          * @param {ProcessImageInput} [processImageInput] 
          * @param {*} [options] Override http request option.
@@ -2804,6 +3085,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async refresh(refreshLoginInput?: RefreshLoginInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.refresh(refreshLoginInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Update the boost level for the current user
+         * @param {UpdateBoostRequest} [updateBoostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UpdateBoostResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateBoost(updateBoostRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2862,6 +3153,17 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Upload the binary thumbnail data
+         * @param {string} id 
+         * @param {any} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async uploadThumbnailData(id: string, body?: any, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadThumbnailData(id, body, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Verify Login code
          * @param {VerifyLoginInput} [verifyLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2917,15 +3219,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createInviteCode(options).then((request) => request(axios, basePath));
         },
         /**
-         * Create a new order
-         * @param {CreateOrderInput} [createOrderInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createOrder(createOrderInput?: CreateOrderInput, options?: any): AxiosPromise<Order> {
-            return localVarFp.createOrder(createOrderInput, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Create a service account
          * @param {CreateServiceAccountInput} [createServiceAccountInput] 
          * @param {*} [options] Override http request option.
@@ -2962,6 +3255,16 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.deleteWorker(workerId, options).then((request) => request(axios, basePath));
         },
         /**
+         * Deposit to a user\'s boost
+         * @param {string} userId 
+         * @param {DepositRequest} [depositRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        depositBoost(userId: string, depositRequest?: DepositRequest, options?: any): AxiosPromise<Boost> {
+            return localVarFp.depositBoost(userId, depositRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Log in with Discord
          * @param {DiscordLogin} [discordLogin] 
          * @param {*} [options] Override http request option.
@@ -2986,6 +3289,23 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         getAssetsUrl(options?: any): AxiosPromise<AssetsUrl> {
             return localVarFp.getAssetsUrl(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get the boost for the current user
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getBoost(options?: any): AxiosPromise<Boost> {
+            return localVarFp.getBoost(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get the boost for a user
+         * @param {string} userId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getBoostForUser(userId: string, options?: any): AxiosPromise<Boost> {
+            return localVarFp.getBoostForUser(userId, options).then((request) => request(axios, basePath));
         },
         /**
          * Get the features
@@ -3050,14 +3370,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getNpyData(id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get the list of orders
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getOrders(options?: any): AxiosPromise<OrderList> {
-            return localVarFp.getOrders(options).then((request) => request(axios, basePath));
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -3118,6 +3430,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.isAdmin(options).then((request) => request(axios, basePath));
         },
         /**
+         * Get the boost for all users
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listBoosts(options?: any): AxiosPromise<BoostList> {
+            return localVarFp.listBoosts(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {string} [filter] 
@@ -3148,6 +3468,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.loginAsWorker(workerLoginCode, options).then((request) => request(axios, basePath));
         },
         /**
+         * Ping a worker
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        pingWorker(options?: any): AxiosPromise<void> {
+            return localVarFp.pingWorker(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get the next pending image and set its status to processing.
          * @param {ProcessImageInput} [processImageInput] 
          * @param {*} [options] Override http request option.
@@ -3164,6 +3492,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         refresh(refreshLoginInput?: RefreshLoginInput, options?: any): AxiosPromise<LoginResult> {
             return localVarFp.refresh(refreshLoginInput, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Update the boost level for the current user
+         * @param {UpdateBoostRequest} [updateBoostRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: any): AxiosPromise<UpdateBoostResponse> {
+            return localVarFp.updateBoost(updateBoostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * Update a saved image
@@ -3214,6 +3551,16 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         uploadImageData(id: string, body?: any, options?: any): AxiosPromise<void> {
             return localVarFp.uploadImageData(id, body, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Upload the binary thumbnail data
+         * @param {string} id 
+         * @param {any} [body] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        uploadThumbnailData(id: string, body?: any, options?: any): AxiosPromise<void> {
+            return localVarFp.uploadThumbnailData(id, body, options).then((request) => request(axios, basePath));
         },
         /**
          * Verify Login code
@@ -3278,17 +3625,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Create a new order
-     * @param {CreateOrderInput} [createOrderInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createOrder(createOrderInput?: CreateOrderInput, options?: any) {
-        return AIBrushApiFp(this.configuration).createOrder(createOrderInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Create a service account
      * @param {CreateServiceAccountInput} [createServiceAccountInput] 
      * @param {*} [options] Override http request option.
@@ -3333,6 +3669,18 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Deposit to a user\'s boost
+     * @param {string} userId 
+     * @param {DepositRequest} [depositRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public depositBoost(userId: string, depositRequest?: DepositRequest, options?: any) {
+        return AIBrushApiFp(this.configuration).depositBoost(userId, depositRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Log in with Discord
      * @param {DiscordLogin} [discordLogin] 
      * @param {*} [options] Override http request option.
@@ -3362,6 +3710,27 @@ export class AIBrushApi extends BaseAPI {
      */
     public getAssetsUrl(options?: any) {
         return AIBrushApiFp(this.configuration).getAssetsUrl(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get the boost for the current user
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getBoost(options?: any) {
+        return AIBrushApiFp(this.configuration).getBoost(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get the boost for a user
+     * @param {string} userId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getBoostForUser(userId: string, options?: any) {
+        return AIBrushApiFp(this.configuration).getBoostForUser(userId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3441,16 +3810,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Get the list of orders
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getOrders(options?: any) {
-        return AIBrushApiFp(this.configuration).getOrders(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Get the binary thumbnail data
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -3525,6 +3884,16 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Get the boost for all users
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public listBoosts(options?: any) {
+        return AIBrushApiFp(this.configuration).listBoosts(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Get a list of saved images
      * @param {number} [cursor] 
      * @param {string} [filter] 
@@ -3561,6 +3930,16 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Ping a worker
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public pingWorker(options?: any) {
+        return AIBrushApiFp(this.configuration).pingWorker(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Get the next pending image and set its status to processing.
      * @param {ProcessImageInput} [processImageInput] 
      * @param {*} [options] Override http request option.
@@ -3580,6 +3959,17 @@ export class AIBrushApi extends BaseAPI {
      */
     public refresh(refreshLoginInput?: RefreshLoginInput, options?: any) {
         return AIBrushApiFp(this.configuration).refresh(refreshLoginInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update the boost level for the current user
+     * @param {UpdateBoostRequest} [updateBoostRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: any) {
+        return AIBrushApiFp(this.configuration).updateBoost(updateBoostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3640,6 +4030,18 @@ export class AIBrushApi extends BaseAPI {
      */
     public uploadImageData(id: string, body?: any, options?: any) {
         return AIBrushApiFp(this.configuration).uploadImageData(id, body, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Upload the binary thumbnail data
+     * @param {string} id 
+     * @param {any} [body] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public uploadThumbnailData(id: string, body?: any, options?: any) {
+        return AIBrushApiFp(this.configuration).uploadThumbnailData(id, body, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

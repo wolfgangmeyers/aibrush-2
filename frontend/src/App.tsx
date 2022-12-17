@@ -15,7 +15,6 @@ import { DeletedImages } from "./pages/DeletedImages";
 
 // V2 UI
 import { Homepage } from "./pages/Homepage";
-import { Orders } from "./pages/admin/Orders";
 import { ApiSocket } from "./lib/apisocket";
 import { DiscordLogin } from "./pages/DiscordLogin";
 
@@ -206,9 +205,6 @@ function App() {
                                 <>
                                     <Route path="/admin">
                                         <Admin api={client} />
-                                    </Route>
-                                    <Route path="/orders">
-                                        <Orders api={client} />
                                     </Route>
                                 </>
                             )}

@@ -7,6 +7,9 @@ import { Logger } from "./logs";
 import moment from "moment";
 
 export function hash(username: string): string {
+    if (username.indexOf("@") == -1) {
+        return username;
+    }
     return crypto.createHash("sha256").update(username).digest("base64")
 }
 

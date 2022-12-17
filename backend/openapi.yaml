@@ -713,36 +713,6 @@ paths:
       responses:
         "200":
           description: Success
-  /api/orders:
-    get:
-      description: Get the list of orders
-      operationId: getOrders
-      tags:
-        - AIBrush
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/OrderList"
-    post:
-      description: Create a new order
-      operationId: createOrder
-      tags:
-        - AIBrush
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateOrderInput"
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Order"
   /api/boost:
     get:
       description: Get the boost for the current user
@@ -756,6 +726,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Boost"
+    put:
+      description: Update the boost level for the current user
+      operationId: updateBoost
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBoostRequest"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBoostResponse"
+  /api/boosts:
+    get:
+      description: Get the boost for all users
+      operationId: listBoosts
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BoostList"
   /api/boost/{user_id}:
     get:
       description: Get the boost for a user
@@ -1243,25 +1243,6 @@ components:
         - is_active
         - gpu_count
         - amount_paid_cents
-    CreateOrderInput:
-      type: object
-      properties:
-        gpu_count:
-          type: integer
-        hours:
-          type: integer
-      required:
-        - gpu_count
-        - hours
-    OrderList:
-      type: object
-      properties:
-        orders:
-          type: array
-          items:
-            $ref: "#/components/schemas/Order"
-      required:
-        - orders
     DiscordLogin:
       type: object
       properties:
@@ -1281,6 +1262,9 @@ components:
           description: "Balance in 1/2 gpu milliseconds (.1 cents)"
         level:
           type: integer
+        is_active:
+          type: boolean
+          description: "Whether the boost is active"
       required:
         - user_id
         - activated_at
@@ -1292,5 +1276,40 @@ components:
         amount:
           type: integer
           description: "Amount in 1/2 gpu milliseconds (.1 cents)"
+        level:
+          type: integer
+          description: "Boost level to activate after deposit"
       required:
         - amount
+        - level
+    UpdateBoostRequest:
+      type: object
+      properties:
+        level:
+          type: integer
+          description: "Boost level to set for current user"
+        is_active:
+          type: boolean
+          description: "Whether to activate or deactivate the boost"
+    UpdateBoostResponse:
+      type: object
+      properties:
+        level:
+          type: integer
+        balance:
+          type: integer
+          description: "Balance in 1/2 gpu milliseconds (.1 cents)"
+        is_active:
+          type: boolean
+          description: "Whether the boost is active"
+        error:
+          type: string
+    BoostList:
+      type: object
+      properties:
+        boosts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Boost"
+      required:
+        - boosts

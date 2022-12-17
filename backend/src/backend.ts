@@ -61,6 +61,12 @@ export const NOTIFICATION_IMAGE_DELETED = "image_deleted";
 export const NOTIFICATION_PENDING_IMAGE = "pending_image";
 export const NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated";
 
+export class UserError extends Error {
+    constructor(message: string) {
+        super(message);
+    }
+}
+
 interface DiscordLoginResult {
     access_token: string;
     token_type: string;
@@ -806,59 +812,6 @@ export class BackendService {
         }
     }
 
-    async listOrders(activeOnly: boolean): Promise<Order[]> {
-        const client = await this.pool.connect();
-        try {
-            const now = moment().valueOf();
-            let filter = "";
-            let args = [];
-            if (activeOnly) {
-                filter = "WHERE ends_at > $1 AND is_active = true";
-                args = [now];
-            }
-
-            const result = await client.query(
-                `SELECT * FROM orders ${filter} ORDER BY created_at DESC`,
-                args
-            );
-            return result.rows;
-        } finally {
-            client.release();
-        }
-    }
-
-    async createOrder(
-        createdBy: string,
-        body: CreateOrderInput,
-        active: boolean,
-        amountPaidCents: number
-    ): Promise<Order> {
-        const client = await this.pool.connect();
-        try {
-            const hours = body.hours;
-            const id = uuid.v4();
-            const result = await client.query(
-                `INSERT INTO orders (id, created_by, created_at, ends_at, is_active, gpu_count, amount_paid_cents)
-                VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-                [
-                    id,
-                    createdBy,
-                    moment().valueOf(),
-                    moment().add(hours, "hours").valueOf(),
-                    active,
-                    body.gpu_count,
-                    amountPaidCents,
-                ]
-            );
-            const order = result.rows[0];
-            return {
-                ...order,
-            };
-        } finally {
-            client.release();
-        }
-    }
-
     async blockWorker(workerId: string, engine: string, now: moment.Moment) {
         this.metrics.addMetric("backend.block_worker", 1, "count", {
             engine: engine,
@@ -1207,15 +1160,12 @@ export class BackendService {
 
         if (!user) {
             // get random user
-
-            const orders = await this.listOrders(true);
+            const boosts = await this.listActiveBoosts();
             const paidUsers: string[] = [];
-            // a user may have multiple current orders,
-            // and some orders may have multiple gpus
-            for (let order of orders) {
-                if (users.indexOf(order.created_by) !== -1) {
-                    for (let i = 0; i < order.gpu_count; i++) {
-                        paidUsers.push(order.created_by);
+            for (let boost of boosts) {
+                if (users.indexOf(boost.user_id) !== -1) {
+                    for (let i = 0; i < boost.level; i++) {
+                        paidUsers.push(boost.user_id);
                     }
                 }
             }
@@ -1530,6 +1480,7 @@ export class BackendService {
             activated_at: parseInt(row.activated_at),
             balance: parseInt(row.balance),
             level: parseInt(row.level),
+            is_active: row.is_active,
         };
     }
 
@@ -1539,14 +1490,15 @@ export class BackendService {
         try {
             const result = await client.query(
                 `SELECT * FROM boost WHERE user_id=$1`,
-                [user_id]
+                [hash(user_id)]
             );
             if (result.rowCount === 0) {
                 return {
                     user_id,
                     activated_at: 0,
                     balance: 0,
-                    level: 0,
+                    level: 1,
+                    is_active: false,
                 };
             }
             return this.hydrateBoost(result.rows[0]);
@@ -1555,18 +1507,22 @@ export class BackendService {
         }
     }
 
-    async depositBoost(user_id: string, amount: number, level: number): Promise<Boost> {
+    async depositBoost(
+        user_id: string,
+        amount: number,
+        level: number
+    ): Promise<Boost> {
         const existingBoost = await this.getBoost(user_id);
-        if (existingBoost.level > 0) {
+        if (existingBoost.is_active) {
             // force balance deduction before potentially changing level
-            this.setBoostLevel(user_id, 0, false);
+            await this.updateBoost(user_id, 1, true, false);
         }
         // upsert
         const client = await this.pool.connect();
         try {
             const result = await client.query(
-                `INSERT INTO boost (user_id, activated_at, balance, level) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET balance = boost.balance + $3, level = $4 RETURNING *`,
-                [user_id, moment().valueOf(), amount, level]
+                `INSERT INTO boost (user_id, activated_at, balance, level, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id) DO UPDATE SET balance = boost.balance + $3, level = $4, is_active = $5 RETURNING *`,
+                [hash(user_id), moment().valueOf(), amount, level, true]
             );
             return this.hydrateBoost(result.rows[0]);
         } finally {
@@ -1578,7 +1534,7 @@ export class BackendService {
         const client = await this.pool.connect();
         try {
             const result = await client.query(
-                `SELECT * FROM boost WHERE level > 0 AND $1 - activated_at < balance`,
+                `SELECT * FROM boost WHERE is_active AND $1 - activated_at < balance`,
                 [moment().valueOf()]
             );
             return result.rows.map((row: any) => this.hydrateBoost(row));
@@ -1587,29 +1543,50 @@ export class BackendService {
         }
     }
 
-    async setBoostLevel(user_id: string, level: number, cooldownCheck=true): Promise<Boost> {
+    async updateBoost(
+        user_id: string,
+        level: number,
+        isActive: boolean,
+        cooldownCheck = true
+    ): Promise<Boost> {
         // if level > 0, activated_at must be at least 10 minutes in the past
         // if level > 0, set activated_at to now
         const existingBoost = await this.getBoost(user_id);
-        if (cooldownCheck && level > 0 && level !== existingBoost.level && moment().valueOf() - existingBoost.activated_at < 10 * 60 * 1000) {
-            throw new Error("Cannot change boost level yet");
+        if (
+            cooldownCheck &&
+            moment().valueOf() - existingBoost.activated_at < 10 * 60 * 1000
+        ) {
+            if (isActive) {
+                throw new UserError("Cannot activate boost yet");
+            }
+            if (level !== existingBoost.level) {
+                throw new UserError("Cannot change boost level yet");
+            }
         }
-        
-        // if existing level > 0, deduct balance
-        if (existingBoost.level > 0) {
-            existingBoost.balance -= (moment().valueOf() - existingBoost.activated_at) * existingBoost.level;
+
+        // if existing is active deduct balance
+        if (existingBoost.is_active) {
+            existingBoost.balance -=
+                (moment().valueOf() - existingBoost.activated_at) *
+                existingBoost.level;
             if (existingBoost.balance < 0) {
                 existingBoost.balance = 0;
             }
         }
-        if (level > 0 && existingBoost.balance === 0) {
-            throw new Error("Cannot activate boost with zero balance");
+        if (isActive && existingBoost.balance === 0) {
+            throw new UserError("Cannot activate boost with zero balance");
         }
         const client = await this.pool.connect();
         try {
             const result = await client.query(
-                `INSERT INTO boost (user_id, activated_at, balance, level) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET level = $4, balance = $3, activated_at = $2 RETURNING *`,
-                [user_id, moment().valueOf(), existingBoost.balance, level]
+                `INSERT INTO boost (user_id, activated_at, balance, level, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id) DO UPDATE SET level = $4, balance = $3, activated_at = $2, is_active = $5 RETURNING *`,
+                [
+                    hash(user_id),
+                    moment().valueOf(),
+                    existingBoost.balance,
+                    level,
+                    isActive,
+                ]
             );
             return this.hydrateBoost(result.rows[0]);
         } finally {
