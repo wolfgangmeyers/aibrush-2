@@ -1657,10 +1657,10 @@ export class BackendService {
             }
             const userIds = activeBoosts.map((boost) => boost.user_id);
             const result = await client.query(
-                `SELECT user_id, COUNT(*) FROM images WHERE user_id = ANY($1) AND created_at > $2 GROUP BY user_id`,
+                `SELECT created_by, COUNT(*) FROM images WHERE user_id = ANY($1) AND created_at > $2 GROUP BY user_id`,
                 [userIds, moment().valueOf() - 15 * 60 * 1000]
             );
-            const activeUserIds = result.rows.map((row: any) => row.user_id);
+            const activeUserIds = result.rows.map((row: any) => row.created_by);
             const inactiveBoosts = activeBoosts.filter(
                 (boost) => !activeUserIds.includes(boost.user_id)
             );

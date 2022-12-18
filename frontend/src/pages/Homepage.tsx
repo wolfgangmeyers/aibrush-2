@@ -323,10 +323,15 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
     }, [apiSocket]);
 
     useEffect(() => {
-        api.getBoost().then((resp) => {
-            console.log("boost", resp.data);
-            setBoost(resp.data);
-        });
+        const refreshBoost = async () => {
+            const updatedBoost = await api.getBoost();
+            setBoost(updatedBoost.data);
+        }
+        refreshBoost();
+        const interval = setInterval(refreshBoost, 60 * 1000);
+        return () => {
+            clearInterval(interval);
+        };
     }, [api])
 
     const isPendingOrProcessing = (image: Image) => {
