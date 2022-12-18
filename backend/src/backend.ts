@@ -1510,19 +1510,24 @@ export class BackendService {
     async depositBoost(
         user_id: string,
         amount: number,
-        level: number
+        level: number,
+        activate=true,
     ): Promise<Boost> {
         const existingBoost = await this.getBoost(user_id);
         if (existingBoost.is_active) {
             // force balance deduction before potentially changing level
             await this.updateBoost(user_id, 1, true, false);
         }
+        let activatedAt = existingBoost.activated_at;
+        if (activate) {
+            activatedAt = moment().valueOf();
+        }
         // upsert
         const client = await this.pool.connect();
         try {
             const result = await client.query(
                 `INSERT INTO boost (user_id, activated_at, balance, level, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id) DO UPDATE SET balance = boost.balance + $3, level = $4, is_active = $5 RETURNING *`,
-                [hash(user_id), moment().valueOf(), amount, level, true]
+                [hash(user_id), activatedAt, amount, level, activate]
             );
             return this.hydrateBoost(result.rows[0]);
         } finally {
@@ -1547,16 +1552,17 @@ export class BackendService {
         user_id: string,
         level: number,
         isActive: boolean,
-        cooldownCheck = true
+        cooldownCheck = true,
     ): Promise<Boost> {
         // if level > 0, activated_at must be at least 10 minutes in the past
         // if level > 0, set activated_at to now
         const existingBoost = await this.getBoost(user_id);
         if (
             cooldownCheck &&
-            moment().valueOf() - existingBoost.activated_at < 10 * 60 * 1000
+            moment().valueOf() - existingBoost.activated_at < 10 * 60 * 1000 &&
+            isActive
         ) {
-            if (isActive) {
+            if (!existingBoost.is_active) {
                 throw new UserError("Cannot activate boost yet");
             }
             if (level !== existingBoost.level) {
@@ -1566,6 +1572,7 @@ export class BackendService {
 
         // if existing is active deduct balance
         if (existingBoost.is_active) {
+            console.log("existing boost is active");
             existingBoost.balance -=
                 (moment().valueOf() - existingBoost.activated_at) *
                 existingBoost.level;
@@ -1576,13 +1583,17 @@ export class BackendService {
         if (isActive && existingBoost.balance === 0) {
             throw new UserError("Cannot activate boost with zero balance");
         }
+        let activatedAt = existingBoost.activated_at;
+        if (isActive && (!existingBoost.is_active || level != existingBoost.level)) {
+            activatedAt = moment().valueOf();
+        }
         const client = await this.pool.connect();
         try {
             const result = await client.query(
                 `INSERT INTO boost (user_id, activated_at, balance, level, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id) DO UPDATE SET level = $4, balance = $3, activated_at = $2, is_active = $5 RETURNING *`,
                 [
                     hash(user_id),
-                    moment().valueOf(),
+                    activatedAt,
                     existingBoost.balance,
                     level,
                     isActive,
