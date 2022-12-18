@@ -2,7 +2,7 @@ import * as axios from "axios";
 import { sleep } from "./sleep";
 import { ErrorFactory } from "./error_factory";
 
-const serverUrl = "https://vast.ai/api/v0";
+const serverUrl = "https://console.vast.ai/api/v0";
 
 export interface Offer {
     is_bid: boolean;
