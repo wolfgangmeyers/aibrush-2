@@ -315,6 +315,7 @@ export class VastEngine implements ScalingEngine {
                         );
                     workers.push(updatedWorker);
                 } catch (err) {
+                    console.error("Error creating instance", err);
                     tags.error = err.message;
                     Bugsnag.notify(err, evt => {
                         evt.context = "VastEngine.create";
