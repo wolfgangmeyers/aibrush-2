@@ -51,6 +51,7 @@ export const DELETED_IMAGES_KEY = 3;
 export const MIGRATIONS_KEY = 4;
 export const SCALING_KEY = 5;
 export const WORK_DISTRIBUTION_KEY = 6;
+export const IDLE_BOOSTS_KEY = 7;
 
 const BLOCK_DURATION_DAYS = 7;
 
@@ -1366,6 +1367,7 @@ export class BackendService {
         await this.cleanupStuckImages();
         await this.cleanupTemporaryImages();
         await this.cleanupDeletedImages();
+        await this.cleanupIdleBoosts();
         const elapsed = moment().diff(start, "milliseconds");
         this.metrics.addMetric("backend.cleanup", 1, "count", {
             duration: elapsed,
@@ -1638,6 +1640,50 @@ export class BackendService {
         }
     }
 
+    async cleanupIdleBoosts(): Promise<void> {
+        // list the active boosts, then
+        // check if the boost owner has created any images in
+        // the last 15 minutes. If not, deactivate the boost
+        const activeBoosts = await this.listActiveBoosts();
+        if (activeBoosts.length === 0) {
+            return;
+        }
+        const client = await this.pool.connect();
+        let lock = false;
+        try {
+            lock = await this.acquireLock(client, IDLE_BOOSTS_KEY);
+            if (!lock) {
+                return;
+            }
+            const userIds = activeBoosts.map((boost) => boost.user_id);
+            const result = await client.query(
+                `SELECT user_id, COUNT(*) FROM images WHERE user_id = ANY($1) AND created_at > $2 GROUP BY user_id`,
+                [userIds, moment().valueOf() - 15 * 60 * 1000]
+            );
+            const activeUserIds = result.rows.map((row: any) => row.user_id);
+            const inactiveBoosts = activeBoosts.filter(
+                (boost) => !activeUserIds.includes(boost.user_id)
+            );
+            if (inactiveBoosts.length === 0) {
+                return;
+            }
+            for (let boost of inactiveBoosts) {
+                this.logger.log("deactivating boost");
+                await this.updateBoost(
+                    boost.user_id,
+                    boost.level,
+                    false,
+                    false
+                );
+            }
+        } finally {
+            if (lock) {
+                await this.releaseLock(client, IDLE_BOOSTS_KEY);
+            }
+            client.release();
+        }
+    }
+
     private async backfillUserEmail(email: string): Promise<void> {
         const client = await this.pool.connect();
         try {
@@ -1653,16 +1699,8 @@ export class BackendService {
     async login(
         email: string,
         sendEmail = true
-        // inviteCode: string = undefined
     ): Promise<string> {
         if (!(await this.isUserAllowed(email))) {
-            // if (inviteCode && !(await this.activateUser(email, inviteCode))) {
-            //     this.metrics.addMetric("backend.login", 1, "count", {
-            //         status: "failed",
-            //         reason: "invalid_invite_code",
-            //     });
-            //     throw new Error("User not allowed");
-            // }
             if (!(await this.isUserAllowed(email))) {
                 this.metrics.addMetric("backend.login", 1, "count", {
                     status: "failed",
