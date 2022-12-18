@@ -72,6 +72,29 @@ describe("backend boost", () => {
                 expect(boosts[0]).toEqual(boost);
             });
         });
+
+        describe("depositing again", () => {
+            let boost2: Boost;
+
+            beforeEach(async () => {
+                boost2 = await backendService.depositBoost("user1", 100, 1);
+            });
+
+            it("should return a boost with the correct balance and level", async () => {
+                expect(boost2.user_id).toEqual("user1");
+                expect(boost2.activated_at).toBeGreaterThan(0);
+                expect(boost2.balance).toBeGreaterThan(100);
+                expect(boost2.level).toEqual(1);
+                expect(boost2.is_active).toEqual(true);
+            });
+
+            describe("Getting the boost", () => {
+                it("should return the same boost", async () => {
+                    const boost3 = await backendService.getBoost("user1");
+                    expect(boost3).toEqual(boost2);
+                });
+            });
+        })
     })
 
     describe("Activate, deactivate and reactivate boost", () => {

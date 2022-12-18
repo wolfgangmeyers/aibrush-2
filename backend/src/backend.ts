@@ -60,6 +60,7 @@ export const NOTIFICATION_IMAGE_UPDATED = "image_updated";
 export const NOTIFICATION_IMAGE_DELETED = "image_deleted";
 export const NOTIFICATION_PENDING_IMAGE = "pending_image";
 export const NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated";
+export const NOTIFICATION_BOOST_UPDATED = "boost_updated";
 
 export class UserError extends Error {
     constructor(message: string) {
@@ -1516,7 +1517,7 @@ export class BackendService {
         const existingBoost = await this.getBoost(user_id);
         if (existingBoost.is_active) {
             // force balance deduction before potentially changing level
-            await this.updateBoost(user_id, 1, true, false);
+            await this.updateBoost(user_id, existingBoost.level, true, false);
         }
         let activatedAt = existingBoost.activated_at;
         if (activate) {
@@ -1526,9 +1527,12 @@ export class BackendService {
         const client = await this.pool.connect();
         try {
             const result = await client.query(
-                `INSERT INTO boost (user_id, activated_at, balance, level, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id) DO UPDATE SET balance = boost.balance + $3, level = $4, is_active = $5 RETURNING *`,
+                `INSERT INTO boost (user_id, activated_at, balance, level, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id) DO UPDATE SET activated_at = $2, balance = boost.balance + $3, level = $4, is_active = $5 RETURNING *`,
                 [hash(user_id), activatedAt, amount, level, activate]
             );
+            await this.notify(existingBoost.user_id, JSON.stringify({
+                type: NOTIFICATION_BOOST_UPDATED,
+            }));
             return this.hydrateBoost(result.rows[0]);
         } finally {
             client.release();
@@ -1599,6 +1603,9 @@ export class BackendService {
                     isActive,
                 ]
             );
+            await this.notify(existingBoost.user_id, JSON.stringify({
+                type: NOTIFICATION_BOOST_UPDATED,
+            }));
             return this.hydrateBoost(result.rows[0]);
         } finally {
             client.release();

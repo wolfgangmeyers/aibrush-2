@@ -1,6 +1,9 @@
 import React, { FC, useState, useEffect, CSSProperties } from "react";
+import { Modal } from "react-bootstrap";
 import moment from "moment";
 import { Boost } from "../client";
+import { relative } from "path";
+import { BoostLevelPopup } from "./BoostLevelPopup";
 
 interface Props {
     boost: Boost;
@@ -9,7 +12,12 @@ interface Props {
 }
 
 const COOLDOWN_MILLISECONDS = 1000 * 60 * 10; // 10 minutes
-const boostLevelToLabel = [undefined, "QUICK", "FAST", "PRO", "SUPER"];
+const boostLevelToLabel: { [key: number]: string } = {
+    1: "QUICK",
+    2: "FAST",
+    4: "PRO",
+    8: "SUPER",
+};
 
 export const BoostWidget: FC<Props> = ({
     boost,
@@ -19,13 +27,14 @@ export const BoostWidget: FC<Props> = ({
     const [remainingTime, setRemainingTime] = useState<string>("00:00:00");
     const [hidden, setHidden] = useState<boolean>(false);
     const [cooldown, setCooldown] = useState(false);
+    const [updatingBoostLevel, setUpdatingBoostLevel] = useState(false);
 
     const style: CSSProperties = {
         // width: "100%",
         height: "50px",
         // background:
         //     "linear-gradient(-45deg, #3D3BB5, #8B41D6, #26D6E1)",
-        background: "#3D3BB5",
+        backgroundColor: "#3D3BB5",
         backgroundSize: "400% 400%",
         borderRadius: "8px",
         textAlign: "left",
@@ -41,7 +50,9 @@ export const BoostWidget: FC<Props> = ({
         // animationIterationCount: "infinite",
     };
     if (boost.is_active) {
-        style.background = "linear-gradient(-45deg, #3D3BB5, #8B41D6, #26D6E1)";
+        style.backgroundColor = undefined;
+        style.backgroundImage =
+            "linear-gradient(-45deg, #3D3BB5, #8B41D6, #26D6E1)";
         style.animationName = "boost";
         style.animationDuration = "5s";
         style.animationIterationCount = "infinite";
@@ -52,7 +63,7 @@ export const BoostWidget: FC<Props> = ({
             // boost.balance is specified in milliseconds
             // use the moment library to show remaining time in the form of
             // "HH:MM:SS"
-            let remainingMilliseconds = boost.balance;
+            let remainingMilliseconds = boost.balance / boost.level;
 
             if (boost.is_active) {
                 remainingMilliseconds -= moment()
@@ -62,12 +73,14 @@ export const BoostWidget: FC<Props> = ({
                     remainingMilliseconds = 0;
                 }
                 setHidden(remainingMilliseconds === 0);
+                setCooldown(false);
             } else {
                 const millisecondsSinceLastActivated =
                     moment().valueOf() - boost.activated_at;
                 if (millisecondsSinceLastActivated < COOLDOWN_MILLISECONDS) {
                     setCooldown(true);
-                    remainingMilliseconds = COOLDOWN_MILLISECONDS - millisecondsSinceLastActivated;
+                    remainingMilliseconds =
+                        COOLDOWN_MILLISECONDS - millisecondsSinceLastActivated;
                 } else {
                     setCooldown(false);
                 }
@@ -90,7 +103,15 @@ export const BoostWidget: FC<Props> = ({
 
     return (
         <div className="boost-widget" style={style}>
-            {boostLevelToLabel[boost.level]}
+            <span
+                style={{
+                    cursor: "pointer",
+                    fontStyle: boost.is_active ? "italic" : "normal",
+                }}
+                onClick={() => setUpdatingBoostLevel(true)}
+            >
+                {boostLevelToLabel[boost.level]}
+            </span>
 
             <div
                 style={{
@@ -123,19 +144,31 @@ export const BoostWidget: FC<Props> = ({
             >
                 {remainingTime}&nbsp;
             </span>
-            {cooldown && <span
-                style={{
-                    fontStyle: "normal",
-                    fontSize: "12px",
-                    float: "right",
-                    paddingTop: "8px",
-                    marginRight: "8px",
-                    color: "#26D6E1",
-                    animation: "cooldown 5s ease infinite",
-                }}
-            >
-                COOLDOWN&nbsp;
-            </span>}
+            {cooldown && (
+                <span
+                    style={{
+                        fontStyle: "normal",
+                        fontSize: "12px",
+                        float: "right",
+                        paddingTop: "8px",
+                        marginRight: "8px",
+                        color: "#26D6E1",
+                        animation: "cooldown 5s ease infinite",
+                    }}
+                >
+                    COOLDOWN&nbsp;
+                </span>
+            )}
+            {updatingBoostLevel && (
+                <BoostLevelPopup
+                    onCancel={() => setUpdatingBoostLevel(false)}
+                    onUpdateBoostLevel={(level: number) => {
+                        setUpdatingBoostLevel(false);
+                        onUpdateBoostLevel(level);
+                    }}
+                    selectedBoostLevel={boost.level}
+                />
+            )}
         </div>
     );
 };

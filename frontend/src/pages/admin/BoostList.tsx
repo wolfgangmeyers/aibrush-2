@@ -28,8 +28,8 @@ export const BoostList: FC<Props> = ({ api }) => {
 
     const onDepositBoost = async () => {
         await api.depositBoost(email, {
-            amount: amount * 1000 * 60 * 60,
-            level: 1,
+            amount: amount * level * 1000 * 60 * 60,
+            level: level,
         });
         refresh();
         setShowDeposit(false);

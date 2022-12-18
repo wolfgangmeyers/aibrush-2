@@ -117,7 +117,7 @@ hr {
   border-color: #3D3BB5 !important;
 }
 
-.btn-primary:hover:enabled, a.btn-primary:hover {
+.btn:hover:enabled, a.btn:hover {
   border-color: #ffffff !important;
 }
 

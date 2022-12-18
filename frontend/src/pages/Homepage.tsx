@@ -15,7 +15,7 @@ import { ImagePopup } from "../components/ImagePopup";
 import { BusyModal } from "../components/BusyModal";
 import { PendingImagesThumbnail } from "../components/PendingImagesThumbnail";
 import { PendingImages } from "../components/PendingImages";
-import { ApiSocket, NOTIFICATION_IMAGE_DELETED, NOTIFICATION_IMAGE_UPDATED } from "../lib/apisocket";
+import { ApiSocket, NOTIFICATION_BOOST_UPDATED, NOTIFICATION_IMAGE_DELETED, NOTIFICATION_IMAGE_UPDATED } from "../lib/apisocket";
 
 interface Props {
     api: AIBrushApi;
@@ -312,6 +312,9 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                     }
                     return updatedImages.sort(sortImages);
                 });
+            } else if (payload.type === NOTIFICATION_BOOST_UPDATED) {
+                const updatedBoost = await api.getBoost();
+                setBoost(updatedBoost.data);
             }
         });
         return () => {
@@ -321,6 +324,7 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
 
     useEffect(() => {
         api.getBoost().then((resp) => {
+            console.log("boost", resp.data);
             setBoost(resp.data);
         });
     }, [api])

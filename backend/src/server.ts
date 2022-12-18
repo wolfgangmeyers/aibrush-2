@@ -40,6 +40,7 @@ import { MetricsClient } from "./metrics";
 import { ScalingService } from "./scaling_service";
 import { Logger } from "./logs";
 import { WorkDistributor } from "./work_distributor";
+import { BOOST_LEVELS } from "./boost";
 
 export class Server {
     private server: HTTPServer;
@@ -1153,7 +1154,7 @@ export class Server {
                     return;
                 }
                 const level = req.body.level;
-                if (!level || level < 0 || level > 4) {
+                if (!BOOST_LEVELS.find((l) => l.level == level)) {
                     res.status(400).send("Invalid level");
                     return;
                 }
