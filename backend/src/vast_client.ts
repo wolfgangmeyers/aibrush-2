@@ -183,7 +183,7 @@ export class VastAIApi implements VastClient {
             try {
                 return await fn();
             } catch (e) {
-                if (e.response.status === 429) {
+                if (e.response && e.response.status === 429) {
                     if (i === 2) {
                         throw e;
                     }
