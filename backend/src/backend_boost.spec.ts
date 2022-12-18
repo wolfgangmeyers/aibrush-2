@@ -11,8 +11,6 @@ describe("backend boost", () => {
     let testHelper: TestHelper;
     let databaseName: string;
 
-    let notifications: string[] = [];
-
     beforeAll(async () => {
         testHelper = new TestHelper();
         await testHelper.cleanupDatabases();
@@ -24,7 +22,6 @@ describe("backend boost", () => {
         const config = testHelper.createConfig(databaseName);
         backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger());
         await backendService.init();
-        notifications = [];
     });
 
     afterEach(async () => {
@@ -127,6 +124,33 @@ describe("backend boost", () => {
                     expect(boost2.is_active).toEqual(true);
                 });
             })
+        });
+    })
+
+    describe("Switch levels while inactive, then activate", () => {
+        let boost: Boost;
+
+        beforeEach(async () => {
+            boost = await backendService.depositBoost("user1", 100, 1, false);
+            boost = await backendService.updateBoost("user1", 2, false);
+            boost = await backendService.updateBoost("user1", 2, true);
+        });
+
+        it("should return a boost with the correct balance and level", async () => {
+            expect(boost.user_id).toEqual("user1");
+            expect(boost.activated_at).toBeGreaterThan(0);
+            expect(boost.balance).toEqual(100);
+            expect(boost.level).toEqual(2);
+            expect(boost.is_active).toEqual(true);
+        });
+    })
+
+    describe("Activate, then switch levels", () => {
+        let boost: Boost;
+
+        it("should throw an error", async () => {
+            boost = await backendService.depositBoost("user1", 100, 1, true);
+            await expect(backendService.updateBoost("user1", 2, true)).rejects.toThrow(/Cannot change boost level yet/);
         });
     })
 
