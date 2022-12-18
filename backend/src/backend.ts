@@ -1668,6 +1668,10 @@ export class BackendService {
                 return;
             }
             for (let boost of inactiveBoosts) {
+                // make sure it hasn't been activated in the last 15 minutes
+                if (moment().valueOf() - boost.activated_at < 15 * 60 * 1000) {
+                    continue;
+                }
                 this.logger.log("deactivating boost");
                 await this.updateBoost(
                     boost.user_id,
@@ -1696,10 +1700,7 @@ export class BackendService {
         }
     }
 
-    async login(
-        email: string,
-        sendEmail = true
-    ): Promise<string> {
+    async login(email: string, sendEmail = true): Promise<string> {
         if (!(await this.isUserAllowed(email))) {
             if (!(await this.isUserAllowed(email))) {
                 this.metrics.addMetric("backend.login", 1, "count", {
