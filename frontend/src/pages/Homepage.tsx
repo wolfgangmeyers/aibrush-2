@@ -1,5 +1,6 @@
 // V2 page
 import React, { FC, useState, useEffect } from "react";
+import axios from "axios";
 import Dropdown from "react-bootstrap/Dropdown";
 import { useParams, useHistory, Link } from "react-router-dom";
 import moment from "moment";
@@ -9,13 +10,19 @@ import { CreateImageInput, Image, ImageStatusEnum, Boost } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import { BoostWidget } from "../components/BoostWidget";
+import { createEncodedThumbnail, encodedImageToBlob, uploadBlob } from "../lib/imageutil";
 
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ImagePopup } from "../components/ImagePopup";
 import { BusyModal } from "../components/BusyModal";
 import { PendingImagesThumbnail } from "../components/PendingImagesThumbnail";
 import { PendingImages } from "../components/PendingImages";
-import { ApiSocket, NOTIFICATION_BOOST_UPDATED, NOTIFICATION_IMAGE_DELETED, NOTIFICATION_IMAGE_UPDATED } from "../lib/apisocket";
+import {
+    ApiSocket,
+    NOTIFICATION_BOOST_UPDATED,
+    NOTIFICATION_IMAGE_DELETED,
+    NOTIFICATION_IMAGE_UPDATED,
+} from "../lib/apisocket";
 
 interface Props {
     api: AIBrushApi;
@@ -93,9 +100,22 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
         setErr(null);
         window.scrollTo(0, 0);
         try {
-            const newImages = await api.createImage(input);
+            const encodedImage = input.encoded_image!;
+            const encodedThumbnail = await createEncodedThumbnail(encodedImage);
+            const newImages = await api.createImage({
+                ...input,
+                encoded_image: undefined,
+            });
             if (newImages.data.images) {
                 const image = newImages.data.images![0];
+                const uploadUrls = await api.getImageUploadUrls(image.id);
+                // convert base64 encoded image to binary to upload as image/png with axios
+                const blob = encodedImageToBlob(encodedImage);
+                const thumbnailBlob = encodedImageToBlob(encodedThumbnail);
+                const imagePromise = uploadBlob(uploadUrls.data.image_url!, blob);
+                const thumbnailPromise = uploadBlob(uploadUrls.data.thumbnail_url!, thumbnailBlob);
+                await Promise.all([imagePromise, thumbnailPromise]);
+
                 history.push(`/image-editor/${image.id}`);
             }
         } catch (e: any) {
@@ -290,15 +310,20 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
     }, [images]);
 
     useEffect(() => {
-        apiSocket.onMessage(async message => {
+        apiSocket.onMessage(async (message) => {
             const payload = JSON.parse(message);
-            if (payload.type === NOTIFICATION_IMAGE_UPDATED || payload.type === NOTIFICATION_IMAGE_DELETED) {
+            if (
+                payload.type === NOTIFICATION_IMAGE_UPDATED ||
+                payload.type === NOTIFICATION_IMAGE_DELETED
+            ) {
                 const updatedImage = await api.getImage(payload.id);
                 if (updatedImage.data.temporary) {
                     return;
                 }
                 setImages((images) => {
-                    const index = images.findIndex((image) => image.id === updatedImage.data.id);
+                    const index = images.findIndex(
+                        (image) => image.id === updatedImage.data.id
+                    );
                     let updatedImages = images;
                     if (index >= 0) {
                         updatedImages = images.map((image) => {
@@ -319,20 +344,20 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
         });
         return () => {
             apiSocket.onMessage(undefined);
-        }
+        };
     }, [apiSocket]);
 
     useEffect(() => {
         const refreshBoost = async () => {
             const updatedBoost = await api.getBoost();
             setBoost(updatedBoost.data);
-        }
+        };
         refreshBoost();
         const interval = setInterval(refreshBoost, 60 * 1000);
         return () => {
             clearInterval(interval);
         };
-    }, [api])
+    }, [api]);
 
     const isPendingOrProcessing = (image: Image) => {
         return (
@@ -493,7 +518,7 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
         } else {
             setBoost((await api.getBoost()).data);
         }
-    }
+    };
 
     const onUpdateBoostLevel = async (level: number) => {
         if (!boost) return;
@@ -506,7 +531,7 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
         } else {
             setBoost((await api.getBoost()).data);
         }
-    }
+    };
 
     return (
         <>
@@ -522,14 +547,19 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                 parent={parentImage}
                 onCancel={() => handleCancelFork()}
             />
-            {boost && <BoostWidget
-                boost={boost}
-                onUpdateActive={onUpdateBoostActive}
-                onUpdateBoostLevel={onUpdateBoostLevel}
-            />}
+            {boost && (
+                <BoostWidget
+                    boost={boost}
+                    onUpdateActive={onUpdateBoostActive}
+                    onUpdateBoostLevel={onUpdateBoostLevel}
+                />
+            )}
             <hr />
 
-            <div className="homepage-images" style={{ marginTop: "48px", paddingBottom: "48px" }}>
+            <div
+                className="homepage-images"
+                style={{ marginTop: "48px", paddingBottom: "48px" }}
+            >
                 <div style={{ textAlign: "left" }}>
                     <div
                         className="input-group"
@@ -602,7 +632,12 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                     dataLength={images.length}
                     next={onLoadMore}
                     hasMore={hasMore}
-                    loader={<><hr/><h4>Loading...</h4></>}
+                    loader={
+                        <>
+                            <hr />
+                            <h4>Loading...</h4>
+                        </>
+                    }
                 >
                     {pendingOrProcessingImages.length > 0 && (
                         <PendingImagesThumbnail

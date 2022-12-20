@@ -109,6 +109,7 @@ export const ImagePrompt: FC<Props> = ({
     const handleEdit = () => {
         if (!encodedImage) {
             console.error("Cannot edit without existing image")
+            return;
         }
         const args = defaultArgs();
         args.phrases = [prompt || ""];

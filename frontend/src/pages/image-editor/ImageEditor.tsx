@@ -19,7 +19,11 @@ import { ImportExportControls } from "./import-export";
 import { InpaintControls, InpaintTool } from "./inpaint-tool";
 import { defaultArgs } from "../../components/ImagePrompt";
 import { ApiSocket } from "../../lib/apisocket";
-import { createEncodedThumbnail } from "../../lib/imageutil";
+import {
+    createEncodedThumbnail,
+    encodedImageToBlob,
+    uploadBlob,
+} from "../../lib/imageutil";
 import { BusyModal } from "../../components/BusyModal";
 
 interface CanPreventDefault {
@@ -173,8 +177,17 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         args.width = renderer!.getWidth() as any;
         args.height = renderer!.getHeight() as any;
         args.nsfw = image.nsfw;
-        args.encoded_image = encodedImage;
         const newImage = (await api.createImage(args)).data!.images![0];
+
+        // upload image data
+        const imageBlob = encodedImageToBlob(encodedImage);
+        const encodedThumbnail = await createEncodedThumbnail(encodedImage);
+        const thumbnailBlob = encodedImageToBlob(encodedThumbnail);
+        const uploadUrls = await api.getImageUploadUrls(newImage.id);
+        const promise1 = uploadBlob(uploadUrls.data.image_url!, imageBlob);
+        const promise2 = uploadBlob(uploadUrls.data.thumbnail_url!, thumbnailBlob);
+        await Promise.all([promise1, promise2]);
+    
         setImage(newImage);
         // history.push(`/image-editor/${newImage.id}`);
         history.replace(`/image-editor/${newImage.id}`);
@@ -280,7 +293,10 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
                     </h1>
                 </div>
             </div>
-            <div className="row" style={{ marginTop: "32px", paddingBottom: "120px" }}>
+            <div
+                className="row"
+                style={{ marginTop: "32px", paddingBottom: "120px" }}
+            >
                 <div className="col-lg-3">
                     {renderer && (
                         <>
@@ -432,7 +448,11 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
                     {/* vertically center button within the div */}
                 </div>
             </div>
-            {busyMessage && <BusyModal show={true} title="Please Wait">{busyMessage}</BusyModal>}
+            {busyMessage && (
+                <BusyModal show={true} title="Please Wait">
+                    {busyMessage}
+                </BusyModal>
+            )}
         </>
     );
 };

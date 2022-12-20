@@ -169,17 +169,24 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
             const height = 128;
             canvas.width = width;
             canvas.height = height;
+            
+            const aspectRatio = image.width / image.height;
+            const cropWidth = aspectRatio > 1 ? image.width : image.height * aspectRatio;
+            const cropHeight = aspectRatio > 1 ? image.width / aspectRatio : image.height;
+            const cropX = (image.width - cropWidth) / 2;
+            const cropY = (image.height - cropHeight) / 2;
             context.drawImage(
                 image,
-                0,
-                0,
-                image.width,
-                image.height,
+                cropX,
+                cropY,
+                cropWidth,
+                cropHeight,
                 0,
                 0,
                 width,
                 height
             );
+
             // save to png
             const imageUrl = canvas.toDataURL("image/png");
             const base64 = imageUrl.split(",")[1];
@@ -187,3 +194,35 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
         };
     });
 }
+
+export function encodedImageToBlob(encodedImage: string): Blob {
+    const binaryString = atob(encodedImage);
+    const arr = [];
+    for (let i = 0; i < binaryString.length; i++) {
+        arr.push(binaryString.charCodeAt(i));
+    }
+    return new Blob([new Uint8Array(arr)], {
+        type: "image/png",
+    });
+}
+
+// This function is made to work with S3 presigned urls.
+// Solution found at https://stackoverflow.com/questions/22531114/how-to-upload-to-aws-s3-directly-from-browser-using-a-pre-signed-url-instead-of
+export function uploadBlob(signedUrl: string, blob: Blob): Promise<void> {
+    return new Promise((resolve, reject) => {
+        var xhr = new XMLHttpRequest();
+        xhr.open("PUT", signedUrl, true);
+        xhr.setRequestHeader("Content-Type", "image/png");
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                // success!
+                resolve();
+            }
+        };
+        xhr.onerror = (err) => {
+            // error...
+            reject(err);
+        };
+        xhr.send(blob); // `file` is a File object here
+    });
+};
