@@ -25,7 +25,6 @@ import {
     LoginResult,
     WorkerStatusEnum,
     Order,
-    CreateOrderInput,
     ProcessImageInput,
     UpsertWorkerInput,
     WorkerGpuConfig,

@@ -281,68 +281,6 @@ paths:
       responses:
         "200":
           description: Success
-  # handle image .npy files
-  /api/images/{id}.npy:
-    get:
-      description: Get the binary image data
-      operationId: getNpyData
-      tags:
-        - AIBrush
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Success
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-
-  /api/images/{id}.mp4:
-    get:
-      description: Get the binary video data
-      operationId: getVideoData
-      tags:
-        - AIBrush
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Success
-          content:
-            video/mp4:
-              schema:
-                type: string
-                format: binary
-    put:
-      description: Update the video data
-      operationId: updateVideoData
-      tags:
-        - AIBrush
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          video/mp4:
-            schema:
-              type: string
-              format: binary
-      responses:
-        "200":
-          description: Success
   /api/process-image:
     put:
       description: Get the next pending image and set its status to processing.

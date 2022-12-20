@@ -30,7 +30,6 @@ import {
 } from "./auth";
 import {
     AddMetricsInput,
-    CreateOrderInput,
     DepositRequest,
     ImageStatusEnum,
     UpsertWorkerConfigInput,

@@ -1954,39 +1954,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Get the binary image data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getNpyData: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('getNpyData', 'id', id)
-            const localVarPath = `/api/images/{id}.npy`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1996,39 +1963,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getThumbnailData', 'id', id)
             const localVarPath = `/api/images/{id}.thumbnail.png`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get the binary video data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getVideoData: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('getVideoData', 'id', id)
-            const localVarPath = `/api/images/{id}.mp4`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2515,43 +2449,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Update the video data
-         * @param {string} id 
-         * @param {any} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateVideoData: async (id: string, body?: any, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('updateVideoData', 'id', id)
-            const localVarPath = `/api/images/{id}.mp4`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'video/mp4';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Update a worker
          * @param {string} workerId 
          * @param {UpsertWorkerInput} [upsertWorkerInput] 
@@ -2940,16 +2837,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Get the binary image data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getNpyData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getNpyData(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2957,16 +2844,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async getThumbnailData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getThumbnailData(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get the binary video data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getVideoData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getVideoData(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3106,17 +2983,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async updateImage(id: string, updateImageInput?: UpdateImageInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateImage(id, updateImageInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Update the video data
-         * @param {string} id 
-         * @param {any} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async updateVideoData(id: string, body?: any, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateVideoData(id, body, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3361,15 +3227,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getMaskData(id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get the binary image data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getNpyData(id: string, options?: any): AxiosPromise<any> {
-            return localVarFp.getNpyData(id, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Get the binary thumbnail data
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -3377,15 +3234,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         getThumbnailData(id: string, options?: any): AxiosPromise<any> {
             return localVarFp.getThumbnailData(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get the binary video data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getVideoData(id: string, options?: any): AxiosPromise<any> {
-            return localVarFp.getVideoData(id, options).then((request) => request(axios, basePath));
         },
         /**
          * Get a worker
@@ -3511,16 +3359,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         updateImage(id: string, updateImageInput?: UpdateImageInput, options?: any): AxiosPromise<Image> {
             return localVarFp.updateImage(id, updateImageInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Update the video data
-         * @param {string} id 
-         * @param {any} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateVideoData(id: string, body?: any, options?: any): AxiosPromise<void> {
-            return localVarFp.updateVideoData(id, body, options).then((request) => request(axios, basePath));
         },
         /**
          * Update a worker
@@ -3799,17 +3637,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Get the binary image data
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getNpyData(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getNpyData(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Get the binary thumbnail data
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -3818,17 +3645,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public getThumbnailData(id: string, options?: any) {
         return AIBrushApiFp(this.configuration).getThumbnailData(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get the binary video data
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getVideoData(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getVideoData(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3982,18 +3798,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public updateImage(id: string, updateImageInput?: UpdateImageInput, options?: any) {
         return AIBrushApiFp(this.configuration).updateImage(id, updateImageInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Update the video data
-     * @param {string} id 
-     * @param {any} [body] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public updateVideoData(id: string, body?: any, options?: any) {
-        return AIBrushApiFp(this.configuration).updateVideoData(id, body, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
