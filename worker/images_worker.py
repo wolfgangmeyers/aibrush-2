@@ -43,7 +43,9 @@ elif os.environ.get("WORKER_LOGIN_CODE"):
     print("Logging in with login code")
     client = AIBrushAPI(api_url, None, os.environ["WORKER_LOGIN_CODE"])
 else:
-    raise Exception("No credentials.json or WORKER_LOGIN_CODE environment variable found")
+    raise Exception(
+        "No credentials.json or WORKER_LOGIN_CODE environment variable found")
+
 
 def get_worker_id():
     token = client.token
@@ -54,12 +56,14 @@ def get_worker_id():
     print(payload)
     return payload["serviceAccountConfig"]["workerId"]
 
+
 WORKER_ID = get_worker_id()
 
 # create an 'images' folder if it doesn't exist
 for folder in ["images", "output", "output_npy"]:
     if not os.path.exists(folder):
         os.makedirs(folder)
+
 
 def cleanup(image_id: str):
     # delete all files in the current folder ending in .png or .backup
@@ -77,6 +81,7 @@ def cleanup(image_id: str):
             if image_id in fname:
                 os.remove(os.path.join("results", "swinir_real_sr_x4", fname))
 
+
 def _swinir_args(image_data, image):
     # python SwinIR\main_test_swinir.py --task real_sr --model_path 003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth --folder_lq images --scale 4
     if not image_data:
@@ -92,6 +97,7 @@ def _swinir_args(image_data, image):
     args.init_image = init_image_path
     args.output_image = output_image_path
     return args
+
 
 def _sd_args(image_data, mask_data, npy_data, image):
     args = SimpleNamespace()
@@ -118,15 +124,18 @@ def _sd_args(image_data, mask_data, npy_data, image):
         args.mask = os.path.join("images", image.id + "-mask.png")
     return args
 
+
 model_lock = Lock()
 
 # model_name: str = None
 # model = None
 # clip_ranker = None
 
+
 def get_clip_ranker(gpu: str):
     with model_lock:
         return ClipProcess(gpu)
+
 
 def create_model(model_name: str, gpu: str):
     print("create_model", model_name, gpu)
@@ -145,6 +154,7 @@ def create_model(model_name: str, gpu: str):
 #     global model
 #     model = None
 
+
 def metric(name: str, type: str, value: any, attributes: dict = None) -> SimpleNamespace:
     attribute_list = []
     if attributes:
@@ -152,12 +162,14 @@ def metric(name: str, type: str, value: any, attributes: dict = None) -> SimpleN
             attribute_list.append({"name": key, "value": v})
     return SimpleNamespace(name=name, type=type, value=value, attributes=attribute_list)
 
-def get_model_assignment(gpu: str)-> str:
+
+def get_model_assignment(gpu: str) -> str:
     gpu_num = int(gpu.split(":")[1])
     worker_config = client.get_worker_config(WORKER_ID)
     gpu_config = worker_config.gpu_configs[gpu_num]
     model_name = gpu_config.model
     return model_name
+
 
 def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, websocket_queue: Queue, gpu: str):
     last_model_check = time.time()
@@ -198,23 +210,31 @@ def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, we
                 last_model_check = time.time()
                 current_model_name = get_model_assignment(gpu)
                 if current_model_name != model_name:
-                    print("Model changed from", model_name, "to", current_model_name)
+                    print("Model changed from", model_name,
+                          "to", current_model_name)
                     model_name = current_model_name
                     image = warmup_image(model_name, str(uuid4()))
+                else:
+                    image = client.process_image(model_name)
+                    metrics_queue.put(metric("worker.poll", "count", 1, {
+                        "duration_seconds": time.time() - start,
+                    }))
             elif image or pending_image:
                 image = client.process_image(model_name)
                 metrics_queue.put(metric("worker.poll", "count", 1, {
                     "duration_seconds": time.time() - start,
-                    "sticky": True,
                 }))
             if image:
                 image.thumbnail_data = None
                 if not image.warmup:
-                    image_download_urls = client.get_image_download_urls(image.id)
-                    image.image_data = client.get_image_data(image.id, image_download_urls.image_url)
+                    image_download_urls = client.get_image_download_urls(
+                        image.id)
+                    image.image_data = client.get_image_data(
+                        image.id, image_download_urls.image_url)
                     image.mask_data = None
                     if image.model == "stable_diffusion_inpainting":
-                        image.mask_data = client.get_mask_data(image.id, image_download_urls.mask_url)
+                        image.mask_data = client.get_mask_data(
+                            image.id, image_download_urls.mask_url)
                 process_queue.put(image)
                 if image.warmup:
                     ready_queue.get()
@@ -223,12 +243,14 @@ def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, we
             traceback.print_exc()
             continue
 
+
 def blank_image_data():
     img = Image.new("RGB", (512, 512), (255, 255, 255))
     # convert to base64 encoded png
     buf = BytesIO()
     img.save(buf, format="png")
     return buf.getvalue()
+
 
 def warmup_image(model_name: str, image_id: str):
     image_data = None
@@ -252,6 +274,7 @@ def warmup_image(model_name: str, image_id: str):
         nsfw=False,
         negative_phrases=[],
     )
+
 
 def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, gpu: str):
     print("process loop started")
@@ -279,17 +302,21 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
                 if image.model == "swinir" and os.path.exists(image_path):
                     img = Image.open(image_path)
                     # resize image
-                    img = img.resize((image.width, image.height), Image.ANTIALIAS)
+                    img = img.resize(
+                        (image.width, image.height), Image.ANTIALIAS)
                     img.save(image_path)
 
                 if os.path.exists(image_path):
                     prompts = "|".join(image.phrases)
                     negative_prompts = "|".join(image.negative_phrases).strip()
                     print(f"Calculating clip ranking for '{prompts}'")
-                    score = clip_ranker.rank(argparse.Namespace(text=prompts, image=image_path, cpu=False))
+                    score = clip_ranker.rank(argparse.Namespace(
+                        text=prompts, image=image_path, cpu=False))
                     if negative_prompts:
-                        print(f"Calculating negative clip ranking for '{prompts}'")
-                        negative_score = clip_ranker.rank(argparse.Namespace(text=negative_prompts, image=image_path, cpu=False))
+                        print(
+                            f"Calculating negative clip ranking for '{prompts}'")
+                        negative_score = clip_ranker.rank(argparse.Namespace(
+                            text=negative_prompts, image=image_path, cpu=False))
                     with open(image_path, "rb") as f:
                         image_data = f.read()
                     # use PIL to resize image
@@ -299,7 +326,8 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
                     # thumbnail = Image.lo(image_data).resize((128, 128), Image.ANTIALIAS)
                     buf = BytesIO()
                     thumbnail.save(buf, format="png")
-                    thumbnail_data = base64.b64encode(buf.getvalue()).decode("utf-8")
+                    thumbnail_data = base64.b64encode(
+                        buf.getvalue()).decode("utf-8")
                     # base64 encode image
                     image_data = base64.encodebytes(image_data).decode("utf-8")
                 # update image
@@ -331,7 +359,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
             update_image(0, "processing")
 
             nsfw = model.generate(args)
-            nsfw = nsfw or image.nsfw # inherit nsfw from parent
+            nsfw = nsfw or image.nsfw  # inherit nsfw from parent
 
             update_image(image.iterations, "completed", nsfw)
             metrics_queue.put(metric("worker.process", "count", 1, {
@@ -354,7 +382,8 @@ def update_loop(update_queue: Queue, cleanup_queue: Queue, metrics_queue: Queue)
             if not image:
                 return
             start = time.time()
-            client.update_image(image.id, image.image_data, image.thumbnail_data, image.iterations, image.status, image.score, image.negative_score, image.nsfw)
+            client.update_image(image.id, image.image_data, image.thumbnail_data,
+                                image.iterations, image.status, image.score, image.negative_score, image.nsfw)
             metrics_queue.put(metric("worker.update", "count", 1, {
                 "duration_seconds": time.time() - start
             }))
@@ -365,6 +394,7 @@ def update_loop(update_queue: Queue, cleanup_queue: Queue, metrics_queue: Queue)
             print(f"Update Loop Error: {e}")
             traceback.print_exc()
             continue
+
 
 def cleanup_loop(cleanup_queue: Queue):
     while True:
@@ -377,6 +407,7 @@ def cleanup_loop(cleanup_queue: Queue):
             print(f"Cleanup Loop Error: {e}")
             traceback.print_exc()
             continue
+
 
 def metrics_loop(metrics_queue: Queue):
     # Collect metrics and send to server every 10 seconds
@@ -397,6 +428,7 @@ def metrics_loop(metrics_queue: Queue):
             traceback.print_exc()
             continue
 
+
 class ImagesWorker:
     def __init__(self, gpu: str):
         # create queues
@@ -410,12 +442,18 @@ class ImagesWorker:
         # start threads
         self.apisocket = ApiSocket(api_url, client.token, self.websocket_queue)
         # self.websocket_thread = Thread(target=self.apisocket.run)
-        self.websocket_thread = Thread(target=asyncio.run, args=(self.apisocket.run(),))
-        self.poll_thread = Thread(target=poll_loop, args=(self.ready_queue, self.process_queue, self.metrics_queue, self.websocket_queue, gpu))
-        self.process_thread = Thread(target=process_loop, args=(self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue, gpu))
-        self.update_thread = Thread(target=update_loop, args=(self.update_queue, self.cleanup_queue, self.metrics_queue))
-        self.cleanup_thread = Thread(target=cleanup_loop, args=(self.cleanup_queue,))
-        self.metrics_thread = Thread(target=metrics_loop, args=(self.metrics_queue,))
+        self.websocket_thread = Thread(
+            target=asyncio.run, args=(self.apisocket.run(),))
+        self.poll_thread = Thread(target=poll_loop, args=(
+            self.ready_queue, self.process_queue, self.metrics_queue, self.websocket_queue, gpu))
+        self.process_thread = Thread(target=process_loop, args=(
+            self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue, gpu))
+        self.update_thread = Thread(target=update_loop, args=(
+            self.update_queue, self.cleanup_queue, self.metrics_queue))
+        self.cleanup_thread = Thread(
+            target=cleanup_loop, args=(self.cleanup_queue,))
+        self.metrics_thread = Thread(
+            target=metrics_loop, args=(self.metrics_queue,))
 
     def start(self):
         # start threads
@@ -425,7 +463,7 @@ class ImagesWorker:
         self.cleanup_thread.start()
         self.metrics_thread.start()
         self.process_thread.start()
-    
+
     def wait(self):
         self.process_thread.join()
         self.websocket_thread.join()
@@ -433,6 +471,7 @@ class ImagesWorker:
         self.update_thread.join()
         self.cleanup_thread.join()
         self.metrics_thread.join()
+
 
 if __name__ == "__main__":
     device_count = torch.cuda.device_count()
