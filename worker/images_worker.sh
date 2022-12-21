@@ -2,8 +2,9 @@
 
 # cd into same folder as the script
 cd "$(dirname "$0")"
-git pull
+
 while true; do
+    git pull
     # run the worker
     . ../../venv/bin/activate
     python images_worker.py
