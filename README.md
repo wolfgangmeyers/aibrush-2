@@ -16,6 +16,7 @@ Some examples of what can be created with AiBrush:
 
 * Multi-user system with passwordless login
 * Create a new image from phrases
+* Multiple aspect ratios
 * Upload the initial state of an image before processing
 * Create one or more child images from a parent
 * Image Editor: Inpainting, Outpainting and more
