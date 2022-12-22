@@ -6,12 +6,11 @@ creation of artwork. It is currently powered by Stable Diffusion and SwinIR.
 
 Some examples of what can be created with AiBrush:
 
-![fantasy stoat](https://aibrush2-filestore.s3.us-west-2.amazonaws.com/a176e241-657f-4919-a7a6-8e1add194671.image.png?updated_at=1671338148568)
+![cyberpunk cat](https://user-images.githubusercontent.com/1783800/209032611-bf2d23f4-a2cf-4b24-8c20-50025df77cef.png)
 
-![artificial habitat](https://aibrush2-filestore.s3.us-west-2.amazonaws.com/c76ab009-5f54-498e-9e4d-97ae9e1fde08.image.png?updated_at=1670303579559)
+![artificial habitat](https://user-images.githubusercontent.com/1783800/209032677-8068ce46-5ea2-43da-a052-cb63b688920d.png)
 
-![cyberpunk cat](https://aibrush2-filestore.s3.us-west-2.amazonaws.com/a81b9bde-5c16-44ee-91fd-eb9ace042fae.image.png?updated_at=1670218262036)
-
+![fantasy stoat](https://user-images.githubusercontent.com/1783800/209032751-41748b98-5e72-42ad-961a-f3377a74e0c5.png)
 
 ## Features:
 
@@ -19,4 +18,4 @@ Some examples of what can be created with AiBrush:
 * Create a new image from phrases
 * Upload the initial state of an image before processing
 * Create one or more child images from a parent
-* Manually edit an image and continue processing
+* Image Editor: Inpainting, Outpainting and more
