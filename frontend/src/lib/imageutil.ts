@@ -214,7 +214,7 @@ export function uploadBlob(signedUrl: string, blob: Blob): Promise<void> {
         xhr.open("PUT", signedUrl, true);
         xhr.setRequestHeader("Content-Type", "image/png");
         xhr.onload = () => {
-            if (xhr.status === 200) {
+            if (xhr.status < 400) {
                 // success!
                 resolve();
             }

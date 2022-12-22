@@ -72,7 +72,10 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
                     onClick={() => {
                         setBackupImage(undefined);
                         if (tool.saveListener) {
-                            tool.saveListener(backupImage);
+                            const encodedImage = renderer.getEncodedImage(null);
+                            if (encodedImage) {
+                                tool.saveListener(encodedImage);
+                            }
                         }
                     }}
                     style={{marginLeft: "8px"}}
