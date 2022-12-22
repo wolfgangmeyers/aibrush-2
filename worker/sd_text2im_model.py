@@ -183,7 +183,7 @@ class StableDiffusionText2ImageModel:
             start_code = torch.randn([1, args.C, args.H // args.f, args.W // args.f], device=self.device)
         if args.image:
             assert os.path.isfile(args.image)
-            init_image = load_img(args.image, args.W, args.H).to(self.device)
+            init_image = load_img(args.image, args.W, args.H).to(torch.float16).to(self.device)
             #TODO: is this needed?
             init_image = repeat(init_image, '1 ... -> b ...', b=1)
             init_latent = self.model.get_first_stage_encoding(self.model.encode_first_stage(init_image))  # move to latent space

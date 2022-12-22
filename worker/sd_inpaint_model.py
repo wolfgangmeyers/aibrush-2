@@ -74,10 +74,10 @@ def make_batch_sd(
         num_samples=1):
     image = np.array(image.convert("RGB"))
     image = image[None].transpose(0,3,1,2)
-    image = torch.from_numpy(image).to(dtype=torch.float32)/127.5-1.0
+    image = torch.from_numpy(image).to(dtype=torch.float16)/127.5-1.0
 
     mask = np.array(mask.convert("L"))
-    mask = mask.astype(np.float32)/255.0
+    mask = mask.astype(np.float16)/255.0
     mask = mask[None,None]
     mask[mask < 0.5] = 0
     mask[mask >= 0.5] = 1
