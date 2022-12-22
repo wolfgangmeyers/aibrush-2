@@ -1,23 +1,16 @@
-# aibrush-2
-A second iteration on the AI brush system, using VQGAN+CLIP to generate images
-
-The goal of the project is to provide a unique user experience for creating artwork by leveraging the power of state-of-the art AI-based image generation.
-
-This system provides an advanced interface a select set of open-source image generation models.
-
-Supported models:
-- [VQGAN+CLIP](https://github.com/nerdyrodent/VQGAN-CLIP)
-- [Glid-3 XL](https://github.com/Jack000/glid-3-xl)
+# aibrush
+A second iteration on AiBrush. AiBrush is a web-based tool for AI-based
+creation of artwork. It is currently powered by Stable Diffusion and SwinIR.
 
 ## Gallery
 
-Some examples of what can be created with VQGAN+CLIP:
+Some examples of what can be created with AiBrush:
 
-![abstract-portal](https://user-images.githubusercontent.com/1783800/140774958-28350d75-a16d-4c3b-8f90-ce1a83a9675c.jpg)
+![fantasy stoat](https://aibrush2-filestore.s3.us-west-2.amazonaws.com/a176e241-657f-4919-a7a6-8e1add194671.image.png?updated_at=1671338148568)
 
-![ancient-ruins](https://user-images.githubusercontent.com/1783800/140775012-cee58e13-6c9b-47c9-892f-53ef35be7c91.jpg)
+![artificial habitat](https://aibrush2-filestore.s3.us-west-2.amazonaws.com/c76ab009-5f54-498e-9e4d-97ae9e1fde08.image.png?updated_at=1670303579559)
 
-![positronic-brain](https://user-images.githubusercontent.com/1783800/140775043-5d9afb7f-9f41-4574-8726-73a54c04e8fa.jpg)
+![cyberpunk cat](https://aibrush2-filestore.s3.us-west-2.amazonaws.com/a81b9bde-5c16-44ee-91fd-eb9ace042fae.image.png?updated_at=1670218262036)
 
 
 ## Features:
@@ -27,11 +20,3 @@ Some examples of what can be created with VQGAN+CLIP:
 * Upload the initial state of an image before processing
 * Create one or more child images from a parent
 * Manually edit an image and continue processing
-
-## Deployment
-
-* [Deploying on EC2](./DEPLOYING-EC2.md)
-
-## Architecture
-
-![](./docs/AIBrush_Components.jpg)
