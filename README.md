@@ -20,3 +20,13 @@ Some examples of what can be created with AiBrush:
 * Upload the initial state of an image before processing
 * Create one or more child images from a parent
 * Image Editor: Inpainting, Outpainting and more
+
+## Interface
+
+See below for screenshots of the web interface.
+
+![image](https://user-images.githubusercontent.com/1783800/209033130-fda55aa5-acb4-4271-b86c-5fef3e64e64b.png)
+
+![image](https://user-images.githubusercontent.com/1783800/209033172-fd25dfa0-ab92-46c7-9b03-ff59d710a3f5.png)
+
+![image](https://user-images.githubusercontent.com/1783800/209033231-33ea0213-4783-45cf-b961-961c0c95b20a.png)
