@@ -431,6 +431,7 @@ export class Server {
             "/image-editor/:id",
             "/deleted-images",
             "/orders",
+            "/discord-login",
         ]) {
             this.app.get(
                 route,
