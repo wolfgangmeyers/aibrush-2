@@ -207,7 +207,6 @@ def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, we
             try:
                 message = websocket_queue.get(timeout=0.1)
             except Empty:
-                handle_error(Exception("testing kill switch"))
                 pass
             if message:
                 message = json.loads(message)
