@@ -253,3 +253,7 @@ class AIBrushAPI(object):
     def get_image_upload_urls(self, image_id: str) -> SimpleNamespace:
         resp = self.http_request(f"/images/{image_id}/upload-urls", "GET")
         return self.parse_json(resp.text)
+
+    def get_bugsnag_api_key(self) -> str:
+        resp = self.http_request("/bugsnag-api-key", "GET")
+        return self.parse_json(resp.text).bugsnag_api_key

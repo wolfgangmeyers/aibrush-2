@@ -26,6 +26,8 @@ from memutil import get_free_memory
 from torch import device
 from apisocket import ApiSocket
 import asyncio
+import bugsnag
+from errorkillswitch import ErrorKillSwitch
 
 NOTIFICATION_PENDING_IMAGE = "pending_image"
 NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated"
@@ -46,6 +48,21 @@ else:
     raise Exception(
         "No credentials.json or WORKER_LOGIN_CODE environment variable found")
 
+bugsnag_api_key = client.get_bugsnag_api_key()
+bugsnag.configure(api_key=bugsnag_api_key, project_root=".")
+
+killswitch = ErrorKillSwitch()
+_killswitch_lock = Lock()
+
+def on_kill(listener: callable):
+    with _killswitch_lock:
+        killswitch.on_kill(listener)
+
+def handle_error(err, context: str):
+    print(f"Error in {context}: {err}")
+    traceback.print_exc()
+    bugsnag.notify(err, context=context)
+    killswitch.add_error()
 
 def get_worker_id():
     token = client.token
@@ -190,6 +207,7 @@ def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, we
             try:
                 message = websocket_queue.get(timeout=0.1)
             except Empty:
+                handle_error(Exception("testing kill switch"))
                 pass
             if message:
                 message = json.loads(message)
@@ -239,8 +257,8 @@ def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, we
                 if image.warmup:
                     ready_queue.get()
         except Exception as err:
-            print(f"Pool Loop Error: {err}")
-            traceback.print_exc()
+            handle_error(err, "poll_loop")
+            
             continue
 
 
@@ -279,7 +297,17 @@ def warmup_image(model_name: str, image_id: str):
 def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue, gpu: str):
     print("process loop started")
     model_name = None
+    model = None
     clip_ranker = get_clip_ranker(gpu)
+
+    def handle_killswitch():
+        nonlocal model
+        nonlocal clip_ranker
+        model = None
+        clip_ranker = None
+    
+    on_kill(handle_killswitch)
+
     while True:
         try:
             image = process_queue.get()
@@ -370,8 +398,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
             if image.warmup:
                 ready_queue.put(True)
         except Exception as e:
-            print(f"Process Loop Error: {e}")
-            traceback.print_exc()
+            handle_error(e, "process_loop")
             continue
 
 
@@ -391,8 +418,7 @@ def update_loop(update_queue: Queue, cleanup_queue: Queue, metrics_queue: Queue)
             if image.status == "completed":
                 cleanup_queue.put(image.id)
         except Exception as e:
-            print(f"Update Loop Error: {e}")
-            traceback.print_exc()
+            handle_error(e, "update_loop")
             continue
 
 
@@ -404,8 +430,7 @@ def cleanup_loop(cleanup_queue: Queue):
                 return
             cleanup(image_id)
         except Exception as e:
-            print(f"Cleanup Loop Error: {e}")
-            traceback.print_exc()
+            handle_error(e, "cleanup_loop")
             continue
 
 
@@ -424,8 +449,7 @@ def metrics_loop(metrics_queue: Queue):
                 collected_metrics = []
                 last_send = time.time()
         except Exception as e:
-            print(f"Metrics Loop Error: {e}")
-            traceback.print_exc()
+            handle_error(e, "metrics_loop")
             continue
 
 
@@ -472,6 +496,15 @@ class ImagesWorker:
         self.cleanup_thread.join()
         self.metrics_thread.join()
 
+    def kill(self):
+        self.apisocket.kill()
+        self.websocket_queue.put(None)
+        self.process_queue.put(None)
+        self.update_queue.put(None)
+        self.cleanup_queue.put(None)
+        self.metrics_queue.put(None)
+        self.ready_queue.put(None)
+
 
 if __name__ == "__main__":
     device_count = torch.cuda.device_count()
@@ -479,4 +512,5 @@ if __name__ == "__main__":
         print(f"Device {i}: {torch.cuda.get_device_name(i)}")
         worker = ImagesWorker(f"cuda:{i}")
         worker.start()
-    worker.wait()
+        on_kill(worker.kill)
+    # worker.wait()

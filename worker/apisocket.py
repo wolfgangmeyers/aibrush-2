@@ -17,6 +17,10 @@ class ApiSocket:
             self.protocol = "wss"
         self.access_token = access_token
         self.websocket_queue = websocket_queue
+        self._kill = False
+
+    def kill(self):
+        self._kill = True
 
     async def run(self):
         async for websocket in websockets.connect(f"{self.protocol}://{self.host}"):
@@ -24,6 +28,8 @@ class ApiSocket:
             try:
                 await websocket.send(self.access_token)
                 while time.time() - start < 5 * 60:
+                    if self.kill:
+                        return
                     message = None
                     try:
                         message = await asyncio.wait_for(websocket.recv(), timeout=1)

@@ -1269,6 +1269,15 @@ export class Server {
             })
         );
 
+        this.app.get(
+            "/api/bugsnag-api-key",
+            withMetrics("/api/bugsnag-api-key", async (req, res) => {
+                res.json({
+                    bugsnag_api_key: process.env.BUGSNAG_API_KEY,
+                });
+            })
+        );
+
         if (process.env.BUGSNAG_API_KEY) {
             this.app.use(middleware.errorHandler);
         }
