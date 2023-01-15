@@ -738,9 +738,7 @@ describe("backend pending image scores", () => {
     });
 });
 
-// TODO: worker logic to fetch worker config
 // TODO: work distributor implementation (filter out workers with last_ping > 30s)
-// TODO: show gpu configs per worker in admin view
 describe("WorkDistributor", () => {
     let backendService: BackendService;
     let testHelper: TestHelper;
