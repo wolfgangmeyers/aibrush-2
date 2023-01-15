@@ -2,6 +2,7 @@ import moment from "moment";
 import { hash } from "./auth";
 import { BackendService } from "./backend";
 import { WorkerConfig } from "./client";
+import { FakeClock } from "./clock";
 import { ConsoleLogger } from "./logs";
 import { MetricsClient } from "./metrics";
 import { sleep } from "./sleep";
@@ -738,13 +739,13 @@ describe("backend pending image scores", () => {
     });
 });
 
-// TODO: work distributor implementation (filter out workers with last_ping > 30s)
 describe("WorkDistributor", () => {
     let backendService: BackendService;
     let testHelper: TestHelper;
     let databaseName: string;
     let adminUserId: string;
     let workDistributor: WorkDistributor;
+    let clock: FakeClock;
 
     beforeAll(async () => {
         testHelper = new TestHelper();
@@ -755,7 +756,8 @@ describe("WorkDistributor", () => {
         databaseName = await testHelper.createTestDatabase();
         await testHelper.cleanupTestFiles();
         const config = testHelper.createConfig(databaseName);
-        backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger());
+        clock = new FakeClock(moment());
+        backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger(), clock);
         await backendService.init();
         await backendService.createUser("admin@test.test");
         workDistributor = new WorkDistributor(backendService);
@@ -833,6 +835,43 @@ describe("WorkDistributor", () => {
                 "stable_diffusion_inpainting": 1,
                 "stable_diffusion_text2im": 1,
                 "swinir": 1,
+            });
+        });
+    })
+
+    describe("no pending images, 1gpu worker with >10m ping, 2gpu worker with same model", () => {
+        it("should not rebalance the workers", async () => {
+            const worker1 = await backendService.createWorker("test worker 1");
+            // ping
+            await backendService.updateWorker(worker1.id, {
+                status: "idle",
+            })
+            await backendService.updateWorkerDeploymentInfo(worker1.id, "testengine", 1, "asdf", "RTX 3090");
+            // worker config defaults to text2im for each gpu
+            const worker2 = await backendService.createWorker("test worker 2");
+            // ping
+            await backendService.updateWorker(worker2.id, {
+                status: "idle",
+            })
+            await backendService.updateWorkerDeploymentInfo(worker2.id, "testengine", 2, "asdf", "RTX 3090");
+
+            // advance clock by 11m
+            let now = clock.now();
+            now = now.add(11, "minutes");
+            clock.setNow(now)
+            // ping
+            await backendService.updateWorker(worker2.id, {
+                status: "idle",
+            })
+            await backendService.updateWorkerDeploymentInfo(worker2.id, "testengine", 2, "asdf", "RTX 3090");
+
+            // worker config defaults to text2im for each gpu
+            await workDistributor.distributeWork();
+            const workDistribution = await getWorkDistribution();
+            expect(workDistribution).toEqual({
+                "stable_diffusion_inpainting": 0,
+                "stable_diffusion_text2im": 3,
+                "swinir": 0,
             });
         });
     })

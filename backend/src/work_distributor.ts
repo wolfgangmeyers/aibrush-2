@@ -229,7 +229,7 @@ export class WorkDistributor {
                 );
                 // filter out workers with ping > 10 minutes old
                 const workers = (await this.backendService.listWorkers()).filter(
-                    (worker) => moment().diff(moment(worker.last_ping), "minutes") < 10
+                    (worker) => this.backendService.now().diff(moment(worker.last_ping), "minutes") < 10
                 );
                 // calculate cooldown
                 let totalGpus = 0;
@@ -237,11 +237,11 @@ export class WorkDistributor {
                     totalGpus += (worker.num_gpus || 1);
                 }
                 const cooldown = totalGpus >= MODELS.length ? DEFAULT_WORK_DISTRIBUTION_COOLDOWN : QUICK_WORK_DISTRIBUTION_COOLDOWN;
-                if (lastEvent && moment().diff(moment(lastEvent), "milliseconds") < cooldown) {
+                if (lastEvent && this.backendService.now().diff(moment(lastEvent), "milliseconds") < cooldown) {
                     // console.log("Work distributor not running because cooldown has not expired");
                     return;
                 }
-                await this.backendService.setLastEventTime(WORK_DISTRIBUTION_EVENT, moment().valueOf());
+                await this.backendService.setLastEventTime(WORK_DISTRIBUTION_EVENT, this.backendService.now().valueOf());
                 // console.log("Running work distributor");
                 const pending = await this.backendService.getPendingImageScores();
                 const configs = await Promise.all(

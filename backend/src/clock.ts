@@ -17,6 +17,10 @@ export class FakeClock implements Clock {
         this._now = now
     }
 
+    setNow(now: moment.Moment) {
+        this._now = now
+    }
+
     now(): moment.Moment {
         return this._now.clone()
     }

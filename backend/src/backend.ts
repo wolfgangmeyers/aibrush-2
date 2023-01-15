@@ -41,6 +41,7 @@ import { Filestore, S3Filestore, LocalFilestore } from "./filestore";
 import { MetricsClient } from "./metrics";
 import Bugsnag from "@bugsnag/js";
 import { Logger } from "./logs";
+import { Clock, RealClock } from "./clock";
 
 process.env.PGUSER = process.env.PGUSER || "postgres";
 
@@ -105,6 +106,7 @@ export class BackendService {
     private authHelper: AuthHelper;
     private filestore: Filestore;
     private notificationsClient: Client;
+    private clock: Clock;
 
     private notificationListeners: { [key: string]: NotificationListener[] } =
         {};
@@ -112,13 +114,15 @@ export class BackendService {
     constructor(
         private config: Config,
         private metrics: MetricsClient,
-        private logger: Logger
+        private logger: Logger,
+        clock?: Clock
     ) {
         this.authHelper = new AuthHelper(
             config,
-            () => moment().valueOf(),
-            logger
+            () => this.clock.now().valueOf(),
+            logger,
         );
+        this.clock = clock || new RealClock();
         if (config.s3Bucket) {
             this.filestore = new S3Filestore(config.s3Bucket, config.s3Region);
         } else {
@@ -209,6 +213,10 @@ export class BackendService {
         //         await this.deleteImage(image.id)
         //     }
         // }
+    }
+
+    now(): moment.Moment {
+        return this.clock.now();
     }
 
     async destroy() {
@@ -366,7 +374,7 @@ export class BackendService {
     async getPendingImageScores(): Promise<PendingImages[]> {
         // aggregate images that are pending by model
         // calculate score as sum of (now - created_at) for each image
-        const now = moment().valueOf();
+        const now = this.clock.now().valueOf();
         const client = await this.pool.connect();
         try {
             const result = await client.query(
@@ -497,7 +505,7 @@ export class BackendService {
     }
 
     async deleteImage(id: string): Promise<void> {
-        const now = moment().valueOf();
+        const now = this.clock.now().valueOf();
         // set deleted_at to now
         const client = await this.pool.connect();
         const image = await this.getImage(id);
@@ -870,7 +878,7 @@ export class BackendService {
     async createWorker(displayName: string): Promise<Worker> {
         this.metrics.addMetric("backend.create_worker", 1, "count", {});
         const id = uuid.v4();
-        const now = moment().valueOf();
+        const now = this.clock.now().valueOf();
         const login_code = "";
         const status = WorkerStatusEnum.Idle;
         const client = await this.pool.connect();
@@ -983,13 +991,14 @@ export class BackendService {
         upsertWorkerInput.status =
             upsertWorkerInput.status || existingWorker.status;
         const client = await this.pool.connect();
+
         try {
             const result = await client.query(
                 `UPDATE workers SET display_name = $1, status=$2, last_ping=$3 WHERE id = $4 RETURNING *`,
                 [
                     upsertWorkerInput.display_name,
                     upsertWorkerInput.status,
-                    moment().valueOf(),
+                    this.clock.now().valueOf(),
                     workerId,
                 ]
             );
@@ -1307,7 +1316,7 @@ export class BackendService {
             }
             const result = await client.query(
                 `SELECT * FROM images WHERE deleted_at < $1`,
-                [moment().subtract(1, "days").valueOf()]
+                [this.clock.now().subtract(1, "days").valueOf()]
             );
             if (result.rows.length > 0) {
                 const promises: Promise<void>[] = [];
@@ -1362,12 +1371,12 @@ export class BackendService {
     }
 
     async cleanup() {
-        const start = moment();
+        const start = this.clock.now();
         await this.cleanupStuckImages();
         await this.cleanupTemporaryImages();
         await this.cleanupDeletedImages();
         await this.cleanupIdleBoosts();
-        const elapsed = moment().diff(start, "milliseconds");
+        const elapsed = this.clock.now().diff(start, "milliseconds");
         this.metrics.addMetric("backend.cleanup", 1, "count", {
             duration: elapsed,
         });
@@ -1428,7 +1437,7 @@ export class BackendService {
             const id = (uuid.v4() + uuid.v4()).replace(/-/g, "");
             await client.query(
                 `INSERT INTO invite_codes(id, created_at) VALUES($1, $2)`,
-                [id, moment().valueOf()]
+                [id, this.clock.now().valueOf()]
             );
             return {
                 id,
@@ -1444,7 +1453,7 @@ export class BackendService {
         try {
             await client.query(
                 `DELETE FROM invite_codes WHERE created_at < $1`,
-                [moment().subtract(7, "days").valueOf()]
+                [this.clock.now().subtract(7, "days").valueOf()]
             );
         } finally {
             client.release();
@@ -1524,7 +1533,7 @@ export class BackendService {
     private async updateBoostBalance(boost: Boost): Promise<Boost> {
         console.log("existing boost is active");
         boost.balance -=
-            (moment().valueOf() - boost.activated_at) * boost.level;
+            (this.clock.now().valueOf() - boost.activated_at) * boost.level;
         if (boost.balance <= 0) {
             boost.balance = 0;
             boost.is_active = false;
@@ -1545,7 +1554,7 @@ export class BackendService {
         }
         let activatedAt = existingBoost.activated_at;
         if (activate) {
-            activatedAt = moment().valueOf();
+            activatedAt = this.clock.now().valueOf();
         }
         // upsert
         const client = await this.pool.connect();
@@ -1571,7 +1580,7 @@ export class BackendService {
         try {
             const result = await client.query(
                 `SELECT * FROM boost WHERE is_active AND $1 - activated_at < balance`,
-                [moment().valueOf()]
+                [this.clock.now().valueOf()]
             );
             return result.rows.map((row: any) => this.hydrateBoost(row));
         } finally {
@@ -1590,7 +1599,7 @@ export class BackendService {
         let existingBoost = await this.getBoost(user_id);
         if (
             cooldownCheck &&
-            moment().valueOf() - existingBoost.activated_at < 10 * 60 * 1000 &&
+            this.clock.now().valueOf() - existingBoost.activated_at < 10 * 60 * 1000 &&
             isActive
         ) {
             if (!existingBoost.is_active) {
@@ -1613,7 +1622,7 @@ export class BackendService {
             isActive &&
             (!existingBoost.is_active || level != existingBoost.level)
         ) {
-            activatedAt = moment().valueOf();
+            activatedAt = this.clock.now().valueOf();
         }
         const client = await this.pool.connect();
         try {
@@ -1657,7 +1666,7 @@ export class BackendService {
             const userIds = activeBoosts.map((boost) => boost.user_id);
             const result = await client.query(
                 `SELECT created_by, COUNT(*) FROM images WHERE created_by = ANY($1) AND created_at > $2 GROUP BY created_by`,
-                [userIds, moment().valueOf() - 15 * 60 * 1000]
+                [userIds, this.clock.now().valueOf() - 15 * 60 * 1000]
             );
             const activeUserIds = result.rows.map((row: any) => row.created_by);
             const inactiveBoosts = activeBoosts.filter(
@@ -1668,7 +1677,7 @@ export class BackendService {
             }
             for (let boost of inactiveBoosts) {
                 // make sure it hasn't been activated in the last 15 minutes
-                if (moment().valueOf() - boost.activated_at < 15 * 60 * 1000) {
+                if (this.clock.now().valueOf() - boost.activated_at < 15 * 60 * 1000) {
                     continue;
                 }
                 this.logger.log("deactivating boost");
@@ -1712,7 +1721,7 @@ export class BackendService {
         // generate crypto random 6 digit code
         const code = uuid.v4().substring(0, 6).toUpperCase();
         // calculate expiration based on config.loginCodeExpirationSeconds
-        const expiresAt = moment().add(
+        const expiresAt = this.clock.now().add(
             this.config.loginCodeExpirationSeconds,
             "seconds"
         );
@@ -1755,7 +1764,7 @@ export class BackendService {
             }
             const loginCode = result.rows[0] as LoginCode;
             // make sure loginCode isn't expired
-            const now = moment();
+            const now = this.clock.now();
             const expiresAt = moment(loginCode.expires_at);
             await client.query(`DELETE FROM login_codes WHERE code=$1`, [code]);
             if (now.isAfter(expiresAt)) {
