@@ -20,27 +20,38 @@ class ApiSocket:
         self._kill = False
 
     def kill(self):
-        traceback.print_stack()
+        print("kill called")
         self._kill = True
 
     async def run(self):
-        async for websocket in websockets.connect(f"{self.protocol}://{self.host}"):
-            start = time.time()
-            try:
-                await websocket.send(self.access_token)
-                while time.time() - start < 5 * 60:
-                    if self._kill:
-                        return
-                    message = None
-                    try:
-                        message = await asyncio.wait_for(websocket.recv(), timeout=1)
-                    except asyncio.TimeoutError:
-                        pass
-                    if message:
+        websocket_url = f"{self.protocol}://{self.host}"
+        print(f"api socket connecting to {websocket_url}")
+        try:
+            async for websocket in websockets.connect(websocket_url):
+                start = time.time()
+                try:
+                    print("authenticating")
+                    await websocket.send(self.access_token)
+                    print("authenticated")
+                    while time.time() - start < 5 * 60:
+                        if self._kill:
+                            print("killing websocket")
+                            return
+                        message = None
                         try:
-                            self.websocket_queue.put(message, timeout=0.1)
-                        except Full:
+                            message = await asyncio.wait_for(websocket.recv(), timeout=1)
+                        except asyncio.TimeoutError:
                             pass
-            except Exception as err:
-                print(f"Error in websocket loop: {err}")
-                traceback.print_exc()
+                        if message:
+                            print("message received")
+                            try:
+                                self.websocket_queue.put(message, timeout=0.1)
+                            except Full:
+                                print("message ignored (queue full)")
+                                pass
+                except Exception as err:
+                    print(f"Error in websocket loop: {err}")
+                    traceback.print_exc()
+        except Exception as err:
+            print(f"Error in websocket connection: {err}")
+            traceback.print_exc()

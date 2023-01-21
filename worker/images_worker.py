@@ -213,6 +213,7 @@ def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, we
                 if "connected" in message and message["connected"]:
                     print("Connected to websocket")
                 else:
+                    print("received message", message)
                     message = SimpleNamespace(**message)
                     if message.type == NOTIFICATION_PENDING_IMAGE:
                         pending_image = True
@@ -222,7 +223,8 @@ def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, we
                         time.sleep(random.random() * 0.5)
                     elif message.type == NOTIFICATION_WORKER_CONFIG_UPDATED:
                         config_updated = True
-            if config_updated or time.time() - last_model_check > 60:
+            # poll interval has been changed to every 2 seconds because websocket isn't working anymore
+            if config_updated or time.time() - last_model_check > 2:
                 client.worker_ping()
                 last_model_check = time.time()
                 current_model_name = get_model_assignment(gpu)
