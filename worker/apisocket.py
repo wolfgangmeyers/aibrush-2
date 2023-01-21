@@ -20,6 +20,7 @@ class ApiSocket:
         self._kill = False
 
     def kill(self):
+        traceback.print_stack()
         self._kill = True
 
     async def run(self):
@@ -28,7 +29,7 @@ class ApiSocket:
             try:
                 await websocket.send(self.access_token)
                 while time.time() - start < 5 * 60:
-                    if self.kill:
+                    if self._kill:
                         return
                     message = None
                     try:

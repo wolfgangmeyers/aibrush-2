@@ -512,4 +512,3 @@ if __name__ == "__main__":
         worker = ImagesWorker(f"cuda:{i}")
         worker.start()
         on_kill(worker.kill)
-    # worker.wait()
