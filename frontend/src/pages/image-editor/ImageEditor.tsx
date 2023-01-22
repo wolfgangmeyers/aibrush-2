@@ -155,21 +155,27 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
             }
             const newTool = toolconfig.constructor(renderer);
             setTool(newTool);
-            newTool.onSaveImage((encodedImage) => {
+            newTool.onSaveImage((encodedImage, args={}) => {
                 console.log("Saving image...");
-                saveNewImage(encodedImage);
+                saveNewImage(encodedImage, args);
             });
         }
     };
 
-    const saveNewImage = async (encodedImage: string) => {
+    /**
+     * Saves a new image to the server
+     * 
+     * @param encodedImage base64 encoded image
+     * @param newArgs may contain new phrases and negative phrases
+     */
+    const saveNewImage = async (encodedImage: string, newArgs: any) => {
         if (!image || !encodedImage) {
             throw new Error("Cannot save new image without existing image");
         }
         setBusyMessage("Saving image...");
         const args = defaultArgs();
-        args.phrases = image.phrases;
-        args.negative_phrases = image.negative_phrases;
+        args.phrases = newArgs.phrases || image.phrases;
+        args.negative_phrases = newArgs.negative_phrases || image.negative_phrases;
         args.count = 1;
         args.parent = image.id;
         args.stable_diffusion_strength = image.stable_diffusion_strength;

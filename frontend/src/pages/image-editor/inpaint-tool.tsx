@@ -36,6 +36,7 @@ interface ImageWithData extends APIImage {
 export class InpaintTool extends BaseTool implements Tool {
     private selectionTool: SelectionTool;
     private prompt: string = "";
+    private negativePrompt: string = "";
     private count: number = 4;
     private variationStrength: number = 0.35;
     private brushSize: number = 10;
@@ -239,6 +240,7 @@ export class InpaintTool extends BaseTool implements Tool {
         };
         super.updateArgs(args);
         this.prompt = args.prompt || "";
+        this.negativePrompt = args.negativePrompt || "";
         this.count = args.count || 4;
         this.variationStrength = args.variationStrength || 0.75;
         this.brushSize = args.brushSize || 10;
@@ -374,7 +376,7 @@ export class InpaintTool extends BaseTool implements Tool {
         input.encoded_mask = encodedMask;
         input.parent = image.id;
         input.phrases = [this.prompt || image.phrases[0]];
-        input.negative_phrases = image.negative_phrases;
+        input.negative_phrases = [this.negativePrompt || image.negative_phrases[0]];
         input.stable_diffusion_strength = this.variationStrength;
         input.count = this.count;
         input.model = "stable_diffusion_inpainting";
@@ -556,7 +558,7 @@ export class InpaintTool extends BaseTool implements Tool {
         this.renderer.setEditImage(this.selectedImageData);
     }
 
-    onSaveImage(listener: (encodedImage: string) => void): void {
+    onSaveImage(listener: (encodedImage: string, args?: any) => void): void {
         this.saveListener = listener;
     }
 
@@ -571,7 +573,10 @@ export class InpaintTool extends BaseTool implements Tool {
         this.imageData = [];
         const encodedImage = this.renderer.getEncodedImage(null);
         if (encodedImage && this.saveListener) {
-            this.saveListener(encodedImage);
+            this.saveListener(encodedImage, {
+                phrases: [this.prompt],
+                negative_phrases: [this.negativePrompt]
+            });
         }
         this.dirty = false;
     }
@@ -605,6 +610,7 @@ export const InpaintControls: FC<ControlsProps> = ({
 }) => {
     const [count, setCount] = useState(4);
     const [prompt, setPrompt] = useState(image.phrases[0]);
+    const [negativePrompt, setNegativePrompt] = useState(image.negative_phrases[0]);
     const [state, setState] = useState<InpaintToolState>(tool.state);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -759,6 +765,21 @@ export const InpaintControls: FC<ControlsProps> = ({
                             Customize the text prompt here
                         </small>
                     </div>
+                    {/* negative prompt */}
+                    <div className="form-group">
+                        <label htmlFor="negativeprompt">Negative prompt</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            value={negativePrompt}
+                            onChange={(e) => {
+                                setNegativePrompt(e.target.value);
+                            }}
+                        />
+                        <small className="form-text text-muted">
+                            Customize the negative text prompt here
+                        </small>
+                    </div>
                     <div className="form-group">
                         <label htmlFor="count">Count: {count}</label>
                         <input
@@ -847,6 +868,7 @@ export const InpaintControls: FC<ControlsProps> = ({
                             tool.updateArgs({
                                 count,
                                 prompt,
+                                negativePrompt,
                             });
                             tool.submit(api, apisocket, image);
                         }}

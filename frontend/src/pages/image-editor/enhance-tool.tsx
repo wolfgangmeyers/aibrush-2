@@ -35,6 +35,7 @@ interface ImageWithData extends APIImage {
 export class EnhanceTool extends BaseTool implements Tool {
     readonly selectionTool: SelectionTool;
     private prompt: string = "";
+    private negativePrompt: string = "";
     private count: number = 4;
     private variationStrength: number = 0.35;
     private _dirty = false;
@@ -283,9 +284,15 @@ export class EnhanceTool extends BaseTool implements Tool {
     }
 
     updateArgs(args: any) {
+        args = {
+            ...this.getArgs(),
+            ...args,
+        }
         this.prompt = args.prompt || "";
+        this.negativePrompt = args.negativePrompt || "";
         this.count = args.count || 4;
         this.variationStrength = args.variationStrength || 0.75;
+        console.log("updateArgs", args);
     }
 
     onChangeState(handler: (state: EnhanceToolState) => void) {
@@ -389,7 +396,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.encoded_image = encodedImage;
         input.parent = image.id;
         input.phrases = [this.prompt || image.phrases[0]];
-        input.negative_phrases = image.negative_phrases;
+        input.negative_phrases = [this.negativePrompt || image.negative_phrases[0]];
         input.stable_diffusion_strength = this.variationStrength;
         input.count = this.count;
 
@@ -566,7 +573,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.renderer.setEditImage(this.selectedImageData);
     }
 
-    onSaveImage(listener: (encodedImage: string) => void): void {
+    onSaveImage(listener: (encodedImage: string, args?: any) => void): void {
         this.saveListener = listener;
     }
 
@@ -576,7 +583,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.imageData = [];
         const encodedImage = this.renderer.getEncodedImage(null);
         if (encodedImage && this.saveListener) {
-            this.saveListener(encodedImage);
+            this.saveListener(encodedImage, {
+                phrases: [this.prompt],
+                negative_phrases: [this.negativePrompt],
+            });
         }
         this.dirty = false;
     }
@@ -606,6 +616,8 @@ export const EnhanceControls: FC<ControlsProps> = ({
     const [dirty, setDirty] = useState(false);
     const [variationStrength, setVariationStrength] = useState(0.35);
     const [prompt, setPrompt] = useState(image.phrases[0]);
+    const [negativePrompt, setNegativePrompt] = useState(image.negative_phrases[0]);
+    console.log("negativePrompt", negativePrompt);
     const [state, setState] = useState<EnhanceToolState>(tool.state);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -698,6 +710,22 @@ export const EnhanceControls: FC<ControlsProps> = ({
                         />
                         <small className="form-text text-muted">
                             Customize the text prompt here
+                        </small>
+                    </div>
+                    {/* negative prompt */}
+                    <div className="form-group">
+                        <label htmlFor="negative-prompt">Negative Prompt</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            id="negative-prompt"
+                            value={negativePrompt}
+                            onChange={(e) => {
+                                setNegativePrompt(e.target.value);
+                            }}
+                        />
+                        <small className="form-text text-muted">
+                            Customize the negative text prompt here
                         </small>
                     </div>
                     <div className="form-group">
@@ -807,6 +835,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                                 count,
                                 variationStrength,
                                 prompt,
+                                negativePrompt,
                             });
                             tool.submit(api, apisocket, image);
                         }}
