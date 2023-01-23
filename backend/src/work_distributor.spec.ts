@@ -17,9 +17,18 @@ import {
 jest.setTimeout(60000);
 
 describe("Work Distribution Calculations", () => {
+
+    const defaultWorkerSettings = {
+        minimum_worker_allocations: {
+            stable_diffusion_text2im: 0,
+            stable_diffusion_inpainting: 0,
+            swinir: 0,
+        }
+    }
+
     describe("no pending images, no workers", () => {
         it("should return an empty array", () => {
-            const result = calculateWorkDistribution([], [], []);
+            const result = calculateWorkDistribution([], [], [], defaultWorkerSettings);
             expect(result).toEqual([]);
         });
     });
@@ -46,7 +55,8 @@ describe("Work Distribution Calculations", () => {
                             },
                         ],
                     },
-                ]
+                ],
+                defaultWorkerSettings
             );
             expect(result).toEqual([]);
         });
@@ -62,7 +72,8 @@ describe("Work Distribution Calculations", () => {
                     },
                 ],
                 [],
-                []
+                [],
+                defaultWorkerSettings
             );
             expect(result).toEqual([]);
         });
@@ -120,7 +131,8 @@ describe("Work Distribution Calculations", () => {
                             },
                         ],
                     },
-                ]
+                ],
+                defaultWorkerSettings
             );
             expect(result).toEqual([]);
         });
@@ -183,7 +195,8 @@ describe("Work Distribution Calculations", () => {
                             },
                         ],
                     },
-                ]
+                ],
+                defaultWorkerSettings
             );
             expect(result).toEqual([]);
         });
@@ -224,7 +237,8 @@ describe("Work Distribution Calculations", () => {
                             },
                         ],
                     },
-                ]
+                ],
+                defaultWorkerSettings
             );
             expect(result).toEqual([]);
         });
@@ -260,7 +274,8 @@ describe("Work Distribution Calculations", () => {
                             },
                         ],
                     },
-                ]
+                ],
+                defaultWorkerSettings
             );
             expect(result).toEqual([{
                 worker_id: "worker1",
@@ -309,7 +324,8 @@ describe("Work Distribution Calculations", () => {
                             },
                         ],
                     },
-                ]
+                ],
+                defaultWorkerSettings
             );
             expect(result).toEqual([]);
         });
@@ -342,7 +358,8 @@ describe("Work Distribution Calculations", () => {
                             },
                         ],
                     },
-                ]
+                ],
+                defaultWorkerSettings
             );
             expect(result).toEqual([
                 {
@@ -403,7 +420,8 @@ describe("Work Distribution Calculations", () => {
                             },
                         ],
                     },
-                ]
+                ],
+                defaultWorkerSettings
             );
             expect(result).toEqual([
                 {
@@ -470,7 +488,8 @@ describe("Work Distribution Calculations", () => {
                             },
                         ],
                     },
-                ]
+                ],
+                defaultWorkerSettings
             );
             expect(result).toEqual([
                 {
@@ -545,7 +564,8 @@ describe("Work Distribution Calculations", () => {
                             },
                         ],
                     },
-                ]
+                ],
+                defaultWorkerSettings
             );
             expect(result).toEqual([
                 {
@@ -596,7 +616,8 @@ describe("Work Distribution Calculations", () => {
                             },
                         ],
                     },
-                ]
+                ],
+                defaultWorkerSettings
             );
             expect(result).toEqual([
                 {
@@ -820,8 +841,15 @@ describe("WorkDistributor", () => {
         })
     });
 
-    describe("no pending images, 3-gpu worker with same model", () => {
+    describe("no pending images, 3-gpu worker with same model, balanced minimums", () => {
         it("should rebalance the worker", async () => {
+            await backendService.updateGlobalSettings("workers", {
+                minimum_worker_allocations: {
+                    stable_diffusion_text2im: 1,
+                    stable_diffusion_inpainting: 1,
+                    swinir: 1,
+                }
+            })
             const worker = await backendService.createWorker("test worker");
             // ping
             await backendService.updateWorker(worker.id, {
@@ -876,8 +904,15 @@ describe("WorkDistributor", () => {
         });
     })
 
-    describe("no pending images, 4-gpu worker with the same model", () => {
+    describe("no pending images, 4-gpu worker with the same model, balanced minimums", () => {
         it("should rebalance the worker", async () => {
+            await backendService.updateGlobalSettings("workers", {
+                minimum_worker_allocations: {
+                    stable_diffusion_text2im: 1,
+                    stable_diffusion_inpainting: 1,
+                    swinir: 1,
+                }
+            })
             const worker = await backendService.createWorker("test worker");
             // ping
             await backendService.updateWorker(worker.id, {
@@ -895,8 +930,15 @@ describe("WorkDistributor", () => {
         });
     })
 
-    describe("no pending images, 6-gpu worker with the same model", () => {
+    describe("no pending images, 6-gpu worker with the same model, balanced minimums", () => {
         it("should rebalance the worker", async () => {
+            await backendService.updateGlobalSettings("workers", {
+                minimum_worker_allocations: {
+                    stable_diffusion_text2im: 1,
+                    stable_diffusion_inpainting: 1,
+                    swinir: 1,
+                }
+            })
             const worker = await backendService.createWorker("test worker");
             // ping
             await backendService.updateWorker(worker.id, {
@@ -907,9 +949,48 @@ describe("WorkDistributor", () => {
             await workDistributor.distributeWork();
             const workDistribution = await getWorkDistribution();
             expect(workDistribution).toEqual({
-                "stable_diffusion_inpainting": 2,
-                "stable_diffusion_text2im": 3,
+                "stable_diffusion_inpainting": 1,
+                "stable_diffusion_text2im": 4,
                 "swinir": 1,
+            });
+        });
+    })
+
+    describe("no pending images, 3-gpu worker, mismatching minimums", () => {
+        // 0, 3, 0 with 1, 1, 0 minimums = 1, 2, 0
+        it("should rebalance the worker", async () => {
+            await backendService.updateGlobalSettings("workers", {
+                minimum_worker_allocations: {
+                    stable_diffusion_text2im: 1,
+                    stable_diffusion_inpainting: 1,
+                    swinir: 0,
+                }
+            })
+            const worker = await backendService.createWorker("test worker");
+            // ping
+            await backendService.updateWorker(worker.id, {
+                status: "idle",
+            })
+            await backendService.updateWorkerDeploymentInfo(worker.id, "testengine", 3, "asdf", "RTX 3090");
+            await backendService.upsertWorkerConfig(worker.id, {
+                gpu_configs: [{
+                    gpu_num: 0,
+                    model: "stable_diffusion_inpainting",
+                }, {
+                    gpu_num: 1,
+                    model: "stable_diffusion_inpainting",
+                }, {
+                    gpu_num: 2,
+                    model: "stable_diffusion_inpainting",
+                }]
+            })
+            // worker config defaults to text2im for each gpu
+            await workDistributor.distributeWork();
+            const workDistribution = await getWorkDistribution();
+            expect(workDistribution).toEqual({
+                "stable_diffusion_inpainting": 2,
+                "stable_diffusion_text2im": 1,
+                "swinir": 0,
             });
         });
     })

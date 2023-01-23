@@ -31,6 +31,7 @@ import {
     UpsertWorkerConfigInput,
     ImageUrls,
     Boost,
+    GlobalSettings,
 } from "./client/api";
 import { sleep } from "./sleep";
 import { EmailMessage } from "./email_message";
@@ -1647,6 +1648,57 @@ export class BackendService {
             client.release();
         }
     }
+
+    async getGlobalSettings(key: string): Promise<GlobalSettings> {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `SELECT * FROM global_settings WHERE settings_key = $1`,
+                [key]
+            );
+            if (result.rows.length === 0) {
+                return {
+                    settings_key: key,
+                    settings_json: this.defaultGlobalSettings(key),
+                };
+            }
+            return result.rows[0];
+        } finally {
+            client.release();
+        }
+    }
+
+    private defaultGlobalSettings(key: string): any {
+        switch (key) {
+            case "workers":
+                return {
+                    minimum_worker_allocations: {
+                        stable_diffusion_text2im: 0,
+                        stable_diffusion_inpainting: 0,
+                        swinir: 0,
+                    }
+                }
+            default:
+                return {};
+        }
+    }
+
+    async updateGlobalSettings(
+        key: string,
+        settings_json: any
+    ): Promise<GlobalSettings> {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `INSERT INTO global_settings (settings_key, settings_json) VALUES ($1, $2) ON CONFLICT (settings_key) DO UPDATE SET settings_json = $2 RETURNING *`,
+                [key, settings_json]
+            );
+            return result.rows[0];
+        } finally {
+            client.release();
+        }
+    }
+    
 
     async cleanupIdleBoosts(): Promise<void> {
         // list the active boosts, then

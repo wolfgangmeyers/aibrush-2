@@ -737,6 +737,49 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Boost"
+  /api/global-settings/{key}:
+    get:
+      description: Get the global settings
+      operationId: getGlobalSettings
+      tags:
+        - AIBrush
+      # there is a key parameter
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalSettings"
+    put:
+      description: Update the global settings
+      operationId: updateGlobalSettings
+      tags:
+        - AIBrush
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGlobalSettingsRequest"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalSettings"
 
 components:
   schemas:
@@ -1251,3 +1294,20 @@ components:
             $ref: "#/components/schemas/Boost"
       required:
         - boosts
+    GlobalSettings:
+      type: object
+      properties:
+        settings_key:
+          type: string
+        settings_json:
+          type: object
+      required:
+        - settings_key
+        - settings_json
+    UpdateGlobalSettingsRequest:
+      type: object
+      properties:
+        settings_json:
+          type: object
+      required:
+        - settings_json

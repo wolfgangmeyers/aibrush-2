@@ -428,6 +428,25 @@ export interface FeatureList {
 /**
  * 
  * @export
+ * @interface GlobalSettings
+ */
+export interface GlobalSettings {
+    /**
+     * 
+     * @type {string}
+     * @memberof GlobalSettings
+     */
+    'settings_key': string;
+    /**
+     * 
+     * @type {object}
+     * @memberof GlobalSettings
+     */
+    'settings_json': object;
+}
+/**
+ * 
+ * @export
  * @interface Healthcheck
  */
 export interface Healthcheck {
@@ -980,6 +999,19 @@ export interface UpdateBoostResponse {
      * @memberof UpdateBoostResponse
      */
     'error'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface UpdateGlobalSettingsRequest
+ */
+export interface UpdateGlobalSettingsRequest {
+    /**
+     * 
+     * @type {object}
+     * @memberof UpdateGlobalSettingsRequest
+     */
+    'settings_json': object;
 }
 /**
  * 
@@ -1761,6 +1793,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Get the global settings
+         * @param {string} key 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getGlobalSettings: async (key: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'key' is not null or undefined
+            assertParamExists('getGlobalSettings', 'key', key)
+            const localVarPath = `/api/global-settings/{key}`
+                .replace(`{${"key"}}`, encodeURIComponent(String(key)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Get a saved image by id
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2384,6 +2449,43 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Update the global settings
+         * @param {string} key 
+         * @param {UpdateGlobalSettingsRequest} [updateGlobalSettingsRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateGlobalSettings: async (key: string, updateGlobalSettingsRequest?: UpdateGlobalSettingsRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'key' is not null or undefined
+            assertParamExists('updateGlobalSettings', 'key', key)
+            const localVarPath = `/api/global-settings/{key}`
+                .replace(`{${"key"}}`, encodeURIComponent(String(key)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateGlobalSettingsRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Update a saved image
          * @param {string} id 
          * @param {UpdateImageInput} [updateImageInput] 
@@ -2759,6 +2861,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Get the global settings
+         * @param {string} key 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getGlobalSettings(key: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GlobalSettings>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getGlobalSettings(key, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Get a saved image by id
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2944,6 +3056,17 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UpdateBoostResponse>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateBoost(updateBoostRequest, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Update the global settings
+         * @param {string} key 
+         * @param {UpdateGlobalSettingsRequest} [updateGlobalSettingsRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateGlobalSettings(key: string, updateGlobalSettingsRequest?: UpdateGlobalSettingsRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<GlobalSettings>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateGlobalSettings(key, updateGlobalSettingsRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3154,6 +3277,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getFeatures(options).then((request) => request(axios, basePath));
         },
         /**
+         * Get the global settings
+         * @param {string} key 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getGlobalSettings(key: string, options?: any): AxiosPromise<GlobalSettings> {
+            return localVarFp.getGlobalSettings(key, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Get a saved image by id
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -3321,6 +3453,16 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: any): AxiosPromise<UpdateBoostResponse> {
             return localVarFp.updateBoost(updateBoostRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Update the global settings
+         * @param {string} key 
+         * @param {UpdateGlobalSettingsRequest} [updateGlobalSettingsRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateGlobalSettings(key: string, updateGlobalSettingsRequest?: UpdateGlobalSettingsRequest, options?: any): AxiosPromise<GlobalSettings> {
+            return localVarFp.updateGlobalSettings(key, updateGlobalSettingsRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * Update a saved image
@@ -3554,6 +3696,17 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Get the global settings
+     * @param {string} key 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getGlobalSettings(key: string, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).getGlobalSettings(key, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Get a saved image by id
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -3758,6 +3911,18 @@ export class AIBrushApi extends BaseAPI {
      */
     public updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).updateBoost(updateBoostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update the global settings
+     * @param {string} key 
+     * @param {UpdateGlobalSettingsRequest} [updateGlobalSettingsRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public updateGlobalSettings(key: string, updateGlobalSettingsRequest?: UpdateGlobalSettingsRequest, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).updateGlobalSettings(key, updateGlobalSettingsRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

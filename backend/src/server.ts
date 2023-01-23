@@ -1278,6 +1278,55 @@ export class Server {
             })
         );
 
+        // global settings are admin-only
+        this.app.get(
+            "/api/global-settings/:key",
+            withMetrics("/api/global-settings/:key", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to get global settings",
+                        jwt
+                    );
+                    return;
+                }
+                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
+                    res.sendStatus(404);
+                    return;
+                }
+                const settings = await this.backendService.getGlobalSettings(
+                    req.params.key
+                );
+                res.json(settings);
+            })
+        );
+
+        this.app.put(
+            "/api/global-settings/:key",
+            withMetrics("/api/global-settings/:key", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to update global settings",
+                        jwt
+                    );
+                    return;
+                }
+                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
+                    res.sendStatus(404);
+                    return;
+                }
+                const settings = await this.backendService.updateGlobalSettings(
+                    req.params.key,
+                    req.body.settings_json,
+                );
+                res.json(settings);
+            })
+        );
+
+
         if (process.env.BUGSNAG_API_KEY) {
             this.app.use(middleware.errorHandler);
         }

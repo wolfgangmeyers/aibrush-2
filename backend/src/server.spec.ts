@@ -19,6 +19,7 @@ import {
     Worker,
     WorkerStatusEnum,
     ImageUrls,
+    GlobalSettings,
 } from "./client/api"
 
 // import { Mailcatcher, MailcatcherMessage } from './mailcatcher'
@@ -27,6 +28,7 @@ import { Authentication, hash } from './auth'
 import { sleep } from './sleep'
 import { MetricsClient } from './metrics'
 import { ConsoleLogger } from './logs'
+import { WorkerSettings } from './model'
 
 jest.setTimeout(60000);
 
@@ -1314,6 +1316,141 @@ describe("server", () => {
                 expect(response.status).toBe(200);
                 expect(response.data.is_admin).toBe(false);
             })
+        })
+
+        // global settings (admin only functions)
+    // /api/global-settings:
+    //     get:
+    //       description: Get the global settings
+    //       operationId: getGlobalSettings
+    //       tags:
+    //         - AIBrush
+    //       responses:
+    //         "200":
+    //           description: Success
+    //           content:
+    //             application/json:
+    //               schema:
+    //                 $ref: "#/components/schemas/GlobalSettings"
+    //     put:
+    //       description: Update the global settings
+    //       operationId: updateGlobalSettings
+    //       tags:
+    //         - AIBrush
+    //       requestBody:
+    //         content:
+    //           application/json:
+    //             schema:
+    //               $ref: "#/components/schemas/UpdateGlobalSettingsRequest"
+    //       responses:
+    //         "200":
+    //           description: Success
+    //           content:
+    //             application/json:
+    //               schema:
+    //                 $ref: "#/components/schemas/GlobalSettings"
+    // GlobalSettings:
+    //     type: object
+    //     properties:
+    //       settings_key:
+    //         type: string
+    //       settings_json:
+    //         type: object
+    //     required:
+    //       - settings_key
+    //       - settings_json
+    //   UpdateGlobalSettingsRequest:
+    //     type: object
+    //     properties:
+    //       settings_json:
+    //         type: object
+    //     required:
+        //   - settings_json
+// schema for settings_json:
+// export interface MinimumWorkerAllocations {
+// [model: string]: number;
+// }
+
+// export interface GlobalSettings {
+// minimum_worker_allocations: MinimumWorkerAllocations;
+// }
+        describe("global settings", () => {
+            // getting from an empty database should return the default settings
+            // minimum worker allocations:
+            // stable_diffusion_text2im: 0
+            // stable_diffusion_inpainting: 0
+            // swinir: 0
+            describe("when getting the worker settings as admin with empty database", () => {
+                let response: AxiosResponse<WorkerSettings>;
+
+                beforeEach(async () => {
+                    await authenticateUser(backendService, httpClient, "admin@test.test");
+                    response = await client.getGlobalSettings("workers") as any;
+                });
+
+                it("should return the default settings", () => {
+                    expect(response.status).toBe(200);
+                    expect(response.data.settings_json.minimum_worker_allocations).toEqual({
+                        stable_diffusion_text2im: 0,
+                        stable_diffusion_inpainting: 0,
+                        swinir: 0,
+                    });
+                });
+            })
+
+            describe("when getting the worker settings as a normal user", () => {
+                beforeEach(async () => {
+                    await authenticateUser(backendService, httpClient, "test@test.test");
+                });
+
+                it("should return reject with 404", async () => {
+                    await expect(client.getGlobalSettings("workers")).rejects.toThrowError("Request failed with status code 404");
+                });
+            })
+
+            describe("updating the worker settings", () => {
+                let response: AxiosResponse<WorkerSettings>;
+
+                beforeEach(async () => {
+                    await authenticateUser(backendService, httpClient, "admin@test.test");
+                    response = await client.updateGlobalSettings("workers", {
+                        settings_json: {
+                            minimum_worker_allocations: {
+                                stable_diffusion_text2im: 1,
+                                stable_diffusion_inpainting: 2,
+                                swinir: 3,
+                            }
+                        }
+                    }) as any;
+                });
+
+                it("should return the updated settings", () => {
+                    expect(response.status).toBe(200);
+                    expect(response.data.settings_json.minimum_worker_allocations).toEqual({
+                        stable_diffusion_text2im: 1,
+                        stable_diffusion_inpainting: 2,
+                        swinir: 3,
+                    });
+                });
+
+                describe("getting the worker settings", () => {
+                    let response: AxiosResponse<WorkerSettings>;
+
+                    beforeEach(async () => {
+                        response = await client.getGlobalSettings("workers") as any;
+                    });
+
+                    it("should return the updated settings", () => {
+                        expect(response.status).toBe(200);
+                        expect(response.data.settings_json.minimum_worker_allocations).toEqual({
+                            stable_diffusion_text2im: 1,
+                            stable_diffusion_inpainting: 2,
+                            swinir: 3,
+                        });
+                    });
+
+                })
+            });
         })
 
     }) // end authenticated tests

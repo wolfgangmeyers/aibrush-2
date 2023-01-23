@@ -11,10 +11,24 @@ CREATE TABLE login_codes (
 );
  */
 
+import { GlobalSettings } from "./client";
+
 export interface LoginCode {
     id: number;
     code: string;
     user_email: string;
     created_at: Date;
     expires_at: Date;
+}
+
+export interface MinimumWorkerAllocations {
+  [model: string]: number;
+}
+
+export interface WorkerSettingsJson {
+  minimum_worker_allocations: MinimumWorkerAllocations;
+}
+
+export interface WorkerSettings extends GlobalSettings {
+  settings_json: WorkerSettingsJson;
 }

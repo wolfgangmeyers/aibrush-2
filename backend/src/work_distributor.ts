@@ -2,6 +2,7 @@ import Bugsnag from "@bugsnag/js";
 import moment from "moment";
 import { BackendService, WORK_DISTRIBUTION_KEY } from "./backend";
 import { WorkerConfig, WorkerGpuConfig, WorkerStatusEnum } from "./client";
+import { WorkerSettingsJson } from "./model";
 
 export const WORK_DISTRIBUTION_EVENT = "work_distribution_event";
 const DEFAULT_WORK_DISTRIBUTION_COOLDOWN = 60 * 1000;
@@ -53,7 +54,8 @@ function calculateActualState(
 function calculateDesiredState(
     pending: PendingImages[],
     workers: Worker[],
-    configsByWorker: { [workerId: string]: WorkerConfig }
+    configsByWorker: { [workerId: string]: WorkerConfig },
+    workerSettings: WorkerSettingsJson,
 ): { [key: string]: number } {
     pending = pending.sort((a, b) => b.score - a.score);
     const actualState = calculateActualState(workers, configsByWorker);
@@ -89,27 +91,30 @@ function calculateDesiredState(
             desiredState[pendingScore.model] += desiredGpus;
             workerGpuCount -= desiredGpus;
         }
-    } else if (workerGpuCount >= MODELS.length) {
+    } else {
         // if there are at least 3 gpus, assign at least one to each model
         // TODO: maybe in the future, make it a percentage of total gpus instead of just one
+        let minimumWorkerAllocations = 0;
         for (let model of MODELS) {
-            desiredState[model] = 1;
-            workerGpuCount -= 1;
+            const minimum = workerSettings.minimum_worker_allocations[model];
+            desiredState[model] = minimum;
+            workerGpuCount -= minimum;
+            minimumWorkerAllocations += minimum;
+        }
+        if (minimumWorkerAllocations == 0) {
+            return actualState;
         }
         for (let model of MODELS) {
-            const desiredGpus = Math.min(
-                Math.ceil(
-                    (DEFAULT_MODEL_DISTRIBUTION[model] / 100) * workerGpuCount
-                ),
-                workerGpuCount
-            );
+            if (workerGpuCount <= 0) {
+                continue;
+            }
+            const desiredGpus = Math.max(0, Math.min(
+                workerGpuCount,
+                actualState[model] - desiredState[model]
+            ));
             desiredState[model] += desiredGpus;
             workerGpuCount -= desiredGpus;
         }
-    } else {
-        // don't try to adjust the state if there are no pending images
-        // and less than 3 workers. This prevents unnecessary thrashing.
-        return actualState;
     }
     return desiredState;
 }
@@ -117,7 +122,8 @@ function calculateDesiredState(
 export function calculateWorkDistribution(
     pending: PendingImages[],
     workers: Worker[],
-    configs: WorkerConfig[]
+    configs: WorkerConfig[],
+    workerSettings: WorkerSettingsJson,
 ): WorkerConfig[] {
     if (workers.length === 0) {
         return [];
@@ -141,7 +147,8 @@ export function calculateWorkDistribution(
     const desiredState = calculateDesiredState(
         pending,
         workers,
-        configsByWorker
+        configsByWorker,
+        workerSettings
     );
     const actualState = calculateActualState(workers, configsByWorker);
 
@@ -249,10 +256,12 @@ export class WorkDistributor {
                         this.backendService.getWorkerConfig(worker.id)
                     )
                 );
+                const workerSettings = await this.backendService.getGlobalSettings("workers");
                 const workerAssignments = calculateWorkDistribution(
                     pending,
                     workers,
-                    configs
+                    configs,
+                    workerSettings.settings_json as any,
                 );
                 console.log("worker assignments", workerAssignments);
                 for (let workerAssignment of workerAssignments) {

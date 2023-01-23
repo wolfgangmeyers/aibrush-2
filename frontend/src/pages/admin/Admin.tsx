@@ -2,6 +2,7 @@ import React, { FC, useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { AIBrushApi } from "../../client/api";
 import { BoostList } from "./BoostList";
+import { GlobalSettings } from "./GlobalSettings";
 import { WorkerList } from "./WorkerList";
 
 interface Props {
@@ -70,6 +71,8 @@ export const Admin: FC<Props> = ({ api }) => {
             <BoostList api={api} />
             <hr />
             <WorkerList api={api} />
+            <hr />
+            <GlobalSettings api={api} />
         </div>
     );
 };
