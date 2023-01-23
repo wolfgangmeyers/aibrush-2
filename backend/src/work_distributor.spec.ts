@@ -995,8 +995,15 @@ describe("WorkDistributor", () => {
         });
     })
 
-    describe("one pending image, 6-gpu worker balanced", () => {
+    describe("one pending image, 6-gpu worker balanced, balanced minimums", () => {
         it("should redistribute the worker", async () => {
+            await backendService.updateGlobalSettings("workers", {
+                minimum_worker_allocations: {
+                    stable_diffusion_text2im: 1,
+                    stable_diffusion_inpainting: 1,
+                    swinir: 1,
+                }
+            })
             const worker = await backendService.createWorker("test worker");
             // ping
             await backendService.updateWorker(worker.id, {

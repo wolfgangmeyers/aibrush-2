@@ -72,11 +72,16 @@ function calculateDesiredState(
         // console.log("pending", pending);
         // if there are at least 3 gpus, assign at least one to each model
         // TODO: maybe in the future, make it a percentage of total gpus instead of just one
-        if (workerGpuCount >= MODELS.length) {
-            for (let model of MODELS) {
-                desiredState[model] = 1;
-                workerGpuCount -= 1;
-            }
+        // if (workerGpuCount >= MODELS.length) {
+        //     for (let model of MODELS) {
+        //         desiredState[model] = 1;
+        //         workerGpuCount -= 1;
+        //     }
+        // }
+        for (let model of MODELS) {
+            const minimum = workerSettings.minimum_worker_allocations[model];
+            desiredState[model] = minimum;
+            workerGpuCount -= minimum;
         }
 
         let totalPending = 0;
