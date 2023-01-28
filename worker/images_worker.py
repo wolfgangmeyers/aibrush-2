@@ -458,10 +458,10 @@ class ImagesWorker:
     def __init__(self, gpu: str):
         # create queues
         self.websocket_queue = Queue(maxsize=1)
-        self.process_queue = Queue(maxsize=1)
-        self.update_queue = Queue(maxsize=1)
-        self.cleanup_queue = Queue(maxsize=1)
-        self.metrics_queue = Queue(maxsize=1)
+        self.process_queue = Queue(maxsize=4)
+        self.update_queue = Queue(maxsize=4)
+        self.cleanup_queue = Queue(maxsize=4)
+        self.metrics_queue = Queue(maxsize=4)
         self.ready_queue = Queue(maxsize=1)
 
         # start threads
