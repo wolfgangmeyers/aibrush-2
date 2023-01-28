@@ -353,13 +353,6 @@ export class EnhanceTool extends BaseTool implements Tool {
                         selectionOverlay.width,
                         selectionOverlay.height
                     );
-                    // featherEdges(
-                    //     selectionOverlay,
-                    //     baseImage.width!,
-                    //     baseImage.height!,
-                    //     imageData
-                    // );
-                    // resolve(imageData);
                     const id = this.newId();
                     this.worker.processRequest({
                         id,
@@ -604,7 +597,11 @@ export class EnhanceTool extends BaseTool implements Tool {
 
     confirm() {
         this.renderer.commitSelection();
-        this.state = "default";
+        if (this.selectSupported()) {
+            this.state = "select";
+        } else {
+            this.state = "default";
+        }
         this.imageData = [];
         const encodedImage = this.renderer.getEncodedImage(null);
         if (encodedImage && this.saveListener) {
