@@ -250,6 +250,44 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
     });
 }
 
+export function resizeEncodedImage(encodedImage: string, width: number, height: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+        // use html5 canvas
+        // crop to square aspect ratio on 128x128 canvas
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const image = new Image();
+        image.src = `data:image/png;base64,${encodedImage}`;
+        image.onload = () => {
+            const context = canvas.getContext("2d");
+            if (!context) {
+                throw new Error("Could not create canvas context");
+            }
+            canvas.width = width;
+            canvas.height = height;
+            
+            context.drawImage(
+                image,
+                0,
+                0,
+                image.width,
+                image.height,
+                0,
+                0,
+                width,
+                height
+            );
+
+            // save to png
+            const imageUrl = canvas.toDataURL("image/png");
+            const base64 = imageUrl.split(",")[1];
+            resolve(base64);
+        };
+    });
+}
+
 export function encodedImageToBlob(encodedImage: string): Blob {
     const binaryString = atob(encodedImage);
     const arr = [];

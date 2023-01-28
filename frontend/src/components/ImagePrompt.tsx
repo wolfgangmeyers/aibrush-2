@@ -6,6 +6,7 @@ import {
 import loadImage from "blueimp-load-image";
 import { AspectRatioSelector } from "./AspectRatioSelector";
 import { getUpscaleLevel } from "../lib/upscale";
+import { resizeEncodedImage } from "../lib/imageutil";
 
 interface Props {
     parent: Image | null;
@@ -99,7 +100,7 @@ export const ImagePrompt: FC<Props> = ({
             args.height = bestMatch.height;
         }
         if (encodedImage) {
-            args.encoded_image = encodedImage;
+            args.encoded_image = await resizeEncodedImage(encodedImage, args.width, args.height);
         }
 
         resetState();
