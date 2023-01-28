@@ -16,7 +16,7 @@ import {
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
-import { featherEdges, fixRedShift } from "../../lib/imageutil";
+import { featherEdges, fixRedShift, ImageUtilWorker } from "../../lib/imageutil";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { getUpscaleLevel } from "../../lib/upscale";
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
@@ -39,6 +39,9 @@ export class EnhanceTool extends BaseTool implements Tool {
     private count: number = 4;
     private variationStrength: number = 0.35;
     private _dirty = false;
+    private worker: ImageUtilWorker;
+    private idCounter = 0;
+
 
     private _state: EnhanceToolState = "default";
     private stateHandler: (state: EnhanceToolState) => void = () => {};
@@ -136,6 +139,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             };
         }
         this.selectionTool.updateArgs(selectionArgs);
+        this.worker = new ImageUtilWorker();
     }
 
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
@@ -307,6 +311,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.progressListener = listener;
     }
 
+    private newId(): string {
+        return `${this.idCounter++}`;
+    }
+
     private loadImageData(
         api: AIBrushApi,
         imageId: string,
@@ -345,13 +353,30 @@ export class EnhanceTool extends BaseTool implements Tool {
                         selectionOverlay.width,
                         selectionOverlay.height
                     );
-                    featherEdges(
+                    // featherEdges(
+                    //     selectionOverlay,
+                    //     baseImage.width!,
+                    //     baseImage.height!,
+                    //     imageData
+                    // );
+                    // resolve(imageData);
+                    const id = this.newId();
+                    this.worker.processRequest({
+                        id,
+                        alpha: false,
+                        feather: true,
+                        height: this.renderer.getHeight(),
+                        width: this.renderer.getWidth(),
+                        pixels: imageData.data,
                         selectionOverlay,
-                        baseImage.width!,
-                        baseImage.height!,
-                        imageData
-                    );
-                    resolve(imageData);
+                    }).then(resp => {
+                        const updatedImageData = new ImageData(
+                            resp.pixels,
+                            imageData.width,
+                            imageData.height,
+                        )
+                        resolve(updatedImageData);
+                    })
                     // remove canvas
                     canvas.remove();
                 };
@@ -593,6 +618,7 @@ export class EnhanceTool extends BaseTool implements Tool {
 
     destroy(): boolean {
         this.renderer.setCursor(undefined);
+        this.worker.destroy();
         return true;
     }
 }

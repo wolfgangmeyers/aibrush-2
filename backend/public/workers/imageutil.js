@@ -1,12 +1,13 @@
-import { Rect } from "../pages/image-editor/models";
+// import { Rect } from "../pages/image-editor/models";
 
-export function featherEdges(
-    selectionOverlay: Rect,
-    imageWidth: number,
-    imageHeight: number,
-    imageData: ImageData,
-    featherWidth?: number
+function featherEdges(
+    selectionOverlay,
+    imageWidth,
+    imageHeight,
+    imageData,
+    featherWidth
 ) {
+    console.log("featherEdges", selectionOverlay, imageWidth, imageHeight);
     const featherLeftEdge = selectionOverlay.x != 0;
     const featherRightEdge =
         selectionOverlay.x + selectionOverlay.width != imageWidth;
@@ -71,7 +72,8 @@ export function featherEdges(
     }
 }
 
-export function applyAlphaMask(imageData: ImageData, alphaMask: ImageData) {
+function applyAlphaMask(imageData, alphaMask) {
+    console.log("applyAlphaMask", imageData, alphaMask);
     if (
         imageData.width != alphaMask.width ||
         imageData.height != alphaMask.height
@@ -112,100 +114,27 @@ export function applyAlphaMask(imageData: ImageData, alphaMask: ImageData) {
     }
 }
 
-export interface ImageWorkerRequest {
-    id: string;
-    feather: boolean;
-    alpha: boolean;
-    pixels: Uint8ClampedArray;
-    alphaPixels?: Uint8ClampedArray;
-    width: number;
-    height: number;
-    featherWidth?: number;
-    selectionOverlay: Rect;
-}
-
-export interface ImageWorkerResponse {
-    id: string;
-    pixels: Uint8ClampedArray;
-}
-
-export class ImageUtilWorker {
-    
-    private workers: Array<Worker> = [];
-    private callbacks: {[key: string]: (event: MessageEvent) => void} = {};
-    private cursor = 0;
-
-    constructor(numWorkers=3) {
-        for (let i = 0; i < numWorkers; i++) {
-            this.workers[i] = new Worker(`${process.env.PUBLIC_URL}/workers/imageutil.js`);
-            this.workers[i].addEventListener("message", this.onMessage.bind(this));
-        }
+self.addEventListener('message', (evt) => {
+    const { id, feather, alpha, pixels, alphaPixels, width, height, featherWidth, selectionOverlay } = evt.data;
+    const imageData = new ImageData(pixels, selectionOverlay.width, selectionOverlay.height);
+    if (feather) {
+        featherEdges(selectionOverlay, width, height, imageData, featherWidth);
     }
-
-    onMessage(event: MessageEvent) {
-        const resp = event.data as ImageWorkerResponse;
-        this.callbacks[resp.id](event);
-        delete this.callbacks[resp.id];
+    if (alpha) {
+        const alphaMask = new ImageData(
+            new Uint8ClampedArray(alphaPixels),
+            selectionOverlay.width,
+            selectionOverlay.height,
+        );
+        applyAlphaMask(imageData, alphaMask);
     }
+    self.postMessage({
+        id,
+        pixels: imageData.data
+    }, [imageData.data.buffer]);
+});
 
-    async processRequest(request: ImageWorkerRequest): Promise<ImageWorkerResponse> {
-        return new Promise((resolve, reject) => {
-            this.callbacks[request.id] = (event) => {
-                resolve(event.data);
-            };
-            this.workers[this.cursor].postMessage({
-                ...request,
-            });
-            this.cursor = (this.cursor + 1) % this.workers.length;
-        });
-    }
-
-    destroy() {
-        for (let key in this.workers) {
-            this.workers[key].terminate();
-        }
-    }
-}
-
-function getAverageColor(imageData: ImageData) {
-    let red = 0;
-    let green = 0;
-    let blue = 0;
-    let count = 0;
-    for (let i = 0; i < imageData.data.length; i += 4) {
-        if (imageData.data[i + 3] > 0) {
-            red += imageData.data[i];
-            green += imageData.data[i + 1];
-            blue += imageData.data[i + 2];
-            count++;
-        }
-    }
-    return {
-        red: red / count,
-        green: green / count,
-        blue: blue / count,
-    };
-}
-
-export function fixRedShift(baseImageData: ImageData, imageData: ImageData) {
-    // get the average red, green and blue values for the base image
-    const baseAverageColor = getAverageColor(baseImageData);
-    const averageColor = getAverageColor(imageData);
-
-    // we need to multiply pixels in imageData by an amount so that the average equals the base average
-    // do this for red, green and blue separately
-    const redMultiplier = baseAverageColor.red / averageColor.red;
-    const greenMultiplier = baseAverageColor.green / averageColor.green;
-    const blueMultiplier = baseAverageColor.blue / averageColor.blue;
-
-    for (let i = 0; i < imageData.data.length; i += 4) {
-        imageData.data[i] *= Math.floor(redMultiplier);
-        imageData.data[i + 1] *= Math.floor(greenMultiplier);
-        imageData.data[i + 2] *= Math.floor(blueMultiplier);
-    }
-}
-
-export function createEncodedThumbnail(encodedImage: string): Promise<string> {
+function createEncodedThumbnail(encodedImage) {
     return new Promise((resolve, reject) => {
         // use html5 canvas
         // crop to square aspect ratio on 128x128 canvas
@@ -250,7 +179,7 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
     });
 }
 
-export function encodedImageToBlob(encodedImage: string): Blob {
+function encodedImageToBlob(encodedImage) {
     const binaryString = atob(encodedImage);
     const arr = [];
     for (let i = 0; i < binaryString.length; i++) {
@@ -263,7 +192,7 @@ export function encodedImageToBlob(encodedImage: string): Blob {
 
 // This function is made to work with S3 presigned urls.
 // Solution found at https://stackoverflow.com/questions/22531114/how-to-upload-to-aws-s3-directly-from-browser-using-a-pre-signed-url-instead-of
-export function uploadBlob(signedUrl: string, blob: Blob): Promise<void> {
+function uploadBlob(signedUrl, blob) {
     return new Promise((resolve, reject) => {
         var xhr = new XMLHttpRequest();
         xhr.open("PUT", signedUrl, true);

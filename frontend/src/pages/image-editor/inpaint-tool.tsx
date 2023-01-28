@@ -17,7 +17,7 @@ import {
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
 import { getUpscaleLevel } from "../../lib/upscale";
-import { applyAlphaMask, featherEdges } from "../../lib/imageutil";
+import { applyAlphaMask, featherEdges, ImageUtilWorker } from "../../lib/imageutil";
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 import moment from "moment";
 
@@ -41,6 +41,8 @@ export class InpaintTool extends BaseTool implements Tool {
     private variationStrength: number = 0.35;
     private brushSize: number = 10;
     private _dirty = false;
+    private worker: ImageUtilWorker;
+    private idCounter = 0;
 
     private _state: InpaintToolState;
     private stateHandler: (state: InpaintToolState) => void = () => {};
@@ -64,6 +66,10 @@ export class InpaintTool extends BaseTool implements Tool {
 
     get dirty() {
         return this._dirty;
+    }
+
+    private newId(): string {
+        return `${this.idCounter++}`;
     }
 
     onError(handler: (error: string | null) => void) {
@@ -138,6 +144,7 @@ export class InpaintTool extends BaseTool implements Tool {
         } else {
             this.state = "erase";
         }
+        this.worker = new ImageUtilWorker();
     }
 
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
@@ -302,20 +309,28 @@ export class InpaintTool extends BaseTool implements Tool {
                         0,
                         0,
                         selectionOverlay.width,
-                        selectionOverlay.height
+                        selectionOverlay.height,
                     );
 
-                    applyAlphaMask(imageData, alphaMask);
-
-                    featherEdges(
+                    const id = this.newId();
+                    this.worker.processRequest({
+                        id,
+                        alpha: true,
+                        alphaPixels: alphaMask.data,
+                        feather: true,
+                        height: this.renderer.getHeight(),
+                        width: this.renderer.getWidth(),
+                        pixels: imageData.data,
                         selectionOverlay,
-                        this.renderer.getWidth(),
-                        this.renderer.getHeight(),
-                        imageData,
-                        10
-                    );
-
-                    resolve(imageData);
+                        featherWidth: 10,
+                    }).then(resp => {
+                        const updatedImageData = new ImageData(
+                            resp.pixels,
+                            imageData.width,
+                            imageData.height,
+                        )
+                        resolve(updatedImageData);
+                    })
                     // remove canvas
                     canvas.remove();
                 };
@@ -589,6 +604,7 @@ export class InpaintTool extends BaseTool implements Tool {
         }
         this.renderer.setCursor(undefined);
         this.renderer.setEditImage(null);
+        this.worker.destroy();
         return true;
     }
 }
