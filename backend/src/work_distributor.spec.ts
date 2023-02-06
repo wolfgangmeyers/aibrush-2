@@ -20,7 +20,7 @@ describe("Work Distribution Calculations", () => {
 
     const defaultWorkerSettings = {
         minimum_worker_allocations: {
-            stable_diffusion_text2im: 0,
+            stable_diffusion: 0,
             stable_diffusion_inpainting: 0,
             swinir: 0,
         }
@@ -51,7 +51,7 @@ describe("Work Distribution Calculations", () => {
                         gpu_configs: [
                             {
                                 gpu_num: 0,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                         ],
                     },
@@ -67,7 +67,7 @@ describe("Work Distribution Calculations", () => {
             const result = calculateWorkDistribution(
                 [
                     {
-                        model: "stable_diffusion_text2im",
+                        model: "stable_diffusion",
                         score: 1,
                     },
                 ],
@@ -109,7 +109,7 @@ describe("Work Distribution Calculations", () => {
                         gpu_configs: [
                             {
                                 gpu_num: 0,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                         ],
                     },
@@ -143,7 +143,7 @@ describe("Work Distribution Calculations", () => {
             const result = calculateWorkDistribution(
                 [
                     {
-                        model: "stable_diffusion_text2im",
+                        model: "stable_diffusion",
                         score: 1,
                     },
                 ],
@@ -173,7 +173,7 @@ describe("Work Distribution Calculations", () => {
                         gpu_configs: [
                             {
                                 gpu_num: 0,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                         ],
                     },
@@ -207,7 +207,7 @@ describe("Work Distribution Calculations", () => {
             const result = calculateWorkDistribution(
                 [
                     {
-                        model: "stable_diffusion_text2im",
+                        model: "stable_diffusion",
                         score: 1,
                     },
                 ],
@@ -225,7 +225,7 @@ describe("Work Distribution Calculations", () => {
                         gpu_configs: [
                             {
                                 gpu_num: 0,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                             {
                                 gpu_num: 1,
@@ -262,11 +262,11 @@ describe("Work Distribution Calculations", () => {
                         gpu_configs: [
                             {
                                 gpu_num: 0,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                             {
                                 gpu_num: 1,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                             {
                                 gpu_num: 2,
@@ -286,7 +286,7 @@ describe("Work Distribution Calculations", () => {
                     },
                     {
                         gpu_num: 1,
-                        model: "stable_diffusion_text2im",
+                        model: "stable_diffusion",
                     },
                     {
                         gpu_num: 2,
@@ -302,7 +302,7 @@ describe("Work Distribution Calculations", () => {
             const result = calculateWorkDistribution(
                 [
                     {
-                        model: "stable_diffusion_text2im",
+                        model: "stable_diffusion",
                         score: 1,
                     },
                 ],
@@ -320,7 +320,7 @@ describe("Work Distribution Calculations", () => {
                         gpu_configs: [
                             {
                                 gpu_num: 0,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                         ],
                     },
@@ -336,7 +336,7 @@ describe("Work Distribution Calculations", () => {
             const result = calculateWorkDistribution(
                 [
                     {
-                        model: "stable_diffusion_text2im",
+                        model: "stable_diffusion",
                         score: 1,
                     },
                 ],
@@ -367,7 +367,7 @@ describe("Work Distribution Calculations", () => {
                     gpu_configs: [
                         {
                             gpu_num: 0,
-                            model: "stable_diffusion_text2im",
+                            model: "stable_diffusion",
                         },
                     ],
                 },
@@ -383,7 +383,7 @@ describe("Work Distribution Calculations", () => {
             const result = calculateWorkDistribution(
                 [
                     {
-                        model: "stable_diffusion_text2im",
+                        model: "stable_diffusion",
                         score: 1,
                     },
                 ],
@@ -407,7 +407,7 @@ describe("Work Distribution Calculations", () => {
                         gpu_configs: [
                             {
                                 gpu_num: 0,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                         ],
                     },
@@ -429,7 +429,7 @@ describe("Work Distribution Calculations", () => {
                     gpu_configs: [
                         {
                             gpu_num: 0,
-                            model: "stable_diffusion_text2im",
+                            model: "stable_diffusion",
                         },
                     ],
                 },
@@ -443,7 +443,7 @@ describe("Work Distribution Calculations", () => {
             const result = calculateWorkDistribution(
                 [
                     {
-                        model: "stable_diffusion_text2im",
+                        model: "stable_diffusion",
                         score: 1,
                     },
                 ],
@@ -467,7 +467,7 @@ describe("Work Distribution Calculations", () => {
                         gpu_configs: [
                             {
                                 gpu_num: 0,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                             {
                                 gpu_num: 1,
@@ -497,11 +497,11 @@ describe("Work Distribution Calculations", () => {
                     gpu_configs: [
                         {
                             gpu_num: 0,
-                            model: "stable_diffusion_text2im",
+                            model: "stable_diffusion",
                         },
                         {
                             gpu_num: 1,
-                            model: "stable_diffusion_text2im",
+                            model: "stable_diffusion",
                         },
                         {
                             gpu_num: 2,
@@ -519,7 +519,7 @@ describe("Work Distribution Calculations", () => {
             const result = calculateWorkDistribution(
                 [
                     {
-                        model: "stable_diffusion_text2im",
+                        model: "stable_diffusion",
                         score: 1,
                     },
                 ],
@@ -543,7 +543,7 @@ describe("Work Distribution Calculations", () => {
                         gpu_configs: [
                             {
                                 gpu_num: 0,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                             {
                                 gpu_num: 1,
@@ -573,7 +573,7 @@ describe("Work Distribution Calculations", () => {
                     gpu_configs: [
                         {
                             gpu_num: 0,
-                            model: "stable_diffusion_text2im",
+                            model: "stable_diffusion",
                         },
                     ],
                 },
@@ -586,7 +586,7 @@ describe("Work Distribution Calculations", () => {
             const result = calculateWorkDistribution(
                 [
                     {
-                        model: "stable_diffusion_text2im",
+                        model: "stable_diffusion",
                         score: 1,
                     },
                 ],
@@ -604,7 +604,7 @@ describe("Work Distribution Calculations", () => {
                         gpu_configs: [
                             {
                                 gpu_num: 0,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                             {
                                 gpu_num: 1,
@@ -612,7 +612,7 @@ describe("Work Distribution Calculations", () => {
                             },
                             {
                                 gpu_num: 2,
-                                model: "stable_diffusion_text2im",
+                                model: "stable_diffusion",
                             },
                         ],
                     },
@@ -633,7 +633,7 @@ describe("Work Distribution Calculations", () => {
                         },
                         {
                             gpu_num: 2,
-                            model: "stable_diffusion_text2im",
+                            model: "stable_diffusion",
                         },
                     ],
                 },
@@ -686,14 +686,14 @@ describe("backend pending image scores", () => {
                 status: "pending",
                 label: "",
                 iterations: 50,
-                model: "stable_diffusion_text2im",
+                model: "stable_diffusion",
             });
         });
 
         it("should return one pending image", async () => {
             const result = await backendService.getPendingImageScores();
             expect(result.length).toEqual(1);
-            expect(result[0].model).toEqual("stable_diffusion_text2im");
+            expect(result[0].model).toEqual("stable_diffusion");
             expect(result[0].score).toBeGreaterThan(0);
         });
     });
@@ -713,7 +713,7 @@ describe("backend pending image scores", () => {
                 status: "pending",
                 label: "",
                 iterations: 50,
-                model: "stable_diffusion_text2im",
+                model: "stable_diffusion",
                 count: 2,
             });
             await sleep(100);
@@ -722,7 +722,7 @@ describe("backend pending image scores", () => {
         it("should return scores", async () => {
             const result = await backendService.getPendingImageScores();
             expect(result.length).toEqual(2);
-            expect(result[0].model).toEqual("stable_diffusion_text2im");
+            expect(result[0].model).toEqual("stable_diffusion");
             expect(result[1].model).toEqual("stable_diffusion_inpainting");
             expect(result[0].score).toBeGreaterThan(result[1].score);
         });
@@ -744,7 +744,7 @@ describe("backend pending image scores", () => {
                 status: "pending",
                 label: "",
                 iterations: 50,
-                model: "stable_diffusion_text2im",
+                model: "stable_diffusion",
                 count: 2,
             });
         });
@@ -754,7 +754,7 @@ describe("backend pending image scores", () => {
             expect(result.length).toEqual(2);
             // older image gets a higher score
             expect(result[0].model).toEqual("stable_diffusion_inpainting");
-            expect(result[1].model).toEqual("stable_diffusion_text2im");
+            expect(result[1].model).toEqual("stable_diffusion");
             expect(result[0].score).toBeGreaterThan(result[1].score);
         });
     });
@@ -816,7 +816,7 @@ describe("WorkDistributor", () => {
             const workDistribution = await getWorkDistribution();
             expect(workDistribution).toEqual({
                 "stable_diffusion_inpainting": 0,
-                "stable_diffusion_text2im": 0,
+                "stable_diffusion": 0,
                 "swinir": 0,
             });
         });
@@ -835,7 +835,7 @@ describe("WorkDistributor", () => {
             const workDistribution = await getWorkDistribution();
             expect(workDistribution).toEqual({
                 "stable_diffusion_inpainting": 0,
-                "stable_diffusion_text2im": 2,
+                "stable_diffusion": 2,
                 "swinir": 0,
             });
         })
@@ -845,7 +845,7 @@ describe("WorkDistributor", () => {
         it("should rebalance the worker", async () => {
             await backendService.updateGlobalSettings("workers", {
                 minimum_worker_allocations: {
-                    stable_diffusion_text2im: 1,
+                    stable_diffusion: 1,
                     stable_diffusion_inpainting: 1,
                     swinir: 1,
                 }
@@ -861,7 +861,7 @@ describe("WorkDistributor", () => {
             const workDistribution = await getWorkDistribution();
             expect(workDistribution).toEqual({
                 "stable_diffusion_inpainting": 1,
-                "stable_diffusion_text2im": 1,
+                "stable_diffusion": 1,
                 "swinir": 1,
             });
         });
@@ -898,7 +898,7 @@ describe("WorkDistributor", () => {
             const workDistribution = await getWorkDistribution();
             expect(workDistribution).toEqual({
                 "stable_diffusion_inpainting": 0,
-                "stable_diffusion_text2im": 3,
+                "stable_diffusion": 3,
                 "swinir": 0,
             });
         });
@@ -908,7 +908,7 @@ describe("WorkDistributor", () => {
         it("should rebalance the worker", async () => {
             await backendService.updateGlobalSettings("workers", {
                 minimum_worker_allocations: {
-                    stable_diffusion_text2im: 1,
+                    stable_diffusion: 1,
                     stable_diffusion_inpainting: 1,
                     swinir: 1,
                 }
@@ -924,7 +924,7 @@ describe("WorkDistributor", () => {
             const workDistribution = await getWorkDistribution();
             expect(workDistribution).toEqual({
                 "stable_diffusion_inpainting": 1,
-                "stable_diffusion_text2im": 2,
+                "stable_diffusion": 2,
                 "swinir": 1,
             });
         });
@@ -934,7 +934,7 @@ describe("WorkDistributor", () => {
         it("should rebalance the worker", async () => {
             await backendService.updateGlobalSettings("workers", {
                 minimum_worker_allocations: {
-                    stable_diffusion_text2im: 1,
+                    stable_diffusion: 1,
                     stable_diffusion_inpainting: 1,
                     swinir: 1,
                 }
@@ -950,7 +950,7 @@ describe("WorkDistributor", () => {
             const workDistribution = await getWorkDistribution();
             expect(workDistribution).toEqual({
                 "stable_diffusion_inpainting": 1,
-                "stable_diffusion_text2im": 4,
+                "stable_diffusion": 4,
                 "swinir": 1,
             });
         });
@@ -961,7 +961,7 @@ describe("WorkDistributor", () => {
         it("should rebalance the worker", async () => {
             await backendService.updateGlobalSettings("workers", {
                 minimum_worker_allocations: {
-                    stable_diffusion_text2im: 1,
+                    stable_diffusion: 1,
                     stable_diffusion_inpainting: 1,
                     swinir: 0,
                 }
@@ -989,7 +989,7 @@ describe("WorkDistributor", () => {
             const workDistribution = await getWorkDistribution();
             expect(workDistribution).toEqual({
                 "stable_diffusion_inpainting": 2,
-                "stable_diffusion_text2im": 1,
+                "stable_diffusion": 1,
                 "swinir": 0,
             });
         });
@@ -999,7 +999,7 @@ describe("WorkDistributor", () => {
         it("should redistribute the worker", async () => {
             await backendService.updateGlobalSettings("workers", {
                 minimum_worker_allocations: {
-                    stable_diffusion_text2im: 1,
+                    stable_diffusion: 1,
                     stable_diffusion_inpainting: 1,
                     swinir: 1,
                 }
@@ -1012,11 +1012,11 @@ describe("WorkDistributor", () => {
             await backendService.updateWorkerDeploymentInfo(worker.id, "testengine", 6, "asdf", "RTX 3090");
             await backendService.upsertWorkerConfig(worker.id, {
                 gpu_configs: [{
-                    model: "stable_diffusion_text2im",
+                    model: "stable_diffusion",
                     gpu_num: 0,
                 },
                 {
-                    model: "stable_diffusion_text2im",
+                    model: "stable_diffusion",
                     gpu_num: 1,
                 },
                 {
@@ -1041,7 +1041,7 @@ describe("WorkDistributor", () => {
                 status: "pending",
                 label: "",
                 iterations: 50,
-                model: "stable_diffusion_text2im",
+                model: "stable_diffusion",
             });
             
             // worker config defaults to text2im for each gpu
@@ -1049,7 +1049,7 @@ describe("WorkDistributor", () => {
             const workDistribution = await getWorkDistribution();
             expect(workDistribution).toEqual({
                 "stable_diffusion_inpainting": 1,
-                "stable_diffusion_text2im": 4,
+                "stable_diffusion": 4,
                 "swinir": 1,
             });
         });

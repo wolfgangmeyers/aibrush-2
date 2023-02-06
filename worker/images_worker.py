@@ -85,18 +85,25 @@ for folder in ["images", "output", "output_npy"]:
 def cleanup(image_id: str):
     # delete all files in the current folder ending in .png or .backup
     for fname in os.listdir("images"):
-        if image_id in fname:
-            os.remove(os.path.join("images", fname))
+        _cleanup_file(image_id, os.path.join("images", fname))
     for fname in os.listdir("output"):
-        if image_id in fname:
-            os.remove(os.path.join("output", fname))
+        _cleanup_file(image_id, os.path.join("output", fname))
     for fname in os.listdir("output_npy"):
-        if image_id in fname:
-            os.remove(os.path.join("output_npy", fname))
+        _cleanup_file(image_id, os.path.join("output_npy", fname))
     if os.path.exists("results"):
         for fname in os.listdir(os.path.join("results", "swinir_real_sr_x4")):
-            if image_id in fname:
-                os.remove(os.path.join("results", "swinir_real_sr_x4", fname))
+            _cleanup_file(image_id, os.path.join("results", "swinir_real_sr_x4", fname))
+
+
+def _cleanup_file(image_id: str, file_path: str):
+    is_old = time.time() - os.path.getmtime(file_path) > 3600
+    match = image_id in file_path
+    if is_old or match:
+        try:
+            os.remove(file_path)
+        except:
+            # another thread might have deleted it
+            pass
 
 
 def _swinir_args(image_data, image):
@@ -126,7 +133,7 @@ def _sd_args(image_data, mask_data, npy_data, image):
     args.seed = random.randint(0, 2**32)
     args.filename = image.id + ".png"
     args.ddim_steps = image.iterations
-    if image.model == "stable_diffusion_text2im":
+    if image.model == "stable_diffusion":
         args.strength = image.stable_diffusion_strength
     args.image = None
     if image_data:
@@ -160,7 +167,7 @@ def create_model(model_name: str, gpu: str):
         print("lock acquired")
         if model_name == "swinir":
             return ModelProcess("swinir_model.py", gpu)
-        elif model_name == "stable_diffusion_text2im":
+        elif model_name == "stable_diffusion":
             return ModelProcess("sd_text2im_model.py", gpu)
         elif model_name == "stable_diffusion_inpainting":
             return ModelProcess("sd_inpaint_model.py", gpu)
@@ -375,7 +382,7 @@ def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, 
 
             if image.model == "swinir":
                 args = _swinir_args(image_data, image)
-            elif image.model == "stable_diffusion_text2im":
+            elif image.model == "stable_diffusion":
                 args = _sd_args(image_data, None, None, image)
             elif image.model == "stable_diffusion_inpainting":
                 args = _sd_args(image_data, mask_data, None, image)

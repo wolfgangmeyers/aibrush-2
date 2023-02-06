@@ -22,13 +22,13 @@ export interface Worker {
 }
 
 export const MODELS = [
-    "stable_diffusion_text2im",
+    "stable_diffusion",
     "stable_diffusion_inpainting",
     "swinir",
 ];
 
 const DEFAULT_MODEL_DISTRIBUTION = {
-    stable_diffusion_text2im: 65,
+    stable_diffusion: 65,
     stable_diffusion_inpainting: 30,
     swinir: 5,
 };

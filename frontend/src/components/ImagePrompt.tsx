@@ -33,7 +33,7 @@ export function defaultArgs(): CreateImageInput {
         zoom_scale: 0.99,
         zoom_shift_x: 0,
         zoom_shift_y: 0,
-        model: "stable_diffusion_text2im",
+        model: "stable_diffusion",
         glid_3_xl_clip_guidance: false,
         glid_3_xl_clip_guidance_scale: 150,
         glid_3_xl_skip_iterations: 0,

@@ -323,7 +323,7 @@ describe("server", () => {
                 expect(image.parent).toBe("")
                 expect(image.enable_video).toBe(false)
                 expect(image.enable_zoom).toBe(false)
-                expect(image.model).toBe("stable_diffusion_text2im")
+                expect(image.model).toBe("stable_diffusion")
                 expect(image.glid_3_xl_skip_iterations).toBe(0)
                 expect(image.glid_3_xl_clip_guidance).toBe(false)
                 expect(image.glid_3_xl_clip_guidance_scale).toBe(150)
@@ -1377,7 +1377,7 @@ describe("server", () => {
         describe("global settings", () => {
             // getting from an empty database should return the default settings
             // minimum worker allocations:
-            // stable_diffusion_text2im: 0
+            // stable_diffusion: 0
             // stable_diffusion_inpainting: 0
             // swinir: 0
             describe("when getting the worker settings as admin with empty database", () => {
@@ -1391,7 +1391,7 @@ describe("server", () => {
                 it("should return the default settings", () => {
                     expect(response.status).toBe(200);
                     expect(response.data.settings_json.minimum_worker_allocations).toEqual({
-                        stable_diffusion_text2im: 0,
+                        stable_diffusion: 0,
                         stable_diffusion_inpainting: 0,
                         swinir: 0,
                     });
@@ -1416,7 +1416,7 @@ describe("server", () => {
                     response = await client.updateGlobalSettings("workers", {
                         settings_json: {
                             minimum_worker_allocations: {
-                                stable_diffusion_text2im: 1,
+                                stable_diffusion: 1,
                                 stable_diffusion_inpainting: 2,
                                 swinir: 3,
                             }
@@ -1427,7 +1427,7 @@ describe("server", () => {
                 it("should return the updated settings", () => {
                     expect(response.status).toBe(200);
                     expect(response.data.settings_json.minimum_worker_allocations).toEqual({
-                        stable_diffusion_text2im: 1,
+                        stable_diffusion: 1,
                         stable_diffusion_inpainting: 2,
                         swinir: 3,
                     });
@@ -1443,7 +1443,7 @@ describe("server", () => {
                     it("should return the updated settings", () => {
                         expect(response.status).toBe(200);
                         expect(response.data.settings_json.minimum_worker_allocations).toEqual({
-                            stable_diffusion_text2im: 1,
+                            stable_diffusion: 1,
                             stable_diffusion_inpainting: 2,
                             swinir: 3,
                         });

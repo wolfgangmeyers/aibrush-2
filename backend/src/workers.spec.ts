@@ -202,7 +202,7 @@ describe("workers", () => {
                     expect(workerConfig.data.gpu_configs).toEqual([
                         {
                             gpu_num: 0,
-                            model: "stable_diffusion_text2im",
+                            model: "stable_diffusion",
                         }
                     ]);
                     expect(workerConfig.data.worker_id).toEqual(worker.data.id);

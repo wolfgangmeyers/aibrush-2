@@ -264,4 +264,4 @@ class StableDiffusionText2ImageModel:
 
 
 if __name__ == "__main__":
-    child_process(StableDiffusionText2ImageModel, "stable_diffusion_text2im")
+    child_process(StableDiffusionText2ImageModel, "stable_diffusion")

@@ -11,6 +11,8 @@ RUN apt-get install -y software-properties-common
 RUN add-apt-repository -y ppa:deadsnakes/ppa
 RUN apt-get update
 RUN apt-get install -y python3.10 python3.10-dev python3.10-venv git wget libgl1-mesa-glx
+# avoid infinite hanging when pulling new code
+RUN git config http.sslVerify "false"
 
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3.10 -m venv $VIRTUAL_ENV

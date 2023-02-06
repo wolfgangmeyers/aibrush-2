@@ -594,7 +594,7 @@ export class BackendService {
                     body.zoom_scale || 0.99,
                     body.zoom_shift_x || 0,
                     body.zoom_shift_y || 0,
-                    body.model || "stable_diffusion_text2im",
+                    body.model || "stable_diffusion",
                     body.glid_3_xl_skip_iterations || 0,
                     body.glid_3_xl_clip_guidance || false,
                     body.glid_3_xl_clip_guidance_scale || 150,
@@ -907,7 +907,7 @@ export class BackendService {
                 for (let i = 0; i < (worker.num_gpus || 1); i++) {
                     gpuConfigs.push({
                         gpu_num: i,
-                        model: "stable_diffusion_text2im",
+                        model: "stable_diffusion",
                     });
                 }
                 return {
@@ -1673,7 +1673,7 @@ export class BackendService {
             case "workers":
                 return {
                     minimum_worker_allocations: {
-                        stable_diffusion_text2im: 0,
+                        stable_diffusion: 0,
                         stable_diffusion_inpainting: 0,
                         swinir: 0,
                     }

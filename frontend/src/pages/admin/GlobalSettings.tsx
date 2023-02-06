@@ -11,7 +11,7 @@ interface Props {
 // default "workers" setting:
 // {
 //     "minimum_worker_allocations": {
-//         "stable_diffusion_text2im": 0,
+//         "stable_diffusion": 0,
 //         "stable_diffusion_inpainting": 0,
 //         "swinir": 0,
 //     }
@@ -20,7 +20,7 @@ interface Props {
 export const GlobalSettings: FC<Props> = ({ api }) => {
     const [workerSettings, setWorkerSettings] = useState<WorkerSettingsJson>({
         minimum_worker_allocations: {
-            stable_diffusion_text2im: 0,
+            stable_diffusion: 0,
             stable_diffusion_inpainting: 0,
             swinir: 0,
         },
@@ -64,23 +64,23 @@ export const GlobalSettings: FC<Props> = ({ api }) => {
             {/* slider from 0 to 10 for each model */}
             <div className="row">
                 <div className="col-12">
-                    <label htmlFor="stable_diffusion_text2im">
-                        stable_diffusion_text2im: {workerSettings.minimum_worker_allocations.stable_diffusion_text2im}
+                    <label htmlFor="stable_diffusion">
+                        stable_diffusion: {workerSettings.minimum_worker_allocations.stable_diffusion}
                     </label>
                     <input
                         style={{marginLeft: "16px"}}
                         type="range"
                         min={0}
                         max={10}
-                        value={workerSettings.minimum_worker_allocations.stable_diffusion_text2im}
+                        value={workerSettings.minimum_worker_allocations.stable_diffusion}
                         className="form-range"
-                        id="stable_diffusion_text2im"
+                        id="stable_diffusion"
                         onChange={(e) => {
                             setWorkerSettings({
                                 ...workerSettings,
                                 minimum_worker_allocations: {
                                     ...workerSettings.minimum_worker_allocations,
-                                    stable_diffusion_text2im: parseInt(e.target.value),
+                                    stable_diffusion: parseInt(e.target.value),
                                 },
                             });
                         }}
