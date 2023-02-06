@@ -992,8 +992,14 @@ components:
         - ids
     ProcessImageInput:
       properties:
-        model:
-          type: string
+        include_models:
+          type: array
+          items:
+            type: string
+        exclude_models:
+          type: array
+          items:
+            type: string
         peek:
           type: boolean
     ImageUrls:

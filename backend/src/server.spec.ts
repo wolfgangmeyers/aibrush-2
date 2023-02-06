@@ -831,7 +831,7 @@ describe("server", () => {
                 beforeEach(async () => {
                     // process the image
                     const response = await client2.processImage({
-                        model: "swinir"
+                        include_models: ["swinir"]
                     })
                     processingImage = response.data
                 })

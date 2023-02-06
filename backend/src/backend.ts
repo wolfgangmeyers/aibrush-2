@@ -1137,14 +1137,19 @@ export class BackendService {
     }
 
     private async getUsersWithPendingImages(
-        model: string | null
+        include_models: string[] | null,
+        exclude_models: string[] | null
     ): Promise<Array<string>> {
         const args = [];
         const client = await this.pool.connect();
         let filter = " AND deleted_at IS NULL";
-        if (model) {
-            filter = "AND deleted_at IS NULL AND model = $1 ";
-            args.push(model);
+        if (include_models) {
+            filter += ` AND model in ($${args.length + 1})`;
+            args.push(include_models);
+        }
+        if (exclude_models) {
+            filter += ` AND model NOT IN ($${args.length + 1})`;
+            args.push(exclude_models);
         }
         try {
             const result = await client.query(
@@ -1163,7 +1168,7 @@ export class BackendService {
         workerId: string | null
     ): Promise<Image> {
         // get all users with pending images
-        const users = await this.getUsersWithPendingImages(input?.model);
+        const users = await this.getUsersWithPendingImages(input?.include_models, input?.exclude_models);
         // if there are no users, return null
         if (users.length === 0) {
             return null;
@@ -1187,11 +1192,16 @@ export class BackendService {
                 user = users[Math.floor(Math.random() * users.length)];
             }
         }
-        const args = [user];
+        const args: Array<any> = [user];
         let filter = " AND deleted_at IS NULL";
-        if (input?.model) {
-            filter = " AND model = $2 AND deleted_at IS NULL";
-            args.push(input?.model);
+        if (input?.include_models) {
+            // filter = " AND model = $2 AND deleted_at IS NULL";
+            filter += ` AND model in $${args.length + 1}`;
+            args.push(input?.include_models);
+        }
+        if (input?.exclude_models) {
+            filter += ` AND model NOT IN ($${args.length + 1})`;
+            args.push(input?.exclude_models);
         }
 
         // get random image from user

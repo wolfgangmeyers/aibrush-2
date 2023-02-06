@@ -926,10 +926,16 @@ export interface Order {
 export interface ProcessImageInput {
     /**
      * 
-     * @type {string}
+     * @type {Array<string>}
      * @memberof ProcessImageInput
      */
-    'model'?: string;
+    'include_models'?: Array<string>;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof ProcessImageInput
+     */
+    'exclude_models'?: Array<string>;
     /**
      * 
      * @type {boolean}
