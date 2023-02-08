@@ -118,11 +118,13 @@ def metric(name: str, type: str, value: any, attributes: dict = None) -> SimpleN
             attribute_list.append({"name": key, "value": v})
     return SimpleNamespace(name=name, type=type, value=value, attributes=attribute_list)
 
+
 _triggers = {
     "GTA5 Artwork Diffusion": "gtav style",
     "colorbook": "in VARPJ1 Coloring Book Art Style",
     "Future Diffusion": "future style",
 }
+
 
 def add_trigger(prompt: str, model: str) -> str:
     if model in _triggers:
@@ -198,12 +200,36 @@ def poll_loop(ready_queue: Queue, process_queue: Queue, metrics_queue: Queue, we
 
 STABLE_HORDE_API_KEY = os.environ.get("STABLE_HORDE_API_KEY")
 
+blacklisted_terms = [
+    "loli"
+]
+
+blacklisted_nsfw_terms = [
+    "child",
+    "teen",
+    "girl",
+    "boy",
+    "young",
+    "underage",
+    "infant",
+    "baby"
+]
+
+def strip_blacklisted_terms(nsfw: bool, prompt: str)->str:
+    prompt = prompt.lower()
+    for term in blacklisted_terms:
+        prompt = prompt.replace(term, "")
+    if nsfw:
+        for term in blacklisted_nsfw_terms:
+            prompt = prompt.replace(term, "")
+    return prompt
 
 def process_image(image):
     prompt = add_trigger(",".join(image.phrases), image.model)
     negative_prompt = ",".join(image.negative_phrases)
     if len(negative_prompt) > 0:
         prompt = prompt + " ### " + negative_prompt
+    prompt = strip_blacklisted_terms(prompt)
     payload = {
         "params": {
             "n": 1,
@@ -227,22 +253,33 @@ def process_image(image):
         png_image = Image.open(BytesIO(image.image_data))
         buffer = BytesIO()
         png_image.save(buffer, format="Webp", quality=95)
-        payload["source_image"] = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        payload["source_image"] = base64.b64encode(
+            buffer.getvalue()).decode("utf-8")
     if image.mask_data:
         png_mask = Image.open(BytesIO(image.mask_data))
         buffer = BytesIO()
         png_mask.save(buffer, format="Webp", quality=95)
-        payload["source_mask"] = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        payload["source_mask"] = base64.b64encode(
+            buffer.getvalue()).decode("utf-8")
         payload["source_processing"] = "inpainting"
     headers = {"apiKey": STABLE_HORDE_API_KEY}
 
     # Submit job
-    submit_req = requests.post(f'https://stablehorde.net/api/v2/generate/async', json = payload, headers = headers)
+    submit_req = requests.post(
+        f'https://stablehorde.net/api/v2/generate/async', json=payload, headers=headers)
     if not submit_req.ok:
         print("horde submit failed", submit_req.text)
-        bugsnag.notify(Exception("horde submit failed"), context="process_image")
+        bugsnag.notify(
+            Exception("horde submit failed"),
+            context="process_image",
+            metadata={
+                "prompt": prompt,
+                "created_by": image.created_by,
+                "image_id": image.id,
+            }
+        )
         return None
-    
+
     # poll for status and retrieve image
     submit_results = submit_req.json()
     req_id = submit_results["id"]
@@ -250,7 +287,8 @@ def process_image(image):
     retry = 0
     while not is_done:
         try:
-            chk_req = requests.get(f'https://stablehorde.net/api/v2/generate/check/{req_id}')
+            chk_req = requests.get(
+                f'https://stablehorde.net/api/v2/generate/check/{req_id}')
             if not chk_req.ok:
                 print(chk_req.text)
                 return None
@@ -265,7 +303,8 @@ def process_image(image):
                 time.sleep(1)
                 continue
             raise
-    retrieve_req = requests.get(f'https://stablehorde.net/api/v2/generate/status/{req_id}')
+    retrieve_req = requests.get(
+        f'https://stablehorde.net/api/v2/generate/status/{req_id}')
     if not retrieve_req.ok:
         print(retrieve_req.text)
         return
@@ -273,8 +312,10 @@ def process_image(image):
     if results_json['faulted']:
         final_submit_dict = payload
         if "source_image" in final_submit_dict:
-            final_submit_dict["source_image"] = f"img2img request with size: {len(final_submit_dict['source_image'])}"
-        print(f"Something went wrong when generating the request. Please contact the horde administrator with your request details: {final_submit_dict}")
+            final_submit_dict[
+                "source_image"] = f"img2img request with size: {len(final_submit_dict['source_image'])}"
+        print(
+            f"Something went wrong when generating the request. Please contact the horde administrator with your request details: {final_submit_dict}")
         return None
     # TODO: maybe support batch size > 1 later
     result = results_json["generations"][0]
@@ -284,6 +325,7 @@ def process_image(image):
     webp_image.save(buffer, format="PNG")
     image.image_data = buffer.getvalue()
     return image
+
 
 def process_loop(ready_queue: Queue, process_queue: Queue, update_queue: Queue, metrics_queue: Queue):
     print("process loop started")
@@ -400,6 +442,9 @@ def metrics_loop(metrics_queue: Queue):
             continue
 
 
+PROCESS_THREADS = 30
+
+
 class ImagesWorker:
     def __init__(self):
         # create queues
@@ -420,7 +465,7 @@ class ImagesWorker:
         # self.process_thread = Thread(target=process_loop, args=(
         #     self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue))
         self.process_threads = []
-        for i in range(10):
+        for i in range(PROCESS_THREADS):
             self.process_threads.append(Thread(target=process_loop, args=(
                 self.ready_queue, self.process_queue, self.update_queue, self.metrics_queue)))
         self.update_thread = Thread(target=update_loop, args=(
@@ -455,7 +500,7 @@ class ImagesWorker:
         self.apisocket.kill()
         self.websocket_queue.put(None)
         # self.process_queue.put(None)
-        for i in range(10):
+        for i in range(PROCESS_THREADS):
             self.process_queue.put(None)
         self.update_queue.put(None)
         self.cleanup_queue.put(None)

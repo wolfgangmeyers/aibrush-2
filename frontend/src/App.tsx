@@ -153,10 +153,10 @@ function App() {
                                             className="btn top-button pulse"
                                             to="/"
                                             style={{
-                                                width: "47px"
+                                                width: "47px",
                                             }}
-                                            onClick={
-                                                () => alert("Coming soon!")
+                                            onClick={() =>
+                                                alert("Coming soon!")
                                             }
                                         >
                                             {/* font awesome bolt icon */}
@@ -223,31 +223,37 @@ function App() {
                                 backgroundColor: "#000000",
                             }}
                         >
-                                {/* show external popout pages to terms and privacy policy, if they are present in the features */}
-                                {features && features.privacy_uri && (
-                                    <a
-                                        href={features.privacy_uri}
-                                        target="_blank"
-                                    >
-                                        Privacy Policy
-                                    </a>
-                                )}
-                                {features && features.terms_uri && (
-                                    <a
-                                        href={features.terms_uri}
-                                        target="_blank"
-                                        style={{ marginLeft: "20px" }}
-                                    >
-                                        Terms of Service
-                                    </a>
-                                )}
-                                {/* link to mail to admin@aibrush.art */}
+                            {/* show external popout pages to terms and privacy policy, if they are present in the features */}
+                            {features && features.privacy_uri && (
+                                <a href={features.privacy_uri} target="_blank">
+                                    Privacy Policy
+                                </a>
+                            )}
+                            {features && features.terms_uri && (
                                 <a
-                                    href="mailto:admin@aibrush.art"
+                                    href={features.terms_uri}
+                                    target="_blank"
                                     style={{ marginLeft: "20px" }}
                                 >
-                                    Contact
+                                    Terms of Service
                                 </a>
+                            )}
+                            {/* link to mail to admin@aibrush.art */}
+                            <a
+                                href="mailto:admin@aibrush.art"
+                                style={{ marginLeft: "20px" }}
+                            >
+                                Contact
+                            </a>
+                            <span style={{ float: "right", marginRight: "50px" }}>
+                                Powered by the{" "}
+                                <a
+                                    href="https://stablehorde.net/"
+                                    target="_blank"
+                                >
+                                    Stable Horde
+                                </a>
+                            </span>
                         </div>
                     </div>
                 )}
