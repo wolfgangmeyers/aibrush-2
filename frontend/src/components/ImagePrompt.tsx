@@ -1,7 +1,12 @@
 import React, { FC, useEffect, useState } from "react";
 import { CreateImageInput, CreateImageInputStatusEnum, Image } from "../client";
 import {
-    aspectRatios, DEFAULT_ASPECT_RATIO, getClosestAspectRatio, upscale, compareSize, AspectRatio
+    aspectRatios,
+    DEFAULT_ASPECT_RATIO,
+    getClosestAspectRatio,
+    upscale,
+    compareSize,
+    AspectRatio,
 } from "../lib/aspecRatios";
 import loadImage from "blueimp-load-image";
 import { AspectRatioSelector } from "./AspectRatioSelector";
@@ -44,6 +49,9 @@ export function defaultArgs(): CreateImageInput {
     };
 }
 
+const defaultNegativePrompt =
+    "low quality, distorted, deformed, dull, boring, plain, ugly, noise";
+
 export const ImagePrompt: FC<Props> = ({
     parent,
     creating,
@@ -53,7 +61,9 @@ export const ImagePrompt: FC<Props> = ({
     onEdit,
 }) => {
     const [prompt, setPrompt] = useState<string>("");
-    const [negativePrompt, setNegativePrompt] = useState<string>("");
+    const [negativePrompt, setNegativePrompt] = useState<string>(
+        defaultNegativePrompt
+    );
     const [count, setCount] = useState<number>(4);
     const [variationStrength, setVariationStrength] = useState<number>(0.75);
     const [aspectRatio, setAspectRatio] =
@@ -61,17 +71,25 @@ export const ImagePrompt: FC<Props> = ({
     const [parentId, setParentId] = useState<string | null>(null);
     const [advancedView, setAdvancedView] = useState<boolean>(false);
     const [encodedImage, setEncodedImage] = useState<string>("");
+    const [nsfw, setNsfw] = useState<boolean>(false);
+    const [model, setModel] = useState<string>("stable_diffusion");
     const defaultAspectRatio = aspectRatios[DEFAULT_ASPECT_RATIO];
-    
-    const [aspectRatioDetails, setAspectRatioDetails] = useState<AspectRatio>(aspectRatios[DEFAULT_ASPECT_RATIO]);
-    let [originalWidth, setOriginalWidth] = useState<number>(defaultAspectRatio.width);
-    let [originalHeight, setOriginalHeight] = useState<number>(defaultAspectRatio.height);
+
+    const [aspectRatioDetails, setAspectRatioDetails] = useState<AspectRatio>(
+        aspectRatios[DEFAULT_ASPECT_RATIO]
+    );
+    let [originalWidth, setOriginalWidth] = useState<number>(
+        defaultAspectRatio.width
+    );
+    let [originalHeight, setOriginalHeight] = useState<number>(
+        defaultAspectRatio.height
+    );
 
     // const aspectRatioDetails = aspectRatios[aspectRatio];
 
     const resetState = () => {
         setPrompt("");
-        setNegativePrompt("");
+        setNegativePrompt(defaultNegativePrompt);
         setCount(4);
         setAdvancedView(false);
         setParentId(null);
@@ -89,18 +107,29 @@ export const ImagePrompt: FC<Props> = ({
         args.count = count;
         args.parent = parentId || undefined;
         args.stable_diffusion_strength = variationStrength;
+        args.nsfw = nsfw;
+        args.model = model;
         if (parent) {
-            const bestMatch = getClosestAspectRatio(parent.width!, parent.height!);
+            const bestMatch = getClosestAspectRatio(
+                parent.width!,
+                parent.height!
+            );
             args.width = bestMatch.width;
             args.height = bestMatch.height;
-            args.nsfw = parent.nsfw;
         } else {
-            const bestMatch = getClosestAspectRatio(aspectRatioDetails.width, aspectRatioDetails.height);
+            const bestMatch = getClosestAspectRatio(
+                aspectRatioDetails.width,
+                aspectRatioDetails.height
+            );
             args.width = bestMatch.width;
             args.height = bestMatch.height;
         }
         if (encodedImage) {
-            args.encoded_image = await resizeEncodedImage(encodedImage, args.width, args.height);
+            args.encoded_image = await resizeEncodedImage(
+                encodedImage,
+                args.width,
+                args.height
+            );
         }
 
         resetState();
@@ -109,7 +138,7 @@ export const ImagePrompt: FC<Props> = ({
 
     const handleEdit = () => {
         if (!encodedImage) {
-            console.error("Cannot edit without existing image")
+            console.error("Cannot edit without existing image");
             return;
         }
         const args = defaultArgs();
@@ -121,16 +150,15 @@ export const ImagePrompt: FC<Props> = ({
         args.status = CreateImageInputStatusEnum.Completed;
         args.width = originalWidth;
         args.height = originalHeight;
-        if (parent) {
-            args.nsfw = parent.nsfw;
-        }
+        args.nsfw = nsfw;
+        args.model = model;
         if (encodedImage) {
             args.encoded_image = encodedImage;
         }
 
         resetState();
         onEdit(args);
-    }
+    };
 
     const handleCancel = () => {
         resetState();
@@ -154,12 +182,13 @@ export const ImagePrompt: FC<Props> = ({
                 let bestMatch = getClosestAspectRatio(width, height);
                 while (compareSize(upscale(bestMatch), width, height) <= 0) {
                     bestMatch = upscale(bestMatch);
-                    if (getUpscaleLevel(bestMatch.width, bestMatch.height) >= 2) {
+                    if (
+                        getUpscaleLevel(bestMatch.width, bestMatch.height) >= 2
+                    ) {
                         break;
                     }
                 }
                 console.log("best match", bestMatch);
-
 
                 const canvas = document.createElement("canvas");
                 // canvas.width = bestMatch.width;
@@ -179,9 +208,7 @@ export const ImagePrompt: FC<Props> = ({
                 setEncodedImage(base64);
                 // get the index of the best match
                 setAspectRatio(
-                    aspectRatios.findIndex(
-                        (a) => a.id === bestMatch.id
-                    )
+                    aspectRatios.findIndex((a) => a.id === bestMatch.id)
                 );
                 setAspectRatioDetails(bestMatch);
                 setOriginalWidth(width);
@@ -206,6 +233,8 @@ export const ImagePrompt: FC<Props> = ({
             setAdvancedView(true);
             setVariationStrength(parent.stable_diffusion_strength);
             setEncodedImage("");
+            setNsfw(parent.nsfw);
+            setModel(parent.model);
         } else {
             resetState();
         }
@@ -296,7 +325,7 @@ export const ImagePrompt: FC<Props> = ({
                         {!parent && !encodedImage && (
                             <AspectRatioSelector
                                 aspectRatio={aspectRatio}
-                                onChange={aspectRatioId => {
+                                onChange={(aspectRatioId) => {
                                     setAspectRatio(aspectRatioId);
                                     setAspectRatioDetails(
                                         aspectRatios[aspectRatioId]
@@ -343,6 +372,35 @@ export const ImagePrompt: FC<Props> = ({
                                     </label>
                                 )}
                             </div>
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="model">Model</label>
+                            <select
+                                className="form-control"
+                                id="model"
+                                value={model}
+                                onChange={(e) => setModel(e.target.value)}
+                            >
+                                <option value="stable_diffusion">
+                                    Stable Diffusion
+                                </option>
+                                <option value="Hentai Diffusion">
+                                    Hentai Diffusion
+                                </option>
+                                <option value="URPM">URPM</option>
+                                <option value="Deliberate">Deliberate</option>
+                                <option value="Epic Diffusion">
+                                    Epic Diffusion
+                                </option>
+                                <option value="colorbook">Colorbook</option>
+                                <option value="Vector Art">Vector Art</option>
+                                <option value="Future Diffusion">
+                                    Future Diffusion
+                                </option>
+                                <option value="GTA5 Artwork Diffusion">
+                                    GTA5 Artwork Diffusion
+                                </option>
+                            </select>
                         </div>
                         <div className="form-group">
                             {/* negative prompt */}
@@ -409,53 +467,79 @@ export const ImagePrompt: FC<Props> = ({
                                 </span>
                             </div>
                         )}
-                        {advancedView && (
-                            <div
-                                className="form-group"
-                                style={{ minHeight: "20px" }}
+                        {/* nsfw toggle button */}
+                        <div className="form-group">
+                            <label>NSFW</label>
+                            <button
+                                style={{ marginLeft: "16px" }}
+                                type="button"
+                                className="btn btn-primary btn-sm"
+                                onClick={() => setNsfw(!nsfw)}
                             >
-                                <div className="float-right">
-                                    {parent && (
-                                        <button
-                                            type="button"
-                                            className="btn btn-secondary light-button"
-                                            onClick={handleCancel}
-                                        >
-                                            <i className="fas fa-times"></i>
-                                            &nbsp;CANCEL
-                                        </button>
-                                    )}
+                                {nsfw && (
+                                    <>
+                                        <i className="fa fa-check"></i>
+                                        &nbsp;Enabled
+                                    </>
+                                )}
+                                {!nsfw && (
+                                    <>
+                                        <i className="fa fa-times"></i>
+                                        &nbsp;Disabled
+                                    </>
+                                )}
+                            </button>
+
+                            <br />
+                            <span className="helptext">
+                                Toggle this if you want to generate NSFW images
+                            </span>
+                        </div>
+                        <div
+                            className="form-group"
+                            style={{ minHeight: "20px" }}
+                        >
+                            <div className="float-right">
+                                {parent && (
                                     <button
-                                        type="submit"
-                                        className="btn btn-primary"
+                                        type="button"
+                                        className="btn btn-secondary light-button"
+                                        onClick={handleCancel}
+                                    >
+                                        <i className="fas fa-times"></i>
+                                        &nbsp;CANCEL
+                                    </button>
+                                )}
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    style={{ marginLeft: "8px" }}
+                                    disabled={!prompt || creating}
+                                >
+                                    {/* paintbrush button */}
+                                    {!creating && (
+                                        <i className="fas fa-paint-brush"></i>
+                                    )}
+                                    {/* spinner button */}
+                                    {creating && (
+                                        <i className="fas fa-spinner fa-spin"></i>
+                                    )}
+                                    &nbsp;PAINT
+                                </button>
+                                {encodedImage && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary light-button"
+                                        onClick={handleEdit}
                                         style={{ marginLeft: "8px" }}
                                         disabled={!prompt || creating}
                                     >
-                                        {/* paintbrush button */}
-                                        {!creating && (
-                                            <i className="fas fa-paint-brush"></i>
-                                        )}
-                                        {/* spinner button */}
-                                        {creating && (
-                                            <i className="fas fa-spinner fa-spin"></i>
-                                        )}
-                                        &nbsp;PAINT
+                                        <i className="fas fa-edit"></i>
+                                        &nbsp;EDIT
                                     </button>
-                                    {encodedImage && (
-                                        <button
-                                            type="button"
-                                            className="btn btn-secondary light-button"
-                                            onClick={handleEdit}
-                                            style={{ marginLeft: "8px" }}
-                                            disabled={!prompt || creating}
-                                        >
-                                            <i className="fas fa-edit"></i>
-                                            &nbsp;EDIT
-                                        </button>
-                                    )}
-                                </div>
+                                )}
                             </div>
-                        )}
+                        </div>
                     </div>
                 )}
             </div>

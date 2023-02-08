@@ -85,6 +85,7 @@ export const DeletedImages: FC<Props> = ({ api, assetsUrl }) => {
                             <ImageThumbnail
                                 assetsUrl={assetsUrl}
                                 image={image}
+                                censorNSFW={true}
                             />
                         </div>
                         <div

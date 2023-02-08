@@ -5,11 +5,12 @@ import { Image, ImageStatusEnum } from "../client/api";
 interface Props {
     assetsUrl: string;
     image: Image;
+    censorNSFW: boolean;
     bulkDelete?: boolean;
     onClick?: (image: Image) => void;
 }
 
-export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, bulkDelete, onClick }) => {
+export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, censorNSFW, bulkDelete, onClick }) => {
     const src = `${assetsUrl}/${image.id}.thumbnail.png?updated_at=${image.updated_at}`;
     const [retry, setRetry] = useState("");
 
@@ -40,7 +41,7 @@ export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, bulkDelete, onClic
             className={className}
             style={{
                 backgroundImage: `url(${src}${retry}), url(/images/default.png)`,
-                filter: image.nsfw ? "blur(8px)" : undefined,
+                filter: (image.nsfw && censorNSFW) ? "blur(8px)" : undefined,
             }}
             onClick={() => onClick && onClick(image)}
         >

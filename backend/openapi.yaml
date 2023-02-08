@@ -791,6 +791,7 @@ components:
           enum:
             - pending
             - processing
+            - ranking
             - completed
             - saved
             - error
@@ -863,7 +864,7 @@ components:
           type: integer
         status:
           type: string
-          enum: [pending, processing, completed, saved, error]
+          enum: [pending, processing, ranking, completed, saved, error]
         encoded_image:
           type: string
         encoded_npy:
@@ -910,7 +911,7 @@ components:
           type: number
         status:
           type: string
-          enum: [pending, processing, completed, saved, error]
+          enum: [pending, processing, ranking, completed, saved, error]
         enable_video:
           type: boolean
         enable_zoom:
@@ -992,6 +993,9 @@ components:
         - ids
     ProcessImageInput:
       properties:
+        status:
+          type: string
+          enum: [pending, ranking]
         include_models:
           type: array
           items:

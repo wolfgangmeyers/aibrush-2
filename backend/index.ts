@@ -6,7 +6,6 @@ import { MetricsClient } from "./src/metrics";
 import { Server } from "./src/server";
 import { ScalingService, getScalingEngines } from "./src/scaling_service";
 import { LogsClient } from "./src/logs";
-import { WorkDistributor } from "./src/work_distributor";
 
 const config = loadConfig();
 
@@ -25,7 +24,6 @@ const scalingService = new ScalingService(
     scalingEngines,
     loggingClient
 );
-const workDistributor = new WorkDistributor(backendService);
 const server = new Server(
     config,
     backendService,
@@ -33,7 +31,6 @@ const server = new Server(
     metricsClient,
     loggingClient,
     scalingService,
-    workDistributor
 );
 server.init().then(() => {
     console.log("Server initialized");

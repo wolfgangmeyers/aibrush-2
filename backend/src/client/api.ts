@@ -322,6 +322,7 @@ export interface CreateImageInput {
 export const CreateImageInputStatusEnum = {
     Pending: 'pending',
     Processing: 'processing',
+    Ranking: 'ranking',
     Completed: 'completed',
     Saved: 'saved',
     Error: 'error'
@@ -667,6 +668,7 @@ export interface Image {
 export const ImageStatusEnum = {
     Pending: 'pending',
     Processing: 'processing',
+    Ranking: 'ranking',
     Completed: 'completed',
     Saved: 'saved',
     Error: 'error'
@@ -926,6 +928,12 @@ export interface Order {
 export interface ProcessImageInput {
     /**
      * 
+     * @type {string}
+     * @memberof ProcessImageInput
+     */
+    'status'?: ProcessImageInputStatusEnum;
+    /**
+     * 
      * @type {Array<string>}
      * @memberof ProcessImageInput
      */
@@ -943,6 +951,14 @@ export interface ProcessImageInput {
      */
     'peek'?: boolean;
 }
+
+export const ProcessImageInputStatusEnum = {
+    Pending: 'pending',
+    Ranking: 'ranking'
+} as const;
+
+export type ProcessImageInputStatusEnum = typeof ProcessImageInputStatusEnum[keyof typeof ProcessImageInputStatusEnum];
+
 /**
  * 
  * @export
@@ -1084,6 +1100,7 @@ export interface UpdateImageInput {
 export const UpdateImageInputStatusEnum = {
     Pending: 'pending',
     Processing: 'processing',
+    Ranking: 'ranking',
     Completed: 'completed',
     Saved: 'saved',
     Error: 'error'

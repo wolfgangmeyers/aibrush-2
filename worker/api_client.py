@@ -57,9 +57,11 @@ class AIBrushAPI(object):
             print(f"Error parsing json: {err}")
             raise err
 
-    def process_image(self, model: str, peek=False) -> SimpleNamespace:
+    def process_image(self, status: str=None, include_models: List[str]=None, exclude_models: List[str]=None, peek=False) -> SimpleNamespace:
         resp = self.http_request("/process-image", "PUT", body={
-            "model": model,
+            "include_models": include_models,
+            "exclude_models": exclude_models,
+            "status": status,
             "peek": peek,
         })
         # print(resp.text)
@@ -88,21 +90,28 @@ class AIBrushAPI(object):
         return self.parse_json(resp.text)
 
     def update_image(self, image_id: str, encoded_image: str, encoded_thumbnail: str, current_iterations: int, status: str, score: float, negative_score: float, nsfw: bool = False) -> SimpleNamespace:
-        image_upload_urls = self.get_image_upload_urls(image_id)
+        image_upload_urls = None
+        if encoded_image or encoded_thumbnail:
+            try:
+                image_upload_urls = self.get_image_upload_urls(image_id)
+            except:
+                print("Failed to get image upload urls")
         body = {
-            "current_iterations": current_iterations,
             "status": status,
             "score": score,
             "negative_score": negative_score,
-            "nsfw": nsfw,
         }
-        if encoded_image:
+        if nsfw is not None:
+            body["nsfw"] = nsfw
+        if current_iterations:
+            body["current_iterations"] = current_iterations
+        if encoded_image and image_upload_urls:
             # body["encoded_image"] = encoded_image
             # base64 decode image
             image_data = base64.b64decode(encoded_image)
             resp = self.http_request(image_upload_urls.image_url, "PUT", image_data, content_type="image/png", auth=False)
             print("Update image response", resp)
-        if encoded_thumbnail:
+        if encoded_thumbnail and image_upload_urls:
             # body["encoded_thumbnail"] = encoded_thumbnail
             # base64 decode image
             thumbnail_data = base64.b64decode(encoded_thumbnail)

@@ -1137,6 +1137,7 @@ export class BackendService {
     }
 
     private async getUsersWithPendingImages(
+        status: string,
         include_models: string[] | null,
         exclude_models: string[] | null
     ): Promise<Array<string>> {
@@ -1144,16 +1145,18 @@ export class BackendService {
         const client = await this.pool.connect();
         let filter = " AND deleted_at IS NULL";
         if (include_models) {
-            filter += ` AND model in ($${args.length + 1})`;
-            args.push(include_models);
+            const in_str = include_models.map((_, i) => `$${args.length + i + 1}`).join(",");
+            filter += ` AND model in (${in_str})`;
+            args.push(...include_models);
         }
         if (exclude_models) {
-            filter += ` AND model NOT IN ($${args.length + 1})`;
-            args.push(exclude_models);
+            const in_str = exclude_models.map((_, i) => `$${args.length + i + 1}`).join(",");
+            filter += ` AND model NOT IN (${in_str})`;
+            args.push(...exclude_models);
         }
         try {
             const result = await client.query(
-                `SELECT DISTINCT created_by FROM images WHERE status='pending'${filter}`,
+                `SELECT DISTINCT created_by FROM images WHERE status='${status || "pending"}'${filter}`,
                 args
             );
             return result.rows.map((row) => row.created_by);
@@ -1167,8 +1170,12 @@ export class BackendService {
         input: ProcessImageInput | null,
         workerId: string | null
     ): Promise<Image> {
+        // validate status is in whitelist to avoid sql injection
+        if (input.status && input.status !== "pending" && input.status !== "ranking") {
+            throw new Error("Invalid status");
+        }
         // get all users with pending images
-        const users = await this.getUsersWithPendingImages(input?.include_models, input?.exclude_models);
+        const users = await this.getUsersWithPendingImages(input?.status, input?.include_models, input?.exclude_models);
         // if there are no users, return null
         if (users.length === 0) {
             return null;
@@ -1194,14 +1201,16 @@ export class BackendService {
         }
         const args: Array<any> = [user];
         let filter = " AND deleted_at IS NULL";
-        if (input?.include_models) {
-            // filter = " AND model = $2 AND deleted_at IS NULL";
-            filter += ` AND model in $${args.length + 1}`;
-            args.push(input?.include_models);
+        if (input.include_models) {
+            // args.push(input?.include_models);
+            const inStr = input.include_models.map((_, i) => `$${args.length + i + 1}`).join(",");
+            filter += ` AND model in (${inStr})`;
+            args.push(...input.include_models);
         }
-        if (input?.exclude_models) {
-            filter += ` AND model NOT IN ($${args.length + 1})`;
-            args.push(input?.exclude_models);
+        if (input.exclude_models) {
+            const inStr = input.exclude_models.map((_, i) => `$${args.length + i + 1}`).join(",");
+            filter += ` AND model NOT IN (${inStr})`;
+            args.push(...input.exclude_models);
         }
 
         // get random image from user
@@ -1213,7 +1222,7 @@ export class BackendService {
             }
 
             const result = await client.query(
-                `SELECT * FROM images WHERE created_by=$1 AND status='pending'${filter} ORDER BY created_at ASC LIMIT 1`,
+                `SELECT * FROM images WHERE created_by=$1 AND status='${input.status || "pending"}'${filter} ORDER BY created_at ASC LIMIT 1`,
                 args
             );
             if (result.rows.length === 0) {

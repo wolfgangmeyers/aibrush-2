@@ -10,7 +10,11 @@ import { CreateImageInput, Image, ImageStatusEnum, Boost } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import { BoostWidget } from "../components/BoostWidget";
-import { createEncodedThumbnail, encodedImageToBlob, uploadBlob } from "../lib/imageutil";
+import {
+    createEncodedThumbnail,
+    encodedImageToBlob,
+    uploadBlob,
+} from "../lib/imageutil";
 
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ImagePopup } from "../components/ImagePopup";
@@ -50,6 +54,7 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
     }>({});
 
     const [boost, setBoost] = useState<Boost | null>(null);
+    const [censorNSFW, setCensorNSFW] = useState(true);
 
     const { id } = useParams<{ id?: string }>();
     const history = useHistory();
@@ -112,8 +117,14 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                 // convert base64 encoded image to binary to upload as image/png with axios
                 const blob = encodedImageToBlob(encodedImage);
                 const thumbnailBlob = encodedImageToBlob(encodedThumbnail);
-                const imagePromise = uploadBlob(uploadUrls.data.image_url!, blob);
-                const thumbnailPromise = uploadBlob(uploadUrls.data.thumbnail_url!, thumbnailBlob);
+                const imagePromise = uploadBlob(
+                    uploadUrls.data.image_url!,
+                    blob
+                );
+                const thumbnailPromise = uploadBlob(
+                    uploadUrls.data.thumbnail_url!,
+                    thumbnailBlob
+                );
                 await Promise.all([imagePromise, thumbnailPromise]);
 
                 history.push(`/image-editor/${image.id}`);
@@ -580,28 +591,47 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                             }}
                         >
                             {!bulkDeleteSelecting && (
-                                <Dropdown>
-                                    <Dropdown.Toggle variant="danger">
-                                        <i className="fas fa-trash"></i>
-                                    </Dropdown.Toggle>
+                                <>
+                                    <button
+                                        style={{ display: "inline" }}
+                                        className="btn btn-primary image-popup-button"
+                                        onClick={() =>
+                                            setCensorNSFW(!censorNSFW)
+                                        }
+                                    >
+                                        {!censorNSFW && (
+                                            <i className="fas fa-eye"></i>
+                                        )}
+                                        {censorNSFW && (
+                                            <i className="fas fa-eye-slash"></i>
+                                        )}
+                                    </button>
+                                    <Dropdown style={{ display: "inline", marginLeft: "8px" }}>
+                                        <Dropdown.Toggle variant="danger">
+                                            <i className="fas fa-trash"></i>
+                                        </Dropdown.Toggle>
 
-                                    <Dropdown.Menu>
-                                        <Dropdown.Item
-                                            onClick={() =>
-                                                setBulkDeleteSelecting(true)
-                                            }
-                                        >
-                                            Bulk Delete
-                                        </Dropdown.Item>
-                                        <Dropdown.Item
-                                            onClick={() =>
-                                                history.push("/deleted-images")
-                                            }
-                                        >
-                                            View Deleted Images
-                                        </Dropdown.Item>
-                                    </Dropdown.Menu>
-                                </Dropdown>
+                                        <Dropdown.Menu>
+                                            <Dropdown.Item
+                                                onClick={() =>
+                                                    setBulkDeleteSelecting(true)
+                                                }
+                                            >
+                                                Bulk Delete
+                                            </Dropdown.Item>
+                                            <Dropdown.Item
+                                                onClick={() =>
+                                                    history.push(
+                                                        "/deleted-images"
+                                                    )
+                                                }
+                                            >
+                                                View Deleted Images
+                                            </Dropdown.Item>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
+                                    
+                                </>
                             )}
                             {bulkDeleteSelecting && (
                                 <>
@@ -657,6 +687,7 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                             bulkDelete={
                                 bulkDeleteSelecting && bulkDeleteIds[image.id]
                             }
+                            censorNSFW={censorNSFW}
                         />
                     ))}
                 </InfiniteScroll>
@@ -683,6 +714,7 @@ export const Homepage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                         onUpscale(image);
                     }}
                     onNSFW={onNSFW}
+                    censorNSFW={censorNSFW}
                 />
             )}
             <ScrollToTop />

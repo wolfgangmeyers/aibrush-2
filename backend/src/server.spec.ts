@@ -139,7 +139,7 @@ describe("server", () => {
         }
         backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger())
 
-        server = new Server(config, backendService, 35456, new MetricsClient(""), new ConsoleLogger(), null, null)
+        server = new Server(config, backendService, 35456, new MetricsClient(""), new ConsoleLogger(), null)
         await server.init()
         await server.start()
 

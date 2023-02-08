@@ -417,6 +417,9 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.negative_phrases = [this.negativePrompt || image.negative_phrases[0]];
         input.stable_diffusion_strength = this.variationStrength;
         input.count = this.count;
+        // TODO: allow switching model
+        input.model = image.model;
+        input.nsfw = image.nsfw;
 
         const closestAspectRatio = getClosestAspectRatio(
             selectionOverlay!.width,

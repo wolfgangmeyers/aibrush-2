@@ -38,7 +38,6 @@ import {
 import { MetricsClient } from "./metrics";
 import { ScalingService } from "./scaling_service";
 import { Logger } from "./logs";
-import { WorkDistributor } from "./work_distributor";
 import { BOOST_LEVELS } from "./boost";
 
 export class Server {
@@ -59,7 +58,6 @@ export class Server {
         private metricsClient: MetricsClient,
         private logger: Logger,
         private scalingService: ScalingService,
-        private workDistributor: WorkDistributor
     ) {
         this.app = express();
         this.authHelper = new AuthHelper(
@@ -1425,10 +1423,6 @@ export class Server {
                 this.scalingService.scale();
             }
 
-            if (this.workDistributor) {
-                this.workDistributor.start();
-                this.workDistributor.distributeWork();
-            }
         });
     }
 
@@ -1443,9 +1437,6 @@ export class Server {
         }
         if (this.config.enableScalingService) {
             this.scalingService.stop();
-        }
-        if (this.workDistributor) {
-            this.workDistributor.stop();
         }
     }
 }

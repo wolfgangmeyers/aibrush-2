@@ -38,6 +38,12 @@ class ClipProcess:
             self.process = None
             print("Clip process killed")
 
+def read_or_die():
+    try:
+        return input()
+    except EOFError:
+        sys.exit(0)
+
 def child_process():
     gpu = "cuda:0" if len(sys.argv) == 1 else sys.argv[1]
     torch.cuda.set_device(gpu)
@@ -46,7 +52,7 @@ def child_process():
     eprint("clip process created")
     while True:
         try:
-            args_json = input()
+            args_json = read_or_die()
             args = SimpleNamespace(**json.loads(args_json))
             eprint(f"input received: {args}")
             rank = clip_ranker.rank(args)

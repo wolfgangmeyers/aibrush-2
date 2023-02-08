@@ -6,6 +6,7 @@ import { getUpscaleLevel } from "../lib/upscale";
 interface ImagePopupProps {
     assetsUrl: string;
     image: Image;
+    censorNSFW: boolean;
     onClose: () => void;
     onDelete?: (image: Image) => void;
     onFork?: (image: Image) => void;
@@ -17,6 +18,7 @@ interface ImagePopupProps {
 export const ImagePopup: FC<ImagePopupProps> = ({
     assetsUrl,
     image,
+    censorNSFW,
     onClose,
     onDelete,
     onFork,
@@ -103,7 +105,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                         display: "block",
                         marginLeft: "auto",
                         marginRight: "auto",
-                        filter: image.nsfw && !showNSFW ? "blur(30px)" : "",
+                        filter: (image.nsfw && censorNSFW) && !showNSFW ? "blur(30px)" : "",
                     }}
                     id={`image-popup-${image.id}`}
                     src={src}
@@ -169,7 +171,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         &nbsp;UPSCALE
                                     </button>
                                 )}
-                                {image.nsfw && (
+                                {(image.nsfw && censorNSFW) && (
                                     <button
                                         className="btn btn-primary btn-sm image-popup-button"
                                         onClick={() => setShowNSFW(!showNSFW)}
@@ -185,10 +187,11 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                             className="image-popup-controls"
                             style={{ marginTop: "28px", marginBottom: "85px" }}
                         >
-                            <div>
+                            {/* Horde interface doesn't support score yet */}
+                            {/* <div>
                                 Similarity to prompt: {(score * 200).toFixed(2)}
                                 %
-                            </div>
+                            </div> */}
                             <div>
                                 Image dimensions: {image.width} x {image.height}
                             </div>
