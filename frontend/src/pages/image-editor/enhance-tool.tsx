@@ -16,7 +16,11 @@ import {
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
-import { featherEdges, fixRedShift, ImageUtilWorker } from "../../lib/imageutil";
+import {
+    featherEdges,
+    fixRedShift,
+    ImageUtilWorker,
+} from "../../lib/imageutil";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { getUpscaleLevel } from "../../lib/upscale";
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
@@ -36,12 +40,12 @@ export class EnhanceTool extends BaseTool implements Tool {
     readonly selectionTool: SelectionTool;
     private prompt: string = "";
     private negativePrompt: string = "";
+    private model: string = "stable_diffusion";
     private count: number = 4;
     private variationStrength: number = 0.35;
     private _dirty = false;
     private worker: ImageUtilWorker;
     private idCounter = 0;
-
 
     private _state: EnhanceToolState = "default";
     private stateHandler: (state: EnhanceToolState) => void = () => {};
@@ -291,9 +295,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         args = {
             ...this.getArgs(),
             ...args,
-        }
+        };
         this.prompt = args.prompt || "";
         this.negativePrompt = args.negativePrompt || "";
+        this.model = args.model || "stable_diffusion";
         this.count = args.count || 4;
         this.variationStrength = args.variationStrength || 0.75;
         console.log("updateArgs", args);
@@ -354,22 +359,24 @@ export class EnhanceTool extends BaseTool implements Tool {
                         selectionOverlay.height
                     );
                     const id = this.newId();
-                    this.worker.processRequest({
-                        id,
-                        alpha: false,
-                        feather: true,
-                        height: this.renderer.getHeight(),
-                        width: this.renderer.getWidth(),
-                        pixels: imageData.data,
-                        selectionOverlay,
-                    }).then(resp => {
-                        const updatedImageData = new ImageData(
-                            resp.pixels,
-                            imageData.width,
-                            imageData.height,
-                        )
-                        resolve(updatedImageData);
-                    })
+                    this.worker
+                        .processRequest({
+                            id,
+                            alpha: false,
+                            feather: true,
+                            height: this.renderer.getHeight(),
+                            width: this.renderer.getWidth(),
+                            pixels: imageData.data,
+                            selectionOverlay,
+                        })
+                        .then((resp) => {
+                            const updatedImageData = new ImageData(
+                                resp.pixels,
+                                imageData.width,
+                                imageData.height
+                            );
+                            resolve(updatedImageData);
+                        });
                     // remove canvas
                     canvas.remove();
                 };
@@ -414,11 +421,13 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.encoded_image = encodedImage;
         input.parent = image.id;
         input.phrases = [this.prompt || image.phrases[0]];
-        input.negative_phrases = [this.negativePrompt || image.negative_phrases[0]];
+        input.negative_phrases = [
+            this.negativePrompt || image.negative_phrases[0],
+        ];
         input.stable_diffusion_strength = this.variationStrength;
         input.count = this.count;
         // TODO: allow switching model
-        input.model = image.model;
+        input.model = this.model;
         input.nsfw = image.nsfw;
 
         const closestAspectRatio = getClosestAspectRatio(
@@ -479,7 +488,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         try {
             let startTime = moment();
             let lastCheck = moment();
-            
+
             while (!completed) {
                 let completeCount = 0;
                 await sleep(1000);
@@ -504,7 +513,11 @@ export class EnhanceTool extends BaseTool implements Tool {
                 if (moment().diff(lastCheck, "seconds") > 10) {
                     // get list of ids that aren't completed and batch get them.
                     const pendingIds = newImages
-                        .filter((img) => img.status === ImageStatusEnum.Pending || img.status === ImageStatusEnum.Processing)
+                        .filter(
+                            (img) =>
+                                img.status === ImageStatusEnum.Pending ||
+                                img.status === ImageStatusEnum.Processing
+                        )
                         .map((img) => img.id);
                     console.log("Checking pending images", pendingIds);
                     const updatedImagesResult = await api.batchGetImages({
@@ -516,7 +529,10 @@ export class EnhanceTool extends BaseTool implements Tool {
                         return acc;
                     }, {} as Record<string, APIImage>);
                     for (let i = 0; i < newImages!.length; i++) {
-                        if (newImages![i].status === ImageStatusEnum.Pending || newImages![i].status === ImageStatusEnum.Processing) {
+                        if (
+                            newImages![i].status === ImageStatusEnum.Pending ||
+                            newImages![i].status === ImageStatusEnum.Processing
+                        ) {
                             const updated = byId[newImages![i].id];
                             if (updated) {
                                 newImages![i].status = updated.status;
@@ -539,7 +555,11 @@ export class EnhanceTool extends BaseTool implements Tool {
                     lastCheck = moment();
                 }
                 // timeout of 2 minutes
-                if ((lastUpdate.isAfter(startTime) && moment().diff(lastUpdate, "seconds") > 30) || moment().diff(startTime, "minutes") > 2) {
+                if (
+                    (lastUpdate.isAfter(startTime) &&
+                        moment().diff(lastUpdate, "seconds") > 30) ||
+                    moment().diff(startTime, "minutes") > 2
+                ) {
                     completed = true;
                 }
             }
@@ -611,6 +631,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             this.saveListener(encodedImage, {
                 phrases: [this.prompt],
                 negative_phrases: [this.negativePrompt],
+                model: this.model,
             });
         }
         this.dirty = false;
@@ -642,8 +663,13 @@ export const EnhanceControls: FC<ControlsProps> = ({
     const [dirty, setDirty] = useState(false);
     const [variationStrength, setVariationStrength] = useState(0.35);
     const [prompt, setPrompt] = useState(image.phrases[0]);
-    const [negativePrompt, setNegativePrompt] = useState(image.negative_phrases[0]);
+    const [negativePrompt, setNegativePrompt] = useState(
+        image.negative_phrases[0]
+    );
     console.log("negativePrompt", negativePrompt);
+    const [model, setModel] = useState(
+        image.model == "swinir" ? "stable_diffusion" : image.model
+    );
     const [state, setState] = useState<EnhanceToolState>(tool.state);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -795,6 +821,38 @@ export const EnhanceControls: FC<ControlsProps> = ({
                             How much variation to use
                         </small>
                     </div>
+                    <div className="form-group">
+                        <label htmlFor="model">Model</label>
+                        <select
+                            className="form-control"
+                            id="model"
+                            value={model}
+                            onChange={(e) => setModel(e.target.value)}
+                        >
+                            <option value="stable_diffusion">
+                                Stable Diffusion
+                            </option>
+                            <option value="Hentai Diffusion">
+                                Hentai Diffusion
+                            </option>
+                            <option value="URPM">URPM</option>
+                            <option value="Deliberate">Deliberate</option>
+                            <option value="Epic Diffusion">
+                                Epic Diffusion
+                            </option>
+                            <option value="colorbook">Colorbook</option>
+                            <option value="Vector Art">Vector Art</option>
+                            <option value="Future Diffusion">
+                                Future Diffusion
+                            </option>
+                            <option value="GTA5 Artwork Diffusion">
+                                GTA5 Artwork Diffusion
+                            </option>
+                        </select>
+                        <small className="form-text text-muted">
+                            Select the model to use
+                        </small>
+                    </div>
                 </>
             )}
             {state === "erase" && (
@@ -862,6 +920,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                                 variationStrength,
                                 prompt,
                                 negativePrompt,
+                                model,
                             });
                             tool.submit(api, apisocket, image);
                         }}

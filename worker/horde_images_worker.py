@@ -229,7 +229,7 @@ def process_image(image):
     negative_prompt = ",".join(image.negative_phrases)
     if len(negative_prompt) > 0:
         prompt = prompt + " ### " + negative_prompt
-    prompt = strip_blacklisted_terms(prompt)
+    prompt = strip_blacklisted_terms(image.nsfw, prompt)
     payload = {
         "params": {
             "n": 1,
