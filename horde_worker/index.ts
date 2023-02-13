@@ -231,7 +231,10 @@ async function processImage(request: HordeRequest) {
         const pngImage = await sharp(Buffer.from(webpImageData))
             .png()
             .toBuffer();
-        await uploadImage(`${request.imageId}.image.png`, pngImage);
+        const upload1 = uploadImage(`${request.imageId}.image.png`, pngImage);
+        const thumbnail = await sharp(Buffer.from(webpImageData)).resize(128, 128).png().toBuffer();
+        const upload2 = uploadImage(`${request.imageId}.thumbnail.png`, thumbnail);
+        await Promise.all([upload1, upload2]);
         await updateImage(request.imageId, "completed", request.authToken);
     } catch (e) {
         Bugsnag.notify(e);
