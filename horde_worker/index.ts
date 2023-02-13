@@ -242,9 +242,7 @@ async function processImage(request: HordeRequest) {
 
 export const handler = async (event: SQSEvent) => {
     console.log("Received event:", JSON.stringify(event, null, 2));
-    const promises = event.Records.map(async (record) => {
+    for (const record of event.Records) {
         await processImage(JSON.parse(record.body) as HordeRequest);
-    });
-    await Promise.all(promises);
-
+    }
 };
