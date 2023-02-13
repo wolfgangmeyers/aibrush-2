@@ -230,6 +230,7 @@ def process_image(image):
     if len(negative_prompt) > 0:
         prompt = prompt + " ### " + negative_prompt
     prompt = strip_blacklisted_terms(image.nsfw, prompt)
+    print(prompt)
     payload = {
         "params": {
             "n": 1,
@@ -321,6 +322,9 @@ def process_image(image):
     result = results_json["generations"][0]
     webp_image_data = requests.get(result["img"]).content
     webp_image = Image.open(BytesIO(webp_image_data))
+    # check if image is completely black
+    if webp_image.convert("L").getextrema() == (0, 0):
+        print("image is completely black, completed by worker id", result["worker_id"])
     buffer = BytesIO()
     webp_image.save(buffer, format="PNG")
     image.image_data = buffer.getvalue()

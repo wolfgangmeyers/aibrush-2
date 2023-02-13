@@ -15,6 +15,7 @@ export interface Config {
     dataFolderName?: string;
     s3Bucket?: string;
     s3Region?: string;
+    hordeQueueName?: string;
     loginCodeExpirationSeconds: number;
     userAccessTokenExpirationSeconds: number;
     serviceAccountAccessTokenExpirationSeconds: number;
@@ -43,6 +44,7 @@ export const loadConfig = (): Config => {
         dataFolderName: process.env.DATA_FOLDER_NAME,
         s3Bucket: process.env.S3_BUCKET,
         s3Region: process.env.S3_REGION,
+        hordeQueueName: process.env.HORDE_QUEUE_NAME,
         loginCodeExpirationSeconds: parseInt(process.env.LOGIN_CODE_EXPIRATION_SECONDS, 10),
         userAccessTokenExpirationSeconds: parseInt(process.env.USER_ACCESS_TOKEN_EXPIRATION_SECONDS, 10),
         serviceAccountAccessTokenExpirationSeconds: parseInt(process.env.SERVICE_ACCOUNT_ACCESS_TOKEN_EXPIRATION_SECONDS, 10),

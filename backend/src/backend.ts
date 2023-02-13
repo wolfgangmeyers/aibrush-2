@@ -32,6 +32,7 @@ import {
     ImageUrls,
     Boost,
     GlobalSettings,
+    ExternalUpdateImageInput,
 } from "./client/api";
 import { sleep } from "./sleep";
 import { EmailMessage } from "./email_message";
@@ -43,6 +44,7 @@ import { MetricsClient } from "./metrics";
 import Bugsnag from "@bugsnag/js";
 import { Logger } from "./logs";
 import { Clock, RealClock } from "./clock";
+import { HordeQueue, SQSHordeQueue } from "./horde_queue";
 
 process.env.PGUSER = process.env.PGUSER || "postgres";
 
@@ -108,15 +110,20 @@ export class BackendService {
     private filestore: Filestore;
     private notificationsClient: Client;
     private clock: Clock;
+    private hordeQueue: HordeQueue;
 
     private notificationListeners: { [key: string]: NotificationListener[] } =
         {};
+
+    setHordeQueueForTesting(queue: HordeQueue) {
+        this.hordeQueue = queue;
+    }
 
     constructor(
         private config: Config,
         private metrics: MetricsClient,
         private logger: Logger,
-        clock?: Clock
+        clock?: Clock,
     ) {
         this.authHelper = new AuthHelper(
             config,
@@ -128,6 +135,14 @@ export class BackendService {
             this.filestore = new S3Filestore(config.s3Bucket, config.s3Region);
         } else {
             this.filestore = new LocalFilestore(config.dataFolderName);
+        }
+        if (config.hordeQueueName) {
+            this.hordeQueue = new SQSHordeQueue(
+                config.hordeQueueName,
+                {
+                    region: config.s3Region || "us-west-2",
+                }
+            )
         }
     }
 
@@ -205,6 +220,7 @@ export class BackendService {
                 }
             }
         });
+        await this.hordeQueue.init();
 
         // emergency cleanup logic...
         // const images = await this.listImages({limit: 100000});
@@ -677,6 +693,25 @@ export class BackendService {
                         type: NOTIFICATION_PENDING_IMAGE,
                     })
                 );
+                // TODO: maybe someday we can do just upscale in the horde
+                if (this.hordeQueue && image.model !== "swinir") {
+                    const jwt = this.authHelper.createToken(image.created_by, "access", 3600, null, image.id);
+                    this.hordeQueue.submitImage({
+                        authToken: jwt,
+                        imageId: image.id,
+                        prompt: image.phrases.join(", "),
+                        negativePrompt: image.negative_phrases.join(", "),
+                        width: image.width,
+                        height: image.height,
+                        steps: image.iterations,
+                        cfgScale: 7.5,
+                        denoisingStrength: image.stable_diffusion_strength,
+                        nsfw: image.nsfw,
+                        censorNsfw: !image.nsfw,
+                        model: image.model,
+                    })
+                    console.log("Submitted to horde: " + image.id);
+                }
             }
             this.notify(
                 image.created_by,

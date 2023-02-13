@@ -36,6 +36,7 @@ export interface AuthJWTPayload {
     type: "refresh" | "access";
     exp: number;
     serviceAccountConfig?: ServiceAccountConfig;
+    imageId?: string;
 }
 
 export class AuthHelper {
@@ -59,7 +60,7 @@ export class AuthHelper {
     }
 
     // create token with expiration
-    private createToken(userId: string, type: "access" | "refresh", expiration: number, serviceAccountConfig?: ServiceAccountConfig): string {
+    public createToken(userId: string, type: "access" | "refresh", expiration: number, serviceAccountConfig?: ServiceAccountConfig, imageId?: string): string {
         if (userId.indexOf("@") > -1) {
             userId = hash(userId);
         }
@@ -68,11 +69,11 @@ export class AuthHelper {
             type,
             exp: Math.floor(this.now() / 1000) + expiration
         };
+        if (imageId) {
+            payload.imageId = imageId;
+        }
         if (serviceAccountConfig) {
-            payload = {
-                ...payload,
-                serviceAccountConfig
-            };
+            payload.serviceAccountConfig = serviceAccountConfig;
         }
         return jwt.sign(payload, this.config.secret);
     }

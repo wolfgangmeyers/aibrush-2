@@ -10,18 +10,14 @@ services:
         # mount local host volume in .database/ folder
         volumes:
             - pg-data:/var/lib/postgresql
-    # mailcatcher
-    # mailcatcher:
-    #     image: schickling/mailcatcher
-    #     ports:
-    #         - "1080:1080"
-    #         - "1025:1025"
-    #     environment:
-    #         MAILCATCHER_SMTP_PORT: 1025
-    #         MAILCATCHER_SMTP_AUTHENTICATION: "off"
-    #         MAILCATCHER_START_SCRIPT: "true"
-    #     volumes:
-    #         - mail-data:/var/mail
+    localstack: 
+        image: localstack/localstack:latest
+        environment: 
+        - DEFAULT_REGION=ap-northeast-2
+        - EDGE_PORT=4566
+        - SERVICES=sqs,logs
+        ports: 
+        - '4566-4583:4566-4583'
 volumes:
     pg-data: {}
     # mail-data: {}

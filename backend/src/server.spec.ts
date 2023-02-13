@@ -29,6 +29,7 @@ import { sleep } from './sleep'
 import { MetricsClient } from './metrics'
 import { ConsoleLogger } from './logs'
 import { WorkerSettings } from './model'
+import { HordeRequest, MockHordeQueue } from './horde_queue'
 
 jest.setTimeout(60000);
 
@@ -57,6 +58,7 @@ async function refreshUser(client: AIBrushApi, httpClient: AxiosInstance, refres
 
 describe("server", () => {
     let backendService: BackendService;
+    let hordeQueue: MockHordeQueue;
     let server: Server
     let client: AIBrushApi
     let httpClient: AxiosInstance;
@@ -150,6 +152,9 @@ describe("server", () => {
         httpClient2 = axios.create({
         })
         client2 = new AIBrushApi(undefined, "http://localhost:35456", httpClient2)
+        hordeQueue = new MockHordeQueue();
+        backendService.setHordeQueueForTesting(hordeQueue);
+
         await sleep(100)
     })
 
@@ -328,6 +333,21 @@ describe("server", () => {
                 expect(image.glid_3_xl_clip_guidance).toBe(false)
                 expect(image.glid_3_xl_clip_guidance_scale).toBe(150)
                 expect(image.stable_diffusion_strength).toBe(0.75)
+            })
+
+            describe("when checking the horde queue", () => {
+                let req: HordeRequest;
+
+                beforeEach(async () => {
+                    req = await hordeQueue.popImage();
+                });
+
+                it("should return the image", () => {
+                    expect(req).toBeTruthy();
+                    expect(req.imageId).toEqual(image.id);
+                    expect(req.prompt).toEqual("test");
+                    expect(req.negativePrompt).toEqual("foobar");
+                });
             })
 
             describe("when listing images", () => {
@@ -1318,62 +1338,6 @@ describe("server", () => {
             })
         })
 
-        // global settings (admin only functions)
-    // /api/global-settings:
-    //     get:
-    //       description: Get the global settings
-    //       operationId: getGlobalSettings
-    //       tags:
-    //         - AIBrush
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/GlobalSettings"
-    //     put:
-    //       description: Update the global settings
-    //       operationId: updateGlobalSettings
-    //       tags:
-    //         - AIBrush
-    //       requestBody:
-    //         content:
-    //           application/json:
-    //             schema:
-    //               $ref: "#/components/schemas/UpdateGlobalSettingsRequest"
-    //       responses:
-    //         "200":
-    //           description: Success
-    //           content:
-    //             application/json:
-    //               schema:
-    //                 $ref: "#/components/schemas/GlobalSettings"
-    // GlobalSettings:
-    //     type: object
-    //     properties:
-    //       settings_key:
-    //         type: string
-    //       settings_json:
-    //         type: object
-    //     required:
-    //       - settings_key
-    //       - settings_json
-    //   UpdateGlobalSettingsRequest:
-    //     type: object
-    //     properties:
-    //       settings_json:
-    //         type: object
-    //     required:
-        //   - settings_json
-// schema for settings_json:
-// export interface MinimumWorkerAllocations {
-// [model: string]: number;
-// }
-
-// export interface GlobalSettings {
-// minimum_worker_allocations: MinimumWorkerAllocations;
-// }
         describe("global settings", () => {
             // getting from an empty database should return the default settings
             // minimum worker allocations:

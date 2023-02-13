@@ -632,6 +632,13 @@ export class Server {
                     res.status(404).send("not found");
                     return;
                 }
+                if (jwt.imageId && jwt.imageId !== req.params.id) {
+                    this.logger.log(
+                        `user ${jwt.userId} tried to update image with single-image jwt ${req.params.id} but jwt is for image ${jwt.imageId}`
+                    );
+                    res.status(404).send("not found");
+                    return;
+                }
                 image = await this.backendService.updateImage(
                     req.params.id,
                     req.body,
