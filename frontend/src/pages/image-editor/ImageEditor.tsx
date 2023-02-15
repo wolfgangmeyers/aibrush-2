@@ -155,7 +155,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
             }
             const newTool = toolconfig.constructor(renderer);
             setTool(newTool);
-            newTool.onSaveImage((encodedImage, args={}) => {
+            newTool.onSaveImage((encodedImage, args = {}) => {
                 console.log("Saving image...");
                 saveNewImage(encodedImage, args);
             });
@@ -164,7 +164,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
 
     /**
      * Saves a new image to the server
-     * 
+     *
      * @param encodedImage base64 encoded image
      * @param newArgs may contain new phrases and negative phrases
      */
@@ -172,32 +172,61 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         if (!image || !encodedImage) {
             throw new Error("Cannot save new image without existing image");
         }
+        if (!renderer) {
+            throw new Error("Cannot save new image without renderer");
+        }
         setBusyMessage("Saving image...");
-        const args = defaultArgs();
-        args.phrases = newArgs.phrases || image.phrases;
-        args.negative_phrases = newArgs.negative_phrases || image.negative_phrases;
-        args.count = 1;
-        args.parent = image.id;
-        args.stable_diffusion_strength = image.stable_diffusion_strength;
-        args.status = CreateImageInputStatusEnum.Completed;
-        args.width = renderer!.getWidth() as any;
-        args.height = renderer!.getHeight() as any;
-        args.nsfw = image.nsfw;
-        const newImage = (await api.createImage(args)).data!.images![0];
+        try {
+            // create new image
+            const args = defaultArgs();
+            args.phrases = newArgs.phrases || image.phrases;
+            args.negative_phrases =
+                newArgs.negative_phrases || image.negative_phrases;
+            args.count = 1;
+            args.parent = image.id;
+            args.stable_diffusion_strength = image.stable_diffusion_strength;
+            args.status = CreateImageInputStatusEnum.Completed;
+            args.width = renderer!.getWidth() as any;
+            args.height = renderer!.getHeight() as any;
+            args.nsfw = image.nsfw;
+            const newImage = (await api.createImage(args)).data!.images![0];
 
-        // upload image data
-        const imageBlob = encodedImageToBlob(encodedImage);
-        const encodedThumbnail = await createEncodedThumbnail(encodedImage);
-        const thumbnailBlob = encodedImageToBlob(encodedThumbnail);
-        const uploadUrls = await api.getImageUploadUrls(newImage.id);
-        const promise1 = uploadBlob(uploadUrls.data.image_url!, imageBlob);
-        const promise2 = uploadBlob(uploadUrls.data.thumbnail_url!, thumbnailBlob);
-        await Promise.all([promise1, promise2]);
-    
-        setImage(newImage);
-        // history.push(`/image-editor/${newImage.id}`);
-        history.replace(`/image-editor/${newImage.id}`);
-        setBusyMessage(null);
+            // // upload image data
+            // const imageBlob = encodedImageToBlob(encodedImage);
+            // const encodedThumbnail = await createEncodedThumbnail(encodedImage);
+            // const thumbnailBlob = encodedImageToBlob(encodedThumbnail);
+            // const uploadUrls = await api.getImageUploadUrls(newImage.id);
+            // const promise1 = uploadBlob(uploadUrls.data.image_url!, imageBlob);
+            // const promise2 = uploadBlob(uploadUrls.data.thumbnail_url!, thumbnailBlob);
+            // await Promise.all([promise1, promise2]);
+            const tmpImagePromise = api.createTmpImage();
+            const selectionOverlay = renderer.getSelectionOverlay();
+            const newEncodedImage = renderer.getEncodedImage(
+                selectionOverlay || null
+            );
+            if (!newEncodedImage) {
+                console.error("No image returned from renderer");
+                return;
+            }
+            const newImageBlob = encodedImageToBlob(newEncodedImage);
+            const tmpImage = await tmpImagePromise;
+            console.log("tmp image", tmpImage)
+            await uploadBlob(tmpImage.data.upload_url, newImageBlob);
+            await api.updateLargeImage({
+                image_id: newImage.id,
+                tmp_image_id: tmpImage.data.id,
+                x: selectionOverlay?.x || 0,
+                y: selectionOverlay?.y || 0,
+            });
+
+            // switch url and state to new image
+            setImage(newImage);
+            history.replace(`/image-editor/${newImage.id}`);
+        } finally {
+            setBusyMessage(null);
+        }
+
+        
     };
 
     useEffect(() => {

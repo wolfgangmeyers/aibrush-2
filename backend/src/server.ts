@@ -493,6 +493,17 @@ export class Server {
                 })
             );
 
+            // tmp images
+            this.app.put(
+                "/api/images/tmp/:id.png", async (req, res) => {
+                    await this.backendService.uploadTmpImage(
+                        req.params.id,
+                        req.body
+                    )
+                    res.sendStatus(201);
+                }
+            );
+
             // no-op. This is handled by updating the image data...
             // in production these will be S3 calls
             this.app.put(
@@ -1328,6 +1339,40 @@ export class Server {
                     req.body.settings_json,
                 );
                 res.json(settings);
+            })
+        );
+
+        this.app.post(
+            "/api/tmp-images",
+            withMetrics("/api/tmp-images", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to create tmp image",
+                        jwt
+                    );
+                    return;
+                }
+                const tmpImage = await this.backendService.createTmpImage();
+                res.json(tmpImage);
+            })
+        );
+
+        this.app.post(
+            "/api/large-images",
+            withMetrics("/api/large-images", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                if (jwt.serviceAccountConfig) {
+                    res.status(403).send("Forbidden");
+                    this.logger.log(
+                        "Service account tried to update large image",
+                        jwt
+                    );
+                    return;
+                }
+                await this.backendService.updateLargeImage(req.body);
+                res.sendStatus(204);
             })
         );
 

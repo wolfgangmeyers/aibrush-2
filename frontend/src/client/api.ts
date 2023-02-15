@@ -328,6 +328,7 @@ export interface CreateImageInput {
 export enum CreateImageInputStatusEnum {
     Pending = 'pending',
     Processing = 'processing',
+    Ranking = 'ranking',
     Completed = 'completed',
     Saved = 'saved',
     Error = 'error'
@@ -683,6 +684,7 @@ export interface Image {
 export enum ImageStatusEnum {
     Pending = 'pending',
     Processing = 'processing',
+    Ranking = 'ranking',
     Completed = 'completed',
     Saved = 'saved',
     Error = 'error'
@@ -948,6 +950,12 @@ export interface Order {
 export interface ProcessImageInput {
     /**
      * 
+     * @type {string}
+     * @memberof ProcessImageInput
+     */
+    status?: ProcessImageInputStatusEnum;
+    /**
+     * 
      * @type {Array<string>}
      * @memberof ProcessImageInput
      */
@@ -965,6 +973,16 @@ export interface ProcessImageInput {
      */
     peek?: boolean;
 }
+
+/**
+    * @export
+    * @enum {string}
+    */
+export enum ProcessImageInputStatusEnum {
+    Pending = 'pending',
+    Ranking = 'ranking'
+}
+
 /**
  * 
  * @export
@@ -977,6 +995,25 @@ export interface RefreshLoginInput {
      * @memberof RefreshLoginInput
      */
     refreshToken?: string;
+}
+/**
+ * 
+ * @export
+ * @interface TemporaryImage
+ */
+export interface TemporaryImage {
+    /**
+     * 
+     * @type {string}
+     * @memberof TemporaryImage
+     */
+    id: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof TemporaryImage
+     */
+    upload_url: string;
 }
 /**
  * 
@@ -1110,11 +1147,43 @@ export interface UpdateImageInput {
 export enum UpdateImageInputStatusEnum {
     Pending = 'pending',
     Processing = 'processing',
+    Ranking = 'ranking',
     Completed = 'completed',
     Saved = 'saved',
     Error = 'error'
 }
 
+/**
+ * 
+ * @export
+ * @interface UpdateLargeImageRequest
+ */
+export interface UpdateLargeImageRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateLargeImageRequest
+     */
+    image_id: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateLargeImageRequest
+     */
+    tmp_image_id: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateLargeImageRequest
+     */
+    x: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateLargeImageRequest
+     */
+    y: number;
+}
 /**
  * 
  * @export
@@ -1498,6 +1567,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(createServiceAccountInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createTmpImage: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/tmp-images`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2557,6 +2655,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Update a large image
+         * @param {UpdateLargeImageRequest} [updateLargeImageRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateLargeImage: async (updateLargeImageRequest?: UpdateLargeImageRequest, options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/large-images`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateLargeImageRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Update a worker
          * @param {string} workerId 
          * @param {UpsertWorkerInput} [upsertWorkerInput] 
@@ -2794,6 +2925,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createServiceAccount(createServiceAccountInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Create a temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createTmpImage(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TemporaryImage>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createTmpImage(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3115,6 +3255,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Update a large image
+         * @param {UpdateLargeImageRequest} [updateLargeImageRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateLargeImage(updateLargeImageRequest?: UpdateLargeImageRequest, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateLargeImage(updateLargeImageRequest, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Update a worker
          * @param {string} workerId 
          * @param {UpsertWorkerInput} [upsertWorkerInput] 
@@ -3221,6 +3371,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: any): AxiosPromise<LoginResult> {
             return localVarFp.createServiceAccount(createServiceAccountInput, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Create a temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createTmpImage(options?: any): AxiosPromise<TemporaryImage> {
+            return localVarFp.createTmpImage(options).then((request) => request(axios, basePath));
         },
         /**
          * Create a new worker
@@ -3509,6 +3667,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.updateImage(id, updateImageInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Update a large image
+         * @param {UpdateLargeImageRequest} [updateLargeImageRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateLargeImage(updateLargeImageRequest?: UpdateLargeImageRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.updateLargeImage(updateLargeImageRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Update a worker
          * @param {string} workerId 
          * @param {UpsertWorkerInput} [upsertWorkerInput] 
@@ -3619,6 +3786,16 @@ export class AIBrushApi extends BaseAPI {
      */
     public createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: any) {
         return AIBrushApiFp(this.configuration).createServiceAccount(createServiceAccountInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a temporary image
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createTmpImage(options?: any) {
+        return AIBrushApiFp(this.configuration).createTmpImage(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3969,6 +4146,17 @@ export class AIBrushApi extends BaseAPI {
      */
     public updateImage(id: string, updateImageInput?: UpdateImageInput, options?: any) {
         return AIBrushApiFp(this.configuration).updateImage(id, updateImageInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update a large image
+     * @param {UpdateLargeImageRequest} [updateLargeImageRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public updateLargeImage(updateLargeImageRequest?: UpdateLargeImageRequest, options?: any) {
+        return AIBrushApiFp(this.configuration).updateLargeImage(updateLargeImageRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

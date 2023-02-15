@@ -32,7 +32,8 @@ import {
     ImageUrls,
     Boost,
     GlobalSettings,
-    ExternalUpdateImageInput,
+    TemporaryImage,
+    UpdateLargeImageRequest,
 } from "./client/api";
 import { sleep } from "./sleep";
 import { EmailMessage } from "./email_message";
@@ -45,6 +46,7 @@ import Bugsnag from "@bugsnag/js";
 import { Logger } from "./logs";
 import { Clock, RealClock } from "./clock";
 import { HordeQueue, SQSHordeQueue } from "./horde_queue";
+import { mergeImage } from "./image_helper";
 
 process.env.PGUSER = process.env.PGUSER || "postgres";
 
@@ -572,13 +574,22 @@ export class BackendService {
         }
     }
 
-    private async createThumbnail(encoded_image: string) {
-        const thumbnail = await sharp(Buffer.from(encoded_image, "base64"))
-            .resize(128, 128)
-            .toBuffer()
-            .then((buffer) => buffer.toString("base64"));
+    private async createThumbnail(image: Buffer): Promise<Buffer> {
+        const thumbnail = await sharp(image)
+            .resize(128, 128, {
+                fit: "cover",
+            })
+            .toBuffer();
         return thumbnail;
     }
+
+    private async createEncodedThumbnail(encoded_image: string) {
+        const binaryImage = Buffer.from(encoded_image, "base64");
+        const thumbnail = await this.createThumbnail(binaryImage);
+        return thumbnail.toString("base64");
+    }
+
+    
 
     private async createImage(
         createdBy: string,
@@ -649,7 +660,7 @@ export class BackendService {
                         binary_image
                     )
                 );
-                const encoded_thumbnail = await this.createThumbnail(
+                const encoded_thumbnail = await this.createEncodedThumbnail(
                     encoded_image
                 );
                 const binary_thumbnail = Buffer.from(
@@ -810,7 +821,7 @@ export class BackendService {
                         binaryImage
                     )
                 );
-                const encoded_thumbnail = await this.createThumbnail(
+                const encoded_thumbnail = await this.createEncodedThumbnail(
                     body.encoded_image
                 );
                 const binaryThumbnail = Buffer.from(
@@ -1752,7 +1763,37 @@ export class BackendService {
             client.release();
         }
     }
-    
+
+    // Update large image optimization
+    // allows user to send smaller image that will be merged to
+    // the larger one
+    async createTmpImage(): Promise<TemporaryImage> {
+        const id = uuid.v4();
+        const uploadUrl = await this.filestore.getUploadUrl(
+            `tmp/${id}.png`,
+        );
+        return {
+            id,
+            upload_url: uploadUrl,
+        };
+    }
+
+    // TODO: consider offloading this to a lambda for better performance
+    async updateLargeImage(req: UpdateLargeImageRequest) {
+        const tmpImagePromise = this.filestore.readBinaryFile(`tmp/${req.tmp_image_id}.png`);
+        const baseImagePromise = this.filestore.readBinaryFile(`${req.image_id}.image.png`);
+        const [tmpImage, baseImage] = await Promise.all([tmpImagePromise, baseImagePromise]);
+        const mergedImage = await mergeImage(baseImage, tmpImage, req.x, req.y);
+        const thumbnail = await this.createThumbnail(mergedImage);
+        const imagePromise = this.filestore.writeFile(`${req.image_id}.image.png`, mergedImage);
+        const thumbnailPromise = this.filestore.writeFile(`${req.image_id}.thumbnail.png`, thumbnail);
+        await Promise.all([imagePromise, thumbnailPromise]);
+    }
+
+    // dev-only function
+    async uploadTmpImage(id: string, image: Buffer) {
+        await this.filestore.writeFile(`tmp/${id}.png`, image);
+    }
 
     async cleanupIdleBoosts(): Promise<void> {
         // list the active boosts, then

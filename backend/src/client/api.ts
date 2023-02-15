@@ -410,28 +410,6 @@ export interface DiscordLogin {
 /**
  * 
  * @export
- * @interface ExternalUpdateImageInput
- */
-export interface ExternalUpdateImageInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof ExternalUpdateImageInput
-     */
-    'status'?: ExternalUpdateImageInputStatusEnum;
-}
-
-export const ExternalUpdateImageInputStatusEnum = {
-    Processing: 'processing',
-    Completed: 'completed',
-    Error: 'error'
-} as const;
-
-export type ExternalUpdateImageInputStatusEnum = typeof ExternalUpdateImageInputStatusEnum[keyof typeof ExternalUpdateImageInputStatusEnum];
-
-/**
- * 
- * @export
  * @interface FeatureList
  */
 export interface FeatureList {
@@ -997,6 +975,25 @@ export interface RefreshLoginInput {
 /**
  * 
  * @export
+ * @interface TemporaryImage
+ */
+export interface TemporaryImage {
+    /**
+     * 
+     * @type {string}
+     * @memberof TemporaryImage
+     */
+    'id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof TemporaryImage
+     */
+    'upload_url': string;
+}
+/**
+ * 
+ * @export
  * @interface UpdateBoostRequest
  */
 export interface UpdateBoostRequest {
@@ -1130,6 +1127,37 @@ export const UpdateImageInputStatusEnum = {
 
 export type UpdateImageInputStatusEnum = typeof UpdateImageInputStatusEnum[keyof typeof UpdateImageInputStatusEnum];
 
+/**
+ * 
+ * @export
+ * @interface UpdateLargeImageRequest
+ */
+export interface UpdateLargeImageRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateLargeImageRequest
+     */
+    'image_id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateLargeImageRequest
+     */
+    'tmp_image_id': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateLargeImageRequest
+     */
+    'x': number;
+    /**
+     * 
+     * @type {number}
+     * @memberof UpdateLargeImageRequest
+     */
+    'y': number;
+}
 /**
  * 
  * @export
@@ -1516,6 +1544,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Create a temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createTmpImage: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/tmp-images`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Create a new worker
          * @param {UpsertWorkerInput} [upsertWorkerInput] 
          * @param {*} [options] Override http request option.
@@ -1678,43 +1735,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(discordLogin, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Update a saved image
-         * @param {string} id 
-         * @param {ExternalUpdateImageInput} [externalUpdateImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        externalUpdateImage: async (id: string, externalUpdateImageInput?: ExternalUpdateImageInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('externalUpdateImage', 'id', id)
-            const localVarPath = `/api/external-images/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(externalUpdateImageInput, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2605,6 +2625,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Update a large image
+         * @param {UpdateLargeImageRequest} [updateLargeImageRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateLargeImage: async (updateLargeImageRequest?: UpdateLargeImageRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/large-images`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateLargeImageRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Update a worker
          * @param {string} workerId 
          * @param {UpsertWorkerInput} [upsertWorkerInput] 
@@ -2845,6 +2898,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createTmpImage(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TemporaryImage>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createTmpImage(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Create a new worker
          * @param {UpsertWorkerInput} [upsertWorkerInput] 
          * @param {*} [options] Override http request option.
@@ -2893,17 +2955,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async discordLogin(discordLogin?: DiscordLogin, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.discordLogin(discordLogin, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Update a saved image
-         * @param {string} id 
-         * @param {ExternalUpdateImageInput} [externalUpdateImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async externalUpdateImage(id: string, externalUpdateImageInput?: ExternalUpdateImageInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.externalUpdateImage(id, externalUpdateImageInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3174,6 +3225,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Update a large image
+         * @param {UpdateLargeImageRequest} [updateLargeImageRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateLargeImage(updateLargeImageRequest?: UpdateLargeImageRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateLargeImage(updateLargeImageRequest, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Update a worker
          * @param {string} workerId 
          * @param {UpsertWorkerInput} [upsertWorkerInput] 
@@ -3282,6 +3343,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createServiceAccount(createServiceAccountInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Create a temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createTmpImage(options?: any): AxiosPromise<TemporaryImage> {
+            return localVarFp.createTmpImage(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Create a new worker
          * @param {UpsertWorkerInput} [upsertWorkerInput] 
          * @param {*} [options] Override http request option.
@@ -3326,16 +3395,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         discordLogin(discordLogin?: DiscordLogin, options?: any): AxiosPromise<LoginResult> {
             return localVarFp.discordLogin(discordLogin, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Update a saved image
-         * @param {string} id 
-         * @param {ExternalUpdateImageInput} [externalUpdateImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        externalUpdateImage(id: string, externalUpdateImageInput?: ExternalUpdateImageInput, options?: any): AxiosPromise<void> {
-            return localVarFp.externalUpdateImage(id, externalUpdateImageInput, options).then((request) => request(axios, basePath));
         },
         /**
          * Generate a login code for a worker
@@ -3578,6 +3637,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.updateImage(id, updateImageInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Update a large image
+         * @param {UpdateLargeImageRequest} [updateLargeImageRequest] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateLargeImage(updateLargeImageRequest?: UpdateLargeImageRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.updateLargeImage(updateLargeImageRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Update a worker
          * @param {string} workerId 
          * @param {UpsertWorkerInput} [upsertWorkerInput] 
@@ -3691,6 +3759,16 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Create a temporary image
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createTmpImage(options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).createTmpImage(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Create a new worker
      * @param {UpsertWorkerInput} [upsertWorkerInput] 
      * @param {*} [options] Override http request option.
@@ -3744,18 +3822,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public discordLogin(discordLogin?: DiscordLogin, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).discordLogin(discordLogin, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Update a saved image
-     * @param {string} id 
-     * @param {ExternalUpdateImageInput} [externalUpdateImageInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public externalUpdateImage(id: string, externalUpdateImageInput?: ExternalUpdateImageInput, options?: AxiosRequestConfig) {
-        return AIBrushApiFp(this.configuration).externalUpdateImage(id, externalUpdateImageInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4050,6 +4116,17 @@ export class AIBrushApi extends BaseAPI {
      */
     public updateImage(id: string, updateImageInput?: UpdateImageInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).updateImage(id, updateImageInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Update a large image
+     * @param {UpdateLargeImageRequest} [updateLargeImageRequest] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public updateLargeImage(updateLargeImageRequest?: UpdateLargeImageRequest, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).updateLargeImage(updateLargeImageRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

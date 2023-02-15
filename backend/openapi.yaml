@@ -780,6 +780,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GlobalSettings"
+# API to upload temporary images and then merge them into larger images
+# to avoid having to upload the entire image at once
+  /api/tmp-images:
+    post:
+      description: Create a temporary image
+      operationId: createTmpImage
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporaryImage"
+  /api/large-images:
+    post:
+      description: Update a large image
+      operationId: updateLargeImage
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLargeImageRequest"
+      responses:
+        "204":
+          description: Success
 
 components:
   schemas:
@@ -1321,3 +1350,29 @@ components:
           type: object
       required:
         - settings_json
+    UpdateLargeImageRequest:
+      type: object
+      properties:
+        image_id:
+          type: string
+        tmp_image_id:
+          type: string
+        x:
+          type: integer
+        y:
+          type: integer
+      required:
+        - image_id
+        - tmp_image_id
+        - x
+        - y
+    TemporaryImage:
+      type: object
+      properties:
+        id:
+          type: string
+        upload_url:
+          type: string
+      required:
+        - id
+        - upload_url

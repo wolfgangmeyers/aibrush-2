@@ -36,6 +36,7 @@ async function downloadImage(key: string): Promise<Buffer> {
         const image = sharp(imageData);
         // convert to webp and return buffer
         const webp = await image.webp().toBuffer();
+        return webp;
     } catch (e) {
         return null;
     }
@@ -69,11 +70,14 @@ const blacklisted_nsfw_terms = [
     "girl",
     "boy",
     "young",
+    "youth",
     "underage",
     "infant",
     "baby",
     "under 18",
     "daughter",
+    "year-old",
+    "year old",
 ];
 
 // refactor to typescript:
@@ -227,12 +231,10 @@ async function processImage(request: HordeRequest) {
             responseType: "arraybuffer",
         });
         const webpImageData = webpImageResponse.data;
-        // use sharp to convert webp to png
-        const pngImage = await sharp(Buffer.from(webpImageData))
-            .png()
-            .toBuffer();
-        const upload1 = uploadImage(`${request.imageId}.image.png`, pngImage);
-        const thumbnail = await sharp(Buffer.from(webpImageData)).resize(128, 128).png().toBuffer();
+        const upload1 = uploadImage(`${request.imageId}.image.png`, webpImageData);
+        const thumbnail = await sharp(Buffer.from(webpImageData)).resize(128, 128, {
+            fit: "contain",
+        }).webp().toBuffer();
         const upload2 = uploadImage(`${request.imageId}.thumbnail.png`, thumbnail);
         await Promise.all([upload1, upload2]);
         await updateImage(request.imageId, "completed", request.authToken);

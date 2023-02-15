@@ -99,32 +99,38 @@ export class LocalFilestore implements Filestore {
     }
 
     async getDownloadUrl(filename: string): Promise<string> {
-        // return `http://localhost:3000/api/images/${filename}`;
-        return `http://192.168.0.236:3000/api/images/${filename}`;
+        return `http://localhost:3000/api/images/${filename}`;
     }
 
     async getUploadUrl(filename: string): Promise<string> {
-        // return `http://localhost:3000/api/images/${filename}`;
-        return `http://192.168.0.236:3000/api/images/${filename}`;
+        console.log("getUploadUrl", filename);
+        return `http://localhost:3000/api/images/${filename}`;
+    }
+
+    private getFilename(filename: string): string {
+        if (filename.startsWith("tmp/")) {
+            return `/${filename}`;
+        }
+        return `${this.dataFolderName}/${filename}`;
     }
 
     async exists(filename: string): Promise<boolean> {
-        return fs.existsSync(`${this.dataFolderName}/${filename}`);
+        return fs.existsSync(this.getFilename(filename));
     }
 
     async readFile(filename: string): Promise<string> {
-        return fs.readFileSync(`${this.dataFolderName}/${filename}`, 'utf-8');
+        return fs.readFileSync(this.getFilename(filename), 'utf-8');
     }
 
     async writeFile(filename: string, data: string | Buffer): Promise<void> {
-        fs.writeFileSync(`${this.dataFolderName}/${filename}`, data);
+        fs.writeFileSync(this.getFilename(filename), data);
     }
 
     async readBinaryFile(filename: string): Promise<Buffer> {
-        return fs.readFileSync(`${this.dataFolderName}/${filename}`);
+        return fs.readFileSync(this.getFilename(filename));
     }
 
     async deleteFile(filename: string): Promise<void> {
-        fs.unlinkSync(`${this.dataFolderName}/${filename}`);
+        fs.unlinkSync(this.getFilename(filename));
     }
 }
