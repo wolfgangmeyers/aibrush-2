@@ -640,10 +640,14 @@ export class BackendService {
             let encoded_image = body.encoded_image;
             if (!encoded_image && body.parent) {
                 try {
-                    const parentImageData = await this.filestore.readBinaryFile(
-                        `${body.parent}.image.png`
-                    );
-                    encoded_image = parentImageData.toString("base64");
+                    // const parentImageData = await this.filestore.readBinaryFile(
+                    //     `${body.parent}.image.png`
+                    // );
+                    // encoded_image = parentImageData.toString("base64");
+                    await this.filestore.copyFile(
+                        `${body.parent}.image.png`,
+                        `${image.id}.image.png`
+                    )
                 } catch (err) {
                     Bugsnag.notify(err, (event) => {
                         event.context = `load parent image data`;

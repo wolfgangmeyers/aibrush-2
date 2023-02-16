@@ -9,6 +9,7 @@ export interface Filestore {
     deleteFile(filename: string): Promise<void>;
     getDownloadUrl(filename: string): Promise<string>;
     getUploadUrl(filename: string): Promise<string>;
+    copyFile(source: string, target: string): Promise<void>;
 }
 
 export class S3Filestore implements Filestore {
@@ -20,6 +21,14 @@ export class S3Filestore implements Filestore {
             region: region,
         });
         this.bucket = bucket;
+    }
+
+    async copyFile(source: string, target: string): Promise<void> {
+        return this.s3.copyObject({
+            Bucket: this.bucket,
+            CopySource: `${this.bucket}/${source}`,
+            Key: target,
+        }).promise().then(() => {});
     }
 
     getDownloadUrl(filename: string): Promise<string> {
@@ -96,6 +105,10 @@ export class LocalFilestore implements Filestore {
         if (!fs.existsSync(dataFolderName)) {
             fs.mkdirSync(dataFolderName);
         }
+    }
+
+    async copyFile(source: string, target: string): Promise<void> {
+        fs.copyFileSync(source, target);
     }
 
     async getDownloadUrl(filename: string): Promise<string> {
