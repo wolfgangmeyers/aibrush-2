@@ -43,7 +43,7 @@ import { LoginCode } from "./model";
 import { Filestore, S3Filestore, LocalFilestore } from "./filestore";
 import { MetricsClient } from "./metrics";
 import Bugsnag from "@bugsnag/js";
-import { Logger } from "./logs";
+import { ConsoleLogger, Logger } from "./logs";
 import { Clock, RealClock } from "./clock";
 import { HordeQueue, SQSHordeQueue } from "./horde_queue";
 import { mergeImage } from "./image_helper";
@@ -649,6 +649,7 @@ export class BackendService {
                         `${image.id}.image.png`
                     )
                 } catch (err) {
+                    console.error(err);
                     Bugsnag.notify(err, (event) => {
                         event.context = `load parent image data`;
                     });

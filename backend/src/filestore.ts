@@ -108,7 +108,7 @@ export class LocalFilestore implements Filestore {
     }
 
     async copyFile(source: string, target: string): Promise<void> {
-        fs.copyFileSync(source, target);
+        fs.copyFileSync(this.getFilename(source), this.getFilename(target));
     }
 
     async getDownloadUrl(filename: string): Promise<string> {
@@ -116,7 +116,6 @@ export class LocalFilestore implements Filestore {
     }
 
     async getUploadUrl(filename: string): Promise<string> {
-        console.log("getUploadUrl", filename);
         return `http://localhost:3000/api/images/${filename}`;
     }
 
