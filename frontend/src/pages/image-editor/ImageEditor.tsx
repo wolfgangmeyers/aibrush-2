@@ -191,35 +191,52 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
             args.nsfw = image.nsfw;
             const newImage = (await api.createImage(args)).data!.images![0];
 
-            // // upload image data
-            // const imageBlob = encodedImageToBlob(encodedImage);
-            // const encodedThumbnail = await createEncodedThumbnail(encodedImage);
-            // const thumbnailBlob = encodedImageToBlob(encodedThumbnail);
-            // const uploadUrls = await api.getImageUploadUrls(newImage.id);
-            // const promise1 = uploadBlob(uploadUrls.data.image_url!, imageBlob);
-            // const promise2 = uploadBlob(uploadUrls.data.thumbnail_url!, thumbnailBlob);
-            // await Promise.all([promise1, promise2]);
-            const tmpImagePromise = api.createTmpImage();
-            const selectionOverlay = renderer.getSelectionOverlay();
-            const newEncodedImage = renderer.getEncodedImage(
-                selectionOverlay || null
-            );
-            if (!newEncodedImage) {
-                console.error("No image returned from renderer");
-                return;
+            if (
+                args.width !== (image.width as any) ||
+                args.height !== (image.height as any)
+            ) {
+                // upload entire image
+                const imageBlob = encodedImageToBlob(encodedImage);
+                const encodedThumbnail = await createEncodedThumbnail(
+                    encodedImage
+                );
+                const thumbnailBlob = encodedImageToBlob(encodedThumbnail);
+                const uploadUrls = await api.getImageUploadUrls(newImage.id);
+                const promise1 = uploadBlob(
+                    uploadUrls.data.image_url!,
+                    imageBlob
+                );
+                const promise2 = uploadBlob(
+                    uploadUrls.data.thumbnail_url!,
+                    thumbnailBlob
+                );
+                await Promise.all([promise1, promise2]);
+            } else {
+                // upload only the selection
+                const tmpImagePromise = api.createTmpImage();
+                const selectionOverlay = renderer.getSelectionOverlay();
+                const newEncodedImage = renderer.getEncodedImage(
+                    selectionOverlay || null
+                );
+                if (!newEncodedImage) {
+                    console.error("No image returned from renderer");
+                    return;
+                }
+                const newImageBlob = encodedImageToBlob(newEncodedImage);
+                const tmpImage = await tmpImagePromise;
+                console.log("tmp image", tmpImage);
+                await uploadBlob(tmpImage.data.upload_url, newImageBlob);
+                // updating large image takes a few seconds on the backend
+                // so let it run in the background without waiting for it
+                api.updateLargeImage({
+                    image_id: newImage.id,
+                    tmp_image_id: tmpImage.data.id,
+                    x: selectionOverlay?.x || 0,
+                    y: selectionOverlay?.y || 0,
+                });
             }
-            const newImageBlob = encodedImageToBlob(newEncodedImage);
-            const tmpImage = await tmpImagePromise;
-            console.log("tmp image", tmpImage)
-            await uploadBlob(tmpImage.data.upload_url, newImageBlob);
-            // updating large image takes a few seconds on the backend
-            // so let it run in the background without waiting for it
-            api.updateLargeImage({
-                image_id: newImage.id,
-                tmp_image_id: tmpImage.data.id,
-                x: selectionOverlay?.x || 0,
-                y: selectionOverlay?.y || 0,
-            });
+
+            
 
             // switch url and state to new image
             setImage(newImage);
@@ -227,8 +244,6 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         } finally {
             setBusyMessage(null);
         }
-
-        
     };
 
     useEffect(() => {
