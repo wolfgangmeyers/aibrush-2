@@ -214,7 +214,9 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
             } else {
                 // upload only the selection
                 const tmpImagePromise = api.createTmpImage();
-                const selectionOverlay = renderer.getSelectionOverlay();
+                // inpainting tool passes selection overlay
+                // because it gets reset right after this method is called
+                const selectionOverlay = newArgs.selection_overlay || renderer.getSelectionOverlay();
                 const newEncodedImage = renderer.getEncodedImage(
                     selectionOverlay || null
                 );

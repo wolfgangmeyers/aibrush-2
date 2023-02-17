@@ -579,21 +579,22 @@ export class InpaintTool extends BaseTool implements Tool {
 
     confirm() {
         this.renderer.commitSelection();
-        if (this.selectSupported()) {
-            this.state = "select";
-        } else {
-            this.state = "erase";
-        }
 
         this.imageData = [];
         const encodedImage = this.renderer.getEncodedImage(null);
         if (encodedImage && this.saveListener) {
             this.saveListener(encodedImage, {
                 phrases: [this.prompt],
-                negative_phrases: [this.negativePrompt]
+                negative_phrases: [this.negativePrompt],
+                selection_overlay: this.renderer.getSelectionOverlay(),
             });
         }
         this.dirty = false;
+        if (this.selectSupported()) {
+            this.state = "select";
+        } else {
+            this.state = "erase";
+        }
     }
 
     destroy(): boolean {
