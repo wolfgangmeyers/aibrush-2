@@ -212,7 +212,9 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
             const tmpImage = await tmpImagePromise;
             console.log("tmp image", tmpImage)
             await uploadBlob(tmpImage.data.upload_url, newImageBlob);
-            await api.updateLargeImage({
+            // updating large image takes a few seconds on the backend
+            // so let it run in the background without waiting for it
+            api.updateLargeImage({
                 image_id: newImage.id,
                 tmp_image_id: tmpImage.data.id,
                 x: selectionOverlay?.x || 0,
