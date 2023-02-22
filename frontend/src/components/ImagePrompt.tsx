@@ -388,7 +388,7 @@ export const ImagePrompt: FC<Props> = ({
                                 <option value="Epic Diffusion">
                                     Epic Diffusion
                                 </option>
-                                <option value="Anything V3">Anything V3</option>
+                                <option value="Anything v3">Anything v3</option>
                                 <option value="Hentai Diffusion">
                                     Hentai Diffusion
                                 </option>
