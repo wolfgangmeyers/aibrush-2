@@ -4,6 +4,12 @@ import sharp from "sharp";
 import Bugsnag from "@bugsnag/js";
 import axios from "axios";
 
+if (process.env.BUGSNAG_API_KEY) {
+    Bugsnag.start({
+        apiKey: process.env.BUGSNAG_API_KEY,
+    });
+}
+
 const callbackEndpoint = process.env.CALLBACK_ENDPOINT || "https://aibrush.ngrok.io";
 
 async function updateImage(imageId: string, status: string, authToken: string) {
