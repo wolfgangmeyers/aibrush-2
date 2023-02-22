@@ -40,7 +40,7 @@ export class EnhanceTool extends BaseTool implements Tool {
     readonly selectionTool: SelectionTool;
     private prompt: string = "";
     private negativePrompt: string = "";
-    private model: string = "stable_diffusion";
+    private model: string = "Epic Diffusion";
     private count: number = 4;
     private variationStrength: number = 0.35;
     private _dirty = false;
@@ -298,7 +298,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         };
         this.prompt = args.prompt || "";
         this.negativePrompt = args.negativePrompt || "";
-        this.model = args.model || "stable_diffusion";
+        this.model = args.model || "Epic Diffusion";
         this.count = args.count || 4;
         this.variationStrength = args.variationStrength || 0.75;
         console.log("updateArgs", args);
@@ -668,7 +668,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
     );
     console.log("negativePrompt", negativePrompt);
     const [model, setModel] = useState(
-        image.model == "swinir" ? "stable_diffusion" : image.model
+        (image.model == "swinir" || image.model == "stable_diffusion") ? "Epic Diffusion" : image.model
     );
     const [state, setState] = useState<EnhanceToolState>(tool.state);
     const [progress, setProgress] = useState(0);
@@ -829,22 +829,17 @@ export const EnhanceControls: FC<ControlsProps> = ({
                             value={model}
                             onChange={(e) => setModel(e.target.value)}
                         >
-                            <option value="stable_diffusion">
-                                Stable Diffusion
+                            <option value="Epic Diffusion">
+                                Epic Diffusion
+                            </option>
+                            <option value="Anything V3">
+                                Anything V3
                             </option>
                             <option value="Hentai Diffusion">
                                 Hentai Diffusion
                             </option>
                             <option value="URPM">URPM</option>
                             <option value="Deliberate">Deliberate</option>
-                            <option value="Epic Diffusion">
-                                Epic Diffusion
-                            </option>
-                            <option value="colorbook">Colorbook</option>
-                            <option value="Vector Art">Vector Art</option>
-                            <option value="Future Diffusion">
-                                Future Diffusion
-                            </option>
                             <option value="GTA5 Artwork Diffusion">
                                 GTA5 Artwork Diffusion
                             </option>

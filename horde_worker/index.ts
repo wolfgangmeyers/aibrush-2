@@ -96,8 +96,6 @@ function stripBlacklistedTerms(nsfw: boolean, prompt: string): string {
 
 const triggers = {
     "GTA5 Artwork Diffusion": "gtav style",
-    colorbook: "in VARPJ1 Coloring Book Art Style",
-    "Future Diffusion": "future style",
 };
 
 function addTrigger(prompt: string, model: string): string {

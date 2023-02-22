@@ -38,7 +38,7 @@ export function defaultArgs(): CreateImageInput {
         zoom_scale: 0.99,
         zoom_shift_x: 0,
         zoom_shift_y: 0,
-        model: "stable_diffusion",
+        model: "Epic Diffusion",
         glid_3_xl_clip_guidance: false,
         glid_3_xl_clip_guidance_scale: 150,
         glid_3_xl_skip_iterations: 0,
@@ -72,7 +72,7 @@ export const ImagePrompt: FC<Props> = ({
     const [advancedView, setAdvancedView] = useState<boolean>(false);
     const [encodedImage, setEncodedImage] = useState<string>("");
     const [nsfw, setNsfw] = useState<boolean>(false);
-    const [model, setModel] = useState<string>("stable_diffusion");
+    const [model, setModel] = useState<string>("Epic Diffusion");
     const defaultAspectRatio = aspectRatios[DEFAULT_ASPECT_RATIO];
 
     const [aspectRatioDetails, setAspectRatioDetails] = useState<AspectRatio>(
@@ -234,7 +234,11 @@ export const ImagePrompt: FC<Props> = ({
             setVariationStrength(parent.stable_diffusion_strength);
             setEncodedImage("");
             setNsfw(parent.nsfw);
-            setModel(parent.model);
+            setModel(
+                parent.model == "stable_diffusion"
+                    ? "Epic Diffusion"
+                    : parent.model
+            );
         } else {
             resetState();
         }
@@ -381,22 +385,15 @@ export const ImagePrompt: FC<Props> = ({
                                 value={model}
                                 onChange={(e) => setModel(e.target.value)}
                             >
-                                <option value="stable_diffusion">
-                                    Stable Diffusion
+                                <option value="Epic Diffusion">
+                                    Epic Diffusion
                                 </option>
+                                <option value="Anything V3">Anything V3</option>
                                 <option value="Hentai Diffusion">
                                     Hentai Diffusion
                                 </option>
                                 <option value="URPM">URPM</option>
                                 <option value="Deliberate">Deliberate</option>
-                                <option value="Epic Diffusion">
-                                    Epic Diffusion
-                                </option>
-                                <option value="colorbook">Colorbook</option>
-                                <option value="Vector Art">Vector Art</option>
-                                <option value="Future Diffusion">
-                                    Future Diffusion
-                                </option>
                                 <option value="GTA5 Artwork Diffusion">
                                     GTA5 Artwork Diffusion
                                 </option>
