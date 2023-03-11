@@ -222,7 +222,9 @@ export class BackendService {
                 }
             }
         });
-        await this.hordeQueue.init();
+        if (this.hordeQueue) {
+            await this.hordeQueue.init();
+        }
 
         // emergency cleanup logic...
         // const images = await this.listImages({limit: 100000});
@@ -604,9 +606,9 @@ export class BackendService {
         try {
             const result = await client.query(
                 `INSERT INTO images
-                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status, enable_video, enable_zoom, zoom_frequency, zoom_scale, zoom_shift_x, zoom_shift_y, model, glid_3_xl_skip_iterations, glid_3_xl_clip_guidance, glid_3_xl_clip_guidance_scale, width, height, uncrop_offset_x, uncrop_offset_y, negative_phrases, negative_score, stable_diffusion_strength, nsfw, temporary)
+                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status, enable_video, enable_zoom, zoom_frequency, zoom_scale, zoom_shift_x, zoom_shift_y, model, glid_3_xl_skip_iterations, glid_3_xl_clip_guidance, glid_3_xl_clip_guidance_scale, width, height, uncrop_offset_x, uncrop_offset_y, negative_phrases, negative_score, stable_diffusion_strength, nsfw, temporary, upscale)
                 VALUES
-                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30)
+                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31)
                 RETURNING *`,
                 [
                     uuid.v4(),
@@ -639,6 +641,7 @@ export class BackendService {
                     body.stable_diffusion_strength || 0.75,
                     body.nsfw || false,
                     body.temporary || false,
+                    body.upscale || false,
                 ]
             );
             const image = result.rows[0] as Image;
@@ -670,19 +673,22 @@ export class BackendService {
                         binary_image
                     )
                 );
-                const encoded_thumbnail = await this.createEncodedThumbnail(
-                    encoded_image
-                );
-                const binary_thumbnail = Buffer.from(
-                    encoded_thumbnail,
-                    "base64"
-                );
-                promises.push(
-                    this.filestore.writeFile(
-                        `${image.id}.thumbnail.png`,
-                        binary_thumbnail
-                    )
-                );
+                if (!body.temporary) {
+                    const encoded_thumbnail = await this.createEncodedThumbnail(
+                        encoded_image
+                    );
+                    const binary_thumbnail = Buffer.from(
+                        encoded_thumbnail,
+                        "base64"
+                    );
+                    promises.push(
+                        this.filestore.writeFile(
+                            `${image.id}.thumbnail.png`,
+                            binary_thumbnail
+                        )
+                    );
+                }
+                
             }
             let encoded_npy = body.encoded_npy;
 
@@ -727,9 +733,10 @@ export class BackendService {
                         steps: image.iterations,
                         cfgScale: 7.5,
                         denoisingStrength: image.stable_diffusion_strength,
-                        nsfw: image.nsfw,
-                        censorNsfw: !image.nsfw,
+                        nsfw: true,
+                        censorNsfw: image.temporary ? false : !image.nsfw,
                         model: image.model,
+                        upscale: image.upscale,
                     })
                     console.log("Submitted to horde: " + image.id);
                 }

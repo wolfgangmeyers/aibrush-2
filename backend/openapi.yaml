@@ -883,6 +883,8 @@ components:
           type: boolean
         temporary:
           type: boolean
+        upscale:
+          type: boolean
 
     UpdateImageInput:
       type: object
@@ -984,6 +986,8 @@ components:
           type: integer
         worker_id:
           type: string
+        upscale:
+          type: boolean
       required:
         - id
         - created_at
@@ -1005,6 +1009,7 @@ components:
         - stable_diffusion_strength
         - nsfw
         - temporary
+        - upscale
     ImageList:
       properties:
         images:

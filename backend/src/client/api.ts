@@ -317,6 +317,12 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     'temporary'?: boolean;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof CreateImageInput
+     */
+    'upscale'?: boolean;
 }
 
 export const CreateImageInputStatusEnum = {
@@ -663,6 +669,12 @@ export interface Image {
      * @memberof Image
      */
     'worker_id'?: string;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Image
+     */
+    'upscale': boolean;
 }
 
 export const ImageStatusEnum = {

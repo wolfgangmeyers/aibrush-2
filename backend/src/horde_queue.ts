@@ -14,6 +14,7 @@ export interface HordeRequest {
     nsfw: boolean;
     censorNsfw: boolean;
     model: string;
+    upscale: boolean;
 }
 
 export interface HordeQueue {

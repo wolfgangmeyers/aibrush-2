@@ -125,6 +125,7 @@ interface HordeRequest {
     nsfw: boolean;
     censorNsfw: boolean;
     model: string;
+    upscale: boolean;
 }
 
 async function processRequest(request: HordeRequest) {
@@ -137,6 +138,10 @@ async function processRequest(request: HordeRequest) {
         }
         prompt = stripBlacklistedTerms(request.nsfw, prompt);
         console.log(prompt);
+        const post_processing: string[] = [];
+        if (request.upscale) {
+            post_processing.push("RealESRGAN_x4plus");
+        }
         const payload: HordeRequestPayload = {
             params: {
                 n: 1,
@@ -150,7 +155,7 @@ async function processRequest(request: HordeRequest) {
                 // TODO: does this work? Maybe we can use it to handle larger
                 // areas of an image in the editor
                 hires_fix: false,
-                post_processing: [],
+                post_processing,
             },
             prompt,
             api_key: hordeApiKey,
