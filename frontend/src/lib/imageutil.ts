@@ -1,5 +1,129 @@
 import { Rect } from "../pages/image-editor/models";
 
+export interface SplitResult {
+    numTilesX: number;
+    numTilesY: number;
+    tileSize: number;
+    imageWidth: number;
+    imageHeight: number;
+    tiles: ImageData[][]; // [x][y]
+}
+
+// split image for individual upscales
+export function splitImage(initImage: ImageData) {
+    // Check if the image area is larger than 512x512
+    if (initImage.width * initImage.height > 512 * 512) {
+        // use a temporary canvas to split the image
+        const canvas = document.createElement("canvas");
+        try {
+            canvas.width = initImage.width;
+            canvas.height = initImage.height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+                throw new Error("Could not get canvas context");
+            }
+            ctx.putImageData(initImage, 0, 0);
+            const tile_size = Math.min(initImage.width, initImage.height, 512);
+            // split the image into 512x512 tiles
+            // they need to overlap by at least 32 pixels
+            // so that the edges can be merged
+    
+            // calculate the number of tiles in each dimension
+            const num_tiles_x = Math.ceil(initImage.width / (tile_size - 32));
+            const num_tiles_y = Math.ceil(initImage.height / (tile_size - 32));
+    
+            const tiles: ImageData[][] = [];
+            for (let x = 0; x < num_tiles_x; x++) {
+                tiles.push([]);
+                for (let y = 0; y < num_tiles_y; y++) {
+                    // calculate the bounding box of the tile
+                    const x0 = x * (tile_size - 32);
+                    const y0 = y * (tile_size - 32);
+                    const x1 = Math.min(x0 + tile_size, initImage.width);
+                    const y1 = Math.min(y0 + tile_size, initImage.height);
+                    // crop the tile
+                    const tile = ctx.getImageData(x0, y0, x1 - x0, y1 - y0);
+                    tiles[x].push(tile);
+                }
+            }
+            return {
+                numTilesX: num_tiles_x,
+                numTilesY: num_tiles_y,
+                tileSize: tile_size,
+                imageWidth: initImage.width,
+                imageHeight: initImage.height,
+                tiles,
+            };
+        } finally {
+            canvas.remove();
+        }
+    } else {
+        return null;
+    }
+}
+
+// merge the tiles back into a single image
+// tiles should be 2x original size
+export function mergeTiles(splitResult: SplitResult): ImageData {
+    // create a new image
+    const canvas = document.createElement("canvas");
+    try {
+        canvas.width = splitResult.imageWidth;
+        canvas.height = splitResult.imageHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            throw new Error("Could not get canvas context");
+        }
+        for (let x = 0; x < splitResult.numTilesX; x++) {
+            for (let y = 0; y < splitResult.numTilesY; y++) {
+                // load the tile
+                const tile = splitResult.tiles[x][y];
+                // paste the tile into the new image
+                ctx.putImageData(tile, x * (splitResult.tileSize - 64), y * (splitResult.tileSize - 64));
+            }
+        }
+        return ctx.getImageData(0, 0, splitResult.imageWidth, splitResult.imageHeight);
+    } finally {
+        canvas.remove();
+    }
+}
+
+export function imageDataToCanvas(imageData: ImageData): HTMLCanvasElement {
+    const canvas = document.createElement("canvas");
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+        throw new Error("Could not get canvas context");
+    }
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+};
+
+export function fixImageSize(image: HTMLCanvasElement): HTMLCanvasElement {
+    // if the width and the height are divisible by 64, return the image data
+    // otherwise, resize up to the next multiple of 64
+    const width = Math.ceil(image.width / 64) * 64;
+    const height = Math.ceil(image.height / 64) * 64;
+    if (width == image.width && height == image.height) {
+        return image;
+    }
+    const canvas = document.createElement("canvas");
+    try {
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            throw new Error("Could not get canvas context");
+        }
+        ctx.drawImage(image, 0, 0, width, height);
+        return canvas;
+    } finally {
+        image.remove();
+    }
+}
+
+
 export function featherEdges(
     selectionOverlay: Rect,
     imageWidth: number,
@@ -130,15 +254,19 @@ export interface ImageWorkerResponse {
 }
 
 export class ImageUtilWorker {
-    
     private workers: Array<Worker> = [];
-    private callbacks: {[key: string]: (event: MessageEvent) => void} = {};
+    private callbacks: { [key: string]: (event: MessageEvent) => void } = {};
     private cursor = 0;
 
-    constructor(numWorkers=3) {
+    constructor(numWorkers = 3) {
         for (let i = 0; i < numWorkers; i++) {
-            this.workers[i] = new Worker(`${process.env.PUBLIC_URL}/workers/imageutil.js`);
-            this.workers[i].addEventListener("message", this.onMessage.bind(this));
+            this.workers[i] = new Worker(
+                `${process.env.PUBLIC_URL}/workers/imageutil.js`
+            );
+            this.workers[i].addEventListener(
+                "message",
+                this.onMessage.bind(this)
+            );
         }
     }
 
@@ -148,7 +276,9 @@ export class ImageUtilWorker {
         delete this.callbacks[resp.id];
     }
 
-    async processRequest(request: ImageWorkerRequest): Promise<ImageWorkerResponse> {
+    async processRequest(
+        request: ImageWorkerRequest
+    ): Promise<ImageWorkerResponse> {
         return new Promise((resolve, reject) => {
             this.callbacks[request.id] = (event) => {
                 resolve(event.data);
@@ -164,44 +294,6 @@ export class ImageUtilWorker {
         for (let key in this.workers) {
             this.workers[key].terminate();
         }
-    }
-}
-
-function getAverageColor(imageData: ImageData) {
-    let red = 0;
-    let green = 0;
-    let blue = 0;
-    let count = 0;
-    for (let i = 0; i < imageData.data.length; i += 4) {
-        if (imageData.data[i + 3] > 0) {
-            red += imageData.data[i];
-            green += imageData.data[i + 1];
-            blue += imageData.data[i + 2];
-            count++;
-        }
-    }
-    return {
-        red: red / count,
-        green: green / count,
-        blue: blue / count,
-    };
-}
-
-export function fixRedShift(baseImageData: ImageData, imageData: ImageData) {
-    // get the average red, green and blue values for the base image
-    const baseAverageColor = getAverageColor(baseImageData);
-    const averageColor = getAverageColor(imageData);
-
-    // we need to multiply pixels in imageData by an amount so that the average equals the base average
-    // do this for red, green and blue separately
-    const redMultiplier = baseAverageColor.red / averageColor.red;
-    const greenMultiplier = baseAverageColor.green / averageColor.green;
-    const blueMultiplier = baseAverageColor.blue / averageColor.blue;
-
-    for (let i = 0; i < imageData.data.length; i += 4) {
-        imageData.data[i] *= Math.floor(redMultiplier);
-        imageData.data[i + 1] *= Math.floor(greenMultiplier);
-        imageData.data[i + 2] *= Math.floor(blueMultiplier);
     }
 }
 
@@ -224,10 +316,12 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
             const height = 128;
             canvas.width = width;
             canvas.height = height;
-            
+
             const aspectRatio = image.width / image.height;
-            const cropWidth = aspectRatio > 1 ? image.width : image.height * aspectRatio;
-            const cropHeight = aspectRatio > 1 ? image.width / aspectRatio : image.height;
+            const cropWidth =
+                aspectRatio > 1 ? image.width : image.height * aspectRatio;
+            const cropHeight =
+                aspectRatio > 1 ? image.width / aspectRatio : image.height;
             const cropX = (image.width - cropWidth) / 2;
             const cropY = (image.height - cropHeight) / 2;
             context.drawImage(
@@ -250,7 +344,11 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
     });
 }
 
-export function resizeEncodedImage(encodedImage: string, width: number, height: number): Promise<string> {
+export function resizeEncodedImage(
+    encodedImage: string,
+    width: number,
+    height: number
+): Promise<string> {
     return new Promise((resolve, reject) => {
         // use html5 canvas
         // crop to square aspect ratio on 128x128 canvas
@@ -267,7 +365,7 @@ export function resizeEncodedImage(encodedImage: string, width: number, height: 
             }
             canvas.width = width;
             canvas.height = height;
-            
+
             context.drawImage(
                 image,
                 0,
@@ -318,4 +416,4 @@ export function uploadBlob(signedUrl: string, blob: Blob): Promise<void> {
         };
         xhr.send(blob); // `file` is a File object here
     });
-};
+}

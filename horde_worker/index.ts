@@ -4,6 +4,8 @@ import sharp from "sharp";
 import Bugsnag from "@bugsnag/js";
 import axios from "axios";
 
+import { HordeRequestPayload, processImage } from "./horde";
+
 if (process.env.BUGSNAG_API_KEY) {
     Bugsnag.start({
         apiKey: process.env.BUGSNAG_API_KEY,
@@ -59,10 +61,6 @@ async function uploadImage(key: string, data: Buffer): Promise<void> {
             Body: png,
         })
         .promise();
-}
-
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 const hordeApiKey = process.env.STABLE_HORDE_API_KEY;
@@ -129,7 +127,7 @@ interface HordeRequest {
     model: string;
 }
 
-async function processImage(request: HordeRequest) {
+async function processRequest(request: HordeRequest) {
     try {
         updateImage(request.imageId, "processing", request.authToken);
         let prompt = addTrigger(request.prompt, request.model);
@@ -139,15 +137,20 @@ async function processImage(request: HordeRequest) {
         }
         prompt = stripBlacklistedTerms(request.nsfw, prompt);
         console.log(prompt);
-        const payload: any = {
+        const payload: HordeRequestPayload = {
             params: {
                 n: 1,
                 width: request.width,
                 height: request.height,
-                steps: request.steps,
+                steps: 20,
+                karras: true,
                 sampler_name: "k_euler",
                 cfg_scale: request.cfgScale,
                 denoising_strength: request.denoisingStrength,
+                // TODO: does this work? Maybe we can use it to handle larger
+                // areas of an image in the editor
+                hires_fix: false,
+                post_processing: [],
             },
             prompt,
             api_key: hordeApiKey,
@@ -170,71 +173,17 @@ async function processImage(request: HordeRequest) {
         }
         if (maskData) {
             payload.source_mask = maskData.toString("base64");
-            payload.source_processing = "inpainting";
-        }
-        const submitReq = await axios.post(
-            "https://stablehorde.net/api/v2/generate/async",
-            payload,
-            {
-                headers: {
-                    "Content-Type": "application/json",
-                    apiKey: hordeApiKey,
-                },
-            }
-        );
-        // poll for status and retrieve image
-        const submitResults = submitReq.data;
-        const reqId = submitResults.id;
-        let isDone = false;
-        let retry = 0;
-        while (!isDone) {
-            try {
-                const chkReq = await axios.get(
-                    `https://stablehorde.net/api/v2/generate/check/${reqId}`,
-                    {
-                        headers: {
-                            apiKey: hordeApiKey,
-                        },
-                    }
-                );
-                const chkResults = await chkReq.data;
-                console.log(chkResults);
-                isDone = chkResults.done;
-                await sleep(800);
-            } catch (e) {
-                retry += 1;
-                console.log(
-                    `Error ${e} when retrieving status. Retry ${retry}/10`
-                );
-                if (retry < 10) {
-                    await sleep(1000);
-                    continue;
-                }
-                Bugsnag.notify(e);
-                return null;
+            if (request.model == "stable_diffusion_inpainting") {
+                payload.source_processing = "inpainting";
             }
         }
-        const retrieveReq = await axios.get(
-            `https://stablehorde.net/api/v2/generate/status/${reqId}`,
-            {
-                headers: {
-                    apiKey: hordeApiKey,
-                },
-            }
-        );
-        const resultsJson = await retrieveReq.data;
-        if (resultsJson.faulted) {
-            console.log(
-                "Something went wrong when generating the request. Please contact the horde administrator with your request details:",
-                payload
-            );
-            return null;
+
+        const webpImageData = await processImage(payload);
+        if (!webpImageData) {
+            await updateImage(request.imageId, "error", request.authToken);
+            return;
         }
-        const result = resultsJson.generations[0];
-        const webpImageResponse = await axios.get(result.img, {
-            responseType: "arraybuffer",
-        });
-        const webpImageData = webpImageResponse.data;
+
         const upload1 = uploadImage(`${request.imageId}.image.png`, webpImageData);
         const thumbnail = await sharp(Buffer.from(webpImageData)).resize(128, 128, {
             fit: "contain",
@@ -252,6 +201,6 @@ async function processImage(request: HordeRequest) {
 export const handler = async (event: SQSEvent) => {
     console.log("Received event:", JSON.stringify(event, null, 2));
     for (const record of event.Records) {
-        await processImage(JSON.parse(record.body) as HordeRequest);
+        await processRequest(JSON.parse(record.body) as HordeRequest);
     }
 };

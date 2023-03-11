@@ -4,6 +4,7 @@ import { BrowserRouter, Switch, Route, Link } from "react-router-dom";
 import "./App.css";
 import "./bootstrap.min.css";
 import { AIBrushApi, LoginResult, FeatureList } from "./client/api";
+import { LocalImagesStore } from "./lib/localImagesStore";
 import { getConfig } from "./config";
 import { Login } from "./pages/Login";
 import { TokenRefresher } from "./components/TokenRefresher";
@@ -17,15 +18,19 @@ import { DeletedImages } from "./pages/DeletedImages";
 import { Homepage } from "./pages/Homepage";
 import { ApiSocket } from "./lib/apisocket";
 import { DiscordLogin } from "./pages/DiscordLogin";
+import { LocalDeletedImages } from "./pages/LocalDeletedImages";
+import { SavedImagesPage } from "./pages/SavedImagesPage";
+import { TestPage } from "./pages/TestPage";
 
 const config = getConfig();
-const httpClient = axios.default;
+const httpClient = axios.default.create();
 const client = new AIBrushApi(
     undefined,
     localStorage.getItem("apiUrl") || config.apiUrl,
     httpClient
 );
 const apiSocket: ApiSocket = new ApiSocket();
+const localImages = new LocalImagesStore();
 
 function updateHttpClient(loginResult: LoginResult) {
     if (loginResult.accessToken) {
@@ -49,6 +54,7 @@ function App() {
 
     const init = async () => {
         console.log("App.init");
+        await localImages.init();
         client
             .getAssetsUrl()
             .then((result) => setAssetsUrl(result.data.assets_url));
@@ -132,6 +138,14 @@ function App() {
                                             {/* font awesome logout icon */}
                                             <i className="fas fa-sign-out-alt"></i>
                                         </button>
+                                        {/* saved images */}
+                                        <Link
+                                            className="btn btn-primary top-button"
+                                            to="/saved"
+                                        >
+                                            {/* font awesome save icon */}
+                                            <i className="fas fa-save"></i>
+                                        </Link>
                                         {/* home button */}
                                         <Link
                                             className="btn btn-primary top-button"
@@ -176,10 +190,28 @@ function App() {
                                     api={client}
                                     apiSocket={apiSocket}
                                     assetsUrl={assetsUrl}
+                                    localImages={localImages}
                                 />
                             </Route>
                             <Route path="/images/:id">
                                 <Homepage
+                                    api={client}
+                                    apiSocket={apiSocket}
+                                    assetsUrl={assetsUrl}
+                                    localImages={localImages}
+                                />
+                            </Route>
+                            <Route path="/saved" exact={true}>
+                                {/* <MainMenu isAdmin={isAdmin} /> */}
+                                <SavedImagesPage
+                                    api={client}
+                                    apiSocket={apiSocket}
+                                    assetsUrl={assetsUrl}
+                                />
+                            </Route>
+                            <Route path="/saved/:id" exact={true}>
+                                {/* <MainMenu isAdmin={isAdmin} /> */}
+                                <SavedImagesPage
                                     api={client}
                                     apiSocket={apiSocket}
                                     assetsUrl={assetsUrl}
@@ -190,6 +222,7 @@ function App() {
                                     api={client}
                                     apisocket={apiSocket}
                                     assetsUrl={assetsUrl}
+                                    localImages={localImages}
                                 />
                             </Route>
                             <Route path="/worker-config">
@@ -200,6 +233,14 @@ function App() {
                                     api={client}
                                     assetsUrl={assetsUrl}
                                 />
+                            </Route>
+                            <Route path="/local-deleted-images">
+                                <LocalDeletedImages
+                                    localImages={localImages}
+                                />
+                            </Route>
+                            <Route path="/testpage">
+                                <TestPage />
                             </Route>
                             {isAdmin && (
                                 <>

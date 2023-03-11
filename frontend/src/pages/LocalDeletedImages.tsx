@@ -3,44 +3,33 @@ import { AIBrushApi, Image } from "../client";
 import moment from "moment";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { useHistory } from "react-router-dom";
+import { LocalImagesStore } from "../lib/localImagesStore";
 import { BusyModal } from "../components/BusyModal";
 
 interface Props {
-    api: AIBrushApi;
-    assetsUrl: string;
+    localImages: LocalImagesStore;
 }
 
-export const DeletedImages: FC<Props> = ({ api, assetsUrl }) => {
+export const LocalDeletedImages: FC<Props> = ({ localImages }) => {
     const [images, setImages] = useState<Image[]>([]);
     const [deleting, setDeleting] = useState(false);
 
     const history = useHistory();
 
     const loadImages = async () => {
-        const cursor = moment().add(-24, "hours").valueOf();
-        // TODO: special api call for deleted images?
-        const resp = await api.listImages(cursor, "", 100, "asc");
-        setImages(
-            (
-                resp.data.images?.filter((image) => !!image.deleted_at) || []
-            ).sort((a, b) => {
-                if (a.deleted_at && b.deleted_at) {
-                    return b.deleted_at - a.deleted_at;
-                }
-                return 0;
-            })
-        );
+        const deletedImages = await localImages.getDeletedImages();
+        setImages(deletedImages);
     };
 
     const onDeleteImage = async (image: Image) => {
         setImages(images.filter((i) => i.id !== image.id));
-        await api.deleteImage(image.id);
+        await localImages.deleteImage(image.id);
     };
 
     const onDeleteAllImages = async () => {
         setDeleting(true);
         try {
-            await Promise.all(images.map((image) => api.deleteImage(image.id)));
+            await localImages.clearDeletedImages();
             setImages([]);
         } finally {
             setDeleting(false);
@@ -49,12 +38,15 @@ export const DeletedImages: FC<Props> = ({ api, assetsUrl }) => {
 
     const onRestoreImage = async (image: Image) => {
         setImages(images.filter((i) => i.id !== image.id));
-        await api.updateImage(image.id, { deleted_at: null });
+        await localImages.saveImage({
+            ...image,
+            deleted_at: undefined,
+        });
     };
 
     useEffect(() => {
         loadImages();
-    }, [api]);
+    }, [localImages]);
 
     return (
         <div>
@@ -69,7 +61,6 @@ export const DeletedImages: FC<Props> = ({ api, assetsUrl }) => {
                             ></i>
                             &nbsp; Deleted Images
                         </h1>
-                        {/* float right "delete all" button */}
                         <button
                             className="btn btn-danger btn-sm image-popup-delete-button"
                             onClick={onDeleteAllImages}
@@ -97,7 +88,7 @@ export const DeletedImages: FC<Props> = ({ api, assetsUrl }) => {
                     >
                         <div className="col-sm-2 offset-sm-2">
                             <ImageThumbnail
-                                assetsUrl={assetsUrl}
+                                assetsUrl={""}
                                 image={image}
                                 censorNSFW={true}
                             />

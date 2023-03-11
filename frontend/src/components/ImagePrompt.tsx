@@ -12,9 +12,10 @@ import loadImage from "blueimp-load-image";
 import { AspectRatioSelector } from "./AspectRatioSelector";
 import { getUpscaleLevel } from "../lib/upscale";
 import { resizeEncodedImage } from "../lib/imageutil";
+import { LocalImage } from "../lib/localImagesStore";
 
 interface Props {
-    parent: Image | null;
+    parent: LocalImage | null;
     creating: boolean;
     assetsUrl: string;
     onSubmit: (input: CreateImageInput) => void;
@@ -109,6 +110,7 @@ export const ImagePrompt: FC<Props> = ({
         args.stable_diffusion_strength = variationStrength;
         args.nsfw = nsfw;
         args.model = model;
+        args.temporary = true;
         if (parent) {
             const bestMatch = getClosestAspectRatio(
                 parent.width!,
@@ -226,13 +228,16 @@ export const ImagePrompt: FC<Props> = ({
 
     useEffect(() => {
         if (parent) {
+            const imageData = parent.imageData;
+            if (imageData) {
+                setEncodedImage(imageData.split(",")[1]);
+            }
             setPrompt(parent.phrases.join(", "));
-            setNegativePrompt(parent.negative_phrases.join(", "));
+            setNegativePrompt(parent.negative_phrases.join(", ") || defaultNegativePrompt);
             setCount(4);
             setParentId(parent.id);
             setAdvancedView(true);
             setVariationStrength(parent.stable_diffusion_strength);
-            setEncodedImage("");
             setNsfw(parent.nsfw);
             setModel(
                 parent.model == "stable_diffusion"
@@ -297,21 +302,6 @@ export const ImagePrompt: FC<Props> = ({
                 </div>
                 {advancedView && (
                     <div className="homepage-prompt-advanced">
-                        {parent && !encodedImage && (
-                            <div className="form-group">
-                                <label>Parent Image</label>
-                                {/* ${assetsUrl}/${image.id}.image.png?updated_at=${image.updated_at} */}
-                                <img
-                                    style={{
-                                        display: "block",
-                                        marginLeft: "auto",
-                                        marginRight: "auto",
-                                        maxWidth: "100%",
-                                    }}
-                                    src={`${assetsUrl}/${parentId}.image.png?updated_at=${parent.updated_at}`}
-                                />
-                            </div>
-                        )}
                         {encodedImage && (
                             <div className="form-group">
                                 <label>Init Image</label>

@@ -526,8 +526,13 @@ export class BackendService {
     async deleteImage(id: string): Promise<void> {
         const now = this.clock.now().valueOf();
         // set deleted_at to now
-        const client = await this.pool.connect();
         const image = await this.getImage(id);
+        if (image.temporary) {
+            // delete image
+            await this.hardDeleteImage(id);
+            return;
+        }
+        const client = await this.pool.connect();
         if (image) {
             try {
                 await client.query(

@@ -1,10 +1,11 @@
 import React, { FC, useEffect, useState } from "react";
 import moment from "moment";
 import { Image, ImageStatusEnum } from "../client/api";
+import { LocalImage } from "../lib/localImagesStore";
 
 interface Props {
     assetsUrl: string;
-    image: Image;
+    image: LocalImage;
     censorNSFW: boolean;
     bulkDelete?: boolean;
     onClick?: (image: Image) => void;
@@ -36,11 +37,18 @@ export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, censorNSFW, bulkDe
         className += " bulk-delete";
     }
 
+    let backgroundImage = `url(${src}${retry}), url(/images/default.png)`;
+    if (image.imageData) {
+        backgroundImage = `url(${image.imageData}), url(/images/default.png)`;
+    }
+
     return (
         <div
             className={className}
             style={{
-                backgroundImage: `url(${src}${retry}), url(/images/default.png)`,
+                backgroundImage,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
                 filter: (image.nsfw && censorNSFW) ? "blur(8px)" : undefined,
             }}
             onClick={() => onClick && onClick(image)}

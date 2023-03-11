@@ -352,7 +352,7 @@ export class InpaintTool extends BaseTool implements Tool {
         this.dirty = false;
     }
 
-    async submit(api: AIBrushApi, apisocket: ApiSocket, image: APIImage) {
+    async submit(api: AIBrushApi, apisocket: ApiSocket, image: APIImage, model: string) {
         this.notifyError(null);
         let selectionOverlay = this.renderer.getSelectionOverlay();
         if (!selectionOverlay) {
@@ -394,7 +394,7 @@ export class InpaintTool extends BaseTool implements Tool {
         input.negative_phrases = [this.negativePrompt || image.negative_phrases[0]];
         input.stable_diffusion_strength = this.variationStrength;
         input.count = this.count;
-        input.model = "stable_diffusion_inpainting";
+        input.model = model;
 
         const closestAspectRatio = getClosestAspectRatio(
             selectionOverlay!.width,
@@ -636,6 +636,7 @@ export const InpaintControls: FC<ControlsProps> = ({
     const [outpaint, setoutpaint] = useState<boolean | undefined>(
         tool.getArgs().outpaint
     );
+    const [model, setModel] = useState("stable_diffusion_inpainting");
 
     useEffect(() => {
         tool.updateArgs({
@@ -815,6 +816,30 @@ export const InpaintControls: FC<ControlsProps> = ({
                             Number of inpaint options
                         </small>
                     </div>
+                    {/* select model dropdown */}
+                    {/* options: stable_diffusion_inpainting, "Epic Diffusion", "Deliberate" */}
+                    <div className="form-group">
+                        <label htmlFor="model">Model</label>
+                        <select
+                            className="form-control"
+                            id="model"
+                            value={model}
+                            onChange={(e) => {
+                                setModel(e.target.value);
+                            }}
+                        >
+                            <option value="stable_diffusion_inpainting">
+                                Stable Diffusion
+                            </option>
+                            <option value="Epic Diffusion">
+                                Epic Diffusion
+                            </option>
+                            <option value="Deliberate">Deliberate</option>
+                        </select>
+                        <small className="form-text text-muted">
+                            Select the inpaint model
+                        </small>
+                    </div>
                 </>
             )}
 
@@ -887,7 +912,7 @@ export const InpaintControls: FC<ControlsProps> = ({
                                 prompt,
                                 negativePrompt,
                             });
-                            tool.submit(api, apisocket, image);
+                            tool.submit(api, apisocket, image, model);
                         }}
                     >
                         {/* paint icon */}

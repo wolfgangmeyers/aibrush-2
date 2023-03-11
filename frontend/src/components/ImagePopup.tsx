@@ -1,18 +1,19 @@
 import React, { FC, useEffect, useRef, useState } from "react";
 import { Modal } from "react-bootstrap";
 import { CreateImageInput, Image, ImageStatusEnum } from "../client/api";
+import { LocalImage } from "../lib/localImagesStore";
 import { getUpscaleLevel } from "../lib/upscale";
 
 interface ImagePopupProps {
     assetsUrl: string;
-    image: Image;
+    image: LocalImage;
     censorNSFW: boolean;
     onClose: () => void;
-    onDelete?: (image: Image) => void;
-    onFork?: (image: Image) => void;
-    onEdit?: (image: Image) => void;
-    onUpscale?: (image: Image) => void;
-    onNSFW?: (image: Image, nsfw: boolean) => void;
+    onDelete?: (image: LocalImage) => void;
+    onFork?: (image: LocalImage) => void;
+    onEdit?: (image: LocalImage) => void;
+    onNSFW?: (image: LocalImage, nsfw: boolean) => void;
+    onSave?: (image: LocalImage) => void;
 }
 
 export const ImagePopup: FC<ImagePopupProps> = ({
@@ -23,11 +24,14 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     onDelete,
     onFork,
     onEdit,
-    onUpscale,
     onNSFW,
+    onSave,
 }) => {
     const img = useRef<HTMLImageElement>(null);
-    const src = `${assetsUrl}/${image.id}.image.png?updated_at=${image.updated_at}`;
+    let src = `${assetsUrl}/${image.id}.image.png?updated_at=${image.updated_at}`;
+    if (image.imageData) {
+        src = image.imageData;
+    }
     let score = image.score;
     if (
         image.negative_phrases.join("").trim() !== "" &&
@@ -159,16 +163,14 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         &nbsp;EDIT
                                     </button>
                                 )}
-                                {onUpscale && upscaleLevel < 2 && (
+                                {onSave && (
                                     <button
                                         className="btn btn-primary btn-sm image-popup-button"
-                                        onClick={() =>
-                                            onUpscale && onUpscale(image)
-                                        }
+                                        onClick={() => onSave && onSave(image)}
                                         style={{ marginRight: "5px" }}
                                     >
-                                        <i className="fas fa-search-plus"></i>
-                                        &nbsp;UPSCALE
+                                        <i className="fas fa-save"></i>
+                                        &nbsp;SAVE
                                     </button>
                                 )}
                                 {(image.nsfw && censorNSFW) && (

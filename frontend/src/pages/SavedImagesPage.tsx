@@ -1,14 +1,12 @@
 // V2 page
-import { FC, useState, useEffect } from "react";
-import * as uuid from "uuid";
+import React, { FC, useState, useEffect } from "react";
 import axios from "axios";
-import qs from "qs";
 import Dropdown from "react-bootstrap/Dropdown";
-import { useParams, useHistory, Link, useLocation } from "react-router-dom";
+import { useParams, useHistory, Link } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
-import { CreateImageInput, ImageStatusEnum, Boost, CreateImageInputStatusEnum } from "../client/api";
+import { CreateImageInput, Image, ImageStatusEnum, Boost } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import { BoostWidget } from "../components/BoostWidget";
@@ -29,38 +27,22 @@ import {
     NOTIFICATION_IMAGE_DELETED,
     NOTIFICATION_IMAGE_UPDATED,
 } from "../lib/apisocket";
-import { LocalImagesStore, LocalImage } from "../lib/localImagesStore";
-import { ErrorNotification, SuccessNotification } from "../components/Alerts";
-
-export const anonymousClient = axios.create();
-delete anonymousClient.defaults.headers.common["Authorization"];
 
 interface Props {
     api: AIBrushApi;
     apiSocket: ApiSocket;
     assetsUrl: string;
-    localImages: LocalImagesStore;
 }
 
-export const Homepage: FC<Props> = ({
-    api,
-    apiSocket,
-    assetsUrl,
-    localImages,
-}) => {
+export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
     const [creating, setCreating] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<LocalImage | null>(null);
-    const [parentImage, setParentImage] = useState<LocalImage | null>(null);
-    const [loadingParent, setLoadingParent] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<Image | null>(null);
+    const [parentImage, setParentImage] = useState<Image | null>(null);
 
     const [showPendingImages, setShowPendingImages] = useState(false);
 
-    const [images, setImages] = useState<Array<LocalImage>>([]);
+    const [images, setImages] = useState<Array<Image>>([]);
     const [err, setErr] = useState<string | null>(null);
-    const [errTime, setErrTime] = useState<number>(0);
-    const [success, setSuccess] = useState<string | null>(null);
-    const [successTime, setSuccessTime] = useState<number>(0);
-
     const [hasMore, setHasMore] = useState<boolean>(true);
     const [search, setSearch] = useState<string>("");
     const [searchDebounce, setSearchDebounce] = useState<string>("");
@@ -76,12 +58,6 @@ export const Homepage: FC<Props> = ({
 
     const { id } = useParams<{ id?: string }>();
     const history = useHistory();
-    const location = useLocation();
-
-    const onError = (err: string) => {
-        setErr(err);
-        setErrTime(moment().valueOf());
-    };
 
     useEffect(() => {
         let handle = setTimeout(() => {
@@ -100,8 +76,8 @@ export const Homepage: FC<Props> = ({
                 setSelectedImage(image);
             }
             // refresh
-            localImages.getImage(id).then((image) => {
-                setSelectedImage(image);
+            api.getImage(id).then((image) => {
+                setSelectedImage(image.data);
             });
         } else {
             setSelectedImage(null);
@@ -114,22 +90,10 @@ export const Homepage: FC<Props> = ({
         setErr(null);
         window.scrollTo(0, 0);
         try {
-            const newImages = await api.createImage(input);
-            if (newImages.data.images) {
-                for (let image of newImages.data.images || []) {
-                    localImages.saveImage(image);
-                }
-                setImages((images) => {
-                    return [...newImages.data.images!, ...images].sort(
-                        sortImages
-                    );
-                });
-            } else {
-                onError("Could not create images");
-            }
+            await api.createImage(input);
         } catch (e: any) {
             console.error(e);
-            onError("Error creating image");
+            setErr("Error creating image");
         } finally {
             setCreating(false);
         }
@@ -142,87 +106,249 @@ export const Homepage: FC<Props> = ({
         window.scrollTo(0, 0);
         try {
             const encodedImage = input.encoded_image!;
-            const newImage: LocalImage = {
-                created_at: moment().valueOf(),
-                updated_at: moment().valueOf(),
-                created_by: "",
-                current_iterations: 20,
-                iterations: 20,
-                width: input.width as any,
-                height: input.height as any,
-                label: "",
-                enable_video: false,
-                id: uuid.v4(),
-                model: input.model!,
-                negative_phrases: input.negative_phrases!,
-                negative_score: 0,
-                nsfw: !!input.nsfw,
-                parent: input.parent!,
-                phrases: input.phrases!,
-                score: 0,
-                stable_diffusion_strength: input.stable_diffusion_strength!,
-                status: ImageStatusEnum.Completed,
-                temporary: false,
-                imageData: `data:image/png;base64,${encodedImage}`,
-            };
-            await localImages.saveImage(newImage);
+            const encodedThumbnail = await createEncodedThumbnail(encodedImage);
+            const newImages = await api.createImage({
+                ...input,
+                encoded_image: undefined,
+            });
+            if (newImages.data.images) {
+                const image = newImages.data.images![0];
+                const uploadUrls = await api.getImageUploadUrls(image.id);
+                // convert base64 encoded image to binary to upload as image/png with axios
+                const blob = encodedImageToBlob(encodedImage);
+                const thumbnailBlob = encodedImageToBlob(encodedThumbnail);
+                const imagePromise = uploadBlob(
+                    uploadUrls.data.image_url!,
+                    blob
+                );
+                const thumbnailPromise = uploadBlob(
+                    uploadUrls.data.thumbnail_url!,
+                    thumbnailBlob
+                );
+                await Promise.all([imagePromise, thumbnailPromise]);
 
-            history.push(`/image-editor/${newImage.id}`);
+                history.push(`/image-editor/${image.id}`);
+            }
         } catch (e: any) {
             console.error(e);
-            onError("Error creating image");
+            setErr("Error creating image");
         } finally {
             setCreating(false);
         }
     };
 
-    const onNSFW = async (image: LocalImage, nsfw: boolean) => {
-        await localImages.saveImage({
-            ...image,
-            nsfw,
-        });
-        setImages((images) => {
-            return images.map((image) => {
-                if (image.id === image.id) {
-                    return {
-                        ...image,
-                        nsfw,
-                    };
-                }
-                return image;
+    const onNSFW = (image: Image, nsfw: boolean) => {
+        api.updateImage(image.id, { nsfw }).then((res) => {
+            setImages((images) => {
+                return images.map((i) => {
+                    if (i.id === image.id) {
+                        return res.data;
+                    }
+                    return i;
+                });
             });
+            setSelectedImage(res.data);
         });
     };
 
-    const loadImages = async (search: string) => {
-        console.log("Initial load images");
-        // clear error
+    const onUpscale = async (image: Image) => {
+        setCreating(true);
         setErr(null);
-        setHasMore(true);
+        window.scrollTo(0, 0);
         try {
-            const cursor = moment().add(1, "minutes").valueOf();
-            const resp = await localImages.listImages(
-                cursor,
-                "prev",
-                100,
-                search
-            );
-            setImages(resp.sort(sortImages));
-            return;
-        } catch (err) {
-            onError("Could not load images");
-            console.error(err);
+            const imageInput = defaultArgs();
+            imageInput.parent = image.id;
+            imageInput.label = image.label;
+            imageInput.phrases = image.phrases;
+            imageInput.negative_phrases = image.negative_phrases;
+            imageInput.width = image.width! * 2;
+            imageInput.height = image.height! * 2;
+            imageInput.model = "swinir";
+            imageInput.count = 1;
+
+            const newImages = await api.createImage(imageInput);
+            setImages((images) => {
+                // there is a race condition where poll images can fire before this callback
+                // so double-check to avoid duplicates
+                const imagesToAdd = (newImages.data.images || []).filter(
+                    (image) => {
+                        return !images.find((i) => i.id === image.id);
+                    }
+                );
+                return [...imagesToAdd, ...images].sort(sortImages);
+            });
+            history.push("/saved");
+        } catch (e: any) {
+            console.error(e);
+            setErr("Error creating image");
+        } finally {
+            setCreating(false);
         }
     };
 
     useEffect(() => {
-        loadImages(search);
-    }, [search]);
+        if (!api) {
+            return;
+        }
+        const loadImages = async () => {
+            console.log("Initial load images");
+            // clear error
+            setErr(null);
+            setHasMore(true);
+            try {
+                const cursor = moment().add(1, "minutes").valueOf();
+                const resp = await api.listImages(cursor, search, 100, "desc");
+                if (resp.data.images) {
+                    console.log("Initial load images", resp.data.images.length);
+                    setImages(
+                        resp.data.images
+                            .filter((image) => !image.deleted_at)
+                            .sort(sortImages)
+                    );
+                }
+                return 0;
+            } catch (err) {
+                setErr("Could not load images");
+                console.error(err);
+            }
+        };
+        loadImages();
+    }, [api, search]);
+
+    useEffect(() => {
+        if (!api) {
+            return;
+        }
+
+        const pollImages = async (images: Array<Image>) => {
+            // clear error
+            setErr(null);
+            // set cursor to max updated_at from images
+            const cursor = images.reduce((max, image) => {
+                return Math.max(max, image.updated_at);
+            }, 0);
+
+            try {
+                const resp = await api.listImages(
+                    cursor + 1,
+                    search,
+                    100,
+                    "asc"
+                );
+                if (resp.data.images) {
+                    let latestCursor = cursor;
+                    for (let image of resp.data.images) {
+                        if (image.updated_at > latestCursor) {
+                            latestCursor = image.updated_at;
+                        }
+                    }
+
+                    // split resp.data.images into "new" and "updated" lists
+                    // image is "new" if it's not in images
+                    const newImages = resp.data.images.filter((image) => {
+                        return images.findIndex((i) => i.id === image.id) < 0;
+                    });
+                    const updatedImages = resp.data.images.filter((image) => {
+                        return images.findIndex((i) => i.id === image.id) >= 0;
+                    });
+                    setImages((images) => {
+                        const deletedIds: { [key: string]: boolean } = {};
+                        for (let image of newImages) {
+                            if (image.deleted_at) {
+                                deletedIds[image.id] = true;
+                                console.log(
+                                    `Deleting image ${image.id} from list`
+                                );
+                            }
+                        }
+                        for (let image of updatedImages) {
+                            if (image.deleted_at) {
+                                deletedIds[image.id] = true;
+                                console.log(
+                                    `Deleting image ${image.id} from list`
+                                );
+                            }
+                        }
+                        images = images.filter(
+                            (image) => !deletedIds[image.id]
+                        );
+                        return [
+                            ...images.map((image) => {
+                                const updatedImage = updatedImages.find(
+                                    (i) => i.id === image.id
+                                );
+                                if (updatedImage) {
+                                    return updatedImage;
+                                }
+                                return image;
+                            }),
+                            ...newImages.filter((image) => !image.deleted_at),
+                        ].sort(sortImages);
+                    });
+                }
+                return images;
+            } catch (err) {
+                setErr("Could not load images");
+                console.error(err);
+            }
+        };
+
+        // polling is now a fallback for when the websocket connection fails
+        const timerHandle = setInterval(() => {
+            pollImages(images);
+        }, 60 * 1000);
+        return () => {
+            clearInterval(timerHandle);
+        };
+    }, [api, images, search]);
+
+    useEffect(() => {
+        // de-duplicate images by id
+        // first check if there are any duplicates
+        // I know, I should figure out where the duplicates are coming from,
+        // but I'm lazy.
+        const ids = images.map((image) => image.id);
+        const uniqueIds = new Set(ids);
+        if (ids.length !== uniqueIds.size) {
+            setImages((images) => {
+                // there are duplicates
+                const uniqueImages = images.filter((image, index) => {
+                    return ids.indexOf(image.id) === index;
+                });
+                return uniqueImages.sort(sortImages);
+            });
+        }
+    }, [images]);
 
     useEffect(() => {
         apiSocket.onMessage(async (message) => {
             const payload = JSON.parse(message);
-            if (payload.type === NOTIFICATION_BOOST_UPDATED) {
+            if (
+                payload.type === NOTIFICATION_IMAGE_UPDATED ||
+                payload.type === NOTIFICATION_IMAGE_DELETED
+            ) {
+                const updatedImage = await api.getImage(payload.id);
+                if (updatedImage.data.temporary) {
+                    return;
+                }
+                setImages((images) => {
+                    const index = images.findIndex(
+                        (image) => image.id === updatedImage.data.id
+                    );
+                    let updatedImages = images;
+                    if (index >= 0) {
+                        updatedImages = images.map((image) => {
+                            if (image.id === updatedImage.data.id) {
+                                return updatedImage.data;
+                            }
+                            return image;
+                        });
+                    } else {
+                        updatedImages = [...images, updatedImage.data];
+                    }
+                    return updatedImages.sort(sortImages);
+                });
+            } else if (payload.type === NOTIFICATION_BOOST_UPDATED) {
                 const updatedBoost = await api.getBoost();
                 setBoost(updatedBoost.data);
             }
@@ -231,113 +357,6 @@ export const Homepage: FC<Props> = ({
             apiSocket.onMessage(undefined);
         };
     }, [apiSocket]);
-
-    useEffect(() => {
-        if (!api) {
-            return;
-        }
-        let lock = false;
-
-        const pollImages = async (images: Array<LocalImage>) => {
-            if (lock) {
-                return;
-            }
-            lock = true;
-            // clear error
-            setErr(null);
-
-            const pendingOrProcessingImages = images.filter((image) => {
-                return (
-                    image.status === "pending" || image.status === "processing"
-                );
-            });
-            if (pendingOrProcessingImages.length === 0) {
-                return;
-            }
-
-            const imageStatuses = pendingOrProcessingImages.reduce(
-                (acc, image) => {
-                    acc[image.id] = image.status;
-                    return acc;
-                },
-                {} as Record<string, ImageStatusEnum>
-            );
-
-            try {
-                const resp = await api.batchGetImages({
-                    ids: pendingOrProcessingImages.map((image) => image.id),
-                });
-
-                if (resp.data.images) {
-                    const updatedImages: Array<LocalImage> =
-                        resp.data.images || [];
-                    let statusChange = false;
-                    for (let img of updatedImages) {
-                        if (imageStatuses[img.id] !== img.status) {
-                            statusChange = true;
-                        }
-                        // TODO: surface errors to the user
-                        if (img.status == ImageStatusEnum.Error) {
-                            setErr(
-                                "Some images failed to generate, please make sure your prompt doesn't violate our terms of service"
-                            );
-                            await api.deleteImage(img.id);
-                            await localImages.deleteImage(img.id);
-                            continue;
-                        }
-
-                        if (img.status === ImageStatusEnum.Completed) {
-                            const downloadUrls = await api.getImageDownloadUrls(
-                                img.id
-                            );
-                            const resp = await anonymousClient.get(
-                                downloadUrls.data.image_url!,
-                                {
-                                    responseType: "arraybuffer",
-                                }
-                            );
-                            const binaryImageData = Buffer.from(
-                                resp.data,
-                                "binary"
-                            );
-                            const base64ImageData =
-                                binaryImageData.toString("base64");
-                            const src = `data:image/png;base64,${base64ImageData}`;
-                            img.imageData = src;
-                        }
-                        await localImages.saveImage(img);
-                    }
-                    if (statusChange) {
-                        setImages((images) => {
-                            return [
-                                ...images.map((image) => {
-                                    const updatedImage = updatedImages.find(
-                                        (i) => i.id === image.id
-                                    );
-                                    if (updatedImage) {
-                                        return updatedImage;
-                                    }
-                                    return image;
-                                }),
-                            ].sort(sortImages);
-                        });
-                    }
-                }
-            } catch (err) {
-                setErr("Could not load images");
-                console.error(err);
-            } finally {
-                lock = false;
-            }
-        };
-
-        const timerHandle = setInterval(() => {
-            pollImages(images);
-        }, 2 * 1000);
-        return () => {
-            clearInterval(timerHandle);
-        };
-    }, [api, images, search]);
 
     useEffect(() => {
         const refreshBoost = async () => {
@@ -351,57 +370,14 @@ export const Homepage: FC<Props> = ({
         };
     }, [api]);
 
-    // load parent image from saved images if an id is on the query string
-    useEffect(() => {
-        const loadParent = async () => {
-            const search = qs.parse(location.search, {
-                ignoreQueryPrefix: true,
-            });
-            if (search.parent) {
-                setLoadingParent(true);
-                try {
-                    const parentImage = await api.getImage(
-                        search.parent as string
-                    );
-                    if (parentImage.data) {
-                        const downloadUrls = await api.getImageDownloadUrls(
-                            parentImage.data.id
-                        );
-                        const resp = await anonymousClient.get(
-                            downloadUrls.data.image_url!,
-                            {
-                                responseType: "arraybuffer",
-                            }
-                        );
-                        const binaryImageData = Buffer.from(
-                            resp.data,
-                            "binary"
-                        );
-                        const base64ImageData =
-                            binaryImageData.toString("base64");
-                        const src = `data:image/png;base64,${base64ImageData}`;
-                        setParentImage({
-                            ...parentImage.data,
-                            imageData: src,
-                        });
-                        history.push("/");
-                    }
-                } finally {
-                    setLoadingParent(false);
-                }
-            }
-        };
-        loadParent();
-    }, [location.search]);
-
-    const isPendingOrProcessing = (image: LocalImage) => {
+    const isPendingOrProcessing = (image: Image) => {
         return (
             image.status === ImageStatusEnum.Pending ||
             image.status === ImageStatusEnum.Processing
         );
     };
 
-    const sortImages = (a: LocalImage, b: LocalImage) => {
+    const sortImages = (a: Image, b: Image) => {
         // pending and processing images always come first
         if (isPendingOrProcessing(a) && !isPendingOrProcessing(b)) {
             return -1;
@@ -443,16 +419,16 @@ export const Homepage: FC<Props> = ({
             minUpdatedAt = Math.min(minUpdatedAt, image.updated_at);
         });
         // load images in descending order from updated_at
-        const resp = await localImages.listImages(
+        const resp = await api.listImages(
             minUpdatedAt - 1,
-            "prev",
+            search,
             100,
-            search
+            "desc"
         );
-        if (resp.length > 0) {
+        if (resp.data.images && resp.data.images.length > 0) {
             // combine images with new images and sort by updated_at descending
             setImages((images) =>
-                [...images, ...resp]
+                [...images, ...(resp.data.images || [])]
                     .filter((image) => !image.deleted_at)
                     .sort(sortImages)
             );
@@ -461,54 +437,27 @@ export const Homepage: FC<Props> = ({
         }
     };
 
-    const onDelete = async (image: LocalImage) => {
+    const onDelete = async (image: Image) => {
         try {
-            // await api.deleteImage(image.id);
-            await localImages.deleteImage(image.id);
-            setImages((images) => {
-                return images.filter((i) => i.id !== image.id);
-            });
+            await api.deleteImage(image.id);
         } catch (e) {
             console.error(e);
-            onError("Error deleting image");
+            setErr("Error deleting image");
         }
     };
 
-    const onFork = async (image: LocalImage) => {
-        setParentImage(image);
-        // setSelectedImage(null);
-        history.push("/");
-        window.scrollTo(0, 0);
-    };
-
-    const onSave = async (image: LocalImage) => {
-        const createInput: CreateImageInput = {
-            count: 1,
-            encoded_image: image.imageData!.split(",")[1],
-            phrases: image.phrases,
-            negative_phrases: image.negative_phrases,
-            status: CreateImageInputStatusEnum.Saved,
-            height: image.height as any,
-            width: image.width as any,
-            temporary: false,
-            label: "",
-            iterations: image.iterations,
-        }
-        await api.createImage(createInput);
-        await localImages.hardDeleteImage(image.id);
-        setImages((images) => {
-            return images.filter((i) => i.id !== image.id);
+    const onFork = async (image: Image) => {
+        history.push({
+            pathname: "/",
+            search: `?parent=${image.id}`,
         });
-        setSuccess("Image saved");
-        setSuccessTime(moment().valueOf());
-        history.push("/");
     };
 
-    const onEdit = async (image: LocalImage) => {
+    const onEdit = async (image: Image) => {
         history.push(`/image-editor/${image.id}`);
     };
 
-    const onThumbnailClicked = (image: LocalImage) => {
+    const onThumbnailClicked = (image: Image) => {
         // setSelectedImage(image);
         if (bulkDeleteSelecting) {
             setBulkDeleteIds({
@@ -516,7 +465,7 @@ export const Homepage: FC<Props> = ({
                 [image.id]: !bulkDeleteIds[image.id],
             });
         } else {
-            history.push(`/images/${image.id}`);
+            history.push(`/saved/${image.id}`);
         }
     };
 
@@ -528,8 +477,9 @@ export const Homepage: FC<Props> = ({
     const onConfirmBulkDelete = async () => {
         try {
             setBulkDeleting(true);
+            // await api.deleteImages(Object.keys(bulkDeleteIds));
             const promises = Object.keys(bulkDeleteIds).map((id) => {
-                return localImages.deleteImage(id);
+                return api.deleteImage(id);
             });
             await Promise.all(promises);
             setImages((images) => {
@@ -539,7 +489,7 @@ export const Homepage: FC<Props> = ({
             setBulkDeleteSelecting(false);
         } catch (e) {
             console.error(e);
-            onError("Error deleting images");
+            setErr("Error deleting images");
         } finally {
             setBulkDeleting(false);
         }
@@ -568,60 +518,14 @@ export const Homepage: FC<Props> = ({
         (image) => image.status === ImageStatusEnum.Processing
     );
 
-    const onUpdateBoostActive = async (active: boolean) => {
-        if (!boost) return;
-        const resp = await api.updateBoost({
-            is_active: active,
-            level: boost.level,
-        });
-        if (resp.data.error) {
-            alert(resp.data.error);
-        } else {
-            setBoost((await api.getBoost()).data);
-        }
-    };
-
-    const onUpdateBoostLevel = async (level: number) => {
-        if (!boost) return;
-        const resp = await api.updateBoost({
-            is_active: boost.is_active,
-            level: level,
-        });
-        if (resp.data.error) {
-            alert(resp.data.error);
-        } else {
-            setBoost((await api.getBoost()).data);
-        }
-    };
-
     return (
         <>
             <h1 style={{ fontSize: "40px", textAlign: "left" }}>
-                Welcome to AiBrush - Home
+                Welcome to AiBrush - Saved
             </h1>
 
-            <ErrorNotification message={err} timestamp={errTime} />
-            <SuccessNotification message={success} timestamp={successTime} />
-
-            <ImagePrompt
-                assetsUrl={assetsUrl}
-                creating={creating}
-                onSubmit={onSubmit}
-                onEdit={onEditNewImage}
-                parent={parentImage}
-                onCancel={() => handleCancelFork()}
-            />
-            {boost && (
-                <BoostWidget
-                    boost={boost}
-                    onUpdateActive={onUpdateBoostActive}
-                    onUpdateBoostLevel={onUpdateBoostLevel}
-                />
-            )}
-            <hr />
-
             <div
-                className="homepage-images"
+                className="saved-images"
                 style={{ marginTop: "48px", paddingBottom: "48px" }}
             >
                 <div style={{ textAlign: "left" }}>
@@ -659,12 +563,7 @@ export const Homepage: FC<Props> = ({
                                             <i className="fas fa-eye-slash"></i>
                                         )}
                                     </button>
-                                    <Dropdown
-                                        style={{
-                                            display: "inline",
-                                            marginLeft: "8px",
-                                        }}
-                                    >
+                                    <Dropdown style={{ display: "inline", marginLeft: "8px" }}>
                                         <Dropdown.Toggle variant="danger">
                                             <i className="fas fa-trash"></i>
                                         </Dropdown.Toggle>
@@ -680,7 +579,7 @@ export const Homepage: FC<Props> = ({
                                             <Dropdown.Item
                                                 onClick={() =>
                                                     history.push(
-                                                        "/local-deleted-images"
+                                                        "/deleted-images"
                                                     )
                                                 }
                                             >
@@ -688,6 +587,7 @@ export const Homepage: FC<Props> = ({
                                             </Dropdown.Item>
                                         </Dropdown.Menu>
                                     </Dropdown>
+                                    
                                 </>
                             )}
                             {bulkDeleteSelecting && (
@@ -754,21 +654,17 @@ export const Homepage: FC<Props> = ({
                 <ImagePopup
                     assetsUrl={assetsUrl}
                     image={selectedImage}
-                    onClose={() => history.push("/")}
+                    onClose={() => history.push("/saved")}
                     onDelete={(image) => {
                         onDelete(image);
                         setImages(images.filter((i) => i.id !== image.id));
-                        history.push("/");
+                        history.push("/saved");
                     }}
                     onFork={(image) => {
                         onFork(image);
-                        history.push("/");
                     }}
                     onEdit={(image) => {
                         onEdit(image);
-                    }}
-                    onSave={(image) => {
-                        onSave(image);
                     }}
                     onNSFW={onNSFW}
                     censorNSFW={censorNSFW}
@@ -780,9 +676,6 @@ export const Homepage: FC<Props> = ({
             </BusyModal>
             <BusyModal show={bulkDeleting} title="Deleting images">
                 <p>Please wait while we delete your images.</p>
-            </BusyModal>
-            <BusyModal show={loadingParent} title="Loading parent image">
-                <p>Please wait while we load the parent image.</p>
             </BusyModal>
             <PendingImages
                 images={pendingOrProcessingImages}

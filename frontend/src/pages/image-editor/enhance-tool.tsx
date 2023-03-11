@@ -17,8 +17,6 @@ import {
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
 import {
-    featherEdges,
-    fixRedShift,
     ImageUtilWorker,
 } from "../../lib/imageutil";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";

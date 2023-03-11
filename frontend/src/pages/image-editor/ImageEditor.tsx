@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import axios, { AxiosInstance } from "axios";
+import * as uuid from "uuid";
 
 import {
     AIBrushApi,
     CreateImageInputStatusEnum,
-    Image as APIImage,
 } from "../../client";
 import { getUpscaleLevel } from "../../lib/upscale";
 import "./ImageEditor.css";
@@ -25,6 +25,7 @@ import {
     uploadBlob,
 } from "../../lib/imageutil";
 import { BusyModal } from "../../components/BusyModal";
+import { LocalImage, LocalImagesStore } from "../../lib/localImagesStore";
 
 interface CanPreventDefault {
     preventDefault: () => void;
@@ -34,6 +35,7 @@ interface Props {
     api: AIBrushApi;
     apisocket: ApiSocket;
     assetsUrl: string;
+    localImages: LocalImagesStore;
 }
 
 interface ToolConfig {
@@ -47,7 +49,7 @@ interface ToolConfig {
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
 
-export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
+export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) => {
     const [showSelectionControls, setShowSelectionControls] = useState(false);
     const tools: Array<ToolConfig> = [
         {
@@ -134,7 +136,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         },
     ];
 
-    const [image, setImage] = useState<APIImage | null>(null);
+    const [image, setImage] = useState<LocalImage | null>(null);
     const [renderer, setRenderer] = useState<Renderer | null>(null);
     const [tool, setTool] = useState<Tool | null>(null);
     const [canUndo, setCanUndo] = useState(false);
@@ -177,62 +179,12 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         }
         setBusyMessage("Saving image...");
         try {
-            // create new image
-            const args = defaultArgs();
-            args.phrases = newArgs.phrases || image.phrases;
-            args.negative_phrases =
-                newArgs.negative_phrases || image.negative_phrases;
-            args.count = 1;
-            args.parent = image.id;
-            args.stable_diffusion_strength = image.stable_diffusion_strength;
-            args.status = CreateImageInputStatusEnum.Completed;
-            args.width = renderer!.getWidth() as any;
-            args.height = renderer!.getHeight() as any;
-            args.nsfw = image.nsfw;
-            console.log("Creating new image...");
-            const newImage = (await api.createImage(args)).data!.images![0];
-            console.log("New image created: ", newImage.id);
-            // if (
-            //     args.width !== (image.width as any) ||
-            //     args.height !== (image.height as any)
-            // ) {
-            // upload entire image
-            const imageBlob = encodedImageToBlob(encodedImage);
-            const encodedThumbnail = await createEncodedThumbnail(encodedImage);
-            const thumbnailBlob = encodedImageToBlob(encodedThumbnail);
-            const uploadUrls = await api.getImageUploadUrls(newImage.id);
-            uploadBlob(uploadUrls.data.image_url!, imageBlob);
-            uploadBlob(
-                uploadUrls.data.thumbnail_url!,
-                thumbnailBlob
-            );
-            // await Promise.all([promise1, promise2]);
-            // } else {
-            //     // upload only the selection
-            //     const tmpImagePromise = api.createTmpImage();
-            //     // inpainting tool passes selection overlay
-            //     // because it gets reset right after this method is called
-            //     const selectionOverlay = newArgs.selection_overlay || renderer.getSelectionOverlay();
-            //     const newEncodedImage = renderer.getEncodedImage(
-            //         selectionOverlay || null
-            //     );
-            //     if (!newEncodedImage) {
-            //         console.error("No image returned from renderer");
-            //         return;
-            //     }
-            //     const newImageBlob = encodedImageToBlob(newEncodedImage);
-            //     const tmpImage = await tmpImagePromise;
-            //     console.log("tmp image", tmpImage);
-            //     await uploadBlob(tmpImage.data.upload_url, newImageBlob);
-            //     // updating large image takes a few seconds on the backend
-            //     // so let it run in the background without waiting for it
-            //     api.updateLargeImage({
-            //         image_id: newImage.id,
-            //         tmp_image_id: tmpImage.data.id,
-            //         x: selectionOverlay?.x || 0,
-            //         y: selectionOverlay?.y || 0,
-            //     });
-            // }
+            const newImage: LocalImage = {
+                ...image,
+                id: uuid.v4(),
+                imageData: `data:image/png;base64,${encodedImage}`
+            }
+            await localImages.saveImage(newImage);
 
             // switch url and state to new image
             setImage(newImage);
@@ -248,22 +200,30 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
         }
 
         async function loadImage() {
-            const image = (await api.getImage(id)).data;
-            setImage(image);
-            const download_urls = await api.getImageDownloadUrls(id);
-            // Loading up data as binary, base64 encoding into image url
-            // bypasses browser security nonsense about cross-domain images
-            const resp = await anonymousClient.get(
-                download_urls.data.image_url!,
-                {
-                    responseType: "arraybuffer",
-                }
-            );
-            const binaryImageData = Buffer.from(resp.data, "binary");
-            const base64ImageData = binaryImageData.toString("base64");
-            const src = `data:image/png;base64,${base64ImageData}`;
+            const localImage = await localImages.getImage(id);
+            let imageSrc = "";
+            if (localImage) {
+                setImage(localImage);
+                imageSrc = localImage.imageData!;
+            } else {
+                const image = (await api.getImage(id)).data;
+                setImage(image);
+                const download_urls = await api.getImageDownloadUrls(id);
+                // Loading up data as binary, base64 encoding into image url
+                // bypasses browser security nonsense about cross-domain images
+                const resp = await anonymousClient.get(
+                    download_urls.data.image_url!,
+                    {
+                        responseType: "arraybuffer",
+                    }
+                );
+                const binaryImageData = Buffer.from(resp.data, "binary");
+                const base64ImageData = binaryImageData.toString("base64");
+                imageSrc = `data:image/png;base64,${base64ImageData}`;
+            }
+            
             const imageElement = new Image();
-            imageElement.src = src;
+            imageElement.src = imageSrc;
             imageElement.onload = () => {
                 if (!canvasRef.current) {
                     console.error("Failed to get canvas");
@@ -411,46 +371,16 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket }) => {
                                 onTouchStart={(e) =>
                                     preventDefault(e) &&
                                     tool &&
-                                    // (() => {
-
-                                    //     const rect = canvasRef.current!.getBoundingClientRect();
-                                    //     const touch = e.touches[0];
-                                    //     if (touch) {
-                                    //         tool.onMouseDown({
-                                    //             type: "touch",
-                                    //             button: 0,
-                                    //             nativeEvent: {
-                                    //                 offsetX: touch.clientX - rect.left,
-                                    //                 offsetY: touch.clientY - rect.top,
-                                    //             }
-                                    //         } as any);
-                                    //     }
-                                    // })()
                                     tool.onTouchStart(e)
                                 }
                                 onTouchMove={(e) =>
                                     preventDefault(e) &&
                                     tool &&
-                                    // (() => {
-                                    //     const rect = canvasRef.current!.getBoundingClientRect();
-                                    //     const touch = e.touches[0];
-                                    //     if (touch) {
-                                    //         tool.onMouseMove({
-                                    //             nativeEvent: {
-                                    //                 offsetX: touch.clientX - rect.left,
-                                    //                 offsetY: touch.clientY - rect.top,
-                                    //             }
-                                    //         } as any);
-                                    //     }
-                                    // })()
                                     tool.onTouchMove(e)
                                 }
                                 onTouchEnd={(e) =>
                                     preventDefault(e) &&
                                     tool &&
-                                    // tool.onMouseUp({
-                                    //     button: 0
-                                    // } as any)
                                     tool.onTouchEnd(e)
                                 }
                             ></canvas>
