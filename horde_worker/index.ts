@@ -106,16 +106,23 @@ function stripBlacklistedTerms(nsfw: boolean, prompt: string): string {
     return prompt;
 }
 
-const triggers = {
-    "GTA5 Artwork Diffusion": "gtav style",
+const triggers: {[key: string]: string[]} = {
+    "GTA5 Artwork Diffusion": ["gtav style"],
+    "AIO Pixel Art": ["16bitscene", "pixelsprite"],
+    "OrbAI": ["orbai"],
+    "Ranma Diffusion": ["80sanimestyle"],
+    "App Icon Diffusion": ["IconsMi",]
 };
 
 function addTrigger(prompt: string, model: string): string {
     if (triggers[model]) {
-        const trigger = triggers[model];
-        if (!prompt.toLocaleLowerCase().includes(trigger.toLocaleLowerCase())) {
-            return `${trigger}, ${prompt}`;
+        const triggerList = triggers[model];
+        for (let trigger of triggerList) {
+            if (prompt.toLocaleLowerCase().includes(trigger.toLocaleLowerCase())) {
+                return prompt;
+            }
         }
+        return `${triggerList[0]}, ${prompt}`;
     }
     return prompt;
 }
