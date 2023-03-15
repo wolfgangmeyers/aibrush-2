@@ -323,6 +323,12 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     'upscale'?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateImageInput
+     */
+    'controlnet_type'?: CreateImageInputControlnetTypeEnum;
 }
 
 export const CreateImageInputStatusEnum = {
@@ -359,6 +365,19 @@ export const CreateImageInputWidthEnum = {
 } as const;
 
 export type CreateImageInputWidthEnum = typeof CreateImageInputWidthEnum[keyof typeof CreateImageInputWidthEnum];
+export const CreateImageInputControlnetTypeEnum = {
+    Canny: 'canny',
+    Hed: 'hed',
+    Depth: 'depth',
+    Normal: 'normal',
+    Openpose: 'openpose',
+    Seg: 'seg',
+    Scribble: 'scribble',
+    Fakescribbles: 'fakescribbles',
+    Hough: 'hough'
+} as const;
+
+export type CreateImageInputControlnetTypeEnum = typeof CreateImageInputControlnetTypeEnum[keyof typeof CreateImageInputControlnetTypeEnum];
 
 /**
  * 
@@ -675,6 +694,12 @@ export interface Image {
      * @memberof Image
      */
     'upscale': boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof Image
+     */
+    'controlnet_type'?: ImageControlnetTypeEnum;
 }
 
 export const ImageStatusEnum = {
@@ -749,6 +774,19 @@ export const ImageUncropOffsetYEnum = {
 } as const;
 
 export type ImageUncropOffsetYEnum = typeof ImageUncropOffsetYEnum[keyof typeof ImageUncropOffsetYEnum];
+export const ImageControlnetTypeEnum = {
+    Canny: 'canny',
+    Hed: 'hed',
+    Depth: 'depth',
+    Normal: 'normal',
+    Openpose: 'openpose',
+    Seg: 'seg',
+    Scribble: 'scribble',
+    Fakescribbles: 'fakescribbles',
+    Hough: 'hough'
+} as const;
+
+export type ImageControlnetTypeEnum = typeof ImageControlnetTypeEnum[keyof typeof ImageControlnetTypeEnum];
 
 /**
  * 

@@ -885,6 +885,9 @@ components:
           type: boolean
         upscale:
           type: boolean
+        controlnet_type:
+          type: string
+          enum: [canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough]
 
     UpdateImageInput:
       type: object
@@ -988,6 +991,9 @@ components:
           type: string
         upscale:
           type: boolean
+        controlnet_type:
+          type: string
+          enum: [canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough]
       required:
         - id
         - created_at
