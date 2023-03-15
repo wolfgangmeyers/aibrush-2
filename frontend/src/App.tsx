@@ -66,6 +66,7 @@ function App() {
                 const credentials = JSON.parse(
                     storedCredentials
                 ) as LoginResult;
+                updateHttpClient(credentials);
                 const result = await client.refresh({
                     refreshToken: credentials.refreshToken,
                 });

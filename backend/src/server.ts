@@ -262,21 +262,6 @@ export class Server {
         );
 
         this.app.post(
-            "/api/auth/refresh",
-            withMetrics("/api/auth/refresh", async (req, res) => {
-                const result = await this.backendService.refresh(
-                    req.body.refreshToken
-                );
-                // if result is null, send 400
-                if (!result) {
-                    res.sendStatus(400);
-                } else {
-                    res.send(result);
-                }
-            })
-        );
-
-        this.app.post(
             "/api/discord-login",
             withMetrics("/api/discord-login", async (req, res) => {
                 const result = await this.backendService.discordLogin(
@@ -522,6 +507,21 @@ export class Server {
 
         // authenticated routes only past this point
         this.app.use(authMiddleware(this.config, this.logger));
+
+        this.app.post(
+            "/api/auth/refresh",
+            withMetrics("/api/auth/refresh", async (req, res) => {
+                const result = await this.backendService.refresh(
+                    req.body.refreshToken
+                );
+                // if result is null, send 400
+                if (!result) {
+                    res.sendStatus(400);
+                } else {
+                    res.send(result);
+                }
+            })
+        );
 
         // list images
         this.app.get(

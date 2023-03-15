@@ -64,5 +64,5 @@
         "@types/react-router-dom": "^5.3.1",
         "@types/uuid": "^9.0.1"
     },
-    "proxy": "https://www.aibrush.art"
+    "proxy": "http://localhost:3000"
 }
