@@ -13,6 +13,7 @@ import { AspectRatioSelector } from "./AspectRatioSelector";
 import { getUpscaleLevel } from "../lib/upscale";
 import { resizeEncodedImage } from "../lib/imageutil";
 import { LocalImage } from "../lib/localImagesStore";
+import { supportedModels } from "../lib/supportedModels";
 
 interface Props {
     parent: LocalImage | null;
@@ -376,18 +377,9 @@ export const ImagePrompt: FC<Props> = ({
                                 value={model}
                                 onChange={(e) => setModel(e.target.value)}
                             >
-                                <option value="Epic Diffusion">
-                                    Epic Diffusion
-                                </option>
-                                <option value="Anything v3">Anything v3</option>
-                                <option value="Hentai Diffusion">
-                                    Hentai Diffusion
-                                </option>
-                                <option value="URPM">URPM</option>
-                                <option value="Deliberate">Deliberate</option>
-                                <option value="GTA5 Artwork Diffusion">
-                                    GTA5 Artwork Diffusion
-                                </option>
+                                {supportedModels.map((model) => (
+                                    <option value={model} key={`model-${model}`}>{model}</option>
+                                ))}
                             </select>
                         </div>
                         <div className="form-group">

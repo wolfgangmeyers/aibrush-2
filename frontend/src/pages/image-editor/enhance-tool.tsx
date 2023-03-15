@@ -16,13 +16,12 @@ import {
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
-import {
-    ImageUtilWorker,
-} from "../../lib/imageutil";
+import { ImageUtilWorker } from "../../lib/imageutil";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { getUpscaleLevel } from "../../lib/upscale";
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 import moment from "moment";
+import { supportedModels } from "../../lib/supportedModels";
 
 type EnhanceToolState = "select" | "default" | "busy" | "confirm" | "erase";
 
@@ -667,7 +666,9 @@ export const EnhanceControls: FC<ControlsProps> = ({
     );
     console.log("negativePrompt", negativePrompt);
     const [model, setModel] = useState(
-        (image.model == "swinir" || image.model == "stable_diffusion") ? "Epic Diffusion" : image.model
+        image.model == "swinir" || image.model == "stable_diffusion"
+            ? "Epic Diffusion"
+            : image.model
     );
     const [state, setState] = useState<EnhanceToolState>(tool.state);
     const [progress, setProgress] = useState(0);
@@ -828,20 +829,11 @@ export const EnhanceControls: FC<ControlsProps> = ({
                             value={model}
                             onChange={(e) => setModel(e.target.value)}
                         >
-                            <option value="Epic Diffusion">
-                                Epic Diffusion
-                            </option>
-                            <option value="Anything v3">
-                                Anything v3
-                            </option>
-                            <option value="Hentai Diffusion">
-                                Hentai Diffusion
-                            </option>
-                            <option value="URPM">URPM</option>
-                            <option value="Deliberate">Deliberate</option>
-                            <option value="GTA5 Artwork Diffusion">
-                                GTA5 Artwork Diffusion
-                            </option>
+                            {supportedModels.map((model) => (
+                                <option value={model} key={`model-${model}`}>
+                                    {model}
+                                </option>
+                            ))}
                         </select>
                         <small className="form-text text-muted">
                             Select the model to use

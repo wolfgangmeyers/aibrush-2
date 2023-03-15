@@ -96,6 +96,7 @@ export class LocalImagesStore {
         const request = store.delete(id);
         return new Promise((resolve, reject) => {
             request.onsuccess = (evt) => {
+                console.log(`image ${id} permanently deleted`)
                 resolve();
             };
             request.onerror = (evt) => {
@@ -199,7 +200,7 @@ export class LocalImagesStore {
         });
     }
 
-    async getDeletedImages(): Promise<LocalImage[]> {
+    async getDeletedImages(olderThan?: number): Promise<LocalImage[]> {
         if (!this.db) {
             throw new Error("not initialized");
         }
@@ -209,7 +210,7 @@ export class LocalImagesStore {
         const index = store.index("deleted_at");
         // const request = index.openCursor();
         // get cursor for all deleted_at values
-        const request = index.openCursor(IDBKeyRange.lowerBound(1));
+        const request = index.openCursor(olderThan ? IDBKeyRange.upperBound(olderThan) : IDBKeyRange.lowerBound(1), olderThan ? "prev" : "next");
         return new Promise((resolve, reject) => {
             const images: LocalImage[] = [];
             request.onsuccess = (evt) => {
@@ -245,12 +246,9 @@ export class LocalImagesStore {
 
     async cleanupDeletedImages(): Promise<void> {
         // delete images that are more than 1 day old
-        const deletedImages = await this.getDeletedImages();
+        const deletedImages = await this.getDeletedImages(moment().subtract(1, "hours").valueOf());
         const promises = deletedImages.map((image) => {
-            if (moment().diff(moment(image.deleted_at), "days") > 1) {
-                return this.hardDeleteImage(image.id);
-            }
-            return Promise.resolve();
+            return this.hardDeleteImage(image.id);
         });
         await Promise.all(promises);
     }

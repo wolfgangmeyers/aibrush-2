@@ -177,14 +177,14 @@ export const Homepage: FC<Props> = ({
         }
     };
 
-    const onNSFW = async (image: LocalImage, nsfw: boolean) => {
+    const onNSFW = async (updatedImage: LocalImage, nsfw: boolean) => {
         await localImages.saveImage({
-            ...image,
+            ...updatedImage,
             nsfw,
         });
         setImages((images) => {
             return images.map((image) => {
-                if (image.id === image.id) {
+                if (updatedImage.id === image.id) {
                     return {
                         ...image,
                         nsfw,
