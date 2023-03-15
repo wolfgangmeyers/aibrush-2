@@ -20,6 +20,7 @@ export interface HordeRequestPayload {
         karras: boolean;
         hires_fix: boolean;
         post_processing: string[];
+        control_type?: string;
     };
     prompt: string;
     api_key: string;

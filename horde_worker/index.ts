@@ -141,6 +141,7 @@ interface HordeRequest {
     censorNsfw: boolean;
     model: string;
     upscale: boolean;
+    controlnetType: string | null;
 }
 
 async function processRequest(request: HordeRequest) {
@@ -167,11 +168,12 @@ async function processRequest(request: HordeRequest) {
                 karras: true,
                 sampler_name: "k_euler",
                 cfg_scale: request.cfgScale,
-                denoising_strength: request.denoisingStrength,
+                denoising_strength: request.controlnetType ? undefined : request.denoisingStrength,
                 // TODO: does this work? Maybe we can use it to handle larger
                 // areas of an image in the editor
                 hires_fix: false,
                 post_processing,
+                control_type: request.controlnetType || undefined,
             },
             prompt,
             api_key: hordeApiKey,
