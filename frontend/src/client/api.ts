@@ -714,6 +714,12 @@ export interface Image {
      * @memberof Image
      */
     controlnet_type?: ImageControlnetTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof Image
+     */
+    error?: string;
 }
 
 /**
@@ -1192,6 +1198,12 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     deleted_at?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateImageInput
+     */
+    error?: string;
 }
 
 /**

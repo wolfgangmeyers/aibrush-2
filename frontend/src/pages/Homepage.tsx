@@ -244,8 +244,6 @@ export const Homepage: FC<Props> = ({
                 return;
             }
             lock = true;
-            // clear error
-            setErr(null);
 
             const pendingOrProcessingImages = images.filter((image) => {
                 return (
@@ -277,10 +275,10 @@ export const Homepage: FC<Props> = ({
                         if (imageStatuses[img.id] !== img.status) {
                             statusChange = true;
                         }
-                        // TODO: surface errors to the user
+
                         if (img.status == ImageStatusEnum.Error) {
-                            setErr(
-                                "Some images failed to generate, please make sure your prompt doesn't violate our terms of service"
+                            onError(
+                                img.error || "Some images failed to generate, please make sure your prompt doesn't violate our terms of service"
                             );
                             await api.deleteImage(img.id);
                             await localImages.deleteImage(img.id);
@@ -325,7 +323,7 @@ export const Homepage: FC<Props> = ({
                     }
                 }
             } catch (err) {
-                setErr("Could not load images");
+                onError("Could not load images");
                 console.error(err);
             } finally {
                 lock = false;

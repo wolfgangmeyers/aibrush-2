@@ -911,6 +911,7 @@ components:
           type: boolean
         deleted_at:
           type: number
+          nullable: true
         error:
           type: string
 
