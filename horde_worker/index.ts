@@ -15,11 +15,14 @@ if (process.env.BUGSNAG_API_KEY) {
 
 const callbackEndpoint = "https://www.aibrush.art";
 
-async function updateImage(imageId: string, status: string, authToken: string) {
+interface UpdateImageInput {
+    status: string;
+    error?: string;
+}
+
+async function updateImage(imageId: string, input: UpdateImageInput, authToken: string) {
     const url = `${callbackEndpoint}/api/images/${imageId}`;
-    await axios.patch(url, {
-        status,
-    }, {
+    await axios.patch(url, input, {
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
@@ -147,7 +150,7 @@ interface HordeRequest {
 async function processRequest(request: HordeRequest) {
     console.log("processing request", request);
     try {
-        updateImage(request.imageId, "processing", request.authToken);
+        updateImage(request.imageId, {status: "processing"}, request.authToken);
         let prompt = addTrigger(request.prompt, request.model);
         const negativePrompt = request.negativePrompt;
         if (negativePrompt.length > 0) {
@@ -207,7 +210,7 @@ async function processRequest(request: HordeRequest) {
         const webpImageData = await processImage(payload);
         console.log("received response from stable horde")
         if (!webpImageData) {
-            await updateImage(request.imageId, "error", request.authToken);
+            await updateImage(request.imageId, {status: "error", error: "Image request timed out"}, request.authToken);
             return;
         }
 
@@ -217,12 +220,16 @@ async function processRequest(request: HordeRequest) {
         }).webp().toBuffer();
         const upload2 = uploadImage(`${request.imageId}.thumbnail.png`, thumbnail);
         await Promise.all([upload1, upload2]);
-        await updateImage(request.imageId, "completed", request.authToken);
+        await updateImage(request.imageId, {status: "completed"}, request.authToken);
         console.log("completed request")
     } catch (e) {
         Bugsnag.notify(e);
         console.log(e);
-        await updateImage(request.imageId, "error", request.authToken);
+        let err = "Image could not be processed";
+        if (e.response?.data?.message) {
+            err = e.response.data.message;
+        }
+        await updateImage(request.imageId, {status: "error", error: err}, request.authToken);
     } finally {
         activeImageCount--;
     }
