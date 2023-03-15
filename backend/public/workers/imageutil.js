@@ -5,15 +5,16 @@ function featherEdges(
     imageWidth,
     imageHeight,
     imageData,
-    featherWidth
+    featherWidth,
+    upscale,
 ) {
     console.log("featherEdges", selectionOverlay, imageWidth, imageHeight);
     const featherLeftEdge = selectionOverlay.x != 0;
     const featherRightEdge =
-        selectionOverlay.x + selectionOverlay.width != imageWidth;
+        !upscale && selectionOverlay.x + selectionOverlay.width != imageWidth;
     const featherTopEdge = selectionOverlay.y != 0;
     const featherBottomEdge =
-        selectionOverlay.y + selectionOverlay.height != imageHeight;
+        !upscale && selectionOverlay.y + selectionOverlay.height != imageHeight;
 
     const baseWidth = Math.min(selectionOverlay.width, selectionOverlay.height);
     if (!featherWidth) {
@@ -115,10 +116,10 @@ function applyAlphaMask(imageData, alphaMask) {
 }
 
 self.addEventListener('message', (evt) => {
-    const { id, feather, alpha, pixels, alphaPixels, width, height, featherWidth, selectionOverlay } = evt.data;
+    const { id, feather, alpha, pixels, alphaPixels, width, height, featherWidth, selectionOverlay, upscale } = evt.data;
     const imageData = new ImageData(pixels, selectionOverlay.width, selectionOverlay.height);
     if (feather) {
-        featherEdges(selectionOverlay, width, height, imageData, featherWidth);
+        featherEdges(selectionOverlay, width, height, imageData, featherWidth, upscale);
     }
     if (alpha) {
         const alphaMask = new ImageData(
