@@ -526,6 +526,26 @@ describe("server", () => {
                 })
             })
 
+            describe("when updating an image with an error", () => {
+                // same as update image but error and status fields are set
+                // just verify they come back the same
+                let updatedImage: Image;
+
+                beforeEach(async () => {
+                    const response = await client.updateImage(image.id, {
+                        status: UpdateImageInputStatusEnum.Error,
+                        error: "test error",
+                    })
+                    updatedImage = response.data
+                });
+
+                it("should return the updated image", () => {
+                    expect(updatedImage.id).toBe(image.id)
+                    expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Error)
+                    expect(updatedImage.error).toBe("test error")
+                });
+            })
+
             describe("when getting image data that doesn't exist", () => {
                 it("should reject the call with not found", async () => {
                     await expect(client.getImageData("does-not-exist")).rejects.toThrow(/Request failed with status code 404/)

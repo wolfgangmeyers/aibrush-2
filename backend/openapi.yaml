@@ -911,7 +911,8 @@ components:
           type: boolean
         deleted_at:
           type: number
-          nullable: true
+        error:
+          type: string
 
     Image:
       properties:
@@ -994,6 +995,8 @@ components:
         controlnet_type:
           type: string
           enum: [canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough]
+        error:
+          type: string
       required:
         - id
         - created_at

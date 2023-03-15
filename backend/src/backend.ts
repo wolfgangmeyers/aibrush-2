@@ -812,8 +812,9 @@ export class BackendService {
                     negative_score=$7,
                     nsfw=$8,
                     deleted_at=$9,
-                    worker_id=$10
-                WHERE id=$11 RETURNING *`,
+                    error=$10,
+                    worker_id=$11
+                WHERE id=$12 RETURNING *`,
                 [
                     existingImage.label,
                     existingImage.current_iterations,
@@ -824,6 +825,7 @@ export class BackendService {
                     existingImage.negative_score,
                     existingImage.nsfw,
                     existingImage.deleted_at,
+                    existingImage.error,
                     assignedWorkerId,
                     id,
                 ]

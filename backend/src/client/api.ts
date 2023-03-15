@@ -700,6 +700,12 @@ export interface Image {
      * @memberof Image
      */
     'controlnet_type'?: ImageControlnetTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof Image
+     */
+    'error'?: string;
 }
 
 export const ImageStatusEnum = {
@@ -1163,7 +1169,13 @@ export interface UpdateImageInput {
      * @type {number}
      * @memberof UpdateImageInput
      */
-    'deleted_at'?: number | null;
+    'deleted_at'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof UpdateImageInput
+     */
+    'error'?: string;
 }
 
 export const UpdateImageInputStatusEnum = {
