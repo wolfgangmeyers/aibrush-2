@@ -325,6 +325,12 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     upscale?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateImageInput
+     */
+    controlnet_type?: CreateImageInputControlnetTypeEnum;
 }
 
 /**
@@ -366,6 +372,21 @@ export enum CreateImageInputWidthEnum {
     NUMBER_768 = 768,
     NUMBER_896 = 896,
     NUMBER_1024 = 1024
+}
+/**
+    * @export
+    * @enum {string}
+    */
+export enum CreateImageInputControlnetTypeEnum {
+    Canny = 'canny',
+    Hed = 'hed',
+    Depth = 'depth',
+    Normal = 'normal',
+    Openpose = 'openpose',
+    Seg = 'seg',
+    Scribble = 'scribble',
+    Fakescribbles = 'fakescribbles',
+    Hough = 'hough'
 }
 
 /**
@@ -687,6 +708,12 @@ export interface Image {
      * @memberof Image
      */
     upscale: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof Image
+     */
+    controlnet_type?: ImageControlnetTypeEnum;
 }
 
 /**
@@ -770,6 +797,21 @@ export enum ImageUncropOffsetYEnum {
     NUMBER_640 = 640,
     NUMBER_768 = 768,
     NUMBER_896 = 896
+}
+/**
+    * @export
+    * @enum {string}
+    */
+export enum ImageControlnetTypeEnum {
+    Canny = 'canny',
+    Hed = 'hed',
+    Depth = 'depth',
+    Normal = 'normal',
+    Openpose = 'openpose',
+    Seg = 'seg',
+    Scribble = 'scribble',
+    Fakescribbles = 'fakescribbles',
+    Hough = 'hough'
 }
 
 /**

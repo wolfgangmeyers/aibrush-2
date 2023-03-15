@@ -13,7 +13,7 @@ import { AspectRatioSelector } from "./AspectRatioSelector";
 import { getUpscaleLevel } from "../lib/upscale";
 import { resizeEncodedImage } from "../lib/imageutil";
 import { LocalImage } from "../lib/localImagesStore";
-import { supportedModels } from "../lib/supportedModels";
+import { controlnetTypes, supportedModels } from "../lib/supportedModels";
 
 interface Props {
     parent: LocalImage | null;
@@ -76,6 +76,7 @@ export const ImagePrompt: FC<Props> = ({
     const [encodedImage, setEncodedImage] = useState<string>("");
     const [nsfw, setNsfw] = useState<boolean>(false);
     const [model, setModel] = useState<string>("Epic Diffusion");
+    const [controlnetType, setControlnetType] = useState<string | undefined>();
     const defaultAspectRatio = aspectRatios[DEFAULT_ASPECT_RATIO];
 
     const [aspectRatioDetails, setAspectRatioDetails] = useState<AspectRatio>(
@@ -113,6 +114,7 @@ export const ImagePrompt: FC<Props> = ({
         args.nsfw = nsfw;
         args.model = model;
         args.temporary = true;
+        args.controlnet_type = controlnetType as any;
         if (parent) {
             const bestMatch = getClosestAspectRatio(
                 parent.width!,
@@ -235,7 +237,9 @@ export const ImagePrompt: FC<Props> = ({
                 setEncodedImage(imageData.split(",")[1]);
             }
             setPrompt(parent.phrases.join(", "));
-            setNegativePrompt(parent.negative_phrases.join(", ") || defaultNegativePrompt);
+            setNegativePrompt(
+                parent.negative_phrases.join(", ") || defaultNegativePrompt
+            );
             setCount(4);
             setParentId(parent.id);
             setAdvancedView(true);
@@ -378,7 +382,12 @@ export const ImagePrompt: FC<Props> = ({
                                 onChange={(e) => setModel(e.target.value)}
                             >
                                 {supportedModels.map((model) => (
-                                    <option value={model} key={`model-${model}`}>{model}</option>
+                                    <option
+                                        value={model}
+                                        key={`model-${model}`}
+                                    >
+                                        {model}
+                                    </option>
                                 ))}
                             </select>
                         </div>
@@ -444,6 +453,35 @@ export const ImagePrompt: FC<Props> = ({
                                 <span className="helptext">
                                     This is how much variation you want to see
                                     from the parent image
+                                </span>
+                            </div>
+                        )}
+                        {encodedImage && (
+                            // controlnet type - canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough
+                            <div className="form-group">
+                                <label htmlFor="controlNetType">
+                                    Control Net Type
+                                </label>
+                                <select
+                                    className="form-control"
+                                    id="controlNetType"
+                                    value={controlnetType}
+                                    onChange={(e) =>
+                                        setControlnetType(e.target.value)
+                                    }
+                                >
+                                    <option value="">None</option>
+                                    {controlnetTypes.map((type) => (
+                                        <option
+                                            value={type}
+                                            key={`type-${type}`}
+                                        >
+                                            {type}
+                                        </option>
+                                    ))}
+                                </select>
+                                <span className="helptext">
+                                    Controlnet is an advanced way of controlling the output of image generation. You can read more about it <a target="_blank" href="https://bootcamp.uxdesign.cc/controlnet-and-stable-diffusion-a-game-changer-for-ai-image-generation-83555cb942fc">here.</a>
                                 </span>
                             </div>
                         )}
