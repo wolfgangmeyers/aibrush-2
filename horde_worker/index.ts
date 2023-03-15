@@ -1,4 +1,3 @@
-import workerpool from "workerpool";
 import * as AWS from "aws-sdk";
 import sharp from "sharp";
 import Bugsnag from "@bugsnag/js";
