@@ -1,11 +1,27 @@
 import { useEffect, useState, FC } from "react";
 import loadImage from "blueimp-load-image";
-import { splitImage, mergeTiles, SplitResult } from "../lib/imageutil";
+import {
+    splitImage,
+    mergeTiles,
+    SplitResult,
+    ImageUtilWorker,
+} from "../lib/imageutil";
+import * as uuid from "uuid";
 
-export const TestPage : FC = () => {
-
+export const TestPage: FC = () => {
     const [originalImage, setOriginalImage] = useState<string | undefined>();
     const [upscaledImage, setUpscaledImage] = useState<string | undefined>();
+    const [imageWorker, setImageWorker] = useState<
+        ImageUtilWorker | undefined
+    >();
+
+    useEffect(() => {
+        const imageWorker = new ImageUtilWorker();
+        setImageWorker(imageWorker);
+        return () => {
+            imageWorker.destroy();
+        };
+    }, []);
 
     const imageDataToCanvas = (imageData: ImageData): HTMLCanvasElement => {
         const canvas = document.createElement("canvas");
@@ -20,7 +36,7 @@ export const TestPage : FC = () => {
     };
 
     const upscaleImageData = (imageData: ImageData): HTMLCanvasElement => {
-        console.log("upscaling image data", imageData.width, imageData.height)
+        console.log("upscaling image data", imageData.width, imageData.height);
         const canvas = document.createElement("canvas");
         canvas.width = imageData.width * 2;
         canvas.height = imageData.height * 2;
@@ -33,19 +49,29 @@ export const TestPage : FC = () => {
         return canvas;
     };
 
-    const onImageSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onImageSelected = async (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        if (!imageWorker) {
+            throw new Error("Image worker not initialized");
+        }
         const files = event.target.files;
         if (files && files.length > 0) {
             loadImage(
                 files[0],
-                (img) => {
+                async (img) => {
                     const c = img as HTMLCanvasElement;
                     const originalImage = c.toDataURL("image/png");
                     setOriginalImage(originalImage);
 
                     const ctx = c.getContext("2d");
                     if (ctx) {
-                        const originalImageData = ctx.getImageData(0, 0, c.width, c.height);
+                        const originalImageData = ctx.getImageData(
+                            0,
+                            0,
+                            c.width,
+                            c.height
+                        );
                         const splitResult = splitImage(originalImageData);
                         if (!splitResult) {
                             setUpscaledImage(originalImage);
@@ -63,13 +89,50 @@ export const TestPage : FC = () => {
                             for (let y = 0; y < splitResult.numTilesY; y++) {
                                 const tile = splitResult.tiles[x][y];
                                 const upscaledTile = upscaleImageData(tile);
-                                splitResult.tiles[x][y] = upscaledTile.getContext("2d")!.getImageData(0, 0, upscaledTile.width, upscaledTile.height);
+                                const upscaledImageData = upscaledTile
+                                .getContext("2d")!
+                                .getImageData(
+                                    0,
+                                    0,
+                                    upscaledTile.width,
+                                    upscaledTile.height
+                                );
+                                const id = uuid.v4();
+                                const feathered =
+                                    await imageWorker.processRequest({
+                                        id,
+                                        alpha: false,
+                                        feather: true,
+                                        width: splitResult.imageWidth,
+                                        height: splitResult.imageHeight,
+                                        pixels: upscaledImageData.data,
+                                        selectionOverlay: {
+                                            x:
+                                                x *
+                                                (splitResult.tileSize - 64),
+                                            y:
+                                                y *
+                                                (splitResult.tileSize - 64),
+                                            width: upscaledTile.width,
+                                            height: upscaledTile.height,
+                                        },
+                                        upscale: true,
+                                        featherWidth: 64,
+                                    });
+
+                                splitResult.tiles[x][y] = new ImageData(feathered.pixels, upscaledTile.width, upscaledTile.height)
                             }
                         }
                         const upscaledImageData = mergeTiles(splitResult);
-                        console.log("upscaled image data size", upscaledImageData.width, upscaledImageData.height)
-                        const upscaledCanvas = imageDataToCanvas(upscaledImageData);
-                        const upscaledImage = upscaledCanvas.toDataURL("image/png");
+                        console.log(
+                            "upscaled image data size",
+                            upscaledImageData.width,
+                            upscaledImageData.height
+                        );
+                        const upscaledCanvas =
+                            imageDataToCanvas(upscaledImageData);
+                        const upscaledImage =
+                            upscaledCanvas.toDataURL("image/png");
                         setUpscaledImage(upscaledImage);
                     }
                 },
@@ -81,13 +144,17 @@ export const TestPage : FC = () => {
     return (
         <div>
             <input type="file" onChange={onImageSelected} />
-            {originalImage && upscaledImage && <div>
-                Original:<br/>
-                <img src={originalImage} />
-                <br/>
-                Upscaled:<br/>
-                <img src={upscaledImage} />
-            </div>}
+            {originalImage && upscaledImage && (
+                <div>
+                    Original:
+                    <br />
+                    <img src={originalImage} />
+                    <br />
+                    Upscaled:
+                    <br />
+                    <img src={upscaledImage} />
+                </div>
+            )}
         </div>
     );
-}
+};

@@ -27,11 +27,11 @@ export function splitImage(initImage: ImageData) {
             // split the image into 512x512 tiles
             // they need to overlap by at least 32 pixels
             // so that the edges can be merged
-    
+
             // calculate the number of tiles in each dimension
             const num_tiles_x = Math.ceil(initImage.width / (tile_size - 32));
             const num_tiles_y = Math.ceil(initImage.height / (tile_size - 32));
-    
+
             const tiles: ImageData[][] = [];
             for (let x = 0; x < num_tiles_x; x++) {
                 tiles.push([]);
@@ -78,11 +78,18 @@ export function mergeTiles(splitResult: SplitResult): ImageData {
             for (let y = 0; y < splitResult.numTilesY; y++) {
                 // load the tile
                 const tile = splitResult.tiles[x][y];
+                const tileCanvas = imageDataToCanvas(tile);
+                
                 // paste the tile into the new image
-                ctx.putImageData(tile, x * (splitResult.tileSize - 64), y * (splitResult.tileSize - 64));
+                ctx.drawImage(tileCanvas, x * (splitResult.tileSize - 64), y * (splitResult.tileSize - 64));
             }
         }
-        return ctx.getImageData(0, 0, splitResult.imageWidth, splitResult.imageHeight);
+        return ctx.getImageData(
+            0,
+            0,
+            splitResult.imageWidth,
+            splitResult.imageHeight
+        );
     } finally {
         canvas.remove();
     }
@@ -98,16 +105,14 @@ export function imageDataToCanvas(imageData: ImageData): HTMLCanvasElement {
     }
     ctx.putImageData(imageData, 0, 0);
     return canvas;
-};
+}
 
-export function fixImageSize(image: HTMLCanvasElement): HTMLCanvasElement {
-    // if the width and the height are divisible by 64, return the image data
-    // otherwise, resize up to the next multiple of 64
-    const width = Math.ceil(image.width / 64) * 64;
-    const height = Math.ceil(image.height / 64) * 64;
-    if (width == image.width && height == image.height) {
-        return image;
-    }
+// extract resizing logic from above function into a reusable resizeImage function
+export function resizeImage(
+    image: HTMLCanvasElement,
+    width: number,
+    height: number
+): HTMLCanvasElement {
     const canvas = document.createElement("canvas");
     try {
         canvas.width = width;
@@ -123,6 +128,17 @@ export function fixImageSize(image: HTMLCanvasElement): HTMLCanvasElement {
     }
 }
 
+// re-implement fixImageSize using resizeImage
+export function fixImageSize(image: HTMLCanvasElement): HTMLCanvasElement {
+    // if the width and the height are divisible by 64, return the image data
+    // otherwise, resize up to the next multiple of 64
+    const width = Math.ceil(image.width / 64) * 64;
+    const height = Math.ceil(image.height / 64) * 64;
+    if (width == image.width && height == image.height) {
+        return image;
+    }
+    return resizeImage(image, width, height);
+}
 
 export function featherEdges(
     selectionOverlay: Rect,
@@ -239,6 +255,7 @@ export function applyAlphaMask(imageData: ImageData, alphaMask: ImageData) {
 export interface ImageWorkerRequest {
     id: string;
     feather: boolean;
+    upscale?: boolean;
     alpha: boolean;
     pixels: Uint8ClampedArray;
     alphaPixels?: Uint8ClampedArray;
@@ -342,6 +359,21 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
             resolve(base64);
         };
     });
+}
+
+export function decodeImage(encodedImage: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${encodedImage}`;
+        image.onload = () => {
+            resolve(image);
+        };
+    });
+}
+
+export function binaryImageToDataBase64(binaryImage: any): string {
+    const buf = Buffer.from(binaryImage, "binary");
+    return buf.toString("base64");
 }
 
 export function resizeEncodedImage(

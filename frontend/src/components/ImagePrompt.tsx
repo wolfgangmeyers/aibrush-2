@@ -47,6 +47,7 @@ export function defaultArgs(): CreateImageInput {
         height: 512,
         stable_diffusion_strength: 0.75,
         count: 4,
+        upscale: false,
     };
 }
 

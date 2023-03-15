@@ -326,6 +326,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         selectionOverlay: Rect
     ): Promise<ImageData> {
         return new Promise((resolve, reject) => {
+            // TODO: use anonymous client to load image data instead with download urls
             api.getImageData(imageId, {
                 responseType: "arraybuffer",
             }).then((resp) => {

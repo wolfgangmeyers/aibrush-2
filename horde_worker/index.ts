@@ -1,8 +1,10 @@
-import { SQSEvent } from "aws-lambda";
+import workerpool from "workerpool";
 import * as AWS from "aws-sdk";
 import sharp from "sharp";
 import Bugsnag from "@bugsnag/js";
 import axios from "axios";
+import moment from "moment";
+import { sleep } from "./sleep";
 
 import { HordeRequestPayload, processImage } from "./horde";
 
@@ -12,7 +14,7 @@ if (process.env.BUGSNAG_API_KEY) {
     });
 }
 
-const callbackEndpoint = process.env.CALLBACK_ENDPOINT || "https://aibrush.ngrok.io";
+const callbackEndpoint = "https://www.aibrush.art";
 
 async function updateImage(imageId: string, status: string, authToken: string) {
     const url = `${callbackEndpoint}/api/images/${imageId}`;
@@ -29,6 +31,12 @@ async function updateImage(imageId: string, status: string, authToken: string) {
 const s3Client = new AWS.S3({
     region: "us-west-2",
 });
+const sqsClient = new AWS.SQS({
+    region: "us-west-2",
+})
+
+// keep track of how many images are being processed
+let activeImageCount = 0;
 
 async function downloadImage(key: string): Promise<Buffer> {
     // return null if object doesn't exist
@@ -65,6 +73,7 @@ async function uploadImage(key: string, data: Buffer): Promise<void> {
 
 const hordeApiKey = process.env.STABLE_HORDE_API_KEY;
 const hordeBaseUrl = "https://stablehorde.net/api";
+const queueUrl = process.env.HORDE_QUEUE_URL;
 
 const blacklisted_terms = ["loli"];
 
@@ -129,6 +138,7 @@ interface HordeRequest {
 }
 
 async function processRequest(request: HordeRequest) {
+    console.log("processing request", request);
     try {
         updateImage(request.imageId, "processing", request.authToken);
         let prompt = addTrigger(request.prompt, request.model);
@@ -174,16 +184,20 @@ async function processRequest(request: HordeRequest) {
         ]);
         if (imageData) {
             // convert to base64
+            console.log("image data found");
             payload.source_image = imageData.toString("base64");
         }
         if (maskData) {
+            console.log("mask data found");
             payload.source_mask = maskData.toString("base64");
             if (request.model == "stable_diffusion_inpainting") {
                 payload.source_processing = "inpainting";
             }
         }
 
+        console.log("sending request to stable horde")
         const webpImageData = await processImage(payload);
+        console.log("received response from stable horde")
         if (!webpImageData) {
             await updateImage(request.imageId, "error", request.authToken);
             return;
@@ -196,16 +210,52 @@ async function processRequest(request: HordeRequest) {
         const upload2 = uploadImage(`${request.imageId}.thumbnail.png`, thumbnail);
         await Promise.all([upload1, upload2]);
         await updateImage(request.imageId, "completed", request.authToken);
+        console.log("completed request")
     } catch (e) {
         Bugsnag.notify(e);
         console.log(e);
         await updateImage(request.imageId, "error", request.authToken);
+    } finally {
+        activeImageCount--;
     }
 }
 
-export const handler = async (event: SQSEvent) => {
-    console.log("Received event:", JSON.stringify(event, null, 2));
-    for (const record of event.Records) {
-        await processRequest(JSON.parse(record.body) as HordeRequest);
+async function poll() {
+    if (activeImageCount >= 30) {
+        console.log("max active image count reached, waiting");
+        await sleep(1000);
+        return;
     }
-};
+    const messages = await sqsClient
+        .receiveMessage({
+            QueueUrl: queueUrl,
+            MaxNumberOfMessages: Math.min(30 - activeImageCount, 10),
+            WaitTimeSeconds: 20,
+        })
+        .promise();
+    console.log(`received ${messages.Messages?.length || 0} messages from queue`)
+    if (messages.Messages) {
+        activeImageCount += messages.Messages.length;
+        for (const message of messages.Messages) {
+            processRequest(JSON.parse(message.Body) as HordeRequest);
+        }
+        
+        await sqsClient
+            .deleteMessageBatch({
+                QueueUrl: queueUrl,
+                Entries: messages.Messages.map((m) => ({
+                    Id: m.MessageId,
+                    ReceiptHandle: m.ReceiptHandle,
+                })),
+            })
+            .promise();
+    }
+}
+
+async function main() {
+    while (true) {
+        await poll();
+    }
+}
+
+main();

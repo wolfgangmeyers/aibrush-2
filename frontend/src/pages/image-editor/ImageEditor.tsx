@@ -17,6 +17,7 @@ import { PencilTool, Controls as PencilControls } from "./pencil-tool";
 import { SmudgeTool, SmudgeControls } from "./smudge-tool";
 import { ImportExportControls } from "./import-export";
 import { InpaintControls, InpaintTool } from "./inpaint-tool";
+import { UpscaleControls } from "./upscale-tool";
 import { defaultArgs } from "../../components/ImagePrompt";
 import { ApiSocket } from "../../lib/apisocket";
 import {
@@ -134,6 +135,22 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) =>
                 );
             },
         },
+        {
+            name: "upscale",
+            iconClass: "fas fa-search-plus",
+            constructor: (r: Renderer) => new BaseTool(r, "upscale"),
+            defaultArgs: {},
+            renderControls: (t: Tool, renderer: Renderer) => {
+                return (
+                    <UpscaleControls
+                        renderer={renderer}
+                        tool={t as BaseTool}
+                        api={api}
+                        image={image!}
+                    />
+                );
+            },
+        }
     ];
 
     const [image, setImage] = useState<LocalImage | null>(null);
@@ -181,6 +198,8 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) =>
         try {
             const newImage: LocalImage = {
                 ...image,
+                width: renderer!.getWidth() as any,
+                height: renderer!.getHeight() as any,
                 id: uuid.v4(),
                 imageData: `data:image/png;base64,${encodedImage}`
             }

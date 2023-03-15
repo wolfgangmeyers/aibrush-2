@@ -427,7 +427,9 @@ export class Server {
             "/admin",
             "/images/:id",
             "/image-editor/:id",
+            "/saved",
             "/deleted-images",
+            "/local-deleted-images",
             "/orders",
             "/discord-login",
         ]) {

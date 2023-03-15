@@ -164,6 +164,7 @@ export const Homepage: FC<Props> = ({
                 status: ImageStatusEnum.Completed,
                 temporary: false,
                 imageData: `data:image/png;base64,${encodedImage}`,
+                upscale: false,
             };
             await localImages.saveImage(newImage);
 
