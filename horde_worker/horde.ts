@@ -2,7 +2,9 @@ import axios from "axios";
 import moment from "moment";
 
 const hordeApiKey = process.env.STABLE_HORDE_API_KEY;
-const hordeBaseUrl = "https://stablehorde.net/api";
+const hordeBaseUrl = process.env.STABLE_HORDE_URL || "https://stablehorde.net/api";
+const altHordeApiKey = process.env.ALTERNATE_HORDE_API_KEY;
+const altHordeBaseUrl = process.env.ALTERNATE_HORDE_URL || "https://aibrush.ngrok.io/api";
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,16 +36,23 @@ export interface HordeRequestPayload {
     source_mask?: string;
 }
 
+const altModels = {
+    "Epic Diffusion Inpainting": true,
+}
+
 export async function processImage(
     payload: HordeRequestPayload
 ): Promise<Buffer> {
+    const model = payload.models[0];
+    const baseUrl = altModels[model] ? altHordeBaseUrl : hordeBaseUrl;
+    const apiKey = altModels[model] ? altHordeApiKey : hordeApiKey;
     const submitReq = await axios.post(
-        `${hordeBaseUrl}/v2/generate/async`,
+        `${baseUrl}/v2/generate/async`,
         payload,
         {
             headers: {
                 "Content-Type": "application/json",
-                apiKey: hordeApiKey,
+                apiKey: apiKey,
             },
         }
     );
@@ -56,10 +65,10 @@ export async function processImage(
     while (!isDone) {
         try {
             const chkReq = await axios.get(
-                `${hordeBaseUrl}/v2/generate/check/${reqId}`,
+                `${baseUrl}/v2/generate/check/${reqId}`,
                 {
                     headers: {
-                        apiKey: hordeApiKey,
+                        apiKey: apiKey,
                     },
                 }
             );
@@ -70,10 +79,10 @@ export async function processImage(
             if (moment().diff(start, "seconds") > 110) {
                 console.log("Horde request timed out");
                 await axios.delete(
-                    `${hordeBaseUrl}/v2/generate/status/${reqId}`,
+                    `${baseUrl}/v2/generate/status/${reqId}`,
                     {
                         headers: {
-                            apiKey: hordeApiKey,
+                            apiKey: apiKey,
                         },
                     }
                 );
@@ -90,10 +99,10 @@ export async function processImage(
         }
     }
     const retrieveReq = await axios.get(
-        `${hordeBaseUrl}/v2/generate/status/${reqId}`,
+        `${baseUrl}/v2/generate/status/${reqId}`,
         {
             headers: {
-                apiKey: hordeApiKey,
+                apiKey: apiKey,
             },
         }
     );
