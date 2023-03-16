@@ -38,7 +38,7 @@ export async function processImage(
     payload: HordeRequestPayload
 ): Promise<Buffer> {
     const submitReq = await axios.post(
-        "https://stablehorde.net/api/v2/generate/async",
+        `${hordeBaseUrl}/v2/generate/async`,
         payload,
         {
             headers: {
@@ -56,7 +56,7 @@ export async function processImage(
     while (!isDone) {
         try {
             const chkReq = await axios.get(
-                `https://stablehorde.net/api/v2/generate/check/${reqId}`,
+                `${hordeBaseUrl}/v2/generate/check/${reqId}`,
                 {
                     headers: {
                         apiKey: hordeApiKey,
@@ -70,7 +70,7 @@ export async function processImage(
             if (moment().diff(start, "seconds") > 110) {
                 console.log("Horde request timed out");
                 await axios.delete(
-                    `https://stablehorde.net/api/v2/generate/status/${reqId}`,
+                    `${hordeBaseUrl}/v2/generate/status/${reqId}`,
                     {
                         headers: {
                             apiKey: hordeApiKey,
@@ -90,7 +90,7 @@ export async function processImage(
         }
     }
     const retrieveReq = await axios.get(
-        `https://stablehorde.net/api/v2/generate/status/${reqId}`,
+        `${hordeBaseUrl}/v2/generate/status/${reqId}`,
         {
             headers: {
                 apiKey: hordeApiKey,
