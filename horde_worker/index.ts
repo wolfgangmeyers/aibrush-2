@@ -224,10 +224,11 @@ async function processRequest(request: HordeRequest) {
         console.log("completed request")
     } catch (e) {
         Bugsnag.notify(e);
-        console.log(e);
+        // console.log(e);
         let err = "Image could not be processed";
         if (e.response?.data?.message) {
             err = e.response.data.message;
+            console.log(JSON.stringify(e.response.data, null, 2))
         }
         await updateImage(request.imageId, {status: "error", error: err}, request.authToken);
     } finally {
