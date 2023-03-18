@@ -201,7 +201,7 @@ async function processRequest(request: HordeRequest) {
         if (maskData) {
             console.log("mask data found");
             payload.source_mask = maskData.toString("base64");
-            if (request.model == "stable_diffusion_inpainting") {
+            if (request.model in ["stable_diffusion_inpainting", "stable_diffusion_2_inpainting", "dreamlike_diffusion_inpainting", "anything_v4_inpainting"]) {
                 payload.source_processing = "inpainting";
             }
         }

@@ -167,7 +167,7 @@ class StableDiffusionInpaintingModel:
     def __init__(self):
         self.sampler = initialize_model(
             "configs/stable-diffusion/v1-inpainting-inference.yaml",
-            "models/ldm/stable-diffusion-v1/model-inpainting.ckpt",
+            "models/ldm/stable-diffusion-v1/sd-v1.5-inpainting-vae.ckpt",
         )
     
     def generate(self, args: SimpleNamespace):
@@ -196,6 +196,7 @@ class StableDiffusionInpaintingModel:
 
         # Make args compatible with text2im version
         args.filename = os.path.join("images", args.filename)
+        args.negative_prompt = ""
 
         inpaint(**args.__dict__)
 
