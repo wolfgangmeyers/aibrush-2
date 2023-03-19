@@ -211,7 +211,8 @@ async function processRequest(request: HordeRequest) {
             payload.source_mask = maskData.toString("base64");
             if (inpaintingModels[request.model]) {
                 payload.source_processing = "inpainting";
-                payload.params.denoising_strength = 1;
+                payload.params.karras = false;
+                payload.params.steps = 50;
             }
         }
 
