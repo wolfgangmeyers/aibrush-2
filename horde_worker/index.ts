@@ -203,6 +203,7 @@ async function processRequest(request: HordeRequest) {
             payload.source_mask = maskData.toString("base64");
             if (request.model in ["stable_diffusion_inpainting", "stable_diffusion_2_inpainting", "dreamlike_diffusion_inpainting", "anything_v4_inpainting"]) {
                 payload.source_processing = "inpainting";
+                payload.params.denoising_strength = 1;
             }
         }
 
