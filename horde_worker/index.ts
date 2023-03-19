@@ -212,7 +212,6 @@ async function processRequest(request: HordeRequest) {
             if (inpaintingModels[request.model]) {
                 payload.source_processing = "inpainting";
                 payload.params.denoising_strength = 1;
-                payload.workers = ["a68c78f2-3303-4b68-b4a2-586183ce7e24"]
             }
         }
 
