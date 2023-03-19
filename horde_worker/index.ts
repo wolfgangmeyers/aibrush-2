@@ -147,6 +147,13 @@ interface HordeRequest {
     controlnetType: string | null;
 }
 
+const inpaintingModels: {[key: string]: boolean} = {
+    "stable_diffusion_inpainting": true,
+    "stable_diffusion_2_inpainting": true,
+    "dreamlike_diffusion_inpainting": true,
+    "anything_v4_inpainting": true,
+};
+
 async function processRequest(request: HordeRequest) {
     console.log("processing request", request);
     try {
@@ -202,7 +209,7 @@ async function processRequest(request: HordeRequest) {
         if (maskData) {
             console.log("mask data found");
             payload.source_mask = maskData.toString("base64");
-            if (request.model in ["stable_diffusion_inpainting", "stable_diffusion_2_inpainting", "dreamlike_diffusion_inpainting", "anything_v4_inpainting"]) {
+            if (inpaintingModels[request.model]) {
                 payload.source_processing = "inpainting";
                 payload.params.denoising_strength = 1;
                 payload.workers = ["a68c78f2-3303-4b68-b4a2-586183ce7e24"]
