@@ -187,7 +187,7 @@ async function processRequest(request: HordeRequest) {
             models: [request.model],
             source_processing: "img2img",
         };
-        console.log("sending payload", payload);
+        
         const imageDataPromise = downloadImage(`${request.imageId}.image.png`);
         const maskDataPromise = downloadImage(`${request.imageId}.mask.png`);
         const [imageData, maskData] = await Promise.all([
@@ -208,6 +208,12 @@ async function processRequest(request: HordeRequest) {
                 payload.workers = ["a68c78f2-3303-4b68-b4a2-586183ce7e24"]
             }
         }
+
+        console.log("sending payload", {
+            ...payload,
+            source_image: payload.source_image ? "present" : undefined,
+            source_mask: payload.source_mask ? "present" : undefined,
+        });
 
         console.log("sending request to stable horde")
         const webpImageData = await processImage(payload);
