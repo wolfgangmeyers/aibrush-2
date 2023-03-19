@@ -34,6 +34,7 @@ export interface HordeRequestPayload {
     source_processing: string;
     source_image?: string;
     source_mask?: string;
+    workers?: string[];
 }
 
 const altModels = {

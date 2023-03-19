@@ -187,6 +187,7 @@ async function processRequest(request: HordeRequest) {
             models: [request.model],
             source_processing: "img2img",
         };
+        console.log("sending payload", payload);
         const imageDataPromise = downloadImage(`${request.imageId}.image.png`);
         const maskDataPromise = downloadImage(`${request.imageId}.mask.png`);
         const [imageData, maskData] = await Promise.all([
@@ -204,6 +205,7 @@ async function processRequest(request: HordeRequest) {
             if (request.model in ["stable_diffusion_inpainting", "stable_diffusion_2_inpainting", "dreamlike_diffusion_inpainting", "anything_v4_inpainting"]) {
                 payload.source_processing = "inpainting";
                 payload.params.denoising_strength = 1;
+                payload.workers = ["a68c78f2-3303-4b68-b4a2-586183ce7e24"]
             }
         }
 
