@@ -51,6 +51,10 @@ async function authenticateWorker(backendService: BackendService, httpClient: Ax
 async function refreshUser(client: AIBrushApi, httpClient: AxiosInstance, refreshToken: string) {
     const response = await client.refresh({
         refreshToken: refreshToken
+    }, {
+        headers: {
+            "Cookie": `refreshToken=${refreshToken};`
+        }
     })
     const refreshResult = response.data
     httpClient.defaults.headers['Authorization'] = `Bearer ${refreshResult.accessToken}`

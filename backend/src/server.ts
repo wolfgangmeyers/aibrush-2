@@ -1,4 +1,5 @@
 import { Server as HTTPServer } from "http";
+import cookies from "cookie-parser";
 import express, { Express } from "express";
 import ws from "ws";
 import cors from "cors";
@@ -172,6 +173,7 @@ export class Server {
             })
         );
         this.app.use(cors());
+        this.app.use(cookies());
 
         // implement and add middleware to force https only when the host is not localhost
         this.app.use((req, res, next) => {
@@ -256,6 +258,11 @@ export class Server {
                 if (!result) {
                     res.sendStatus(400);
                 } else {
+                    res.cookie("refreshToken", result.refreshToken, {
+                        secure: !(process.env.AIBRUSH_DEV_MODE === "true"),
+                        httpOnly: true,
+                        sameSite: "strict",
+                    });
                     res.send(result);
                 }
             })
@@ -268,10 +275,33 @@ export class Server {
                     req.body.code
                 );
                 if (result) {
+                    res.cookie("refreshToken", result.refreshToken, {
+                        secure: !(process.env.AIBRUSH_DEV_MODE === "true"),
+                        httpOnly: true,
+                        sameSite: "strict",
+                    });
                     res.send(result);
                     return;
                 }
                 res.sendStatus(400);
+            })
+        );
+
+        this.app.post(
+            "/api/auth/refresh",
+            withMetrics("/api/auth/refresh", async (req, res) => {
+                // get refresh token from cookie
+                console.log(req.cookies);
+                let refreshToken = req.cookies.refreshToken;
+                const result = await this.backendService.refresh(
+                    refreshToken
+                );
+                // if result is null, send 400
+                if (!result) {
+                    res.sendStatus(400);
+                } else {
+                    res.send(result);
+                }
             })
         );
 
@@ -507,21 +537,6 @@ export class Server {
 
         // authenticated routes only past this point
         this.app.use(authMiddleware(this.config, this.logger));
-
-        this.app.post(
-            "/api/auth/refresh",
-            withMetrics("/api/auth/refresh", async (req, res) => {
-                const result = await this.backendService.refresh(
-                    req.body.refreshToken
-                );
-                // if result is null, send 400
-                if (!result) {
-                    res.sendStatus(400);
-                } else {
-                    res.send(result);
-                }
-            })
-        );
 
         // list images
         this.app.get(
