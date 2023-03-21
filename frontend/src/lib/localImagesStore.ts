@@ -25,7 +25,9 @@ export class LocalImagesStore {
                         keyPath: "id",
                     });
                 } else {
-                    imagesStore = request.transaction?.objectStore("images") as IDBObjectStore;
+                    imagesStore = request.transaction?.objectStore(
+                        "images"
+                    ) as IDBObjectStore;
                 }
                 imagesStore.createIndex("updated_at", "updated_at", {
                     unique: false,
@@ -96,7 +98,7 @@ export class LocalImagesStore {
         const request = store.delete(id);
         return new Promise((resolve, reject) => {
             request.onsuccess = (evt) => {
-                console.log(`image ${id} permanently deleted`)
+                console.log(`image ${id} permanently deleted`);
                 resolve();
             };
             request.onerror = (evt) => {
@@ -141,7 +143,7 @@ export class LocalImagesStore {
         updated_at: number,
         direction: IDBCursorDirection,
         count: number,
-        search: string,
+        search: string
     ): Promise<LocalImage[]> {
         // use updated_at index
         if (!this.db) {
@@ -150,11 +152,11 @@ export class LocalImagesStore {
         const transaction = this.db.transaction(["images"]);
         const store = transaction.objectStore("images");
         const index = store.index("updated_at");
-        const range = direction == "next" ? IDBKeyRange.lowerBound(updated_at) : IDBKeyRange.upperBound(updated_at);
-        const request = index.openCursor(
-            range,
-            direction
-        );
+        const range =
+            direction == "next"
+                ? IDBKeyRange.lowerBound(updated_at)
+                : IDBKeyRange.upperBound(updated_at);
+        const request = index.openCursor(range, direction);
         return new Promise((resolve, reject) => {
             const images: LocalImage[] = [];
             request.onsuccess = (evt) => {
@@ -162,7 +164,10 @@ export class LocalImagesStore {
                 if (cursor) {
                     const image: LocalImage = cursor.value;
                     const prompt = image.phrases.join(", ");
-                    if (!image.deleted_at && (!search || prompt.includes(search))) {
+                    if (
+                        !image.deleted_at &&
+                        (!search || prompt.includes(search))
+                    ) {
                         images.push(cursor.value);
                     }
                     if (images.length < count) {
@@ -210,14 +215,19 @@ export class LocalImagesStore {
         const index = store.index("deleted_at");
         // const request = index.openCursor();
         // get cursor for all deleted_at values
-        const request = index.openCursor(olderThan ? IDBKeyRange.upperBound(olderThan) : IDBKeyRange.lowerBound(1), olderThan ? "prev" : "next");
+        const request = index.openCursor(
+            olderThan
+                ? IDBKeyRange.upperBound(olderThan)
+                : IDBKeyRange.lowerBound(1),
+            olderThan ? "prev" : "next"
+        );
         return new Promise((resolve, reject) => {
             const images: LocalImage[] = [];
             request.onsuccess = (evt) => {
                 const cursor = request.result;
                 if (cursor) {
                     const image: LocalImage = cursor.value;
-                    if (image.deleted_at) {
+                    if (images.length < 50 && image.deleted_at) {
                         images.push(cursor.value);
                     }
                     cursor.continue();
@@ -236,20 +246,31 @@ export class LocalImagesStore {
         if (!this.db) {
             throw new Error("not initialized");
         }
-        const deletedImages = await this.getDeletedImages();
-        // hard delete all deleted images
-        const promises = deletedImages.map((image) => {
-            return this.hardDeleteImage(image.id);
-        });
-        await Promise.all(promises);
+        let deletedImages = await this.getDeletedImages();
+        while (deletedImages.length > 0) {
+            // hard delete all deleted images
+            const promises = deletedImages.map((image) => {
+                return this.hardDeleteImage(image.id);
+            });
+            await Promise.all(promises);
+            deletedImages = await this.getDeletedImages();
+        }
     }
 
     async cleanupDeletedImages(): Promise<void> {
         // delete images that are more than 1 day old
-        const deletedImages = await this.getDeletedImages(moment().subtract(1, "hours").valueOf());
-        const promises = deletedImages.map((image) => {
-            return this.hardDeleteImage(image.id);
-        });
-        await Promise.all(promises);
+        let deletedImages = await this.getDeletedImages(
+            moment().subtract(1, "hours").valueOf()
+        );
+        while (deletedImages.length > 0) {
+            // hard delete all deleted images
+            const promises = deletedImages.map((image) => {
+                return this.hardDeleteImage(image.id);
+            });
+            await Promise.all(promises);
+            deletedImages = await this.getDeletedImages(
+                moment().subtract(1, "hours").valueOf()
+            );
+        }
     }
 }

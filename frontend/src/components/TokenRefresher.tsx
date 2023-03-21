@@ -6,16 +6,19 @@ import { LoginResult, AIBrushApi } from "../client/api";
 
 interface TokenRefresherProps {
     onCredentialsRefreshed: (loginResult: LoginResult) => void;
+    onCredentialsExpired: () => void;
     api: AIBrushApi;
     credentials: LoginResult;
 }
 
-export const TokenRefresher : FC<TokenRefresherProps> = ({ onCredentialsRefreshed, api, credentials }) => {
+export const TokenRefresher : FC<TokenRefresherProps> = ({ onCredentialsRefreshed, onCredentialsExpired, api, credentials }) => {
     useEffect(() => {
         const interval = setInterval(() => {
             if (credentials && credentials.refreshToken) {
                 api.refresh({refreshToken: credentials.refreshToken}).then(loginResult => {
                     onCredentialsRefreshed(loginResult.data);
+                }).catch(() => {
+                    onCredentialsExpired();
                 });
             }
 

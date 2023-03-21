@@ -8,7 +8,12 @@ import { useParams, useHistory, Link, useLocation } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
-import { CreateImageInput, ImageStatusEnum, Boost, CreateImageInputStatusEnum } from "../client/api";
+import {
+    CreateImageInput,
+    ImageStatusEnum,
+    Boost,
+    CreateImageInputStatusEnum,
+} from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import { BoostWidget } from "../components/BoostWidget";
@@ -52,6 +57,7 @@ export const Homepage: FC<Props> = ({
     const [selectedImage, setSelectedImage] = useState<LocalImage | null>(null);
     const [parentImage, setParentImage] = useState<LocalImage | null>(null);
     const [loadingParent, setLoadingParent] = useState(false);
+    const [savingImage, setSavingImage] = useState(false);
 
     const [showPendingImages, setShowPendingImages] = useState(false);
 
@@ -278,7 +284,8 @@ export const Homepage: FC<Props> = ({
 
                         if (img.status == ImageStatusEnum.Error) {
                             onError(
-                                img.error || "Some images failed to generate, please make sure your prompt doesn't violate our terms of service"
+                                img.error ||
+                                    "Some images failed to generate, please make sure your prompt doesn't violate our terms of service"
                             );
                             await api.deleteImage(img.id);
                             await localImages.deleteImage(img.id);
@@ -481,26 +488,35 @@ export const Homepage: FC<Props> = ({
     };
 
     const onSave = async (image: LocalImage) => {
-        const createInput: CreateImageInput = {
-            count: 1,
-            encoded_image: image.imageData!.split(",")[1],
-            phrases: image.phrases,
-            negative_phrases: image.negative_phrases,
-            status: CreateImageInputStatusEnum.Saved,
-            height: image.height as any,
-            width: image.width as any,
-            temporary: false,
-            label: "",
-            iterations: image.iterations,
+        setSavingImage(true);
+        try {
+            history.push("/");
+            const createInput: CreateImageInput = {
+                count: 1,
+                encoded_image: image.imageData!.split(",")[1],
+                phrases: image.phrases,
+                negative_phrases: image.negative_phrases,
+                status: CreateImageInputStatusEnum.Saved,
+                height: image.height as any,
+                width: image.width as any,
+                temporary: false,
+                label: "",
+                iterations: image.iterations,
+            };
+            await api.createImage(createInput);
+            await localImages.hardDeleteImage(image.id);
+            setImages((images) => {
+                return images.filter((i) => i.id !== image.id);
+            });
+            setSuccess("Image saved");
+            setSuccessTime(moment().valueOf());
+            
+        } catch (e) {
+            console.error(e);
+            onError("Error saving image");
+        } finally {
+            setSavingImage(false);
         }
-        await api.createImage(createInput);
-        await localImages.hardDeleteImage(image.id);
-        setImages((images) => {
-            return images.filter((i) => i.id !== image.id);
-        });
-        setSuccess("Image saved");
-        setSuccessTime(moment().valueOf());
-        history.push("/");
     };
 
     const onEdit = async (image: LocalImage) => {
@@ -782,6 +798,9 @@ export const Homepage: FC<Props> = ({
             </BusyModal>
             <BusyModal show={loadingParent} title="Loading parent image">
                 <p>Please wait while we load the parent image.</p>
+            </BusyModal>
+            <BusyModal show={savingImage} title="Saving image">
+                <p>Please wait while we save your image.</p>
             </BusyModal>
             <PendingImages
                 images={pendingOrProcessingImages}

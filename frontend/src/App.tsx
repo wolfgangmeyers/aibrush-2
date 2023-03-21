@@ -84,6 +84,7 @@ function App() {
                 apiSocket.connect();
             } catch (e) {
                 console.log(e);
+                localStorage.removeItem("credentials");
             }
         }
     };
@@ -96,6 +97,10 @@ function App() {
         apiSocket.connect();
     };
 
+    const onCredentialsExpired = () => {
+        onLogout();
+    };
+
     useEffect(() => {
         init();
     }, []);
@@ -106,6 +111,7 @@ function App() {
                 api={client}
                 credentials={credentials as LoginResult}
                 onCredentialsRefreshed={onLogin}
+                onCredentialsExpired={onCredentialsExpired}
             />
             <Healthchecker api={client} />
 

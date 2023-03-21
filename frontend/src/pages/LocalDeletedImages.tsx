@@ -24,6 +24,9 @@ export const LocalDeletedImages: FC<Props> = ({ localImages }) => {
     const onDeleteImage = async (image: Image) => {
         setImages(images.filter((i) => i.id !== image.id));
         await localImages.deleteImage(image.id);
+        if (images.length <= 5) {
+            loadImages();
+        }
     };
 
     const onDeleteAllImages = async () => {

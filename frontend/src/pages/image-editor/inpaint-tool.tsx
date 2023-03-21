@@ -841,10 +841,12 @@ export const InpaintControls: FC<ControlsProps> = ({
                             <option value="anything_v4_inpainting">
                                 Anything v4
                             </option>
-                            {/* <option value="Epic Diffusion Inpainting">
+                            <option value="Epic Diffusion Inpainting">
                                 Epic Diffusion
-                            </option> */}
-                            {/* <option value="Deliberate">Deliberate</option> */}
+                            </option>
+                            <option value="Deliberate Inpainting">
+                                Deliberate
+                            </option>
                         </select>
                         <small className="form-text text-muted">
                             Select the inpaint model
