@@ -2,9 +2,11 @@ import axios from "axios";
 import moment from "moment";
 
 const hordeApiKey = process.env.STABLE_HORDE_API_KEY;
-const hordeBaseUrl = process.env.STABLE_HORDE_URL || "https://stablehorde.net/api";
+const hordeBaseUrl =
+    process.env.STABLE_HORDE_URL || "https://stablehorde.net/api";
 const altHordeApiKey = process.env.ALTERNATE_HORDE_API_KEY;
-const altHordeBaseUrl = process.env.ALTERNATE_HORDE_URL || "https://aibrush.ngrok.io/api";
+const altHordeBaseUrl =
+    process.env.ALTERNATE_HORDE_URL || "https://aibrush.ngrok.io/api";
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -37,9 +39,22 @@ export interface HordeRequestPayload {
     workers?: string[];
 }
 
+export interface AlchemistForm {
+    name: string;
+}
+
+export interface AlchemistPayload {
+    source_image: string;
+    forms: AlchemistForm[];
+}
+
+export interface AlchemistResult {
+
+}
+
 const altModels = {
     "Epic Diffusion Inpainting": true,
-}
+};
 
 export async function processImage(
     payload: HordeRequestPayload
@@ -79,14 +94,11 @@ export async function processImage(
             await sleep(800);
             if (moment().diff(start, "seconds") > 110) {
                 console.log("Horde request timed out");
-                await axios.delete(
-                    `${baseUrl}/v2/generate/status/${reqId}`,
-                    {
-                        headers: {
-                            apiKey: apiKey,
-                        },
-                    }
-                );
+                await axios.delete(`${baseUrl}/v2/generate/status/${reqId}`, {
+                    headers: {
+                        apiKey: apiKey,
+                    },
+                });
                 return null;
             }
         } catch (e) {
@@ -121,4 +133,60 @@ export async function processImage(
         responseType: "arraybuffer",
     });
     return webpImageResponse.data;
+}
+
+export async function processAlchemistImage(
+    payload: AlchemistPayload
+): Promise<any> {
+    const submitReq = await axios.post(
+        `${hordeBaseUrl}/v2/interrogate/async`,
+        payload,
+        {
+            headers: {
+                "Content-Type": "application/json",
+                apiKey: hordeApiKey,
+            },
+        }
+    );
+    // poll for status and retrieve image
+    const submitResults = submitReq.data;
+    const reqId = submitResults.id;
+    let isDone = false;
+    let retry = 0;
+    const start = moment();
+    while (!isDone) {
+        try {
+            const retrieveReq = await axios.get(
+                `${hordeBaseUrl}/v2/interrogate/status/${reqId}`,
+                {
+                    headers: {
+                        apiKey: hordeApiKey,
+                    },
+                }
+            );
+            const resultsJson = await retrieveReq.data;
+            console.log(JSON.stringify(resultsJson));
+            if (resultsJson.state === "done") {
+                isDone = true;
+                if (payload.forms[0].name == "nsfw") {
+                    return resultsJson.forms[0].result.nsfw;
+                }
+                const webpImageResponse = await axios.get(resultsJson.forms[0].result[resultsJson.forms[0].name], {
+                    responseType: "arraybuffer",
+                });
+                return webpImageResponse.data;
+            } else {
+                await sleep(1000);
+            }
+        } catch (e) {
+            retry += 1;
+            console.log(`Error ${e} when retrieving status. Retry ${retry}/10`);
+            if (retry < 10) {
+                await sleep(1000);
+                continue;
+            }
+            throw e;
+        }
+    }
+    return null;
 }

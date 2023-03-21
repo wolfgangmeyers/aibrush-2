@@ -5,7 +5,7 @@ import axios from "axios";
 import moment from "moment";
 import { sleep } from "./sleep";
 
-import { HordeRequestPayload, processImage } from "./horde";
+import { AlchemistPayload, HordeRequestPayload, processAlchemistImage, processImage } from "./horde";
 
 if (process.env.BUGSNAG_API_KEY) {
     Bugsnag.start({
@@ -20,7 +20,11 @@ interface UpdateImageInput {
     error?: string;
 }
 
-async function updateImage(imageId: string, input: UpdateImageInput, authToken: string) {
+async function updateImage(
+    imageId: string,
+    input: UpdateImageInput,
+    authToken: string
+) {
     const url = `${callbackEndpoint}/api/images/${imageId}`;
     await axios.patch(url, input, {
         headers: {
@@ -35,28 +39,44 @@ const s3Client = new AWS.S3({
 });
 const sqsClient = new AWS.SQS({
     region: "us-west-2",
-})
+});
 
 // keep track of how many images are being processed
 let activeImageCount = 0;
 
-async function downloadImage(key: string): Promise<Buffer> {
-    // return null if object doesn't exist
+// replaced with image url
+// async function downloadImage(key: string): Promise<Buffer> {
+//     // return null if object doesn't exist
+//     try {
+//         const data = await s3Client
+//             .getObject({
+//                 Bucket: "aibrush2-filestore",
+//                 Key: key,
+//             })
+//             .promise();
+//         const imageData = data.Body as Buffer;
+//         // load with sharp
+//         const image = sharp(imageData);
+//         // convert to webp and return buffer
+//         const webp = await image.webp().toBuffer();
+//         return webp;
+//     } catch (e) {
+//         return null;
+//     }
+// }
+
+// check if an image with a given key exists, without downloading it
+async function imageExists(key: string): Promise<boolean> {
     try {
-        const data = await s3Client
-            .getObject({
+        await s3Client
+            .headObject({
                 Bucket: "aibrush2-filestore",
                 Key: key,
             })
             .promise();
-        const imageData = data.Body as Buffer;
-        // load with sharp
-        const image = sharp(imageData);
-        // convert to webp and return buffer
-        const webp = await image.webp().toBuffer();
-        return webp;
+        return true;
     } catch (e) {
-        return null;
+        return false;
     }
 }
 
@@ -109,19 +129,21 @@ function stripBlacklistedTerms(nsfw: boolean, prompt: string): string {
     return prompt;
 }
 
-const triggers: {[key: string]: string[]} = {
+const triggers: { [key: string]: string[] } = {
     "GTA5 Artwork Diffusion": ["gtav style"],
     "AIO Pixel Art": ["16bitscene", "pixelsprite"],
-    "OrbAI": ["orbai"],
+    OrbAI: ["orbai"],
     "Ranma Diffusion": ["80sanimestyle"],
-    "App Icon Diffusion": ["IconsMi",]
+    "App Icon Diffusion": ["IconsMi"],
 };
 
 function addTrigger(prompt: string, model: string): string {
     if (triggers[model]) {
         const triggerList = triggers[model];
         for (let trigger of triggerList) {
-            if (prompt.toLocaleLowerCase().includes(trigger.toLocaleLowerCase())) {
+            if (
+                prompt.toLocaleLowerCase().includes(trigger.toLocaleLowerCase())
+            ) {
                 return prompt;
             }
         }
@@ -147,17 +169,21 @@ interface HordeRequest {
     controlnetType: string | null;
 }
 
-const inpaintingModels: {[key: string]: boolean} = {
-    "stable_diffusion_inpainting": true,
-    "stable_diffusion_2_inpainting": true,
-    "dreamlike_diffusion_inpainting": true,
-    "anything_v4_inpainting": true,
+const inpaintingModels: { [key: string]: boolean } = {
+    stable_diffusion_inpainting: true,
+    stable_diffusion_2_inpainting: true,
+    dreamlike_diffusion_inpainting: true,
+    anything_v4_inpainting: true,
 };
 
 async function processRequest(request: HordeRequest) {
     console.log("processing request", request);
     try {
-        updateImage(request.imageId, {status: "processing"}, request.authToken);
+        updateImage(
+            request.imageId,
+            { status: "processing" },
+            request.authToken
+        );
         let prompt = addTrigger(request.prompt, request.model);
         const negativePrompt = request.negativePrompt;
         if (negativePrompt.length > 0) {
@@ -165,88 +191,133 @@ async function processRequest(request: HordeRequest) {
         }
         prompt = stripBlacklistedTerms(request.nsfw, prompt);
         console.log(prompt);
-        const post_processing: string[] = [];
-        if (request.upscale) {
-            post_processing.push("RealESRGAN_x4plus");
-        }
-        const payload: HordeRequestPayload = {
-            params: {
-                n: 1,
-                width: request.width,
-                height: request.height,
-                steps: 20,
-                karras: true,
-                sampler_name: "k_euler",
-                cfg_scale: request.cfgScale,
-                denoising_strength: request.controlnetType ? undefined : request.denoisingStrength,
-                // TODO: does this work? Maybe we can use it to handle larger
-                // areas of an image in the editor
-                hires_fix: false,
-                post_processing,
-                control_type: request.controlnetType || undefined,
-            },
-            prompt,
-            api_key: hordeApiKey,
-            nsfw: request.nsfw,
-            censor_nsfw: !request.nsfw,
-            trusted_workers: false,
-            r2: true,
-            models: [request.model],
-            source_processing: "img2img",
-        };
-        
-        const imageDataPromise = downloadImage(`${request.imageId}.image.png`);
-        const maskDataPromise = downloadImage(`${request.imageId}.mask.png`);
-        const [imageData, maskData] = await Promise.all([
-            imageDataPromise,
-            maskDataPromise,
+
+        const imageExistsPromise = imageExists(`${request.imageId}.image.png`);
+        const maskExistsPromise = imageExists(`${request.imageId}.mask.png`);
+        const [imageOk, maskOk] = await Promise.all([
+            imageExistsPromise,
+            maskExistsPromise,
         ]);
-        if (imageData) {
-            // convert to base64
-            console.log("image data found");
-            payload.source_image = imageData.toString("base64");
-        }
-        if (maskData) {
-            console.log("mask data found");
-            payload.source_mask = maskData.toString("base64");
-            if (inpaintingModels[request.model]) {
-                payload.source_processing = "inpainting";
-                payload.params.karras = false;
-                payload.params.steps = 50;
+
+        const post_processing: string[] = [];
+
+        let webpImageData: Buffer;
+
+        // TODO: support bg removal as well in this flow
+        if (request.upscale) {
+            console.log("upscaling image", request.imageId, "...")
+            if (!imageOk) {
+                updateImage(
+                    request.imageId,
+                    {
+                        status: "error",
+                        error: "no image provided for upscale",
+                    },
+                    request.authToken
+                );
+                return;
             }
+            const payload: AlchemistPayload = {
+                source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
+                forms: [{name: "RealESRGAN_x4plus"}],
+            }
+            webpImageData = await processAlchemistImage(payload);
+        } else {
+            // regular old image generation
+            const payload: HordeRequestPayload = {
+                params: {
+                    n: 1,
+                    width: request.width,
+                    height: request.height,
+                    steps: 20,
+                    karras: true,
+                    sampler_name: "k_euler",
+                    cfg_scale: request.cfgScale,
+                    denoising_strength: request.controlnetType
+                        ? undefined
+                        : request.denoisingStrength,
+                    // TODO: does this work? Maybe we can use it to handle larger
+                    // areas of an image in the editor
+                    hires_fix: false,
+                    post_processing,
+                    control_type: request.controlnetType || undefined,
+                },
+                prompt,
+                api_key: hordeApiKey,
+                nsfw: request.nsfw,
+                censor_nsfw: !request.nsfw,
+                trusted_workers: false,
+                r2: true,
+                models: [request.model],
+                source_processing: "img2img",
+            };
+
+            if (imageOk) {
+                // convert to base64
+                console.log("image data found");
+                // payload.source_image = imageData.toString("base64");
+                payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`;
+            }
+            if (maskOk) {
+                console.log("mask data found");
+                // payload.source_mask = maskData.toString("base64");
+                payload.source_mask = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.mask.png`;
+                if (inpaintingModels[request.model]) {
+                    payload.source_processing = "inpainting";
+                    payload.params.karras = false;
+                    payload.params.steps = 50;
+                }
+            }
+
+            console.log("sending payload", payload);
+
+            webpImageData = await processImage(payload);
         }
 
-        console.log("sending payload", {
-            ...payload,
-            source_image: payload.source_image ? "present" : undefined,
-            source_mask: payload.source_mask ? "present" : undefined,
-        });
-
-        console.log("sending request to stable horde")
-        const webpImageData = await processImage(payload);
-        console.log("received response from stable horde")
+        console.log("received response from stable horde");
         if (!webpImageData) {
-            await updateImage(request.imageId, {status: "error", error: "Image request timed out"}, request.authToken);
+            await updateImage(
+                request.imageId,
+                { status: "error", error: "Image request timed out" },
+                request.authToken
+            );
             return;
         }
 
-        const upload1 = uploadImage(`${request.imageId}.image.png`, webpImageData);
-        const thumbnail = await sharp(Buffer.from(webpImageData)).resize(128, 128, {
-            fit: "contain",
-        }).webp().toBuffer();
-        const upload2 = uploadImage(`${request.imageId}.thumbnail.png`, thumbnail);
+        const upload1 = uploadImage(
+            `${request.imageId}.image.png`,
+            webpImageData
+        );
+        const thumbnail = await sharp(Buffer.from(webpImageData))
+            .resize(128, 128, {
+                fit: "contain",
+            })
+            .webp()
+            .toBuffer();
+        const upload2 = uploadImage(
+            `${request.imageId}.thumbnail.png`,
+            thumbnail
+        );
         await Promise.all([upload1, upload2]);
-        await updateImage(request.imageId, {status: "completed"}, request.authToken);
-        console.log("completed request")
+        await updateImage(
+            request.imageId,
+            { status: "completed" },
+            request.authToken
+        );
+        console.log("completed request");
     } catch (e) {
         Bugsnag.notify(e);
         // console.log(e);
         let err = "Image could not be processed";
         if (e.response?.data?.message) {
             err = e.response.data.message;
-            console.log(JSON.stringify(e.response.data, null, 2))
+            console.log(JSON.stringify(e.response.data, null, 2));
         }
-        await updateImage(request.imageId, {status: "error", error: err}, request.authToken);
+        await updateImage(
+            request.imageId,
+            { status: "error", error: err },
+            request.authToken
+        );
     } finally {
         activeImageCount--;
     }
@@ -265,13 +336,15 @@ async function poll() {
             WaitTimeSeconds: 20,
         })
         .promise();
-    console.log(`received ${messages.Messages?.length || 0} messages from queue`)
+    console.log(
+        `received ${messages.Messages?.length || 0} messages from queue`
+    );
     if (messages.Messages) {
         activeImageCount += messages.Messages.length;
         for (const message of messages.Messages) {
             processRequest(JSON.parse(message.Body) as HordeRequest);
         }
-        
+
         await sqsClient
             .deleteMessageBatch({
                 QueueUrl: queueUrl,
