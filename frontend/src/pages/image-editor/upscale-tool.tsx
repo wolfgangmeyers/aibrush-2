@@ -25,6 +25,8 @@ import {
     SplitResult,
 } from "../../lib/imageutil";
 import { defaultArgs } from "../../components/ImagePrompt";
+import { ErrorNotification } from "../../components/Alerts";
+import moment from "moment";
 
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
@@ -42,6 +44,8 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
     const [imageWorker, setImageWorker] = useState<
         ImageUtilWorker | undefined
     >();
+    const [error, setError] = useState<string | null>(null);
+    const [lastError, setLastError] = useState<number>(0);
 
     useEffect(() => {
         const imageWorker = new ImageUtilWorker();
@@ -106,38 +110,9 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
         return newImageData;
     };
 
-    const upscaleTile = async (
-        splitResult: SplitResult,
-        x: number,
-        y: number
-    ) => {
-        if (!imageWorker) {
-            throw new Error("Image worker not initialized");
-        }
-        const tile = splitResult.tiles[x][y];
-        const newTile = await upscaleImageData(tile);
-        const id = uuid.v4();
-        const feathered = await imageWorker.processRequest({
-            id,
-            alpha: false,
-            feather: true,
-            width: splitResult.imageWidth * 2,
-            height: splitResult.imageHeight * 2,
-            pixels: newTile.data,
-            selectionOverlay: {
-                x: x * (splitResult.tileSize * 2 - 64),
-                y: y * (splitResult.tileSize * 2 - 64),
-                width: newTile.width,
-                height: newTile.height,
-            },
-            upscale: true,
-            featherWidth: 64,
-        })
-        splitResult.tiles[x][y] = new ImageData(feathered.pixels, newTile.width, newTile.height);
-    };
-
     const onUpscale = async () => {
         setUpscaling(true);
+        setError(null);
         try {
             const backupImage = renderer.getEncodedImage(null);
             setBackupImage(backupImage);
@@ -152,29 +127,15 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
                     .getContext("2d")!
                     .getImageData(0, 0, c.width, c.height);
             }
-            const splitResult = splitImage(imageData);
-            if (splitResult) {
-                const promises: Array<Promise<void>> = [];
-                for (let x = 0; x < splitResult.tiles[0].length; x++) {
-                    for (let y = 0; y < splitResult.tiles.length; y++) {
-                        promises.push(upscaleTile(splitResult, x, y));
-                    }
-                }
-                await Promise.all(promises);
-                splitResult.tileSize *= 2;
-                splitResult.imageWidth *= 2;
-                splitResult.imageHeight *= 2;
-                const newImageData = mergeTiles(splitResult);
-                const newCanvas = imageDataToCanvas(newImageData);
-                renderer.setBaseImage(newCanvas);
-                newCanvas.remove();
-            } else {
-                const newImageData = await upscaleImageData(imageData);
-                const newCanvas = imageDataToCanvas(newImageData);
-                renderer.setBaseImage(newCanvas);
-                newCanvas.remove();
-            }
-        } finally {
+
+            const newImageData = await upscaleImageData(imageData);
+            const newCanvas = imageDataToCanvas(newImageData);
+            renderer.setBaseImage(newCanvas);
+            newCanvas.remove();
+        } catch(err: any) {
+            setError(err.message || "Upscaling failed");
+            setLastError(moment().valueOf());
+        }finally {
             setUpscaling(false);
         }
     };
@@ -190,6 +151,7 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
     if (backupImage) {
         return (
             <div className="form-group" style={{ marginTop: "16px" }}>
+                <ErrorNotification message={error} timestamp={lastError} />
                 <button
                     className="btn btn-primary"
                     onClick={() => {
@@ -230,6 +192,7 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
     return (
         <>
             <div className="form-group" style={{ marginTop: "16px" }}>
+                <ErrorNotification message={error} timestamp={lastError} />
                 <button
                     className="btn btn-primary"
                     onClick={() => {

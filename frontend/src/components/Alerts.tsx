@@ -19,7 +19,7 @@ interface AlertProps {
 }
 
 const Alert: FC<AlertProps> = ({ message, timestamp, alertType }) => {
-    const [show, setShow] = useState(true);
+    const [show, setShow] = useState(!!message);
 
     useEffect(() => {
         setShow(!!message);

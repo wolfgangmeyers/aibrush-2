@@ -252,9 +252,18 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) =>
                 renderer.setBaseImage(imageElement);
                 setRenderer(renderer);
             };
+            
         }
         loadImage();
     }, [image, id]);
+
+    // this covers the case that an image is upscaled to max, the upscale tool needs to
+    // be hidden and deselected.
+    useEffect(() => {
+        if (image && tool && tool.name == "upscale" && image.width * image.height >= 2048 * 2048) {
+            onSelectTool(tools[0]);
+        }
+    }, [image, tool]);
 
     useEffect(() => {
         if (renderer) {
@@ -282,6 +291,12 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) =>
     }, [tool, canvasRef.current]);
 
     function renderTool(t: ToolConfig) {
+        if (!image) {
+            return null;
+        }
+        if (t.name == "upscale" && image?.width * image?.height >= 2048 * 2048) {
+            return null;
+        }
         let buttonClass = `btn btn-secondary light-button image-editor-tool-button`;
         const isSelected = tool && tool.name == t.name;
         if (isSelected) {
