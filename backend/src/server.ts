@@ -1256,7 +1256,8 @@ export class Server {
                 const boost = await this.backendService.depositBoost(
                     req.params.userId,
                     depositRequest.amount,
-                    depositRequest.level
+                    depositRequest.level,
+                    false
                 );
                 res.json(boost);
             })
