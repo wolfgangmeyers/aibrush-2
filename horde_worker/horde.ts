@@ -171,7 +171,7 @@ export async function processAlchemistImage(
                 if (payload.forms[0].name == "nsfw") {
                     return resultsJson.forms[0].result.nsfw;
                 }
-                const webpImageResponse = await axios.get(resultsJson.forms[0].result[resultsJson.forms[0].name], {
+                const webpImageResponse = await axios.get(resultsJson.forms[0].result[resultsJson.forms[0].form], {
                     responseType: "arraybuffer",
                 });
                 return webpImageResponse.data;

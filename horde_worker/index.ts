@@ -311,7 +311,7 @@ async function processRequest(request: HordeRequest) {
         let err = "Image could not be processed";
         if (e.response?.data?.message) {
             err = e.response.data.message;
-            console.log(JSON.stringify(e.response.data, null, 2));
+            console.error(JSON.stringify(e.response.data, null, 2));
         }
         await updateImage(
             request.imageId,
