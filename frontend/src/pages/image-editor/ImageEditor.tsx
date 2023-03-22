@@ -27,6 +27,7 @@ import {
 } from "../../lib/imageutil";
 import { BusyModal } from "../../components/BusyModal";
 import { LocalImage, LocalImagesStore } from "../../lib/localImagesStore";
+import { render } from "@testing-library/react";
 
 interface CanPreventDefault {
     preventDefault: () => void;
@@ -141,6 +142,10 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) =>
             constructor: (r: Renderer) => new BaseTool(r, "augment"),
             defaultArgs: {},
             renderControls: (t: Tool, renderer: Renderer) => {
+                const maxSize = 2048 * 2048;
+                if (renderer.getWidth() * renderer.getHeight() > maxSize) {
+                    return <div style={{marginTop: "16px"}}>This image is too large to augment.</div>;
+                }
                 return (
                     <AugmentControls
                         renderer={renderer}
