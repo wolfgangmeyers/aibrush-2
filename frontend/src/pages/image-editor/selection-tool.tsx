@@ -297,8 +297,8 @@ export const Controls: React.FC<ControlsProps> = ({
                     type="range"
                     className="form-control-range"
                     id="size"
-                    min="0.5"
-                    max="1.5"
+                    min="1"
+                    max="2"
                     step="0.1"
                     value={size}
                     onChange={(event) => {
