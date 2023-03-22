@@ -14,7 +14,7 @@ export interface HordeRequest {
     nsfw: boolean;
     censorNsfw: boolean;
     model: string;
-    upscale: boolean;
+    augmentation: "face_restore" | "remove_background" | "upscale";
     controlnetType: string | null;
 }
 

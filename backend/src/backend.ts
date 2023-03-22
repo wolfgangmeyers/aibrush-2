@@ -606,7 +606,7 @@ export class BackendService {
         try {
             const result = await client.query(
                 `INSERT INTO images
-                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status, enable_video, enable_zoom, zoom_frequency, zoom_scale, zoom_shift_x, zoom_shift_y, model, glid_3_xl_skip_iterations, glid_3_xl_clip_guidance, glid_3_xl_clip_guidance_scale, width, height, uncrop_offset_x, uncrop_offset_y, negative_phrases, negative_score, stable_diffusion_strength, nsfw, temporary, upscale, controlnet_type)
+                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status, enable_video, enable_zoom, zoom_frequency, zoom_scale, zoom_shift_x, zoom_shift_y, model, glid_3_xl_skip_iterations, glid_3_xl_clip_guidance, glid_3_xl_clip_guidance_scale, width, height, uncrop_offset_x, uncrop_offset_y, negative_phrases, negative_score, stable_diffusion_strength, nsfw, temporary, augmentation, controlnet_type)
                 VALUES
                     ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
                 RETURNING *`,
@@ -641,7 +641,7 @@ export class BackendService {
                     body.stable_diffusion_strength || 0.75,
                     body.nsfw || false,
                     body.temporary || false,
-                    body.upscale || false,
+                    body.augmentation || null,
                     body.controlnet_type || null,
                 ]
             );
@@ -737,7 +737,7 @@ export class BackendService {
                         nsfw: true,
                         censorNsfw: image.temporary ? false : !image.nsfw,
                         model: image.model,
-                        upscale: image.upscale,
+                        augmentation: image.augmentation,
                         controlnetType: image.controlnet_type,
                     })
                     console.log("Submitted to horde: " + image.id);

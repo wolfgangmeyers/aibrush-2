@@ -9,6 +9,7 @@ import { sleep } from "../../lib/sleep";
 import {
     AIBrushApi,
     CreateImageInput,
+    CreateImageInputAugmentationEnum,
     Image as APIImage,
     ImageStatusEnum,
 } from "../../client";
@@ -38,9 +39,9 @@ interface Props {
     image: APIImage;
 }
 
-export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
+export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
     const [backupImage, setBackupImage] = useState<string | undefined>();
-    const [upscaling, setUpscaling] = useState<boolean>(false);
+    const [activeAugmentation, setActiveAugmentation] = useState<"upscale" | "face_restore" | null>(null);
     const [imageWorker, setImageWorker] = useState<
         ImageUtilWorker | undefined
     >();
@@ -55,8 +56,9 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
         };
     }, []);
 
-    const upscaleImageData = async (
-        imageData: ImageData
+    const augmentImageData = async (
+        imageData: ImageData,
+        augmentation: "upscale" | "face_restore"
     ): Promise<ImageData> => {
         if (!imageWorker) {
             throw new Error("Image worker not initialized");
@@ -76,7 +78,7 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
         input.temporary = true;
         input.width = imageData.width;
         input.height = imageData.height;
-        input.upscale = true;
+        input.augmentation = augmentation === "upscale" ? CreateImageInputAugmentationEnum.Upscale : CreateImageInputAugmentationEnum.FaceRestore;
 
         const createResp = await api.createImage(input);
         let processingImage = createResp.data.images![0];
@@ -85,7 +87,7 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
             const checkResp = await api.getImage(processingImage.id);
             processingImage = checkResp.data;
             if (processingImage.status === ImageStatusEnum.Error) {
-                throw new Error("Upscaling failed");
+                throw new Error("Augmentation failed");
             }
         }
         const downloadUrls = await api.getImageDownloadUrls(processingImage.id);
@@ -110,8 +112,8 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
         return newImageData;
     };
 
-    const onUpscale = async () => {
-        setUpscaling(true);
+    const onAugment = async (augmentation: "upscale" | "face_restore") => {
+        setActiveAugmentation(augmentation);
         setError(null);
         try {
             const backupImage = renderer.getEncodedImage(null);
@@ -128,7 +130,7 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
                     .getImageData(0, 0, c.width, c.height);
             }
 
-            const newImageData = await upscaleImageData(imageData);
+            const newImageData = await augmentImageData(imageData, augmentation);
             const newCanvas = imageDataToCanvas(newImageData);
             renderer.setBaseImage(newCanvas);
             newCanvas.remove();
@@ -136,14 +138,14 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
             setError(err.message || "Upscaling failed");
             setLastError(moment().valueOf());
         }finally {
-            setUpscaling(false);
+            setActiveAugmentation(null);
         }
     };
 
-    if (upscaling) {
+    if (activeAugmentation) {
         return (
             <div className="form-group" style={{ marginTop: "16px" }}>
-                <i className="fas fa-spinner fa-spin"></i>&nbsp; Upscaling...
+                <i className="fas fa-spinner fa-spin"></i>&nbsp; {activeAugmentation === "upscale" ? "Upscaling..." : "Restoring faces..."}
             </div>
         );
     }
@@ -191,18 +193,30 @@ export const UpscaleControls: FC<Props> = ({ renderer, tool, api, image }) => {
     // Show buttons for import and export and "save a copy"
     return (
         <>
+            <ErrorNotification message={error} timestamp={lastError} />
             <div className="form-group" style={{ marginTop: "16px" }}>
-                <ErrorNotification message={error} timestamp={lastError} />
                 <button
                     className="btn btn-primary"
                     onClick={() => {
-                        onUpscale();
+                        onAugment("upscale");
                     }}
                     style={{ marginLeft: "8px" }}
                 >
                     {/* upscale icon */}
-                    <i className="fas fa-search-plus"></i>&nbsp; Upscale Image
+                    <i className="fas fa-arrows-alt"></i>&nbsp; Upscale Image
                     2x
+                </button>
+            </div>
+            <div className="form-group" style={{ marginTop: "16px" }}>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => {
+                        onAugment("face_restore");
+                    }}
+                    style={{ marginLeft: "8px" }}
+                >
+                    {/* face restore icon */}
+                    <i className="fas fa-smile"></i>&nbsp; Restore Faces
                 </button>
             </div>
         </>

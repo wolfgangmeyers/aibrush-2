@@ -428,12 +428,12 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.model = this.model;
         input.nsfw = image.nsfw;
 
-        const closestAspectRatio = getClosestAspectRatio(
-            selectionOverlay!.width,
-            selectionOverlay!.height
-        );
-        input.width = closestAspectRatio.width;
-        input.height = closestAspectRatio.height;
+        // const closestAspectRatio = getClosestAspectRatio(
+        //     selectionOverlay!.width,
+        //     selectionOverlay!.height
+        // );
+        input.width = selectionOverlay!.width;
+        input.height = selectionOverlay!.height;
         input.temporary = true;
 
         this.state = "busy";

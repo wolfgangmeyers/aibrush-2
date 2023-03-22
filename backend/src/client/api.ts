@@ -319,10 +319,10 @@ export interface CreateImageInput {
     'temporary'?: boolean;
     /**
      * 
-     * @type {boolean}
+     * @type {string}
      * @memberof CreateImageInput
      */
-    'upscale'?: boolean;
+    'augmentation'?: CreateImageInputAugmentationEnum;
     /**
      * 
      * @type {string}
@@ -365,6 +365,13 @@ export const CreateImageInputWidthEnum = {
 } as const;
 
 export type CreateImageInputWidthEnum = typeof CreateImageInputWidthEnum[keyof typeof CreateImageInputWidthEnum];
+export const CreateImageInputAugmentationEnum = {
+    FaceRestore: 'face_restore',
+    RemoveBackground: 'remove_background',
+    Upscale: 'upscale'
+} as const;
+
+export type CreateImageInputAugmentationEnum = typeof CreateImageInputAugmentationEnum[keyof typeof CreateImageInputAugmentationEnum];
 export const CreateImageInputControlnetTypeEnum = {
     Canny: 'canny',
     Hed: 'hed',
@@ -690,10 +697,10 @@ export interface Image {
     'worker_id'?: string;
     /**
      * 
-     * @type {boolean}
+     * @type {string}
      * @memberof Image
      */
-    'upscale': boolean;
+    'augmentation'?: ImageAugmentationEnum;
     /**
      * 
      * @type {string}
@@ -780,6 +787,13 @@ export const ImageUncropOffsetYEnum = {
 } as const;
 
 export type ImageUncropOffsetYEnum = typeof ImageUncropOffsetYEnum[keyof typeof ImageUncropOffsetYEnum];
+export const ImageAugmentationEnum = {
+    FaceRestore: 'face_restore',
+    RemoveBackground: 'remove_background',
+    Upscale: 'upscale'
+} as const;
+
+export type ImageAugmentationEnum = typeof ImageAugmentationEnum[keyof typeof ImageAugmentationEnum];
 export const ImageControlnetTypeEnum = {
     Canny: 'canny',
     Hed: 'hed',
@@ -1169,7 +1183,7 @@ export interface UpdateImageInput {
      * @type {number}
      * @memberof UpdateImageInput
      */
-    'deleted_at'?: number;
+    'deleted_at'?: number | null;
     /**
      * 
      * @type {string}

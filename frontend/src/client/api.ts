@@ -321,10 +321,10 @@ export interface CreateImageInput {
     temporary?: boolean;
     /**
      * 
-     * @type {boolean}
+     * @type {string}
      * @memberof CreateImageInput
      */
-    upscale?: boolean;
+    augmentation?: CreateImageInputAugmentationEnum;
     /**
      * 
      * @type {string}
@@ -372,6 +372,15 @@ export enum CreateImageInputWidthEnum {
     NUMBER_768 = 768,
     NUMBER_896 = 896,
     NUMBER_1024 = 1024
+}
+/**
+    * @export
+    * @enum {string}
+    */
+export enum CreateImageInputAugmentationEnum {
+    FaceRestore = 'face_restore',
+    RemoveBackground = 'remove_background',
+    Upscale = 'upscale'
 }
 /**
     * @export
@@ -704,10 +713,10 @@ export interface Image {
     worker_id?: string;
     /**
      * 
-     * @type {boolean}
+     * @type {string}
      * @memberof Image
      */
-    upscale: boolean;
+    augmentation?: ImageAugmentationEnum;
     /**
      * 
      * @type {string}
@@ -803,6 +812,15 @@ export enum ImageUncropOffsetYEnum {
     NUMBER_640 = 640,
     NUMBER_768 = 768,
     NUMBER_896 = 896
+}
+/**
+    * @export
+    * @enum {string}
+    */
+export enum ImageAugmentationEnum {
+    FaceRestore = 'face_restore',
+    RemoveBackground = 'remove_background',
+    Upscale = 'upscale'
 }
 /**
     * @export

@@ -137,6 +137,12 @@ const triggers: { [key: string]: string[] } = {
     "App Icon Diffusion": ["IconsMi"],
 };
 
+const augmentationToForm = {
+    "upscale": "RealESRGAN_x4plus",
+    "face_restore": "GFPGAN",
+    "remove_background": "strip_background"
+}
+
 function addTrigger(prompt: string, model: string): string {
     if (triggers[model]) {
         const triggerList = triggers[model];
@@ -165,7 +171,7 @@ interface HordeRequest {
     nsfw: boolean;
     censorNsfw: boolean;
     model: string;
-    upscale: boolean;
+    augmentation: "face_restore" | "remove_background" | "upscale";
     controlnetType: string | null;
 }
 
@@ -204,14 +210,14 @@ async function processRequest(request: HordeRequest) {
         let webpImageData: Buffer;
 
         // TODO: support bg removal as well in this flow
-        if (request.upscale) {
-            console.log("upscaling image", request.imageId, "...")
+        if (request.augmentation) {
+            console.log("augmenting image", request.imageId, `(${request.augmentation})`);
             if (!imageOk) {
                 updateImage(
                     request.imageId,
                     {
                         status: "error",
-                        error: "no image provided for upscale",
+                        error: "no image provided for augmentation",
                     },
                     request.authToken
                 );
@@ -219,7 +225,7 @@ async function processRequest(request: HordeRequest) {
             }
             const payload: AlchemistPayload = {
                 source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
-                forms: [{name: "RealESRGAN_x4plus"}],
+                forms: [{name: augmentationToForm[request.augmentation]}],
             }
             webpImageData = await processAlchemistImage(payload);
         } else {
