@@ -103,8 +103,9 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
         encodedImage = binaryImageToDataBase64(imageDataResp.data);
         const img = await decodeImage(encodedImage);
         c = document.createElement("canvas");
-        c.width = imageData.width * 2;
-        c.height = imageData.height * 2;
+        const upscaleFactor = augmentation === "upscale" ? 2 : 1;
+        c.width = imageData.width * upscaleFactor;
+        c.height = imageData.height * upscaleFactor;
         const ctx = c.getContext("2d")!;
         ctx.drawImage(img, 0, 0, c.width, c.height);
         const newImageData = ctx.getImageData(0, 0, c.width, c.height);
