@@ -443,6 +443,7 @@ export class Server {
             "/images/:id",
             "/image-editor/:id",
             "/saved",
+            "/saved/:id",
             "/deleted-images",
             "/local-deleted-images",
             "/orders",
