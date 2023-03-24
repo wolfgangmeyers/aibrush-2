@@ -176,6 +176,15 @@ export async function processAlchemistImage(
                 });
                 return webpImageResponse.data;
             } else {
+                if (moment().diff(start, "seconds") > 110) {
+                    console.log("Horde request timed out");
+                    await axios.delete(`${hordeBaseUrl}/v2/interrogate/status/${reqId}`, {
+                        headers: {
+                            apiKey: hordeApiKey,
+                        },
+                    });
+                    return null;
+                }
                 await sleep(1000);
             }
         } catch (e) {
