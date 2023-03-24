@@ -44,26 +44,25 @@ const sqsClient = new AWS.SQS({
 // keep track of how many images are being processed
 let activeImageCount = 0;
 
-// replaced with image url
-// async function downloadImage(key: string): Promise<Buffer> {
-//     // return null if object doesn't exist
-//     try {
-//         const data = await s3Client
-//             .getObject({
-//                 Bucket: "aibrush2-filestore",
-//                 Key: key,
-//             })
-//             .promise();
-//         const imageData = data.Body as Buffer;
-//         // load with sharp
-//         const image = sharp(imageData);
-//         // convert to webp and return buffer
-//         const webp = await image.webp().toBuffer();
-//         return webp;
-//     } catch (e) {
-//         return null;
-//     }
-// }
+async function downloadImage(key: string): Promise<Buffer> {
+    // return null if object doesn't exist
+    try {
+        const data = await s3Client
+            .getObject({
+                Bucket: "aibrush2-filestore",
+                Key: key,
+            })
+            .promise();
+        const imageData = data.Body as Buffer;
+        // load with sharp
+        const image = sharp(imageData);
+        // convert to webp and return buffer
+        const webp = await image.webp().toBuffer();
+        return webp;
+    } catch (e) {
+        return null;
+    }
+}
 
 // check if an image with a given key exists, without downloading it
 async function imageExists(key: string): Promise<boolean> {
@@ -261,8 +260,16 @@ async function processRequest(request: HordeRequest) {
             if (imageOk) {
                 // convert to base64
                 console.log("image data found");
+                if (payload.params.control_type) {
+                    const imageData = await downloadImage(
+                        `${request.imageId}.image.png`
+                    )
+                    payload.source_image = imageData.toString("base64");
+                } else {
+                    payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`;
+                }
                 // payload.source_image = imageData.toString("base64");
-                payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`;
+                
             }
             if (maskOk) {
                 console.log("mask data found");
