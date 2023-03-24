@@ -258,17 +258,8 @@ async function processRequest(request: HordeRequest) {
             };
 
             if (imageOk) {
-                // convert to base64
-                console.log("image data found");
-                if (payload.params.control_type) {
-                    const imageData = await downloadImage(
-                        `${request.imageId}.image.png`
-                    )
-                    payload.source_image = imageData.toString("base64");
-                } else {
-                    payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`;
-                }
                 // payload.source_image = imageData.toString("base64");
+                payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`;
                 
             }
             if (maskOk) {
