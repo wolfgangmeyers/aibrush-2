@@ -1,4 +1,5 @@
 import React, { FC, useEffect, useState } from 'react';
+import moment from "moment";
 
 // implement an error notification component
 // error message and timestamp are passed in as props
@@ -23,6 +24,15 @@ const Alert: FC<AlertProps> = ({ message, timestamp, alertType }) => {
 
     useEffect(() => {
         setShow(!!message);
+        // set a timeout of 10 seconds to hide the message if it is currently showing
+        if (message) {
+            const timeout = setTimeout(() => {
+                setShow(false);
+            }, 10000);
+            return () => {
+                clearTimeout(timeout);
+            };
+        }
     }, [message, timestamp]);
 
     if (!show) {

@@ -245,14 +245,19 @@ export const ImagePrompt: FC<Props> = ({
             setVariationStrength(parent.stable_diffusion_strength);
             setNsfw(parent.nsfw);
             setModel(
-                parent.model == "stable_diffusion"
-                    ? "Epic Diffusion"
-                    : parent.model
+                supportedModels.indexOf(parent.model) > -1 ? parent.model : "Epic Diffusion"
             );
         } else {
             resetState();
         }
     }, [parent]);
+
+    // unset controlnet when encodedImage is null
+    useEffect(() => {
+        if (!encodedImage) {
+            setControlnetType(undefined);
+        }
+    }, [encodedImage]);
 
     return (
         <form onSubmit={handleSubmit}>

@@ -54,6 +54,9 @@ export const ImagePopup: FC<ImagePopupProps> = ({
             case ImageStatusEnum.Completed:
                 icon = "fas fa-check";
                 break;
+            case ImageStatusEnum.Saved:
+                icon = "fas fa-save";
+                break;
             case ImageStatusEnum.Error:
                 icon = "fas fa-exclamation-circle";
                 break;
@@ -196,6 +199,9 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                             </div> */}
                             <div>
                                 Image dimensions: {image.width} x {image.height}
+                            </div>
+                            <div>
+                                Model: {image.model}
                             </div>
                             {image.nsfw && (
                                 <>
