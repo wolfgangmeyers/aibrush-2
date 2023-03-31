@@ -108,6 +108,9 @@ export const Homepage: FC<Props> = ({
             // refresh
             localImages.getImage(id).then((image) => {
                 setSelectedImage(image);
+                if (!image) {
+                    history.replace("/");
+                }
             });
         } else {
             setSelectedImage(null);
@@ -473,6 +476,7 @@ export const Homepage: FC<Props> = ({
             setImages((images) => {
                 return images.filter((i) => i.id !== image.id);
             });
+            history.push("/");
         } catch (e) {
             console.error(e);
             onError("Error deleting image");
@@ -501,6 +505,7 @@ export const Homepage: FC<Props> = ({
                 temporary: false,
                 label: "",
                 iterations: image.iterations,
+                model: image.model,
             };
             await api.createImage(createInput);
             await localImages.hardDeleteImage(image.id);

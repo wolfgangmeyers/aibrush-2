@@ -17,7 +17,11 @@ import {
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
 import { getUpscaleLevel } from "../../lib/upscale";
-import { applyAlphaMask, featherEdges, ImageUtilWorker } from "../../lib/imageutil";
+import {
+    applyAlphaMask,
+    featherEdges,
+    ImageUtilWorker,
+} from "../../lib/imageutil";
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 import moment from "moment";
 
@@ -25,7 +29,8 @@ type InpaintToolState =
     | "select"
     | "erase"
     | "inpaint"
-    | "busy"
+    | "uploading"
+    | "processing"
     | "confirm"
     | undefined;
 
@@ -309,28 +314,30 @@ export class InpaintTool extends BaseTool implements Tool {
                         0,
                         0,
                         selectionOverlay.width,
-                        selectionOverlay.height,
+                        selectionOverlay.height
                     );
 
                     const id = this.newId();
-                    this.worker.processRequest({
-                        id,
-                        alpha: true,
-                        alphaPixels: alphaMask.data,
-                        feather: true,
-                        height: this.renderer.getHeight(),
-                        width: this.renderer.getWidth(),
-                        pixels: imageData.data,
-                        selectionOverlay,
-                        featherWidth: 10,
-                    }).then(resp => {
-                        const updatedImageData = new ImageData(
-                            resp.pixels,
-                            imageData.width,
-                            imageData.height,
-                        )
-                        resolve(updatedImageData);
-                    })
+                    this.worker
+                        .processRequest({
+                            id,
+                            alpha: true,
+                            alphaPixels: alphaMask.data,
+                            feather: true,
+                            height: this.renderer.getHeight(),
+                            width: this.renderer.getWidth(),
+                            pixels: imageData.data,
+                            selectionOverlay,
+                            featherWidth: 10,
+                        })
+                        .then((resp) => {
+                            const updatedImageData = new ImageData(
+                                resp.pixels,
+                                imageData.width,
+                                imageData.height
+                            );
+                            resolve(updatedImageData);
+                        });
                     // remove canvas
                     canvas.remove();
                 };
@@ -352,7 +359,18 @@ export class InpaintTool extends BaseTool implements Tool {
         this.dirty = false;
     }
 
-    async submit(api: AIBrushApi, apisocket: ApiSocket, image: APIImage, model: string) {
+    private updateProgress(progress: number) {
+        if (this.progressListener) {
+            this.progressListener(progress);
+        }
+    }
+
+    async submit(
+        api: AIBrushApi,
+        apisocket: ApiSocket,
+        image: APIImage,
+        model: string
+    ) {
         this.notifyError(null);
         let selectionOverlay = this.renderer.getSelectionOverlay();
         if (!selectionOverlay) {
@@ -391,7 +409,9 @@ export class InpaintTool extends BaseTool implements Tool {
         input.encoded_mask = encodedMask;
         input.parent = image.id;
         input.phrases = [this.prompt || image.phrases[0]];
-        input.negative_phrases = [this.negativePrompt || image.negative_phrases[0]];
+        input.negative_phrases = [
+            this.negativePrompt || image.negative_phrases[0],
+        ];
         input.stable_diffusion_strength = this.variationStrength;
         input.count = this.count;
         input.model = model;
@@ -404,16 +424,27 @@ export class InpaintTool extends BaseTool implements Tool {
         input.height = closestAspectRatio.height;
         input.temporary = true;
 
-        this.state = "busy";
+        this.state = "uploading";
         let resp: ImageList | null = null;
+        this.updateProgress(0);
         try {
-            resp = (await api.createImage(input)).data;
+            resp = (
+                await api.createImage(input, {
+                    onUploadProgress: (progressEvent: any) => {
+                        this.updateProgress(
+                            progressEvent.loaded / progressEvent.total
+                        );
+                    },
+                })
+            ).data;
         } catch (err) {
             console.error("Error creating images", err);
             this.notifyError("Failed to create image");
             this.state = "select";
             return;
         }
+        this.state = "processing";
+        this.updateProgress(0);
         let newImages: Array<ImageWithData> | undefined = resp.images;
         if (!newImages || newImages.length === 0) {
             this.state = "select";
@@ -479,7 +510,11 @@ export class InpaintTool extends BaseTool implements Tool {
                 if (moment().diff(lastCheck, "seconds") > 10) {
                     // get list of ids that aren't completed and batch get them.
                     const pendingIds = newImages
-                        .filter((img) => img.status === ImageStatusEnum.Pending || img.status === ImageStatusEnum.Processing)
+                        .filter(
+                            (img) =>
+                                img.status === ImageStatusEnum.Pending ||
+                                img.status === ImageStatusEnum.Processing
+                        )
                         .map((img) => img.id);
                     console.log("Checking pending images", pendingIds);
                     const updatedImagesResult = await api.batchGetImages({
@@ -491,7 +526,10 @@ export class InpaintTool extends BaseTool implements Tool {
                         return acc;
                     }, {} as Record<string, APIImage>);
                     for (let i = 0; i < newImages!.length; i++) {
-                        if (newImages![i].status === ImageStatusEnum.Pending || newImages![i].status === ImageStatusEnum.Processing) {
+                        if (
+                            newImages![i].status === ImageStatusEnum.Pending ||
+                            newImages![i].status === ImageStatusEnum.Processing
+                        ) {
                             const updated = byId[newImages![i].id];
                             if (updated) {
                                 newImages![i].status = updated.status;
@@ -514,7 +552,11 @@ export class InpaintTool extends BaseTool implements Tool {
                     lastCheck = moment();
                 }
                 // timeout of 2 minutes
-                if ((lastUpdate.isAfter(startTime) && moment().diff(lastUpdate, "seconds") > 30) ||  moment().diff(startTime, "minutes") > 2) {
+                if (
+                    (lastUpdate.isAfter(startTime) &&
+                        moment().diff(lastUpdate, "seconds") > 30) ||
+                    moment().diff(startTime, "minutes") > 2
+                ) {
                     completed = true;
                 }
             }
@@ -627,7 +669,9 @@ export const InpaintControls: FC<ControlsProps> = ({
 }) => {
     const [count, setCount] = useState(4);
     const [prompt, setPrompt] = useState(image.phrases[0]);
-    const [negativePrompt, setNegativePrompt] = useState(image.negative_phrases[0]);
+    const [negativePrompt, setNegativePrompt] = useState(
+        image.negative_phrases[0]
+    );
     const [state, setState] = useState<InpaintToolState>(tool.state);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -649,10 +693,11 @@ export const InpaintControls: FC<ControlsProps> = ({
     tool.onError(setError);
     tool.onDirty(setDirty);
 
-    if (state == "busy") {
+    if (state === "uploading" || state === "processing") {
         return (
             <div style={{ marginTop: "16px" }}>
-                <i className="fa fa-spinner fa-spin"></i>&nbsp; Inpainting...
+                <i className="fa fa-spinner fa-spin"></i>&nbsp;{" "}
+                {state === "uploading" ? "Uploading..." : "Inpainting..."}
                 <br />
                 {/* bootstrap progress bar */}
                 <div
@@ -831,7 +876,7 @@ export const InpaintControls: FC<ControlsProps> = ({
                             <option value="stable_diffusion_inpainting">
                                 Stable Diffusion
                             </option>
-                            
+
                             <option value="stable_diffusion_2_inpainting">
                                 Stable Diffusion 2
                             </option>

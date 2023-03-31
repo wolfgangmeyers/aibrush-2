@@ -23,7 +23,7 @@ import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 import moment from "moment";
 import { supportedModels } from "../../lib/supportedModels";
 
-type EnhanceToolState = "select" | "default" | "busy" | "confirm" | "erase";
+type EnhanceToolState = "select" | "default" | "uploading" | "processing" | "confirm" | "erase";
 
 // eraser width modifier adds a solid core with a feather edge
 // equal to the what is used on enhanced selections
@@ -404,6 +404,12 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.state = "erase";
     }
 
+    private updateProgress(progress: number) {
+        if (this.progressListener) {
+            this.progressListener(progress);
+        }
+    }
+
     async submit(api: AIBrushApi, apisocket: ApiSocket, image: APIImage) {
         this.dirty = true;
         this.notifyError(null);
@@ -428,24 +434,36 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.model = this.model;
         input.nsfw = image.nsfw;
 
-        // const closestAspectRatio = getClosestAspectRatio(
-        //     selectionOverlay!.width,
-        //     selectionOverlay!.height
-        // );
         input.width = selectionOverlay!.width;
         input.height = selectionOverlay!.height;
+        // round width and height up to the nearest multiple of 64
+        input.width = Math.ceil(input.width / 64) * 64;
+        input.height = Math.ceil(input.height / 64) * 64;
         input.temporary = true;
 
-        this.state = "busy";
+        this.state = "uploading";
         let resp: ImageList | null = null;
+        this.updateProgress(0);
         try {
-            resp = (await api.createImage(input)).data;
+            resp = (
+                await api.createImage(input, {
+                    onUploadProgress: (progressEvent: any) => {
+                        console.log("progressEvent", progressEvent)
+                        const progress =
+                            progressEvent.loaded / progressEvent.total;
+
+                        // this.progressListener(progress);
+                        this.updateProgress(progress);
+                    },
+                })
+            ).data;
         } catch (err) {
             console.error("Error creating images", err);
             this.notifyError("Failed to create image");
             this.state = "default";
             return;
         }
+        this.state = "processing";
         let newImages: Array<ImageWithData> | undefined = resp.images;
         if (!newImages || newImages.length === 0) {
             this.state = "default";
@@ -500,9 +518,7 @@ export class EnhanceTool extends BaseTool implements Tool {
                         continue;
                     }
                 }
-                if (this.progressListener) {
-                    this.progressListener(completeCount / newImages!.length);
-                }
+                this.updateProgress(completeCount / newImages!.length);
                 if (completeCount === newImages!.length) {
                     completed = true;
                 }
@@ -679,10 +695,10 @@ export const EnhanceControls: FC<ControlsProps> = ({
     tool.onError(setError);
     tool.onDirty(setDirty);
 
-    if (state == "busy") {
+    if (state == "processing" || state == "uploading") {
         return (
             <div style={{ marginTop: "16px" }}>
-                <i className="fa fa-spinner fa-spin"></i>&nbsp; Enhancing...
+                <i className="fa fa-spinner fa-spin"></i>&nbsp; {state === "processing" ? "Enhancing..." : "Uploading..."}
                 <br />
                 {/* bootstrap progress bar */}
                 <div
