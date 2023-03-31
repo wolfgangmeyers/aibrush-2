@@ -188,7 +188,7 @@ export class InpaintTool extends BaseTool implements Tool {
                 x,
                 y,
             });
-        } else if (this.state == "confirm") {
+        } else {
             this.renderer.setCursor({
                 color: "white",
                 radius: 10,
@@ -196,25 +196,24 @@ export class InpaintTool extends BaseTool implements Tool {
                 x,
                 y,
             });
-        } else {
-            this.renderer.setCursor(undefined);
         }
     }
 
     onMouseMove(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
-        if (this.state == "select") {
-            this.selectionTool.onMouseMove(event);
-            return;
-        }
         let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
             event.nativeEvent.offsetX,
             event.nativeEvent.offsetY
         );
+        this.updateCursor(x, y);
+        if (this.state == "select") {
+            this.selectionTool.onMouseMove(event);
+            return;
+        }
+
         if (this.panning) {
             this.zoomHelper.onPan(event);
         }
 
-        this.updateCursor(x, y);
         if (this.erasing) {
             this.erasePoint(x, y);
         }

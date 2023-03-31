@@ -231,7 +231,7 @@ export class EnhanceTool extends BaseTool implements Tool {
                 x,
                 y,
             });
-        } else if (this.state == "confirm") {
+        } else {
             this.renderer.setCursor({
                 color: "white",
                 radius: 10,
@@ -239,8 +239,6 @@ export class EnhanceTool extends BaseTool implements Tool {
                 x,
                 y,
             });
-        } else {
-            this.renderer.setCursor(undefined);
         }
     }
 

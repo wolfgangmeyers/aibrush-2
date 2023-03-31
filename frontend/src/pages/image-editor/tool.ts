@@ -32,6 +32,7 @@ export class BaseTool implements Tool {
     readonly zoomHelper: ZoomHelper;
 
     private _pinchZooming = false;
+    private _panning = false;
 
     constructor(readonly renderer: Renderer, readonly name: string) {
         this.zoomHelper = new ZoomHelper(renderer);
@@ -45,9 +46,37 @@ export class BaseTool implements Tool {
     updateArgs(args: any) {
         localStorage.setItem(`tool_args_${this.name}`, JSON.stringify(args));
     }
-    onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {}
-    onMouseMove(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {}
-    onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {}
+    onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+        if (event.button === 1) {
+            this._panning = true;
+        }
+    }
+    onMouseMove(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+        if (this._panning) {
+            this.zoomHelper.onPan(event);
+        }
+        let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
+            event.nativeEvent.offsetX,
+            event.nativeEvent.offsetY
+        );
+        this._updateCursor(x, y);
+    }
+
+    private _updateCursor(x: number, y: number) {
+        this.renderer.setCursor({
+            color: "white",
+            radius: 10,
+            type: "crosshairs",
+            x,
+            y,
+        });
+    }
+
+    onMouseUp(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
+        if (this._panning) {
+            this._panning = false;
+        }
+    }
     onMouseLeave(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {}
 
     onTouchStart(event: React.TouchEvent<HTMLCanvasElement>) {
@@ -125,7 +154,9 @@ export class BaseTool implements Tool {
 
     onKeyDown(event: KeyboardEvent) {}
     onKeyUp(event: KeyboardEvent) {}
-    onWheel(event: WheelEvent) {}
+    onWheel(event: WheelEvent) {
+        this.zoomHelper.onWheel(event);
+    }
     destroy(): boolean {
         return true;
     }

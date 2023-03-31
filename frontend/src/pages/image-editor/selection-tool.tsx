@@ -115,17 +115,6 @@ export class SelectionTool extends BaseTool implements Tool {
             };
 
             if (!this.outpaint) {
-                // // clamp to the canvas
-                // x = Math.max(
-                //     0,
-                //     Math.min(x, imageWidth - this.selectionOverlay!.width)
-                // );
-                // y = Math.max(
-                //     0,
-                //     Math.min(y, imageHeight - this.selectionOverlay!.height)
-                // );
-                // x = Math.min(x, imageWidth - this.selectionOverlay!.width);
-                // y = Math.min(y, imageHeight - this.selectionOverlay!.height);
                 this.selectionOverlayPreview = this.clamp(this.selectionOverlayPreview);
             }
 
