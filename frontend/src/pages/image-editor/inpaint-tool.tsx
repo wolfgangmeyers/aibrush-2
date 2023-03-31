@@ -498,9 +498,7 @@ export class InpaintTool extends BaseTool implements Tool {
                         continue;
                     }
                 }
-                if (this.progressListener) {
-                    this.progressListener(completeCount / newImages!.length);
-                }
+                this.updateProgress(completeCount / newImages!.length);
                 if (completeCount === newImages!.length) {
                     completed = true;
                     continue;
