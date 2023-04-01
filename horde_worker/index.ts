@@ -4,8 +4,14 @@ import Bugsnag from "@bugsnag/js";
 import axios from "axios";
 import moment from "moment";
 import { sleep } from "./sleep";
+import { MetricsClient } from "./metrics";
 
-import { AlchemistPayload, HordeRequestPayload, processAlchemistImage, processImage } from "./horde";
+import {
+    AlchemistPayload,
+    HordeRequestPayload,
+    processAlchemistImage,
+    processImage,
+} from "./horde";
 
 if (process.env.BUGSNAG_API_KEY) {
     Bugsnag.start({
@@ -14,6 +20,8 @@ if (process.env.BUGSNAG_API_KEY) {
 }
 
 const callbackEndpoint = "https://www.aibrush.art";
+
+const metricsClient = new MetricsClient(process.env.NEW_RELIC_LICENSE_KEY);
 
 interface UpdateImageInput {
     status: string;
@@ -137,10 +145,10 @@ const triggers: { [key: string]: string[] } = {
 };
 
 const augmentationToForm = {
-    "upscale": "RealESRGAN_x4plus",
-    "face_restore": "GFPGAN",
-    "remove_background": "strip_background"
-}
+    upscale: "RealESRGAN_x4plus",
+    face_restore: "GFPGAN",
+    remove_background: "strip_background",
+};
 
 function addTrigger(prompt: string, model: string): string {
     if (triggers[model]) {
@@ -182,6 +190,10 @@ const inpaintingModels: { [key: string]: boolean } = {
 };
 
 async function processRequest(request: HordeRequest) {
+    const metricParams = {
+        model: request.model,
+        success: true,
+    };
     console.log("processing request", request);
     try {
         updateImage(
@@ -210,7 +222,11 @@ async function processRequest(request: HordeRequest) {
 
         // TODO: support bg removal as well in this flow
         if (request.augmentation) {
-            console.log("augmenting image", request.imageId, `(${request.augmentation})`);
+            console.log(
+                "augmenting image",
+                request.imageId,
+                `(${request.augmentation})`
+            );
             if (!imageOk) {
                 updateImage(
                     request.imageId,
@@ -224,8 +240,8 @@ async function processRequest(request: HordeRequest) {
             }
             const payload: AlchemistPayload = {
                 source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
-                forms: [{name: augmentationToForm[request.augmentation]}],
-            }
+                forms: [{ name: augmentationToForm[request.augmentation] }],
+            };
             webpImageData = await processAlchemistImage(payload);
         } else {
             // regular old image generation
@@ -260,7 +276,6 @@ async function processRequest(request: HordeRequest) {
             if (imageOk) {
                 // payload.source_image = imageData.toString("base64");
                 payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`;
-                
             }
             if (maskOk) {
                 console.log("mask data found");
@@ -310,6 +325,7 @@ async function processRequest(request: HordeRequest) {
         );
         console.log("completed request");
     } catch (e) {
+        metricParams.success = false;
         Bugsnag.notify(e);
         // console.log(e);
         let err = "Image could not be processed";
@@ -324,10 +340,17 @@ async function processRequest(request: HordeRequest) {
         );
     } finally {
         activeImageCount--;
+        metricsClient.addMetric(
+            "horde.processRequest",
+            1,
+            "count",
+            metricParams
+        );
     }
 }
 
 async function poll() {
+    metricsClient.addMetric("horde.poll", 1, "count", {});
     if (activeImageCount >= 30) {
         console.log("max active image count reached, waiting");
         await sleep(1000);
