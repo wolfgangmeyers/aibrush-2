@@ -598,13 +598,26 @@ export class Server {
                     );
                     return;
                 }
-                const images = await this.backendService.createImages(
-                    jwt.userId,
-                    req.body
-                );
-                res.json({
-                    images,
-                });
+                try {
+                    const images = await this.backendService.createImages(
+                        jwt.userId,
+                        req.body
+                    );
+                    res.json({
+                        images,
+                    });
+                } catch (err) {
+                    // check for "Image insert failed: user has too many pending or processing images"
+                    if (err.message.includes("too many pending")) {
+                        res.status(429).send({
+                            message: "Maximum number of pending or processing images reached. Please wait for your images to finish processing before creating more."
+                        });
+                        return;
+                    }
+                    throw err;
+                }
+                
+                
             })
         );
 

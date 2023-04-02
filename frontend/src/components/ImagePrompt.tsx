@@ -423,7 +423,7 @@ export const ImagePrompt: FC<Props> = ({
                                 className="form-control-range"
                                 id="count"
                                 min="1"
-                                max="20"
+                                max="10"
                                 value={count}
                                 onChange={(e) =>
                                     setCount(parseInt(e.target.value))

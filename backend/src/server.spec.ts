@@ -961,6 +961,25 @@ describe("server", () => {
             })
         })
 
+        describe("when creating too many images", () => {
+            it("should reject the request with too many requests error", async () => {
+                await client.createImage({
+                    label: "test",
+                    iterations: 1,
+                    status: UpdateImageInputStatusEnum.Pending,
+                    count: 10,
+                    phrases: ["test"],
+                })
+                await expect(client.createImage({
+                    label: "test",
+                    iterations: 1,
+                    status: UpdateImageInputStatusEnum.Pending,
+                    count: 1,
+                    phrases: ["test"],
+                })).rejects.toThrow(/Request failed with status code 429/)
+            })
+        })
+
         describe("batch get images", () => {
             // before each - create 2 images
             let image1: Image;

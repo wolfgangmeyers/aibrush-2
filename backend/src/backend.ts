@@ -759,12 +759,34 @@ export class BackendService {
         }
     }
 
+    private async getPendingOrProcessingCountForUser(userId: string): Promise<number> {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                "SELECT COUNT(*) FROM images WHERE created_by = $1 AND (status = 'pending' OR status = 'processing')",
+                [userId]
+            );
+            return parseInt(result.rows[0].count);
+        } finally {
+            client.release();
+        }
+    }
+
     async createImages(
         createdBy: string,
         body: CreateImageInput
     ): Promise<Array<Image>> {
+        const pendingOrProcessingCount = await this.getPendingOrProcessingCountForUser(createdBy);
+        let count = body.count || 1;
+        if (count > 10) {
+            count = 10;
+        }
+        count = Math.max(count - pendingOrProcessingCount, 0);
+        if (count <= 0) {
+            throw new Error("You already have too many pending or processing images");
+        }
         const promises: Array<Promise<Image>> = [];
-        for (let i = 0; i < (body.count || 1); i++) {
+        for (let i = 0; i < count - pendingOrProcessingCount; i++) {
             promises.push(this.createImage(createdBy, body));
         }
         return Promise.all(promises);
