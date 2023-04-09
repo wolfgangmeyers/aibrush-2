@@ -31,6 +31,7 @@ export interface HordeRequestPayload {
     nsfw: boolean;
     censor_nsfw: boolean;
     trusted_workers: boolean;
+    slow_workers: boolean;
     r2: boolean;
     models: string[];
     source_processing: string;

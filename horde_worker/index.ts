@@ -270,6 +270,7 @@ async function processRequest(request: HordeRequest) {
                 nsfw: request.nsfw,
                 censor_nsfw: !request.nsfw,
                 trusted_workers: false,
+                slow_workers: false,
                 r2: true,
                 models: [request.model],
                 source_processing: "img2img",
