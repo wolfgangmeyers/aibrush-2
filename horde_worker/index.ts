@@ -244,6 +244,7 @@ async function processRequest(request: HordeRequest) {
             // };
             // webpImageData = await processAlchemistImage(payload);
             post_processing.push(augmentationToForm[request.augmentation]);
+        }
         // } else {
             // regular old image generation
             const payload: HordeRequestPayload = {
