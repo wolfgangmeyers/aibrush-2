@@ -41,7 +41,9 @@ interface Props {
 
 export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
     const [backupImage, setBackupImage] = useState<string | undefined>();
-    const [activeAugmentation, setActiveAugmentation] = useState<"upscale" | "face_restore" | null>(null);
+    const [activeAugmentation, setActiveAugmentation] = useState<
+        "upscale" | "face_restore" | null
+    >(null);
     const [imageWorker, setImageWorker] = useState<
         ImageUtilWorker | undefined
     >();
@@ -78,7 +80,10 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
         input.temporary = true;
         input.width = imageData.width;
         input.height = imageData.height;
-        input.augmentation = augmentation === "upscale" ? CreateImageInputAugmentationEnum.Upscale : CreateImageInputAugmentationEnum.FaceRestore;
+        input.augmentation =
+            augmentation === "upscale"
+                ? CreateImageInputAugmentationEnum.Upscale
+                : CreateImageInputAugmentationEnum.FaceRestore;
 
         const createResp = await api.createImage(input);
         let processingImage = createResp.data.images![0];
@@ -131,14 +136,17 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
                     .getImageData(0, 0, c.width, c.height);
             }
 
-            const newImageData = await augmentImageData(imageData, augmentation);
+            const newImageData = await augmentImageData(
+                imageData,
+                augmentation
+            );
             const newCanvas = imageDataToCanvas(newImageData);
             renderer.setBaseImage(newCanvas);
             newCanvas.remove();
-        } catch(err: any) {
+        } catch (err: any) {
             setError(err.message || "Upscaling failed");
             setLastError(moment().valueOf());
-        }finally {
+        } finally {
             setActiveAugmentation(null);
         }
     };
@@ -146,7 +154,10 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
     if (activeAugmentation) {
         return (
             <div className="form-group" style={{ marginTop: "16px" }}>
-                <i className="fas fa-spinner fa-spin"></i>&nbsp; {activeAugmentation === "upscale" ? "Upscaling..." : "Restoring faces..."}
+                <i className="fas fa-spinner fa-spin"></i>&nbsp;{" "}
+                {activeAugmentation === "upscale"
+                    ? "Upscaling..."
+                    : "Restoring faces..."}
             </div>
         );
     }
@@ -191,6 +202,15 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
         );
     }
 
+    const maxSize = 2048 * 2048;
+    if (renderer.getWidth() * renderer.getHeight() > maxSize) {
+        return (
+            <div style={{ marginTop: "16px" }}>
+                This image is too large to augment.
+            </div>
+        );
+    }
+
     // Show buttons for import and export and "save a copy"
     return (
         <>
@@ -204,8 +224,7 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
                     style={{ marginLeft: "8px" }}
                 >
                     {/* upscale icon */}
-                    <i className="fas fa-arrows-alt"></i>&nbsp; Upscale Image
-                    2x
+                    <i className="fas fa-arrows-alt"></i>&nbsp; Upscale Image 2x
                 </button>
             </div>
             <div className="form-group" style={{ marginTop: "16px" }}>
