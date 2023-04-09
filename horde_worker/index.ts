@@ -238,12 +238,13 @@ async function processRequest(request: HordeRequest) {
                 );
                 return;
             }
-            const payload: AlchemistPayload = {
-                source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
-                forms: [{ name: augmentationToForm[request.augmentation] }],
-            };
-            webpImageData = await processAlchemistImage(payload);
-        } else {
+            // const payload: AlchemistPayload = {
+            //     source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
+            //     forms: [{ name: augmentationToForm[request.augmentation] }],
+            // };
+            // webpImageData = await processAlchemistImage(payload);
+            post_processing.push(augmentationToForm[request.augmentation]);
+        // } else {
             // regular old image generation
             const payload: HordeRequestPayload = {
                 params: {
@@ -291,7 +292,7 @@ async function processRequest(request: HordeRequest) {
             console.log("sending payload", payload);
 
             webpImageData = await processImage(payload);
-        }
+        // }
 
         console.log("received response from stable horde");
         if (!webpImageData) {
