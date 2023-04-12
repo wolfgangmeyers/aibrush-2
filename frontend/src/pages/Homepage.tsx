@@ -58,6 +58,7 @@ export const Homepage: FC<Props> = ({
     const [parentImage, setParentImage] = useState<LocalImage | null>(null);
     const [loadingParent, setLoadingParent] = useState(false);
     const [savingImage, setSavingImage] = useState(false);
+    const [uploadProgress, setUploadingProgress] = useState(0);
 
     const [showPendingImages, setShowPendingImages] = useState(false);
 
@@ -507,7 +508,15 @@ export const Homepage: FC<Props> = ({
                 iterations: image.iterations,
                 model: image.model,
             };
-            await api.createImage(createInput);
+            setUploadingProgress(0);
+            await api.createImage(createInput, {
+                onUploadProgress: (progressEvent: any) => {
+                    const percentCompleted = Math.round(
+                        (progressEvent.loaded) / progressEvent.total
+                    );
+                    setUploadingProgress(percentCompleted);
+                },
+            });
             await localImages.hardDeleteImage(image.id);
             setImages((images) => {
                 return images.filter((i) => i.id !== image.id);
@@ -804,7 +813,16 @@ export const Homepage: FC<Props> = ({
                 <p>Please wait while we load the parent image.</p>
             </BusyModal>
             <BusyModal show={savingImage} title="Saving image">
-                <p>Please wait while we save your image.</p>
+                {/* bootstrap progress bar for uploadProgress (0-1 value) */}
+                <div className="progress">
+                    <div
+                        className="progress-bar"
+                        role="progressbar"
+                        style={{ width: `${uploadProgress * 100}%` }}
+                        aria-valuenow={uploadProgress * 100}
+                    ></div>
+                </div>
+                
             </BusyModal>
             <PendingImages
                 images={pendingOrProcessingImages}

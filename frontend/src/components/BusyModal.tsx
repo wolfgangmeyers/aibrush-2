@@ -15,12 +15,14 @@ export const BusyModal: FC<Props> = ({ show, title, children }) => {
                 <Modal.Title>{title || "Processing"}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <div className="d-flex justify-content-center">
-                    <div className="spinner-border" role="status">
-                        <span className="sr-only">{children || "Please Wait..."}</span>
+                {children || (
+                    <div className="d-flex justify-content-center">
+                        <div className="spinner-border" role="status">
+                            <span className="sr-only">Please Wait...</span>
+                        </div>
                     </div>
-                </div>
+                )}
             </Modal.Body>
         </Modal>
     );
-}
+};
