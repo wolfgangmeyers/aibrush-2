@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from "axios"
 import { Authentication } from "./auth"
 import { BackendService } from "./backend"
-import { AIBrushApi, CreateServiceAccountInputTypeEnum } from "./client"
+import { AIBrushApi } from "./client"
 import { sleep } from './sleep'
 import moment from 'moment'
 import fs from "fs"
@@ -23,16 +23,6 @@ export class TestHelper {
             httpClient,
             client
         }
-    }
-
-    async createServiceAccount(session: Session, type: "public" | "private"): Promise<Session> {
-        const response = await session.client.createServiceAccount({
-            type: type as CreateServiceAccountInputTypeEnum,
-        })
-        const creds = response.data
-        const newSession = this.createSession()
-        newSession.httpClient.defaults.headers['Authorization'] = `Bearer ${creds.accessToken}`
-        return newSession
     }
 
     async authenticateUser(backendService: BackendService, httpClient: AxiosInstance, emailAddress: string): Promise<Authentication> {

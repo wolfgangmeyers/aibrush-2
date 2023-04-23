@@ -2,7 +2,6 @@ import Bugsnag from "@bugsnag/js";
 import moment from "moment";
 import { BackendService, SCALING_KEY } from "./backend";
 import { RealClock } from "./clock";
-import { EC2ClientImpl, Ec2Engine } from "./ec2_engine";
 import { Logger } from "./logs";
 import { MetricsClient } from "./metrics";
 import { RunpodApi } from "./runpod_client";
@@ -47,17 +46,6 @@ export function getScalingEngines(
             )
         }
     }
-    // // these are all A10G GPUs
-    result.push(
-        new Ec2Engine(
-            new EC2ClientImpl(),
-            backendService,
-            new RealClock(),
-            metricsClient,
-            logger,
-            "us-west-2"
-        )
-    )
     return result;
 }
 

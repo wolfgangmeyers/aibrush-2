@@ -281,24 +281,6 @@ paths:
       responses:
         "200":
           description: Success
-  /api/process-image:
-    put:
-      description: Get the next pending image and set its status to processing.
-      operationId: processImage
-      tags:
-        - AIBrush
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ProcessImageInput"
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Image"
 
   /api/invite-codes:
     post:
@@ -392,203 +374,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginResult"
-  /api/auth/service-accounts:
-    post:
-      description: Create a service account
-      operationId: createServiceAccount
-      tags:
-        - AIBrush
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateServiceAccountInput"
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LoginResult"
-
-  # workers
-  /api/workers:
-    get:
-      description: Get the list of workers
-      operationId: getWorkers
-      tags:
-        - AIBrush
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkerList"
-    post:
-      description: Create a new worker
-      operationId: createWorker
-      tags:
-        - AIBrush
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpsertWorkerInput"
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Worker"
-  /api/workers/{worker_id}:
-    get:
-      description: Get a worker
-      operationId: getWorker
-      tags:
-        - AIBrush
-      parameters:
-        - name: worker_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Worker"
-    put:
-      description: Update a worker
-      operationId: updateWorker
-      tags:
-        - AIBrush
-      parameters:
-        - name: worker_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpsertWorkerInput"
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Worker"
-    delete:
-      description: Delete a worker
-      operationId: deleteWorker
-      tags:
-        - AIBrush
-      parameters:
-        - name: worker_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "204":
-          description: Success
-  # generate a login code
-  /api/workers/{worker_id}/login-code:
-    post:
-      description: Generate a login code for a worker
-      operationId: generateWorkerLoginCode
-      tags:
-        - AIBrush
-      parameters:
-        - name: worker_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkerLoginCode"
-  # log in as a worker, using the login code
-  /api/worker-login:
-    post:
-      description: Log in as a worker
-      operationId: loginAsWorker
-      tags:
-        - AIBrush
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/WorkerLoginCode"
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LoginResult"
-  # get/put for worker config
-  /api/workers/{worker_id}/config:
-    get:
-      description: Get a worker config
-      operationId: getWorkerConfig
-      tags:
-        - AIBrush
-      parameters:
-        - name: worker_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkerConfig"
-    put:
-      description: Update a worker config
-      operationId: updateWorkerConfig
-      tags:
-        - AIBrush
-      parameters:
-        - name: worker_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpsertWorkerConfigInput"
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkerConfig"
-  /api/worker-ping:
-    post:
-      description: Ping a worker
-      operationId: pingWorker
-      tags:
-        - AIBrush
-      responses:
-        "201":
-          description: Success
   /api/discord-login:
     post:
       description: Log in with Discord
@@ -812,30 +597,22 @@ paths:
 
 components:
   schemas:
+    StatusEnum:
+      type: string
+      enum:
+        - pending
+        - processing
+        - ranking
+        - completed
+        - saved
+        - error
     CreateImageInput:
       type: object
       properties:
         status:
-          type: string
-          enum:
-            - pending
-            - processing
-            - ranking
-            - completed
-            - saved
-            - error
-        phrases:
-          type: array
-          items:
-            type: string
-        negative_phrases:
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/StatusEnum'
         label:
           type: string
-        iterations:
-          type: integer
         parent:
           type: string
         encoded_image:
@@ -844,62 +621,28 @@ components:
           type: string
         encoded_npy:
           type: string
-        enable_video:
-          type: boolean
-        enable_zoom:
-          type: boolean
-        zoom_frequency:
-          type: integer
-        zoom_scale:
-          type: number
-        zoom_shift_x:
-          type: number
-        zoom_shift_y:
-          type: number
         model:
           type: string
-        # glid-3 xl specific options
-        glid_3_xl_skip_iterations:
-          type: number
-        glid_3_xl_clip_guidance:
-          type: boolean
-        glid_3_xl_clip_guidance_scale:
-          type: number
-        height:
-          type: integer
-          enum: [128, 256, 384, 512, 640, 768, 896, 1024]
-        width:
-          type: integer
-          enum: [128, 256, 384, 512, 640, 768, 896, 1024]
-        uncrop_offset_x:
-          type: integer
-        uncrop_offset_y:
-          type: integer
-        stable_diffusion_strength:
-          type: number
+        params:
+          $ref: '#/components/schemas/ImageParams'
         count:
           type: integer
         nsfw:
           type: boolean
         temporary:
           type: boolean
-        augmentation:
-          type: string
-          enum: [face_restore, remove_background, upscale]
-        controlnet_type:
-          type: string
-          enum: [canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough]
+      required:
+        - model
+        - params
+        - count
 
     UpdateImageInput:
       type: object
       properties:
         label:
           type: string
-        current_iterations:
-          type: integer
         status:
-          type: string
-          enum: [pending, processing, ranking, completed, saved, error]
+          $ref: '#/components/schemas/StatusEnum'
         encoded_image:
           type: string
         encoded_npy:
@@ -916,6 +659,28 @@ components:
         error:
           type: string
 
+    ImageParams:
+      type: object
+      properties:
+        prompt:
+          type: string
+        steps:
+          type: integer
+        negative_prompt:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        denoising_strength:
+          type: number
+        controlnet_type:
+          type: string
+          enum: [canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough]
+        augmentation:
+          type: string
+          enum: [face_restore, remove_background, upscale]
+
     Image:
       properties:
         id:
@@ -926,78 +691,26 @@ components:
           type: string
         updated_at:
           type: integer
-        phrases:
-          type: array
-          items:
-            type: string
-        negative_phrases:
-          type: array
-          items:
-            type: string
+        params:
+          $ref: '#/components/schemas/ImageParams'
         label:
           type: string
         parent:
           type: string
-        iterations:
-          type: integer
-        current_iterations:
-          type: integer
         score:
           type: number
         negative_score:
           type: number
         status:
-          type: string
-          enum: [pending, processing, ranking, completed, saved, error]
-        enable_video:
-          type: boolean
-        enable_zoom:
-          type: boolean
-        zoom_frequency:
-          type: integer
-        zoom_scale:
-          type: number
-        zoom_shift_x:
-          type: number
-        zoom_shift_y:
-          type: number
+          $ref: '#/components/schemas/StatusEnum'
         model:
           type: string
-        # glid-3 xl specific options
-        glid_3_xl_skip_iterations:
-          type: number
-        glid_3_xl_clip_guidance:
-          type: boolean
-        glid_3_xl_clip_guidance_scale:
-          type: number
-        width:
-          type: integer
-          enum: [128, 256, 384, 512, 640, 768, 896, 1024]
-        height:
-          type: integer
-          enum: [128, 256, 384, 512, 640, 768, 896, 1024]
-        uncrop_offset_x:
-          type: integer
-          enum: [-896, -768, -640, -512, -384, -256, -128, 0, 128, 256, 384, 512, 640, 768, 896]
-        uncrop_offset_y:
-          type: integer
-          enum: [-896, -768, -640, -512, -384, -256, -128, 0, 128, 256, 384, 512, 640, 768, 896]
-        stable_diffusion_strength:
-          type: number
         nsfw:
           type: boolean
         temporary:
           type: boolean
         deleted_at:
           type: integer
-        worker_id:
-          type: string
-        augmentation:
-          type: string
-          enum: [face_restore, remove_background, upscale]
-        controlnet_type:
-          type: string
-          enum: [canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough]
         error:
           type: string
       required:
@@ -1005,22 +718,16 @@ components:
         - created_at
         - created_by
         - updated_at
-        - phrases
-        - negative_phrases
+        - params
         - label
         - parent
-        - iterations
-        - current_iterations
         - score
         - negative_score
         - status
-        - enable_video
         - model
-        - width
-        - height
-        - stable_diffusion_strength
         - nsfw
         - temporary
+
     ImageList:
       properties:
         images:
@@ -1036,21 +743,6 @@ components:
             type: string
       required:
         - ids
-    ProcessImageInput:
-      properties:
-        status:
-          type: string
-          enum: [pending, ranking]
-        include_models:
-          type: array
-          items:
-            type: string
-        exclude_models:
-          type: array
-          items:
-            type: string
-        peek:
-          type: boolean
     ImageUrls:
       properties:
         image_url:
@@ -1100,12 +792,6 @@ components:
         status:
           type: string
           enum: [ok]
-    CreateServiceAccountInput:
-      type: object
-      properties:
-        type:
-          type: string
-          enum: [public, private]
     User:
       type: object
       properties:

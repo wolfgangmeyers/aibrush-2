@@ -266,20 +266,20 @@ export class RunpodEngine implements ScalingEngine {
 
     async capacity(): Promise<number> {
         const gpuTypesPromise: Promise<GPUType[]> = this.getGpuTypes();
-        const workersPromise = this.backend.listWorkers();
+        // const workersPromise = this.backend.listWorkers();
         const gpuTypes = await gpuTypesPromise;
-        const workers = (await workersPromise).filter(
-            (worker) => worker.engine === TYPE_RUNPOD && worker.gpu_type === this.gpuType
-        );
+        // const workers = (await workersPromise).filter(
+        //     (worker) => worker.engine === TYPE_RUNPOD && worker.gpu_type === this.gpuType
+        // );
         // add up all the gpus
         let numGpus = 0;
         let allocatedGpus = 0;
-        for (const worker of workers) {
-            if (worker.num_gpus) {
-                numGpus += worker.num_gpus;
-                allocatedGpus += worker.num_gpus;
-            }
-        }
+        // for (const worker of workers) {
+        //     if (worker.num_gpus) {
+        //         numGpus += worker.num_gpus;
+        //         allocatedGpus += worker.num_gpus;
+        //     }
+        // }
         for (const gpuType of gpuTypes) {
             if (gpuType.lowestPrice.stockStatus) {
                 numGpus +=
@@ -301,164 +301,165 @@ export class RunpodEngine implements ScalingEngine {
     }
 
     async scale(activeOrders: number): Promise<number> {
-        this.logger.log(`scaling runpod ${this.gpuType} to ${activeOrders}`);
-        const gpuMultiplier = GPU_PER_ORDER_MULTIPLIERS[this.gpuType];
-        this.metricsClient.addMetric(
-            "runpod_engine.scale",
-            activeOrders,
-            "gauge",
-            {}
-        );
-        const targetGpus = activeOrders * gpuMultiplier;
-        const workers = (await this.backend.listWorkers()).filter(
-            (worker) => worker.engine === TYPE_RUNPOD && worker.gpu_type === this.gpuType
-        );
-        const gpuTypes = await this.getGpuTypes();
-        const lastScalingOperation = moment(
-            await this.backend.getLastEventTime(RUNPOD_SCALING_EVENT)
-        );
-        const operations = calculateScalingOperations(
-            workers,
-            gpuTypes,
-            targetGpus,
-            lastScalingOperation,
-            this.clock,
-            this.logger
-        );
-        for (const operation of operations) {
-            const tags: any = {
-                operation_type: operation.operationType,
-                gpu_type: this.gpuType,
-            };
-            if (operation.operationType === "create") {
-                const newWorker = await this.backend.createWorker(
-                    "Runpod Worker"
-                );
-                const loginCode = await this.backend.generateWorkerLoginCode(
-                    newWorker.id
-                );
+        return 0;
+        // this.logger.log(`scaling runpod ${this.gpuType} to ${activeOrders}`);
+        // const gpuMultiplier = GPU_PER_ORDER_MULTIPLIERS[this.gpuType];
+        // this.metricsClient.addMetric(
+        //     "runpod_engine.scale",
+        //     activeOrders,
+        //     "gauge",
+        //     {}
+        // );
+        // const targetGpus = activeOrders * gpuMultiplier;
+        // const workers = (await this.backend.listWorkers()).filter(
+        //     (worker) => worker.engine === TYPE_RUNPOD && worker.gpu_type === this.gpuType
+        // );
+        // const gpuTypes = await this.getGpuTypes();
+        // const lastScalingOperation = moment(
+        //     await this.backend.getLastEventTime(RUNPOD_SCALING_EVENT)
+        // );
+        // const operations = calculateScalingOperations(
+        //     workers,
+        //     gpuTypes,
+        //     targetGpus,
+        //     lastScalingOperation,
+        //     this.clock,
+        //     this.logger
+        // );
+        // for (const operation of operations) {
+        //     const tags: any = {
+        //         operation_type: operation.operationType,
+        //         gpu_type: this.gpuType,
+        //     };
+        //     if (operation.operationType === "create") {
+        //         const newWorker = await this.backend.createWorker(
+        //             "Runpod Worker"
+        //         );
+        //         const loginCode = await this.backend.generateWorkerLoginCode(
+        //             newWorker.id
+        //         );
 
-                try {
-                    const result = await this.client.createPod({
-                        cloudType: "COMMUNITY",
-                        gpuCount: operation.gpuCount,
-                        volumeInGb: 0,
-                        containerDiskInGb: 1,
-                        minVcpuCount: 1,
-                        minMemoryInGb: 20,
-                        gpuTypeId: operation.targetId,
-                        name: "AiBrush Worker",
-                        dockerArgs: "/app/aibrush-2/worker/images_worker.sh",
-                        imageName: "wolfgangmeyers/aibrush:latest",
-                        ports: "",
-                        env: [
-                            {
-                                key: "WORKER_LOGIN_CODE",
-                                value: loginCode.login_code,
-                            },
-                        ],
-                        volumeMountPath: "",
-                    });
-                    const updatedWorker =
-                        await this.backend.updateWorkerDeploymentInfo(
-                            newWorker.id,
-                            TYPE_RUNPOD,
-                            operation.gpuCount,
-                            result.id,
-                            this.gpuType,
-                        );
-                    workers.push(updatedWorker);
-                } catch (err) {
-                    tags.error = err.message;
-                    Bugsnag.notify(err, evt => {
-                        evt.context = "RunpodEngine.create";
-                    })
-                    await this.backend.deleteWorker(newWorker.id);
-                    break;
-                } finally {
-                    this.metricsClient.addMetric(
-                        "runpod_engine.create",
-                        1,
-                        "count",
-                        tags
-                    );
-                }
-            } else {
-                try {
-                    const worker = workers.find(
-                        (worker) => worker.id === operation.targetId
-                    );
-                    await this.client.terminatePod({
-                        podId: worker.cloud_instance_id,
-                    });
-                    await this.backend.deleteWorker(worker.id);
-                    workers.splice(workers.indexOf(worker), 1);
-                } catch (err) {
-                    tags.error = err.message;
-                    Bugsnag.notify(err, evt => {
-                        evt.context = "RunpodEngine.delete";
-                    })
-                    throw err;
-                } finally {
-                    this.metricsClient.addMetric(
-                        "runpod_engine.destroy",
-                        1,
-                        "count",
-                        tags
-                    );
-                }
-            }
-        }
-        if (operations.length > 0) {
-            await this.backend.setLastEventTime(
-                RUNPOD_SCALING_EVENT,
-                this.clock.now().valueOf()
-            );
-        }
-        let workerGpus = 0;
-        for (let worker of workers) {
-            workerGpus += worker.num_gpus;
-        }
-        return Math.ceil(workerGpus / gpuMultiplier);
+        //         try {
+        //             const result = await this.client.createPod({
+        //                 cloudType: "COMMUNITY",
+        //                 gpuCount: operation.gpuCount,
+        //                 volumeInGb: 0,
+        //                 containerDiskInGb: 1,
+        //                 minVcpuCount: 1,
+        //                 minMemoryInGb: 20,
+        //                 gpuTypeId: operation.targetId,
+        //                 name: "AiBrush Worker",
+        //                 dockerArgs: "/app/aibrush-2/worker/images_worker.sh",
+        //                 imageName: "wolfgangmeyers/aibrush:latest",
+        //                 ports: "",
+        //                 env: [
+        //                     {
+        //                         key: "WORKER_LOGIN_CODE",
+        //                         value: loginCode.login_code,
+        //                     },
+        //                 ],
+        //                 volumeMountPath: "",
+        //             });
+        //             const updatedWorker =
+        //                 await this.backend.updateWorkerDeploymentInfo(
+        //                     newWorker.id,
+        //                     TYPE_RUNPOD,
+        //                     operation.gpuCount,
+        //                     result.id,
+        //                     this.gpuType,
+        //                 );
+        //             workers.push(updatedWorker);
+        //         } catch (err) {
+        //             tags.error = err.message;
+        //             Bugsnag.notify(err, evt => {
+        //                 evt.context = "RunpodEngine.create";
+        //             })
+        //             await this.backend.deleteWorker(newWorker.id);
+        //             break;
+        //         } finally {
+        //             this.metricsClient.addMetric(
+        //                 "runpod_engine.create",
+        //                 1,
+        //                 "count",
+        //                 tags
+        //             );
+        //         }
+        //     } else {
+        //         try {
+        //             const worker = workers.find(
+        //                 (worker) => worker.id === operation.targetId
+        //             );
+        //             await this.client.terminatePod({
+        //                 podId: worker.cloud_instance_id,
+        //             });
+        //             await this.backend.deleteWorker(worker.id);
+        //             workers.splice(workers.indexOf(worker), 1);
+        //         } catch (err) {
+        //             tags.error = err.message;
+        //             Bugsnag.notify(err, evt => {
+        //                 evt.context = "RunpodEngine.delete";
+        //             })
+        //             throw err;
+        //         } finally {
+        //             this.metricsClient.addMetric(
+        //                 "runpod_engine.destroy",
+        //                 1,
+        //                 "count",
+        //                 tags
+        //             );
+        //         }
+        //     }
+        // }
+        // if (operations.length > 0) {
+        //     await this.backend.setLastEventTime(
+        //         RUNPOD_SCALING_EVENT,
+        //         this.clock.now().valueOf()
+        //     );
+        // }
+        // let workerGpus = 0;
+        // for (let worker of workers) {
+        //     workerGpus += worker.num_gpus;
+        // }
+        // return Math.ceil(workerGpus / gpuMultiplier);
     }
 
     async cleanup(): Promise<void> {
-        const workers = (await this.backend.listWorkers()).filter(
-            (worker) => worker.engine === TYPE_RUNPOD && worker.gpu_type === this.gpuType
-        );
-        const pods = await this.client.getMyPods();
-        await sleep(1000);
-        for (let worker of workers) {
-            if (!pods.myself.pods.find((pod) => pod.id.toString() === worker.cloud_instance_id)) {
-                await this.backend.deleteWorker(worker.id);
-                this.metricsClient.addMetric(
-                    "runpod_engine.cleanup_worker",
-                    1,
-                    "count",
-                    {
-                        gpu_type: this.gpuType,
-                    }
-                );
-            }
-        }
-        for (let pod of pods.myself.pods) {
-            if (pod.runtime.gpus[0].id !== this.gpuType) {
-                continue;
-            }
-            if (!workers.find((worker) => worker.cloud_instance_id === pod.id)) {
-                await this.client.terminatePod({
-                    podId: pod.id,
-                });
-                await sleep(1000);
-                this.metricsClient.addMetric(
-                    "runpod_engine.cleanup_instance",
-                    1,
-                    "count",
-                    {
-                        gpu_type: this.gpuType,
-                    },
-                );
-            }
-        }
+        // const workers = (await this.backend.listWorkers()).filter(
+        //     (worker) => worker.engine === TYPE_RUNPOD && worker.gpu_type === this.gpuType
+        // );
+        // const pods = await this.client.getMyPods();
+        // await sleep(1000);
+        // for (let worker of workers) {
+        //     if (!pods.myself.pods.find((pod) => pod.id.toString() === worker.cloud_instance_id)) {
+        //         await this.backend.deleteWorker(worker.id);
+        //         this.metricsClient.addMetric(
+        //             "runpod_engine.cleanup_worker",
+        //             1,
+        //             "count",
+        //             {
+        //                 gpu_type: this.gpuType,
+        //             }
+        //         );
+        //     }
+        // }
+        // for (let pod of pods.myself.pods) {
+        //     if (pod.runtime.gpus[0].id !== this.gpuType) {
+        //         continue;
+        //     }
+        //     if (!workers.find((worker) => worker.cloud_instance_id === pod.id)) {
+        //         await this.client.terminatePod({
+        //             podId: pod.id,
+        //         });
+        //         await sleep(1000);
+        //         this.metricsClient.addMetric(
+        //             "runpod_engine.cleanup_instance",
+        //             1,
+        //             "count",
+        //             {
+        //                 gpu_type: this.gpuType,
+        //             },
+        //         );
+        //     }
+        // }
     }
 }

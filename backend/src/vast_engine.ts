@@ -208,9 +208,9 @@ export class VastEngine implements ScalingEngine {
         const gpuMultiplier = GPU_PER_ORDER_MULTIPLIERS[this.gpuType];
         const offers = await this.client.searchOffers(this.gpuType);
         await sleep(1000);
-        const workers = (await this.backend.listWorkers()).filter(
-            (worker) => worker.engine === TYPE_VASTAI && worker.gpu_type === this.gpuType
-        )
+        // const workers = (await this.backend.listWorkers()).filter(
+        //     (worker) => worker.engine === TYPE_VASTAI && worker.gpu_type === this.gpuType
+        // )
 
         // add up all the gpus
         let numGpus = 0;
@@ -218,10 +218,10 @@ export class VastEngine implements ScalingEngine {
             numGpus += offer.num_gpus;
         }
         let allocatedGpus = 0;
-        for (const worker of workers) {
-            numGpus += worker.num_gpus;
-            allocatedGpus += worker.num_gpus;
-        }
+        // for (const worker of workers) {
+        //     numGpus += worker.num_gpus;
+        //     allocatedGpus += worker.num_gpus;
+        // }
         this.metricsClient.addMetric("vast_engine.capacity", numGpus, "gauge", {
             allocated_gpus: allocatedGpus,
             gpu_type: this.gpuType,
@@ -230,186 +230,187 @@ export class VastEngine implements ScalingEngine {
     }
 
     async scale(activeOrders: number): Promise<number> {
-        const gpuMultiplier = GPU_PER_ORDER_MULTIPLIERS[this.gpuType];
-        console.log(`scaling vast ${this.gpuType} to`, activeOrders);
-        this.metricsClient.addMetric(
-            "vast_engine.scale",
-            activeOrders,
-            "gauge",
-            {}
-        );
-        const targetGpus = activeOrders * gpuMultiplier;
-        const blockedWorkerIds = new Set(
-            await this.backend.listBlockedWorkerIds(
-                TYPE_VASTAI,
-                this.clock.now()
-            )
-        );
-        const workers = (await this.backend.listWorkers()).filter(
-            (worker) => worker.engine === TYPE_VASTAI && worker.gpu_type === this.gpuType
-        );
+        return 0;
+        // const gpuMultiplier = GPU_PER_ORDER_MULTIPLIERS[this.gpuType];
+        // console.log(`scaling vast ${this.gpuType} to`, activeOrders);
+        // this.metricsClient.addMetric(
+        //     "vast_engine.scale",
+        //     activeOrders,
+        //     "gauge",
+        //     {}
+        // );
+        // const targetGpus = activeOrders * gpuMultiplier;
+        // const blockedWorkerIds = new Set(
+        //     await this.backend.listBlockedWorkerIds(
+        //         TYPE_VASTAI,
+        //         this.clock.now()
+        //     )
+        // );
+        // const workers = (await this.backend.listWorkers()).filter(
+        //     (worker) => worker.engine === TYPE_VASTAI && worker.gpu_type === this.gpuType
+        // );
 
-        const offers = (await this.client.searchOffers(this.gpuType)).offers.filter(
-            (offer) => !blockedWorkerIds.has(offer.id.toString())
-        );
-        await sleep(1000);
-        const lastScalingOperation = moment(
-            await this.backend.getLastEventTime(VASTAI_SCALING_EVENT)
-        );
-        const operations = calculateScalingOperations(
-            workers,
-            offers,
-            targetGpus,
-            lastScalingOperation,
-            this.clock
-        );
-        for (const operation of operations) {
-            const tags: any = {
-                operation_type: operation.operationType,
-                gpu_type: this.gpuType,
-            };
-            if (operation.operationType === "create") {
-                const newWorker = await this.backend.createWorker(
-                    "VastAI Worker"
-                );
-                const loginCode = await this.backend.generateWorkerLoginCode(
-                    newWorker.id
-                );
+        // const offers = (await this.client.searchOffers(this.gpuType)).offers.filter(
+        //     (offer) => !blockedWorkerIds.has(offer.id.toString())
+        // );
+        // await sleep(1000);
+        // const lastScalingOperation = moment(
+        //     await this.backend.getLastEventTime(VASTAI_SCALING_EVENT)
+        // );
+        // const operations = calculateScalingOperations(
+        //     workers,
+        //     offers,
+        //     targetGpus,
+        //     lastScalingOperation,
+        //     this.clock
+        // );
+        // for (const operation of operations) {
+        //     const tags: any = {
+        //         operation_type: operation.operationType,
+        //         gpu_type: this.gpuType,
+        //     };
+        //     if (operation.operationType === "create") {
+        //         const newWorker = await this.backend.createWorker(
+        //             "VastAI Worker"
+        //         );
+        //         const loginCode = await this.backend.generateWorkerLoginCode(
+        //             newWorker.id
+        //         );
 
-                try {
-                    const result = await this.client.createInstance(
-                        operation.targetId,
-                        WORKER_IMAGE,
-                        WORKER_COMMAND,
-                        {
-                            WORKER_LOGIN_CODE: loginCode.login_code,
-                        }
-                    );
-                    await sleep(1000);
-                    if (!result.success) {
-                        await this.backend.deleteWorker(newWorker.id);
-                        throw new Error(
-                            "Failed to create instance: " +
-                                JSON.stringify(result)
-                        );
-                    }
-                    const instances = await this.client.listInstances();
-                    await sleep(1000);
-                    const instance = instances.instances.find(
-                        (instance) => instance.id === result.new_contract
-                    );
-                    if (!instance) {
-                        await this.backend.deleteWorker(newWorker.id);
-                        throw new Error(
-                            "Failed to find instance: " + JSON.stringify(result)
-                        );
-                    }
-                    // get the offer from the operation targetId
-                    const updatedWorker =
-                        await this.backend.updateWorkerDeploymentInfo(
-                            newWorker.id,
-                            TYPE_VASTAI,
-                            instance.num_gpus,
-                            instance.id.toString(),
-                            this.gpuType,
-                        );
-                    workers.push(updatedWorker);
-                } catch (err) {
-                    console.error("Error creating instance", err);
-                    tags.error = err.message;
-                    Bugsnag.notify(err, evt => {
-                        evt.context = "VastEngine.create";
-                    })
-                    await this.backend.deleteWorker(newWorker.id);
-                    break;
-                } finally {
-                    this.metricsClient.addMetric(
-                        "vast_engine.create",
-                        1,
-                        "count",
-                        tags
-                    );
-                }
-            } else {
-                try {
-                    const worker = workers.find(
-                        (worker) => worker.id === operation.targetId
-                    );
-                    await this.client.deleteInstance(worker.cloud_instance_id);
-                    await sleep(1000);
-                    await this.backend.deleteWorker(worker.id);
-                    if (operation.block) {
-                        await this.backend.blockWorker(
-                            worker.cloud_instance_id,
-                            TYPE_VASTAI,
-                            this.clock.now()
-                        );
-                    }
-                    workers.splice(workers.indexOf(worker), 1);
-                } catch (err) {
-                    tags.error = err.message;
-                    Bugsnag.notify(err, evt => {
-                        evt.context = "VastEngine.delete";
-                    })
-                    throw err;
-                } finally {
-                    this.metricsClient.addMetric(
-                        "vast_engine.destroy",
-                        1,
-                        "count",
-                        tags
-                    );
-                }
-            }
-        }
-        if (operations.length > 0) {
-            await this.backend.setLastEventTime(
-                VASTAI_SCALING_EVENT,
-                this.clock.now().valueOf()
-            );
-        }
-        let workerGpus = 0;
-        for (let worker of workers) {
-            workerGpus += worker.num_gpus;
-        }
-        return Math.ceil(workerGpus / gpuMultiplier);
+        //         try {
+        //             const result = await this.client.createInstance(
+        //                 operation.targetId,
+        //                 WORKER_IMAGE,
+        //                 WORKER_COMMAND,
+        //                 {
+        //                     WORKER_LOGIN_CODE: loginCode.login_code,
+        //                 }
+        //             );
+        //             await sleep(1000);
+        //             if (!result.success) {
+        //                 await this.backend.deleteWorker(newWorker.id);
+        //                 throw new Error(
+        //                     "Failed to create instance: " +
+        //                         JSON.stringify(result)
+        //                 );
+        //             }
+        //             const instances = await this.client.listInstances();
+        //             await sleep(1000);
+        //             const instance = instances.instances.find(
+        //                 (instance) => instance.id === result.new_contract
+        //             );
+        //             if (!instance) {
+        //                 await this.backend.deleteWorker(newWorker.id);
+        //                 throw new Error(
+        //                     "Failed to find instance: " + JSON.stringify(result)
+        //                 );
+        //             }
+        //             // get the offer from the operation targetId
+        //             const updatedWorker =
+        //                 await this.backend.updateWorkerDeploymentInfo(
+        //                     newWorker.id,
+        //                     TYPE_VASTAI,
+        //                     instance.num_gpus,
+        //                     instance.id.toString(),
+        //                     this.gpuType,
+        //                 );
+        //             workers.push(updatedWorker);
+        //         } catch (err) {
+        //             console.error("Error creating instance", err);
+        //             tags.error = err.message;
+        //             Bugsnag.notify(err, evt => {
+        //                 evt.context = "VastEngine.create";
+        //             })
+        //             await this.backend.deleteWorker(newWorker.id);
+        //             break;
+        //         } finally {
+        //             this.metricsClient.addMetric(
+        //                 "vast_engine.create",
+        //                 1,
+        //                 "count",
+        //                 tags
+        //             );
+        //         }
+        //     } else {
+        //         try {
+        //             const worker = workers.find(
+        //                 (worker) => worker.id === operation.targetId
+        //             );
+        //             await this.client.deleteInstance(worker.cloud_instance_id);
+        //             await sleep(1000);
+        //             await this.backend.deleteWorker(worker.id);
+        //             if (operation.block) {
+        //                 await this.backend.blockWorker(
+        //                     worker.cloud_instance_id,
+        //                     TYPE_VASTAI,
+        //                     this.clock.now()
+        //                 );
+        //             }
+        //             workers.splice(workers.indexOf(worker), 1);
+        //         } catch (err) {
+        //             tags.error = err.message;
+        //             Bugsnag.notify(err, evt => {
+        //                 evt.context = "VastEngine.delete";
+        //             })
+        //             throw err;
+        //         } finally {
+        //             this.metricsClient.addMetric(
+        //                 "vast_engine.destroy",
+        //                 1,
+        //                 "count",
+        //                 tags
+        //             );
+        //         }
+        //     }
+        // }
+        // if (operations.length > 0) {
+        //     await this.backend.setLastEventTime(
+        //         VASTAI_SCALING_EVENT,
+        //         this.clock.now().valueOf()
+        //     );
+        // }
+        // let workerGpus = 0;
+        // for (let worker of workers) {
+        //     workerGpus += worker.num_gpus;
+        // }
+        // return Math.ceil(workerGpus / gpuMultiplier);
     }
     
     async cleanup(): Promise<void> {
-        const workers = (await this.backend.listWorkers()).filter(
-            (worker) => worker.engine === TYPE_VASTAI && worker.gpu_type === this.gpuType
-        );
-        const instances = await this.client.listInstances();
-        await sleep(1000);
-        for (let worker of workers) {
-            if (!instances.instances.find((instance) => instance.id.toString() === worker.cloud_instance_id)) {
-                await this.backend.deleteWorker(worker.id);
-                this.metricsClient.addMetric(
-                    "vast_engine.cleanup_worker",
-                    1,
-                    "count",
-                    {
-                        gpu_type: this.gpuType,
-                    }
-                );
-            }
-        }
-        for (let instance of instances.instances) {
-            if (instance.gpu_name !== this.gpuType) {
-                continue;
-            }
-            if (!workers.find((worker) => worker.cloud_instance_id === instance.id.toString())) {
-                await this.client.deleteInstance(instance.id.toString());
-                await sleep(1000);
-                this.metricsClient.addMetric(
-                    "vast_engine.cleanup_instance",
-                    1,
-                    "count",
-                    {
-                        gpu_type: this.gpuType,
-                    },
-                );
-            }
-        }
+        // const workers = (await this.backend.listWorkers()).filter(
+        //     (worker) => worker.engine === TYPE_VASTAI && worker.gpu_type === this.gpuType
+        // );
+        // const instances = await this.client.listInstances();
+        // await sleep(1000);
+        // for (let worker of workers) {
+        //     if (!instances.instances.find((instance) => instance.id.toString() === worker.cloud_instance_id)) {
+        //         await this.backend.deleteWorker(worker.id);
+        //         this.metricsClient.addMetric(
+        //             "vast_engine.cleanup_worker",
+        //             1,
+        //             "count",
+        //             {
+        //                 gpu_type: this.gpuType,
+        //             }
+        //         );
+        //     }
+        // }
+        // for (let instance of instances.instances) {
+        //     if (instance.gpu_name !== this.gpuType) {
+        //         continue;
+        //     }
+        //     if (!workers.find((worker) => worker.cloud_instance_id === instance.id.toString())) {
+        //         await this.client.deleteInstance(instance.id.toString());
+        //         await sleep(1000);
+        //         this.metricsClient.addMetric(
+        //             "vast_engine.cleanup_instance",
+        //             1,
+        //             "count",
+        //             {
+        //                 gpu_type: this.gpuType,
+        //             },
+        //         );
+        //     }
+        // }
     }
 }

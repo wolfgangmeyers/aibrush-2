@@ -32,7 +32,7 @@ import {
 import {
     AddMetricsInput,
     DepositRequest,
-    ImageStatusEnum,
+    StatusEnum,
     UpsertWorkerConfigInput,
     UpsertWorkerInput,
 } from "./client";
@@ -58,7 +58,7 @@ export class Server {
         private port: string | number,
         private metricsClient: MetricsClient,
         private logger: Logger,
-        private scalingService: ScalingService,
+        private scalingService: ScalingService
     ) {
         this.app = express();
         this.authHelper = new AuthHelper(
@@ -293,9 +293,7 @@ export class Server {
                 // get refresh token from cookie
                 console.log(req.cookies);
                 let refreshToken = req.cookies.refreshToken;
-                const result = await this.backendService.refresh(
-                    refreshToken
-                );
+                const result = await this.backendService.refresh(refreshToken);
                 // if result is null, send 400
                 if (!result) {
                     res.sendStatus(400);
@@ -438,7 +436,6 @@ export class Server {
 
         // render index.html for frontend routes
         for (let route of [
-            "/worker-config",
             "/admin",
             "/images/:id",
             "/image-editor/:id",
@@ -471,15 +468,6 @@ export class Server {
             })
         );
 
-        this.app.post(
-            "/api/worker-login",
-            withMetrics("/api/worker-login", async (req, res) => {
-                const loginCode = req.body.login_code;
-                const auth = await this.backendService.loginAsWorker(loginCode);
-                res.json(auth);
-            })
-        );
-
         // only open these routes in dev mode
         if (process.env.AIBRUSH_DEV_MODE === "true") {
             console.log("Dev routes enabled");
@@ -500,8 +488,7 @@ export class Server {
                         req.params.id,
                         {
                             encoded_image: data,
-                        },
-                        null
+                        }
                     );
                     if (image == null) {
                         res.status(404).send("not found");
@@ -512,15 +499,13 @@ export class Server {
             );
 
             // tmp images
-            this.app.put(
-                "/api/images/tmp/:id.png", async (req, res) => {
-                    await this.backendService.uploadTmpImage(
-                        req.params.id,
-                        req.body
-                    )
-                    res.sendStatus(201);
-                }
-            );
+            this.app.put("/api/images/tmp/:id.png", async (req, res) => {
+                await this.backendService.uploadTmpImage(
+                    req.params.id,
+                    req.body
+                );
+                res.sendStatus(201);
+            });
 
             // no-op. This is handled by updating the image data...
             // in production these will be S3 calls
@@ -570,7 +555,7 @@ export class Server {
 
                     let query = {
                         userId: jwt.userId,
-                        status: req.query.status as ImageStatusEnum,
+                        status: req.query.status as StatusEnum,
                         cursor,
                         direction,
                         limit,
@@ -610,14 +595,13 @@ export class Server {
                     // check for "Image insert failed: user has too many pending or processing images"
                     if (err.message.includes("too many pending")) {
                         res.status(429).send({
-                            message: "Maximum number of pending or processing images reached. Please wait for your images to finish processing before creating more."
+                            message:
+                                "Maximum number of pending or processing images reached. Please wait for your images to finish processing before creating more.",
                         });
                         return;
                     }
                     throw err;
                 }
-                
-                
             })
         );
 
@@ -683,8 +667,7 @@ export class Server {
                 }
                 image = await this.backendService.updateImage(
                     req.params.id,
-                    req.body,
-                    jwt.serviceAccountConfig?.workerId
+                    req.body
                 );
                 if (image == null) {
                     res.status(404).send("not found");
@@ -764,23 +747,13 @@ export class Server {
                     res.status(404).send("not found");
                     return;
                 }
-                if (jwt.serviceAccountConfig) {
-                    if (jwt.serviceAccountConfig.workerId != image.worker_id) {
-                        res.status(404).send("not found");
-                        this.logger.log(
-                            `Service account ${jwt.serviceAccountConfig.workerId} tried to get upload urls for image ${req.params.id} but not authorized`,
-                            jwt
-                        );
-                        return;
-                    }
-                } else {
-                    if (image.created_by !== jwt.userId) {
-                        this.logger.log(
-                            `user ${jwt.userId} tried to get image ${req.params.id} but not authorized`
-                        );
-                        res.status(404).send("not found");
-                        return;
-                    }
+
+                if (image.created_by !== jwt.userId) {
+                    this.logger.log(
+                        `user ${jwt.userId} tried to get image ${req.params.id} but not authorized`
+                    );
+                    res.status(404).send("not found");
+                    return;
                 }
                 const urls = await this.backendService.getImageUploadUrls(
                     req.params.id
@@ -826,325 +799,6 @@ export class Server {
                     req.body
                 );
                 res.sendStatus(204);
-            })
-        );
-
-        this.app.get(
-            "/api/workers",
-            withMetrics("/api/workers", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to get workers",
-                        jwt
-                    );
-                    return;
-                }
-                // check admin
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    this.logger.log(
-                        `${jwt.userId} attempted to get workers but is not an admin`
-                    );
-                    res.sendStatus(403);
-                    return;
-                }
-                const workers = await this.backendService.listWorkers();
-                res.json({
-                    workers: workers,
-                });
-            })
-        );
-
-        this.app.post(
-            "/api/workers",
-            withMetrics("/api/workers", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to create worker",
-                        jwt
-                    );
-                    return;
-                }
-                // check admin
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    this.logger.log(
-                        `${jwt.userId} attempted to create a worker but is not an admin`
-                    );
-                    res.sendStatus(403);
-                    return;
-                }
-                const input = req.body as UpsertWorkerInput;
-                const worker = await this.backendService.createWorker(
-                    input.display_name
-                );
-                res.json(worker);
-            })
-        );
-
-        this.app.get(
-            "/api/workers/:worker_id",
-            withMetrics("/api/workers/:worker_id", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log("Service account tried to get worker", jwt);
-                    return;
-                }
-                // check admin
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    this.logger.log(
-                        `${jwt.userId} attempted to get a worker but is not an admin`
-                    );
-                    res.sendStatus(403);
-                    return;
-                }
-                const worker = await this.backendService.getWorker(
-                    req.params.worker_id
-                );
-                if (worker) {
-                    res.json(worker);
-                } else {
-                    res.sendStatus(404);
-                }
-            })
-        );
-
-        this.app.put(
-            "/api/workers/:worker_id",
-            withMetrics("/api/workers/:worker_id", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to update worker",
-                        jwt
-                    );
-                    return;
-                }
-                // check admin
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    this.logger.log(
-                        `${jwt.userId} attempted to update a worker but is not an admin`
-                    );
-                    res.sendStatus(403);
-                    return;
-                }
-                const input = req.body as UpsertWorkerInput;
-                const worker = await this.backendService.updateWorker(
-                    req.params.worker_id,
-                    input
-                );
-                if (worker) {
-                    res.json(worker);
-                } else {
-                    res.sendStatus(404);
-                }
-            })
-        );
-
-        this.app.delete(
-            "/api/workers/:worker_id",
-            withMetrics("/api/workers/:worker_id", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to delete worker",
-                        jwt
-                    );
-                    return;
-                }
-                // check admin
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    this.logger.log(
-                        `${jwt.userId} attempted to delete a worker but is not an admin`
-                    );
-                    res.sendStatus(403);
-                    return;
-                }
-                await this.backendService.deleteWorker(req.params.worker_id);
-                res.sendStatus(204);
-            })
-        );
-
-        // get worker config is allowed for all users
-        this.app.get(
-            "/api/workers/:worker_id/config",
-            withMetrics("/api/workers/:worker_id/config", async (req, res) => {
-                const workerConfig = await this.backendService.getWorkerConfig(
-                    req.params.worker_id
-                );
-                if (workerConfig) {
-                    res.json(workerConfig);
-                } else {
-                    res.sendStatus(404);
-                }
-            })
-        );
-
-        // upsert worker config is only allowed for admin users
-        this.app.put(
-            "/api/workers/:worker_id/config",
-            withMetrics("/api/workers/:worker_id/config", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to update worker config",
-                        jwt
-                    );
-                    return;
-                }
-                // check admin
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    this.logger.log(
-                        `${jwt.userId} attempted to upsert a worker config but is not an admin`
-                    );
-                    res.sendStatus(403);
-                    return;
-                }
-                const workerId = req.params.worker_id;
-                const input = req.body as UpsertWorkerConfigInput;
-                const workerConfig =
-                    await this.backendService.upsertWorkerConfig(
-                        workerId,
-                        input
-                    );
-                res.json(workerConfig);
-            })
-        );
-
-        this.app.post(
-            "/api/workers/:worker_id/login-code",
-            withMetrics(
-                "/api/workers/:worker_id/login-code",
-                async (req, res) => {
-                    const jwt = this.authHelper.getJWTFromRequest(req);
-                    if (jwt.serviceAccountConfig) {
-                        res.status(403).send("Forbidden");
-                        this.logger.log(
-                            "Service account tried to create worker login code",
-                            jwt
-                        );
-                        return;
-                    }
-                    // check admin
-                    if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                        this.logger.log(
-                            `${jwt.userId} attempted to generate a worker login code but is not an admin`
-                        );
-                        res.sendStatus(403);
-                        return;
-                    }
-                    const workerLoginCode =
-                        await this.backendService.generateWorkerLoginCode(
-                            req.params.worker_id
-                        );
-                    res.json(workerLoginCode);
-                }
-            )
-        );
-
-        //     /api/worker-ping:
-        // post:
-        //   description: Ping a worker
-        //   operationId: pingWorker
-        //   tags:
-        //     - AIBrush
-        //   responses:
-        //     "201":
-        //       description: Success
-
-        // on ping, update the worker with an empty payload
-        this.app.post(
-            "/api/worker-ping",
-            withMetrics("/api/worker-ping", async (req, res) => {
-                console.log("******** worker ping **********");
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (!jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log("Non-service account tried to ping", jwt);
-                    return;
-                }
-                const worker = await this.backendService.updateWorker(
-                    jwt.serviceAccountConfig.workerId,
-                    {}
-                );
-                if (worker) {
-                    res.sendStatus(201);
-                } else {
-                    res.sendStatus(404);
-                }
-            })
-        );
-
-        this.app.put(
-            "/api/process-image",
-            withMetrics("/api/process-image", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-
-                // only service accounts can process images
-                if (!this.serviceAccountType(jwt)) {
-                    this.logger.log(
-                        `${jwt.userId} attempted to process image but is not a service acct`
-                    );
-                    res.sendStatus(403);
-                    return;
-                }
-                // TODO: this may or may not be used in the future...
-                let user: string = undefined;
-                if (jwt.serviceAccountConfig?.type == "private") {
-                    user = jwt.userId;
-                }
-                const workerId = jwt.serviceAccountConfig.workerId;
-                const image = await this.backendService.processImage(
-                    user,
-                    req.body,
-                    workerId
-                );
-                if (jwt.serviceAccountConfig?.workerId) {
-                    await this.backendService.updateWorker(
-                        jwt.serviceAccountConfig.workerId,
-                        {
-                            status: image ? "active" : "idle",
-                        }
-                    );
-                }
-                res.json(image);
-            })
-        );
-
-        this.app.post(
-            "/api/auth/service-accounts",
-            withMetrics("/api/auth/service-accounts", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to create service account",
-                        jwt
-                    );
-                    return;
-                }
-                // service accounts can't create new service accounts
-                if (this.serviceAccountType(jwt)) {
-                    res.sendStatus(403);
-                    return;
-                }
-                const serviceAccountConfig = req.body as ServiceAccountConfig;
-                // only admins can create public service accounts
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    serviceAccountConfig.type = "private";
-                }
-                const result =
-                    await this.backendService.createServiceAccountCreds(
-                        jwt.userId,
-                        serviceAccountConfig
-                    );
-                res.json(result);
             })
         );
 
@@ -1197,7 +851,10 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 if (jwt.serviceAccountConfig) {
                     res.status(403).send("Forbidden");
-                    this.logger.log("Service account tried to update boost level", jwt);
+                    this.logger.log(
+                        "Service account tried to update boost level",
+                        jwt
+                    );
                     return;
                 }
                 const level = req.body.level;
@@ -1209,18 +866,18 @@ export class Server {
                     const boost = await this.backendService.updateBoost(
                         jwt.userId,
                         req.body.level,
-                        req.body.is_active,
+                        req.body.is_active
                     );
                     res.json({
                         level: boost.level,
                         balance: boost.balance,
                         is_active: boost.is_active,
-                    })
+                    });
                 } catch (e) {
                     if (e instanceof UserError) {
                         res.json({
                             error: e.message,
-                        })
+                        });
                     } else {
                         throw e;
                     }
@@ -1283,7 +940,10 @@ export class Server {
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 if (jwt.serviceAccountConfig) {
                     res.status(403).send("Forbidden");
-                    this.logger.log("Service account tried to list boosts", jwt);
+                    this.logger.log(
+                        "Service account tried to list boosts",
+                        jwt
+                    );
                     return;
                 }
                 if (!(await this.backendService.isUserAdmin(jwt.userId))) {
@@ -1368,7 +1028,7 @@ export class Server {
                 }
                 const settings = await this.backendService.updateGlobalSettings(
                     req.params.key,
-                    req.body.settings_json,
+                    req.body.settings_json
                 );
                 res.json(settings);
             })
@@ -1407,7 +1067,6 @@ export class Server {
                 res.sendStatus(204);
             })
         );
-
 
         if (process.env.BUGSNAG_API_KEY) {
             this.app.use(middleware.errorHandler);
@@ -1506,7 +1165,6 @@ export class Server {
                 this.scalingService.start();
                 this.scalingService.scale();
             }
-
         });
     }
 

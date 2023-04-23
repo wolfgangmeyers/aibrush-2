@@ -14,18 +14,16 @@ import {
     Image,
     CreateImageInput,
     UpdateImageInput,
-    ImageStatusEnum,
+    StatusEnum,
     InviteCode,
     User,
     AddMetricsInput,
-    UpdateImageInputStatusEnum,
     Worker,
     WorkerConfig,
     WorkerLoginCode,
     LoginResult,
     WorkerStatusEnum,
     Order,
-    ProcessImageInput,
     UpsertWorkerInput,
     WorkerGpuConfig,
     UpsertWorkerConfigInput,
@@ -251,12 +249,16 @@ export class BackendService {
     private hydrateImage(image: Image): Image {
         return {
             ...image,
-            zoom_scale: parseFloat(image.zoom_scale || ("0.0" as any)),
-            zoom_shift_x: parseFloat(image.zoom_shift_x || ("0.0" as any)),
-            zoom_shift_y: parseFloat(image.zoom_shift_y || ("0.0" as any)),
             created_at: parseInt(image.created_at || ("0" as any)),
             updated_at: parseInt(image.updated_at || ("0" as any)),
-        };
+            // populate legacy fields
+            phrases: [image.params.prompt],
+            negative_phrases: [image.params.negative_prompt],
+            iterations: image.params.steps,
+            stable_diffusion_strength: image.params.denoising_strength,
+            width: image.params.width,
+            height: image.params.height,
+        } as any;
     }
 
     private hydrateWorker(worker: Worker): Worker {
@@ -318,7 +320,7 @@ export class BackendService {
     // list images
     async listImages(query: {
         userId?: string;
-        status?: ImageStatusEnum;
+        status?: StatusEnum;
         cursor?: number;
         direction?: "asc" | "desc";
         limit?: number;
@@ -347,13 +349,10 @@ export class BackendService {
             args.push(query.cursor);
         }
         if (query.filter) {
-            // label is a string, phrases is a string list
-            // if the filter is in either, return the image
-            // TODO: refactor phrases to prompt
             whereClauses.push(
                 `(label ILIKE $` +
                     (args.length + 1) +
-                    ` OR prompt ILIKE $` +
+                    ` OR params.prompt ILIKE $` +
                     (args.length + 1) +
                     `)`
             );
@@ -371,21 +370,11 @@ export class BackendService {
         const orderBy = query.direction === "asc" ? "ASC" : "DESC";
         try {
             const result = await client.query(
-                `SELECT i.* FROM images i, unnest(phrases) prompt ${whereClause} ORDER BY updated_at ${orderBy} LIMIT ${limit}`,
+                `SELECT i.* FROM images i ${whereClause} ORDER BY updated_at ${orderBy} LIMIT ${limit}`,
                 args
             );
-            // deduplicate images due to the unnest. Again, temporary until we refactor phrases to prompt
-            const dedupedImages = result.rows.reduce(
-                (acc: Image[], image: Image) => {
-                    if (acc.find((i) => i.id === image.id)) {
-                        return acc;
-                    }
-                    return [...acc, image];
-                },
-                []
-            );
             return {
-                images: dedupedImages.map((i: any) => this.hydrateImage(i)),
+                images: result.rows.map((i: any) => this.hydrateImage(i)),
             };
         } finally {
             client.release();
@@ -596,53 +585,50 @@ export class BackendService {
         return thumbnail.toString("base64");
     }
 
-    
+    private upgradeLegacyRequest(body: CreateImageInput): CreateImageInput {
+        if (!body.params) {
+            const old = body as any;
+            body.params = {
+                prompt: old.phrases[0] || "",
+                negative_prompt: old.negative_phrases[0] || "",
+                width: old.width || 512,
+                height: old.height || 512,
+                steps: old.iterations || 20,
+                denoising_strength: old.stable_diffusion_strength,
+                controlnet_type: old.controlnet_type,
+                augmentation: old.augmentation,
+            }
+        }
+        return body;
+    }
 
     private async createImage(
         createdBy: string,
         body: CreateImageInput
     ): Promise<Image> {
+        body = this.upgradeLegacyRequest(body);
         const client = await this.pool.connect();
         try {
             const result = await client.query(
                 `INSERT INTO images
-                    (id, created_by, created_at, updated_at, label, parent, phrases, iterations, current_iterations, score, status, enable_video, enable_zoom, zoom_frequency, zoom_scale, zoom_shift_x, zoom_shift_y, model, glid_3_xl_skip_iterations, glid_3_xl_clip_guidance, glid_3_xl_clip_guidance_scale, width, height, uncrop_offset_x, uncrop_offset_y, negative_phrases, negative_score, stable_diffusion_strength, nsfw, temporary, augmentation, controlnet_type)
+                    (id, created_by, created_at, updated_at, label, parent, params, score, status, model, negative_score, nsfw, temporary)
                 VALUES
-                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
+                    ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                 RETURNING *`,
                 [
                     uuid.v4(),
                     createdBy,
                     new Date().getTime(),
                     new Date().getTime(),
-                    body.label,
+                    body.label || "",
                     body.parent,
-                    body.phrases,
-                    body.iterations,
-                    0,
+                    body.params,
                     0,
                     body.status || "pending",
-                    !!body.enable_video,
-                    !!body.enable_zoom,
-                    body.zoom_frequency || 10,
-                    body.zoom_scale || 0.99,
-                    body.zoom_shift_x || 0,
-                    body.zoom_shift_y || 0,
                     body.model || "stable_diffusion",
-                    body.glid_3_xl_skip_iterations || 0,
-                    body.glid_3_xl_clip_guidance || false,
-                    body.glid_3_xl_clip_guidance_scale || 150,
-                    body.width || 256,
-                    body.height || 256,
-                    body.uncrop_offset_x || 0,
-                    body.uncrop_offset_y || 0,
-                    body.negative_phrases || [],
                     0,
-                    body.stable_diffusion_strength || 0.75,
                     body.nsfw || false,
                     body.temporary || false,
-                    body.augmentation || null,
-                    body.controlnet_type || null,
                 ]
             );
             const image = result.rows[0] as Image;
@@ -727,18 +713,18 @@ export class BackendService {
                     this.hordeQueue.submitImage({
                         authToken: jwt,
                         imageId: image.id,
-                        prompt: image.phrases.join(", "),
-                        negativePrompt: image.negative_phrases.join(", "),
-                        width: image.width,
-                        height: image.height,
-                        steps: image.iterations,
+                        prompt: image.params.prompt,
+                        negativePrompt: image.params.negative_prompt,
+                        width: image.params.width,
+                        height: image.params.height,
+                        steps: image.params.steps,
                         cfgScale: 7.5,
-                        denoisingStrength: image.stable_diffusion_strength,
+                        denoisingStrength: image.params.denoising_strength,
                         nsfw: true,
                         censorNsfw: image.temporary ? false : !image.nsfw,
                         model: image.model,
-                        augmentation: image.augmentation,
-                        controlnetType: image.controlnet_type,
+                        augmentation: image.params.augmentation,
+                        controlnetType: image.params.controlnet_type,
                     })
                     console.log("Submitted to horde: " + image.id);
                 }
@@ -781,12 +767,12 @@ export class BackendService {
         if (count > 10) {
             count = 10;
         }
-        count = Math.max(count - pendingOrProcessingCount, 0);
+        count = Math.min(count, 10 - pendingOrProcessingCount)
         if (count <= 0) {
             throw new Error("You already have too many pending or processing images");
         }
         const promises: Array<Promise<Image>> = [];
-        for (let i = 0; i < count - pendingOrProcessingCount; i++) {
+        for (let i = 0; i < count; i++) {
             promises.push(this.createImage(createdBy, body));
         }
         return Promise.all(promises);
@@ -795,52 +781,36 @@ export class BackendService {
     async updateImage(
         id: string,
         body: UpdateImageInput,
-        workerId: string | null
     ): Promise<Image> {
         const existingImage = await this.getImage(id);
         if (!existingImage) {
             this.logger.log("Existing image not found: " + id);
             return null;
         }
-        if (workerId && existingImage.worker_id != workerId) {
-            this.logger.log(
-                `Worker ${workerId} tried to update image ${id} but it is owned by ${existingImage.worker_id}`
-            );
-            return null;
-        }
         let completed =
-            existingImage.status !== ImageStatusEnum.Completed &&
-            body.status === UpdateImageInputStatusEnum.Completed;
+            existingImage.status !== StatusEnum.Completed &&
+            body.status === StatusEnum.Completed;
         // update existing image fields
         Object.keys(body).forEach((key) => {
             existingImage[key] = body[key];
         });
 
-        let assignedWorkerId = existingImage.worker_id;
-        if (body.status === UpdateImageInputStatusEnum.Completed) {
-            assignedWorkerId = null;
-        }
         const client = await this.pool.connect();
         try {
             const result = await client.query(
                 `UPDATE images
                 SET
                     label=$1,
-                    current_iterations=$2,
-                    phrases=$3,
-                    status=$4,
-                    updated_at=$5,
-                    score=$6,
-                    negative_score=$7,
-                    nsfw=$8,
-                    deleted_at=$9,
-                    error=$10,
-                    worker_id=$11
-                WHERE id=$12 RETURNING *`,
+                    status=$2,
+                    updated_at=$3,
+                    score=$4,
+                    negative_score=$5,
+                    nsfw=$6,
+                    deleted_at=$7,
+                    error=$8
+                WHERE id=$9 RETURNING *`,
                 [
                     existingImage.label,
-                    existingImage.current_iterations,
-                    existingImage.phrases,
                     existingImage.status,
                     new Date().getTime(),
                     existingImage.score,
@@ -848,10 +818,10 @@ export class BackendService {
                     existingImage.nsfw,
                     existingImage.deleted_at,
                     existingImage.error,
-                    assignedWorkerId,
                     id,
                 ]
             );
+
 
             const image = result.rows[0] as Image;
             const promises: Promise<void>[] = [];
@@ -906,288 +876,6 @@ export class BackendService {
             return this.hydrateImage({
                 ...image,
             });
-        } finally {
-            client.release();
-        }
-    }
-
-    async blockWorker(workerId: string, engine: string, now: moment.Moment) {
-        this.metrics.addMetric("backend.block_worker", 1, "count", {
-            engine: engine,
-        });
-        // block for BLOCK_DURATION_DAYS
-        const until = now.clone().add(BLOCK_DURATION_DAYS, "days").valueOf();
-        const client = await this.pool.connect();
-        try {
-            // upsert - if exists, update until, otherwise insert
-            await client.query(
-                `INSERT INTO blocklist (id, engine, until)
-                VALUES ($1, $2, $3)
-                ON CONFLICT (id, engine) DO UPDATE SET until = $3`,
-                [workerId, engine, until]
-            );
-        } finally {
-            client.release();
-        }
-    }
-
-    async listBlockedWorkerIds(
-        engine: string,
-        now: moment.Moment
-    ): Promise<string[]> {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `SELECT id FROM blocklist WHERE engine = $1 AND until > $2`,
-                [engine, now.valueOf()]
-            );
-            return result.rows.map((row) => row.id);
-        } finally {
-            client.release();
-        }
-    }
-
-    async isWorkerBlocked(
-        workerId: string,
-        engine: string,
-        now: moment.Moment
-    ): Promise<boolean> {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `SELECT count(*) FROM blocklist WHERE id=$1 AND engine=$2 AND until > $3`,
-                [workerId, engine, now.valueOf()]
-            );
-            const count = result.rows[0].count;
-            return count > 0;
-        } finally {
-            client.release();
-        }
-    }
-
-    async createWorker(displayName: string): Promise<Worker> {
-        this.metrics.addMetric("backend.create_worker", 1, "count", {});
-        const id = uuid.v4();
-        const now = this.clock.now().valueOf();
-        const login_code = "";
-        const status = WorkerStatusEnum.Idle;
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `INSERT INTO workers (id, created_at, display_name, login_code, status) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-                [id, now, displayName, login_code, status]
-            );
-            return result.rows[0];
-        } finally {
-            client.release();
-        }
-    }
-
-    async getWorkerConfig(workerId: string): Promise<WorkerConfig> {
-        const worker = await this.getWorker(workerId);
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `SELECT * FROM worker_configs WHERE worker_id = $1`,
-                [workerId]
-            );
-            if (result.rows.length === 0) {
-                const gpuConfigs: WorkerGpuConfig[] = [];
-                for (let i = 0; i < (worker.num_gpus || 1); i++) {
-                    gpuConfigs.push({
-                        gpu_num: i,
-                        model: "stable_diffusion",
-                    });
-                }
-                return {
-                    worker_id: workerId,
-                    gpu_configs: gpuConfigs,
-                };
-            }
-            let cfg: any = result.rows[0];
-            cfg = JSON.parse(cfg.config_json);
-            return {
-                worker_id: workerId,
-                gpu_configs: cfg.gpu_configs,
-            };
-        } finally {
-            client.release();
-        }
-    }
-
-    async upsertWorkerConfig(
-        workerId: string,
-        config: UpsertWorkerConfigInput
-    ): Promise<WorkerConfig> {
-        const configJson = JSON.stringify({
-            gpu_configs: config.gpu_configs,
-        });
-        const client = await this.pool.connect();
-        try {
-            await client.query(
-                `INSERT INTO worker_configs (worker_id, config_json)
-                VALUES ($1, $2)
-                ON CONFLICT (worker_id) DO UPDATE SET config_json = $2`,
-                [workerId, configJson]
-            );
-            this.notify(
-                workerId,
-                JSON.stringify({
-                    type: NOTIFICATION_WORKER_CONFIG_UPDATED,
-                })
-            );
-            return {
-                worker_id: workerId,
-                gpu_configs: config.gpu_configs,
-            };
-        } finally {
-            client.release();
-        }
-    }
-
-    async listWorkers(): Promise<Worker[]> {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(`SELECT * FROM workers`);
-            return result.rows.map((row) => this.hydrateWorker(row));
-        } finally {
-            client.release();
-        }
-    }
-
-    async getWorker(workerId: string): Promise<Worker> {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `SELECT * FROM workers WHERE id = $1`,
-                [workerId]
-            );
-            if (result.rows.length === 0) {
-                return null;
-            }
-            return this.hydrateWorker(result.rows[0]);
-        } finally {
-            client.release();
-        }
-    }
-
-    async updateWorker(
-        workerId: string,
-        upsertWorkerInput: UpsertWorkerInput
-    ): Promise<Worker> {
-        const existingWorker = await this.getWorker(workerId);
-        upsertWorkerInput.display_name =
-            upsertWorkerInput.display_name || existingWorker.display_name;
-        upsertWorkerInput.status =
-            upsertWorkerInput.status || existingWorker.status;
-        const client = await this.pool.connect();
-
-        try {
-            const result = await client.query(
-                `UPDATE workers SET display_name = $1, status=$2, last_ping=$3 WHERE id = $4 RETURNING *`,
-                [
-                    upsertWorkerInput.display_name,
-                    upsertWorkerInput.status,
-                    this.clock.now().valueOf(),
-                    workerId,
-                ]
-            );
-
-            return result.rows[0];
-        } finally {
-            client.release();
-        }
-    }
-
-    async updateWorkerDeploymentInfo(
-        workerId: string,
-        engine: string,
-        numGpus: number,
-        cloudInstanceId: string,
-        gpuType: string
-    ): Promise<Worker> {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `UPDATE workers SET engine = $1, num_gpus = $2, cloud_instance_id = $3, gpu_type = $4 WHERE id = $5 RETURNING *`,
-                [engine, numGpus, cloudInstanceId, gpuType, workerId]
-            );
-            return result.rows[0];
-        } finally {
-            client.release();
-        }
-    }
-
-    async deleteWorker(workerId: string): Promise<void> {
-        const client = await this.pool.connect();
-        try {
-            await client.query(`DELETE FROM workers WHERE id = $1`, [workerId]);
-        } finally {
-            client.release();
-        }
-    }
-
-    async generateWorkerLoginCode(workerId: string): Promise<WorkerLoginCode> {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `SELECT * FROM workers WHERE id = $1`,
-                [workerId]
-            );
-            if (result.rows.length === 0) {
-                return null;
-            }
-            const worker = result.rows[0];
-            const login_code = uuid.v4();
-            await client.query(
-                `UPDATE workers SET login_code = $1 WHERE id = $2`,
-                [login_code, workerId]
-            );
-            // return result2.rows[0]
-            return {
-                login_code: login_code,
-            };
-        } finally {
-            client.release();
-        }
-    }
-
-    async loginAsWorker(loginCode: string): Promise<Authentication> {
-        // validate that loginCode is a uuid
-        if (!uuid.validate(loginCode)) {
-            this.metrics.addMetric("backend.login_as_worker", 1, "count", {
-                status: "invalid_login_code",
-            });
-            return null;
-        }
-
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `SELECT * FROM workers WHERE login_code = $1`,
-                [loginCode]
-            );
-            if (result.rows.length === 0) {
-                this.metrics.addMetric("backend.login_as_worker", 1, "count", {
-                    status: "login_code_not_found",
-                });
-                return null;
-            }
-            const worker = result.rows[0];
-            // generate auth tokens
-            const auth = this.authHelper.createTokens(worker.id, {
-                workerId: worker.id,
-                type: "public",
-            });
-            // blank out login code
-            await client.query(
-                `UPDATE workers SET login_code = '' WHERE id = $1`,
-                [worker.id]
-            );
-            this.metrics.addMetric("backend.login_as_worker", 1, "count", {
-                status: "success",
-            });
-            return auth;
         } finally {
             client.release();
         }
@@ -1252,93 +940,6 @@ export class BackendService {
         } finally {
             client.release();
         }
-    }
-
-    async processImage(
-        user: string,
-        input: ProcessImageInput | null,
-        workerId: string | null
-    ): Promise<Image> {
-        // validate status is in whitelist to avoid sql injection
-        if (input.status && input.status !== "pending" && input.status !== "ranking") {
-            throw new Error("Invalid status");
-        }
-        // get all users with pending images
-        const users = await this.getUsersWithPendingImages(input?.status, input?.include_models, input?.exclude_models);
-        // if there are no users, return null
-        if (users.length === 0) {
-            return null;
-        }
-
-        if (!user) {
-            // get random user
-            const boosts = await this.listActiveBoosts();
-            const paidUsers: string[] = [];
-            for (let boost of boosts) {
-                if (users.indexOf(boost.user_id) !== -1) {
-                    for (let i = 0; i < boost.level; i++) {
-                        paidUsers.push(boost.user_id);
-                    }
-                }
-            }
-            // 50/50 split between paid and free pool
-            if (Math.random() < 0.5 && paidUsers.length > 0) {
-                user = paidUsers[Math.floor(Math.random() * paidUsers.length)];
-            } else {
-                user = users[Math.floor(Math.random() * users.length)];
-            }
-        }
-        const args: Array<any> = [user];
-        let filter = " AND deleted_at IS NULL";
-        if (input.include_models) {
-            // args.push(input?.include_models);
-            const inStr = input.include_models.map((_, i) => `$${args.length + i + 1}`).join(",");
-            filter += ` AND model in (${inStr})`;
-            args.push(...input.include_models);
-        }
-        if (input.exclude_models) {
-            const inStr = input.exclude_models.map((_, i) => `$${args.length + i + 1}`).join(",");
-            filter += ` AND model NOT IN (${inStr})`;
-            args.push(...input.exclude_models);
-        }
-
-        // get random image from user
-        const client = await this.pool.connect();
-        try {
-            if (!input?.peek) {
-                // begin transaction
-                await client.query("BEGIN");
-            }
-
-            const result = await client.query(
-                `SELECT * FROM images WHERE created_by=$1 AND status='${input.status || "pending"}'${filter} ORDER BY created_at ASC LIMIT 1`,
-                args
-            );
-            if (result.rows.length === 0) {
-                return null;
-            }
-            const image = result.rows[0];
-            if (!input?.peek) {
-                // update image status to "processing"
-                await client.query(
-                    `UPDATE images SET status='processing', updated_at=$2, worker_id=$3 WHERE id=$1`,
-                    [image.id, new Date().getTime(), workerId]
-                );
-                // commit transaction
-                await client.query("COMMIT");
-            }
-            return this.hydrateImage({
-                ...image,
-                status: input?.peek ? "pending" : "processing",
-            });
-        } catch (err) {
-            if (!input?.peek) {
-                await client.query("ROLLBACK");
-            }
-        } finally {
-            client.release();
-        }
-        return null;
     }
 
     // for all images with status "processing" that have not been updated in more than 5 minutes,
@@ -1946,7 +1547,7 @@ export class BackendService {
         try {
             const result = await client.query(
                 `SELECT * FROM login_codes WHERE code=$1`,
-                [code]
+                [code.toUpperCase()]
             );
             if (result.rows.length === 0) {
                 this.logger.log("login code not found: " + code);
@@ -1979,12 +1580,6 @@ export class BackendService {
         } finally {
             client.release();
         }
-    }
-
-    async createServiceAccountCreds(userId: string, cfg: ServiceAccountConfig) {
-        // some day this probably will create a database entry so the creds
-        // can be revoked
-        return this.authHelper.createTokens(userId, cfg);
     }
 
     async refresh(refreshToken: string): Promise<Authentication> {

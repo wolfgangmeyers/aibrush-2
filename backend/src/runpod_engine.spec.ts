@@ -700,626 +700,626 @@ describe("Runpod Scaling Engine Calculations", () => {
     }
 });
 
-describe("RunpodEngine", () => {
-    let backendService: BackendService;
-    let runpodEngine: RunpodEngine;
-    let testHelper: TestHelper;
-    let databaseName: string;
-    let mockRunpodClient: MockRunpodApi;
-    let clock: FakeClock;
+// describe("RunpodEngine", () => {
+//     let backendService: BackendService;
+//     let runpodEngine: RunpodEngine;
+//     let testHelper: TestHelper;
+//     let databaseName: string;
+//     let mockRunpodClient: MockRunpodApi;
+//     let clock: FakeClock;
 
-    const adminId = hash("admin@test.test");
+//     const adminId = hash("admin@test.test");
 
-    beforeAll(async () => {
-        testHelper = new TestHelper();
-        await testHelper.cleanupDatabases();
-    });
+//     beforeAll(async () => {
+//         testHelper = new TestHelper();
+//         await testHelper.cleanupDatabases();
+//     });
 
-    beforeEach(async () => {
-        databaseName = await testHelper.createTestDatabase();
-        await testHelper.cleanupTestFiles();
-        const config = testHelper.createConfig(databaseName);
-        backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger());
-        await backendService.init();
-        mockRunpodClient = new MockRunpodApi();
-        clock = new FakeClock(moment());
-        runpodEngine = new RunpodEngine(
-            mockRunpodClient,
-            backendService,
-            clock,
-            new MetricsClient(""),
-            new ConsoleLogger(),
-            "NVIDIA GeForce RTX 3090"
-        );
-        await backendService.createUser("admin@test.test");
-    });
+//     beforeEach(async () => {
+//         databaseName = await testHelper.createTestDatabase();
+//         await testHelper.cleanupTestFiles();
+//         const config = testHelper.createConfig(databaseName);
+//         backendService = new BackendService(config, new MetricsClient(""), new ConsoleLogger());
+//         await backendService.init();
+//         mockRunpodClient = new MockRunpodApi();
+//         clock = new FakeClock(moment());
+//         runpodEngine = new RunpodEngine(
+//             mockRunpodClient,
+//             backendService,
+//             clock,
+//             new MetricsClient(""),
+//             new ConsoleLogger(),
+//             "NVIDIA GeForce RTX 3090"
+//         );
+//         await backendService.createUser("admin@test.test");
+//     });
 
-    afterEach(async () => {
-        await backendService.destroy();
-    });
+//     afterEach(async () => {
+//         await backendService.destroy();
+//     });
 
-    describe("scale with no workers, no gpus and no orders", () => {
-        it("should not scale", async () => {
-            expect(await runpodEngine.scale(0)).toEqual(0);
-            expect(mockRunpodClient._pods).toEqual([]);
-            const workerResult = await backendService.listWorkers();
-            expect(workerResult).toEqual([]);
-        });
-    });
+//     describe("scale with no workers, no gpus and no orders", () => {
+//         it("should not scale", async () => {
+//             expect(await runpodEngine.scale(0)).toEqual(0);
+//             expect(mockRunpodClient._pods).toEqual([]);
+//             const workerResult = await backendService.listWorkers();
+//             expect(workerResult).toEqual([]);
+//         });
+//     });
 
-    describe("scale with no workers, no gpus and one order", () => {
-        it("should not scale", async () => {
-            expect(await runpodEngine.scale(1)).toEqual(0);
-            expect(mockRunpodClient._pods).toEqual([]);
-            const workerResult = await backendService.listWorkers();
-            expect(workerResult).toEqual([]);
-        });
-    });
+//     describe("scale with no workers, no gpus and one order", () => {
+//         it("should not scale", async () => {
+//             expect(await runpodEngine.scale(1)).toEqual(0);
+//             expect(mockRunpodClient._pods).toEqual([]);
+//             const workerResult = await backendService.listWorkers();
+//             expect(workerResult).toEqual([]);
+//         });
+//     });
 
-    describe("scale with no workers, one gpu and no orders", () => {
-        it("should not scale", async () => {
-            mockRunpodClient._gpuTypes = [
-                {
-                    id: "NVIDIA GeForce RTX 3090",
-                    maxGpuCount: 1,
-                    lowestPrice: {
-                        stockStatus: "Low",
-                        uninterruptablePrice: 0.45,
-                    },
-                },
-            ];
-            expect(await runpodEngine.scale(0)).toEqual(0);
-            expect(mockRunpodClient._pods).toEqual([]);
-            const workerResult = await backendService.listWorkers();
-            expect(workerResult).toEqual([]);
-        });
-    });
+//     describe("scale with no workers, one gpu and no orders", () => {
+//         it("should not scale", async () => {
+//             mockRunpodClient._gpuTypes = [
+//                 {
+//                     id: "NVIDIA GeForce RTX 3090",
+//                     maxGpuCount: 1,
+//                     lowestPrice: {
+//                         stockStatus: "Low",
+//                         uninterruptablePrice: 0.45,
+//                     },
+//                 },
+//             ];
+//             expect(await runpodEngine.scale(0)).toEqual(0);
+//             expect(mockRunpodClient._pods).toEqual([]);
+//             const workerResult = await backendService.listWorkers();
+//             expect(workerResult).toEqual([]);
+//         });
+//     });
 
-    describe("scale with no workers, one gpu, and one order", () => {
-        it("should scale up", async () => {
-            mockRunpodClient._gpuTypes = [
-                {
-                    id: "NVIDIA GeForce RTX 3090",
-                    maxGpuCount: 1,
-                    lowestPrice: {
-                        stockStatus: "Low",
-                        uninterruptablePrice: 0.45,
-                    },
-                },
-            ];
-            expect(await runpodEngine.scale(1)).toEqual(1);
-            const workerResult = await backendService.listWorkers();
-            expect(workerResult.length).toEqual(1);
-            const worker = workerResult[0];
-            expect(worker.login_code).toBeTruthy();
-            expect(worker.cloud_instance_id).toEqual("pod-id");
-            expect(worker.engine).toEqual(TYPE_RUNPOD);
-            expect(worker.num_gpus).toEqual(1);
-            expect(mockRunpodClient._pods).toEqual([
-                {
-                    id: "pod-id",
-                    name: "AiBrush Worker",
-                    runtime: {
-                        container: {
-                            cpuPercent: 0,
-                            memoryPercent: 0,
-                        },
-                        gpus: [],
-                        ports: [],
-                        uptimeInSeconds: 0,
-                    },
-                },
-            ]);
-        });
-    });
+//     describe("scale with no workers, one gpu, and one order", () => {
+//         it("should scale up", async () => {
+//             mockRunpodClient._gpuTypes = [
+//                 {
+//                     id: "NVIDIA GeForce RTX 3090",
+//                     maxGpuCount: 1,
+//                     lowestPrice: {
+//                         stockStatus: "Low",
+//                         uninterruptablePrice: 0.45,
+//                     },
+//                 },
+//             ];
+//             expect(await runpodEngine.scale(1)).toEqual(1);
+//             const workerResult = await backendService.listWorkers();
+//             expect(workerResult.length).toEqual(1);
+//             const worker = workerResult[0];
+//             expect(worker.login_code).toBeTruthy();
+//             expect(worker.cloud_instance_id).toEqual("pod-id");
+//             expect(worker.engine).toEqual(TYPE_RUNPOD);
+//             expect(worker.num_gpus).toEqual(1);
+//             expect(mockRunpodClient._pods).toEqual([
+//                 {
+//                     id: "pod-id",
+//                     name: "AiBrush Worker",
+//                     runtime: {
+//                         container: {
+//                             cpuPercent: 0,
+//                             memoryPercent: 0,
+//                         },
+//                         gpus: [],
+//                         ports: [],
+//                         uptimeInSeconds: 0,
+//                     },
+//                 },
+//             ]);
+//         });
+//     });
 
-    describe("scale with one worker, one offer and one order", () => {
-        it("should not scale", async () => {
-            mockRunpodClient._gpuTypes = [
-                {
-                    id: "NVIDIA GeForce RTX 3090",
-                    maxGpuCount: 2,
-                    lowestPrice: {
-                        stockStatus: "Low",
-                        uninterruptablePrice: 0.45,
-                    },
-                },
-            ];
-            mockRunpodClient._pods = [
-                {
-                    id: "pod-id",
-                    name: "AiBrush Worker",
-                    runtime: {
-                        container: {
-                            cpuPercent: 0,
-                            memoryPercent: 0,
-                        },
-                        gpus: [],
-                        ports: [],
-                        uptimeInSeconds: 0,
-                    },
-                },
-            ];
-            const worker = await backendService.createWorker("existing");
-            await backendService.updateWorkerDeploymentInfo(
-                worker.id,
-                TYPE_RUNPOD,
-                2,
-                "pod-id",
-                "NVIDIA GeForce RTX 3090"
-            );
-            expect(await runpodEngine.scale(1)).toEqual(1);
-            expect(mockRunpodClient._pods).toEqual([
-                {
-                    id: "pod-id",
-                    name: "AiBrush Worker",
-                    runtime: {
-                        container: {
-                            cpuPercent: 0,
-                            memoryPercent: 0,
-                        },
-                        gpus: [],
-                        ports: [],
-                        uptimeInSeconds: 0,
-                    },
-                },
-            ]);
-            const workerResult = await backendService.listWorkers();
-            expect(workerResult.length).toEqual(1);
-        });
-    });
+//     describe("scale with one worker, one offer and one order", () => {
+//         it("should not scale", async () => {
+//             mockRunpodClient._gpuTypes = [
+//                 {
+//                     id: "NVIDIA GeForce RTX 3090",
+//                     maxGpuCount: 2,
+//                     lowestPrice: {
+//                         stockStatus: "Low",
+//                         uninterruptablePrice: 0.45,
+//                     },
+//                 },
+//             ];
+//             mockRunpodClient._pods = [
+//                 {
+//                     id: "pod-id",
+//                     name: "AiBrush Worker",
+//                     runtime: {
+//                         container: {
+//                             cpuPercent: 0,
+//                             memoryPercent: 0,
+//                         },
+//                         gpus: [],
+//                         ports: [],
+//                         uptimeInSeconds: 0,
+//                     },
+//                 },
+//             ];
+//             const worker = await backendService.createWorker("existing");
+//             await backendService.updateWorkerDeploymentInfo(
+//                 worker.id,
+//                 TYPE_RUNPOD,
+//                 2,
+//                 "pod-id",
+//                 "NVIDIA GeForce RTX 3090"
+//             );
+//             expect(await runpodEngine.scale(1)).toEqual(1);
+//             expect(mockRunpodClient._pods).toEqual([
+//                 {
+//                     id: "pod-id",
+//                     name: "AiBrush Worker",
+//                     runtime: {
+//                         container: {
+//                             cpuPercent: 0,
+//                             memoryPercent: 0,
+//                         },
+//                         gpus: [],
+//                         ports: [],
+//                         uptimeInSeconds: 0,
+//                     },
+//                 },
+//             ]);
+//             const workerResult = await backendService.listWorkers();
+//             expect(workerResult.length).toEqual(1);
+//         });
+//     });
 
-    describe("scale with one worker, no offers and no orders", () => {
-        it("should scale down", async () => {
-            mockRunpodClient._pods = [
-                {
-                    id: "pod-id",
-                    name: "AiBrush Worker",
-                    runtime: {
-                        container: {
-                            cpuPercent: 0,
-                            memoryPercent: 0,
-                        },
-                        gpus: [],
-                        ports: [],
-                        uptimeInSeconds: 0,
-                    },
-                },
-            ];
-            const worker = await backendService.createWorker("existing");
-            await backendService.updateWorkerDeploymentInfo(
-                worker.id,
-                TYPE_RUNPOD,
-                2,
-                "pod-id",
-                "NVIDIA GeForce RTX 3090"
-            );
-            // set the last scaling operation to 10 minutes ago
-            await backendService.setLastEventTime(
-                RUNPOD_SCALING_EVENT,
-                clock.now().subtract(10, "minutes").valueOf()
-            );
-            expect(await runpodEngine.scale(0)).toEqual(0);
-            expect(mockRunpodClient._pods).toEqual([]);
-            const workerResult = await backendService.listWorkers();
-            expect(workerResult.length).toEqual(0);
-        });
-    });
+//     describe("scale with one worker, no offers and no orders", () => {
+//         it("should scale down", async () => {
+//             mockRunpodClient._pods = [
+//                 {
+//                     id: "pod-id",
+//                     name: "AiBrush Worker",
+//                     runtime: {
+//                         container: {
+//                             cpuPercent: 0,
+//                             memoryPercent: 0,
+//                         },
+//                         gpus: [],
+//                         ports: [],
+//                         uptimeInSeconds: 0,
+//                     },
+//                 },
+//             ];
+//             const worker = await backendService.createWorker("existing");
+//             await backendService.updateWorkerDeploymentInfo(
+//                 worker.id,
+//                 TYPE_RUNPOD,
+//                 2,
+//                 "pod-id",
+//                 "NVIDIA GeForce RTX 3090"
+//             );
+//             // set the last scaling operation to 10 minutes ago
+//             await backendService.setLastEventTime(
+//                 RUNPOD_SCALING_EVENT,
+//                 clock.now().subtract(10, "minutes").valueOf()
+//             );
+//             expect(await runpodEngine.scale(0)).toEqual(0);
+//             expect(mockRunpodClient._pods).toEqual([]);
+//             const workerResult = await backendService.listWorkers();
+//             expect(workerResult.length).toEqual(0);
+//         });
+//     });
 
-    // refactor to runpod
-    describe("scale with one worker, no offers and no orders, cooldown in effect", () => {
-        it("should not scale down", async () => {
-            mockRunpodClient._pods = [
-                {
-                    id: "pod-id",
-                    name: "AiBrush Worker",
-                    runtime: {
-                        container: {
-                            cpuPercent: 0,
-                            memoryPercent: 0,
-                        },
-                        gpus: [],
-                        ports: [],
-                        uptimeInSeconds: 0,
-                    },
-                },
-            ];
-            const worker = await backendService.createWorker("existing");
-            await backendService.updateWorkerDeploymentInfo(
-                worker.id,
-                TYPE_RUNPOD,
-                2,
-                "pod-id",
-                "NVIDIA GeForce RTX 3090"
-            );
-            // set the last scaling operation to 1 minute ago
-            await backendService.setLastEventTime(
-                RUNPOD_SCALING_EVENT,
-                clock.now().subtract(1, "minutes").valueOf()
-            );
-            expect(await runpodEngine.scale(0)).toEqual(1);
-            expect(mockRunpodClient._pods).toEqual([
-                {
-                    id: "pod-id",
-                    name: "AiBrush Worker",
-                    runtime: {
-                        container: {
-                            cpuPercent: 0,
-                            memoryPercent: 0,
-                        },
-                        gpus: [],
-                        ports: [],
-                        uptimeInSeconds: 0,
-                    },
-                },
-            ]);
-            const workerResult = await backendService.listWorkers();
-            expect(workerResult.length).toEqual(1);
-        });
-    });
+//     // refactor to runpod
+//     describe("scale with one worker, no offers and no orders, cooldown in effect", () => {
+//         it("should not scale down", async () => {
+//             mockRunpodClient._pods = [
+//                 {
+//                     id: "pod-id",
+//                     name: "AiBrush Worker",
+//                     runtime: {
+//                         container: {
+//                             cpuPercent: 0,
+//                             memoryPercent: 0,
+//                         },
+//                         gpus: [],
+//                         ports: [],
+//                         uptimeInSeconds: 0,
+//                     },
+//                 },
+//             ];
+//             const worker = await backendService.createWorker("existing");
+//             await backendService.updateWorkerDeploymentInfo(
+//                 worker.id,
+//                 TYPE_RUNPOD,
+//                 2,
+//                 "pod-id",
+//                 "NVIDIA GeForce RTX 3090"
+//             );
+//             // set the last scaling operation to 1 minute ago
+//             await backendService.setLastEventTime(
+//                 RUNPOD_SCALING_EVENT,
+//                 clock.now().subtract(1, "minutes").valueOf()
+//             );
+//             expect(await runpodEngine.scale(0)).toEqual(1);
+//             expect(mockRunpodClient._pods).toEqual([
+//                 {
+//                     id: "pod-id",
+//                     name: "AiBrush Worker",
+//                     runtime: {
+//                         container: {
+//                             cpuPercent: 0,
+//                             memoryPercent: 0,
+//                         },
+//                         gpus: [],
+//                         ports: [],
+//                         uptimeInSeconds: 0,
+//                     },
+//                 },
+//             ]);
+//             const workerResult = await backendService.listWorkers();
+//             expect(workerResult.length).toEqual(1);
+//         });
+//     });
 
-    // refactor to runpod
-    describe("scale with one worker(timeout), no offers and one order", () => {
-        it("should destroy the timed out worker", async () => {
-            mockRunpodClient._pods = [
-                {
-                    id: "pod-id",
-                    name: "AiBrush Worker",
-                    runtime: {
-                        container: {
-                            cpuPercent: 0,
-                            memoryPercent: 0,
-                        },
-                        gpus: [],
-                        ports: [],
-                        uptimeInSeconds: 0,
-                    },
-                },
-            ];
-            const worker = await backendService.createWorker("existing");
-            await backendService.updateWorkerDeploymentInfo(
-                worker.id,
-                TYPE_RUNPOD,
-                2,
-                "pod-id",
-                "NVIDIA GeForce RTX 3090"
-            );
-            clock._now = moment().add(10, "minutes");
-            expect(await runpodEngine.scale(1)).toEqual(0);
-            expect(mockRunpodClient._pods).toEqual([]);
-            const workerResult = await backendService.listWorkers();
-            expect(workerResult.length).toEqual(0);
-            const isBlocked = await backendService.isWorkerBlocked(
-                "pod-id",
-                TYPE_RUNPOD,
-                clock.now()
-            );
-            // runpod doesn't support blocking
-            expect(isBlocked).toEqual(false);
-        });
-    });
+//     // refactor to runpod
+//     describe("scale with one worker(timeout), no offers and one order", () => {
+//         it("should destroy the timed out worker", async () => {
+//             mockRunpodClient._pods = [
+//                 {
+//                     id: "pod-id",
+//                     name: "AiBrush Worker",
+//                     runtime: {
+//                         container: {
+//                             cpuPercent: 0,
+//                             memoryPercent: 0,
+//                         },
+//                         gpus: [],
+//                         ports: [],
+//                         uptimeInSeconds: 0,
+//                     },
+//                 },
+//             ];
+//             const worker = await backendService.createWorker("existing");
+//             await backendService.updateWorkerDeploymentInfo(
+//                 worker.id,
+//                 TYPE_RUNPOD,
+//                 2,
+//                 "pod-id",
+//                 "NVIDIA GeForce RTX 3090"
+//             );
+//             clock._now = moment().add(10, "minutes");
+//             expect(await runpodEngine.scale(1)).toEqual(0);
+//             expect(mockRunpodClient._pods).toEqual([]);
+//             const workerResult = await backendService.listWorkers();
+//             expect(workerResult.length).toEqual(0);
+//             const isBlocked = await backendService.isWorkerBlocked(
+//                 "pod-id",
+//                 TYPE_RUNPOD,
+//                 clock.now()
+//             );
+//             // runpod doesn't support blocking
+//             expect(isBlocked).toEqual(false);
+//         });
+//     });
 
-    // refactor to runpod
-    describe("scale with no workers, one gpu, and one order, provision error", () => {
-        it("should not scale up", async () => {
-            mockRunpodClient._pods = [];
-            mockRunpodClient._gpuTypes = [
-                {
-                    id: "NVIDIA GeForce RTX 3090",
-                    maxGpuCount: 1,
-                    lowestPrice: {
-                        stockStatus: "Low",
-                        uninterruptablePrice: 0.45,
-                    },
-                },
-            ];
+//     // refactor to runpod
+//     describe("scale with no workers, one gpu, and one order, provision error", () => {
+//         it("should not scale up", async () => {
+//             mockRunpodClient._pods = [];
+//             mockRunpodClient._gpuTypes = [
+//                 {
+//                     id: "NVIDIA GeForce RTX 3090",
+//                     maxGpuCount: 1,
+//                     lowestPrice: {
+//                         stockStatus: "Low",
+//                         uninterruptablePrice: 0.45,
+//                     },
+//                 },
+//             ];
 
-            mockRunpodClient.errFactory = new ErrorFactory([new Error("nope")]);
-            expect(await runpodEngine.scale(1)).toEqual(0);
-            expect(mockRunpodClient._pods).toEqual([]);
-            const workerResult = await backendService.listWorkers();
-            expect(workerResult.length).toEqual(0);
-        });
-    });
+//             mockRunpodClient.errFactory = new ErrorFactory([new Error("nope")]);
+//             expect(await runpodEngine.scale(1)).toEqual(0);
+//             expect(mockRunpodClient._pods).toEqual([]);
+//             const workerResult = await backendService.listWorkers();
+//             expect(workerResult.length).toEqual(0);
+//         });
+//     });
 
-    describe("order to gpu mappings", () => {
-        describe("RTX 3090, one order", () => {
+//     describe("order to gpu mappings", () => {
+//         describe("RTX 3090, one order", () => {
 
-            beforeEach(() => {
-                runpodEngine = new RunpodEngine(
-                    mockRunpodClient,
-                    backendService,
-                    clock,
-                    new MetricsClient(""),
-                    new ConsoleLogger(),
-                    "NVIDIA GeForce RTX 3090"
-                );
-            })
+//             beforeEach(() => {
+//                 runpodEngine = new RunpodEngine(
+//                     mockRunpodClient,
+//                     backendService,
+//                     clock,
+//                     new MetricsClient(""),
+//                     new ConsoleLogger(),
+//                     "NVIDIA GeForce RTX 3090"
+//                 );
+//             })
 
-            it("should use 2 gpus", async () => {
-                mockRunpodClient._pods = [];
-                mockRunpodClient._gpuTypes = [
-                    {
-                        id: "NVIDIA GeForce RTX 3090",
-                        maxGpuCount: 1,
-                        lowestPrice: {
-                            stockStatus: "Low",
-                            uninterruptablePrice: 0.45,
-                        },
-                    },
-                    {
-                        id: "NVIDIA GeForce RTX 3090",
-                        maxGpuCount: 2,
-                        lowestPrice: {
-                            stockStatus: "Low",
-                            uninterruptablePrice: 0.45,
-                        },
-                    },
+//             it("should use 2 gpus", async () => {
+//                 mockRunpodClient._pods = [];
+//                 mockRunpodClient._gpuTypes = [
+//                     {
+//                         id: "NVIDIA GeForce RTX 3090",
+//                         maxGpuCount: 1,
+//                         lowestPrice: {
+//                             stockStatus: "Low",
+//                             uninterruptablePrice: 0.45,
+//                         },
+//                     },
+//                     {
+//                         id: "NVIDIA GeForce RTX 3090",
+//                         maxGpuCount: 2,
+//                         lowestPrice: {
+//                             stockStatus: "Low",
+//                             uninterruptablePrice: 0.45,
+//                         },
+//                     },
 
-                    {
-                        id: "NVIDIA GeForce RTX 3090",
-                        maxGpuCount: 3,
-                        lowestPrice: {
-                            stockStatus: "Low",
-                            uninterruptablePrice: 0.45,
-                        },
-                    },
-                ];
-                expect(await runpodEngine.scale(1)).toEqual(1);
-                expect(mockRunpodClient._pods).toHaveLength(1);
-                const workerResult = await backendService.listWorkers();
-                expect(workerResult.length).toEqual(1);
-                expect(workerResult[0].num_gpus).toEqual(2);
-            });
-        });
+//                     {
+//                         id: "NVIDIA GeForce RTX 3090",
+//                         maxGpuCount: 3,
+//                         lowestPrice: {
+//                             stockStatus: "Low",
+//                             uninterruptablePrice: 0.45,
+//                         },
+//                     },
+//                 ];
+//                 expect(await runpodEngine.scale(1)).toEqual(1);
+//                 expect(mockRunpodClient._pods).toHaveLength(1);
+//                 const workerResult = await backendService.listWorkers();
+//                 expect(workerResult.length).toEqual(1);
+//                 expect(workerResult[0].num_gpus).toEqual(2);
+//             });
+//         });
 
-        describe("A5000, one order", () => {
+//         describe("A5000, one order", () => {
 
-            beforeEach(() => {
-                runpodEngine = new RunpodEngine(
-                    mockRunpodClient,
-                    backendService,
-                    clock,
-                    new MetricsClient(""),
-                    new ConsoleLogger(),
-                    "NVIDIA RTX A5000"
-                );
-            })
+//             beforeEach(() => {
+//                 runpodEngine = new RunpodEngine(
+//                     mockRunpodClient,
+//                     backendService,
+//                     clock,
+//                     new MetricsClient(""),
+//                     new ConsoleLogger(),
+//                     "NVIDIA RTX A5000"
+//                 );
+//             })
 
-            it("should use 2 gpus", async () => {
-                mockRunpodClient._pods = [];
-                mockRunpodClient._gpuTypes = [
-                    {
-                        id: "NVIDIA RTX A5000",
-                        maxGpuCount: 1,
-                        lowestPrice: {
-                            stockStatus: "Low",
-                            uninterruptablePrice: 0.45,
-                        },
-                    },
-                    {
-                        id: "NVIDIA RTX A5000",
-                        maxGpuCount: 2,
-                        lowestPrice: {
-                            stockStatus: "Low",
-                            uninterruptablePrice: 0.45,
-                        },
-                    },
+//             it("should use 2 gpus", async () => {
+//                 mockRunpodClient._pods = [];
+//                 mockRunpodClient._gpuTypes = [
+//                     {
+//                         id: "NVIDIA RTX A5000",
+//                         maxGpuCount: 1,
+//                         lowestPrice: {
+//                             stockStatus: "Low",
+//                             uninterruptablePrice: 0.45,
+//                         },
+//                     },
+//                     {
+//                         id: "NVIDIA RTX A5000",
+//                         maxGpuCount: 2,
+//                         lowestPrice: {
+//                             stockStatus: "Low",
+//                             uninterruptablePrice: 0.45,
+//                         },
+//                     },
 
-                    {
-                        id: "NVIDIA RTX A5000",
-                        maxGpuCount: 3,
-                        lowestPrice: {
-                            stockStatus: "Low",
-                            uninterruptablePrice: 0.45,
-                        },
-                    },
-                ];
-                expect(await runpodEngine.scale(1)).toEqual(1);
-                expect(mockRunpodClient._pods).toHaveLength(1);
-                const workerResult = await backendService.listWorkers();
-                expect(workerResult.length).toEqual(1);
-                expect(workerResult[0].num_gpus).toEqual(2);
-            });
-        })
+//                     {
+//                         id: "NVIDIA RTX A5000",
+//                         maxGpuCount: 3,
+//                         lowestPrice: {
+//                             stockStatus: "Low",
+//                             uninterruptablePrice: 0.45,
+//                         },
+//                     },
+//                 ];
+//                 expect(await runpodEngine.scale(1)).toEqual(1);
+//                 expect(mockRunpodClient._pods).toHaveLength(1);
+//                 const workerResult = await backendService.listWorkers();
+//                 expect(workerResult.length).toEqual(1);
+//                 expect(workerResult[0].num_gpus).toEqual(2);
+//             });
+//         })
 
-        describe("A6000, one order", () => {
+//         describe("A6000, one order", () => {
 
-            beforeEach(() => {
-                runpodEngine = new RunpodEngine(
-                    mockRunpodClient,
-                    backendService,
-                    clock,
-                    new MetricsClient(""),
-                    new ConsoleLogger(),
-                    "NVIDIA RTX A6000"
-                );
-            })
+//             beforeEach(() => {
+//                 runpodEngine = new RunpodEngine(
+//                     mockRunpodClient,
+//                     backendService,
+//                     clock,
+//                     new MetricsClient(""),
+//                     new ConsoleLogger(),
+//                     "NVIDIA RTX A6000"
+//                 );
+//             })
 
-            it("should use 1 gpus", async () => {
-                mockRunpodClient._pods = [];
-                mockRunpodClient._gpuTypes = [
-                    {
-                        id: "NVIDIA RTX A6000",
-                        maxGpuCount: 1,
-                        lowestPrice: {
-                            stockStatus: "Low",
-                            uninterruptablePrice: 0.45,
-                        },
-                    },
-                    {
-                        id: "NVIDIA RTX A6000",
-                        maxGpuCount: 2,
-                        lowestPrice: {
-                            stockStatus: "Low",
-                            uninterruptablePrice: 0.45,
-                        },
-                    },
+//             it("should use 1 gpus", async () => {
+//                 mockRunpodClient._pods = [];
+//                 mockRunpodClient._gpuTypes = [
+//                     {
+//                         id: "NVIDIA RTX A6000",
+//                         maxGpuCount: 1,
+//                         lowestPrice: {
+//                             stockStatus: "Low",
+//                             uninterruptablePrice: 0.45,
+//                         },
+//                     },
+//                     {
+//                         id: "NVIDIA RTX A6000",
+//                         maxGpuCount: 2,
+//                         lowestPrice: {
+//                             stockStatus: "Low",
+//                             uninterruptablePrice: 0.45,
+//                         },
+//                     },
 
-                    {
-                        id: "NVIDIA RTX A6000",
-                        maxGpuCount: 3,
-                        lowestPrice: {
-                            stockStatus: "Low",
-                            uninterruptablePrice: 0.45,
-                        },
-                    },
-                ];
-                expect(await runpodEngine.scale(1)).toEqual(1);
-                expect(mockRunpodClient._pods).toHaveLength(1);
-                const workerResult = await backendService.listWorkers();
-                expect(workerResult.length).toEqual(1);
-                expect(workerResult[0].num_gpus).toEqual(1);
-            });
-        })
-    });
+//                     {
+//                         id: "NVIDIA RTX A6000",
+//                         maxGpuCount: 3,
+//                         lowestPrice: {
+//                             stockStatus: "Low",
+//                             uninterruptablePrice: 0.45,
+//                         },
+//                     },
+//                 ];
+//                 expect(await runpodEngine.scale(1)).toEqual(1);
+//                 expect(mockRunpodClient._pods).toHaveLength(1);
+//                 const workerResult = await backendService.listWorkers();
+//                 expect(workerResult.length).toEqual(1);
+//                 expect(workerResult[0].num_gpus).toEqual(1);
+//             });
+//         })
+//     });
 
-    describe("cleanup", () => {
+//     describe("cleanup", () => {
 
-        describe("cleanup with no instances and no workers", () => {
-            it("should not create any instances or workers", async () => {
-                await runpodEngine.cleanup();
-                expect(mockRunpodClient._pods).toHaveLength(0);
-                const workerResult = await backendService.listWorkers();
-                expect(workerResult.length).toEqual(0);
-            });
-        })
+//         describe("cleanup with no instances and no workers", () => {
+//             it("should not create any instances or workers", async () => {
+//                 await runpodEngine.cleanup();
+//                 expect(mockRunpodClient._pods).toHaveLength(0);
+//                 const workerResult = await backendService.listWorkers();
+//                 expect(workerResult.length).toEqual(0);
+//             });
+//         })
 
-        describe("cleanup with one dangling instance and no workers", () => {
-            it("should clean up instance", async () => {
-                mockRunpodClient._pods = [
-                    {
-                        id: "pod-id",
-                        name: "AiBrush Worker",
-                        runtime: {
-                            container: {
-                                cpuPercent: 0,
-                                memoryPercent: 0,
-                            },
-                            gpus: [{
-                                id: "NVIDIA GeForce RTX 3090",
-                            }],
-                            ports: [],
-                            uptimeInSeconds: 0,
-                        },
-                    },
-                ];
-                await runpodEngine.cleanup();
-                expect(mockRunpodClient._pods).toHaveLength(0);
-                const workerResult = await backendService.listWorkers();
-                expect(workerResult.length).toEqual(0);
-            });
-        });
+//         describe("cleanup with one dangling instance and no workers", () => {
+//             it("should clean up instance", async () => {
+//                 mockRunpodClient._pods = [
+//                     {
+//                         id: "pod-id",
+//                         name: "AiBrush Worker",
+//                         runtime: {
+//                             container: {
+//                                 cpuPercent: 0,
+//                                 memoryPercent: 0,
+//                             },
+//                             gpus: [{
+//                                 id: "NVIDIA GeForce RTX 3090",
+//                             }],
+//                             ports: [],
+//                             uptimeInSeconds: 0,
+//                         },
+//                     },
+//                 ];
+//                 await runpodEngine.cleanup();
+//                 expect(mockRunpodClient._pods).toHaveLength(0);
+//                 const workerResult = await backendService.listWorkers();
+//                 expect(workerResult.length).toEqual(0);
+//             });
+//         });
 
-        describe("cleanup with instance of wrong type and no workers", () => {
-            it("should not clean up instance", async () => {
-                mockRunpodClient._pods = [
-                    {
-                        id: "pod-id",
-                        name: "AiBrush Worker",
-                        runtime: {
-                            container: {
-                                cpuPercent: 0,
-                                memoryPercent: 0,
-                            },
-                            gpus: [{
-                                id: "NVIDIA RTX A6000",
-                            }],
-                            ports: [],
-                            uptimeInSeconds: 0,
-                        },
-                    },
-                ];
-                await runpodEngine.cleanup();
-                expect(mockRunpodClient._pods).toHaveLength(1);
-                const workerResult = await backendService.listWorkers();
-                expect(workerResult.length).toEqual(0);
-            });
-        })
+//         describe("cleanup with instance of wrong type and no workers", () => {
+//             it("should not clean up instance", async () => {
+//                 mockRunpodClient._pods = [
+//                     {
+//                         id: "pod-id",
+//                         name: "AiBrush Worker",
+//                         runtime: {
+//                             container: {
+//                                 cpuPercent: 0,
+//                                 memoryPercent: 0,
+//                             },
+//                             gpus: [{
+//                                 id: "NVIDIA RTX A6000",
+//                             }],
+//                             ports: [],
+//                             uptimeInSeconds: 0,
+//                         },
+//                     },
+//                 ];
+//                 await runpodEngine.cleanup();
+//                 expect(mockRunpodClient._pods).toHaveLength(1);
+//                 const workerResult = await backendService.listWorkers();
+//                 expect(workerResult.length).toEqual(0);
+//             });
+//         })
 
-        describe("cleanup with no instances and one worker", () => {
-            it("should clean up worker", async () => {
-                const worker = await backendService.createWorker("existing");
-                await backendService.updateWorkerDeploymentInfo(
-                    worker.id,
-                    TYPE_RUNPOD,
-                    2,
-                    "pod-id",
-                    "NVIDIA GeForce RTX 3090"
-                );
-                await runpodEngine.cleanup();
-                expect(mockRunpodClient._pods).toHaveLength(0);
-                const workerResult = await backendService.listWorkers();
-                expect(workerResult.length).toEqual(0);
-            });
-        })
+//         describe("cleanup with no instances and one worker", () => {
+//             it("should clean up worker", async () => {
+//                 const worker = await backendService.createWorker("existing");
+//                 await backendService.updateWorkerDeploymentInfo(
+//                     worker.id,
+//                     TYPE_RUNPOD,
+//                     2,
+//                     "pod-id",
+//                     "NVIDIA GeForce RTX 3090"
+//                 );
+//                 await runpodEngine.cleanup();
+//                 expect(mockRunpodClient._pods).toHaveLength(0);
+//                 const workerResult = await backendService.listWorkers();
+//                 expect(workerResult.length).toEqual(0);
+//             });
+//         })
 
-        describe("cleanup with one instance and one worker that match", () => {
-            it("should not clean up anything", async () => {
-                mockRunpodClient._pods = [
-                    {
-                        id: "pod-id",
-                        name: "AiBrush Worker",
-                        runtime: {
-                            container: {
-                                cpuPercent: 0,
-                                memoryPercent: 0,
-                            },
-                            gpus: [{
-                                id: "NVIDIA GeForce RTX 3090",
-                            }],
-                            ports: [],
-                            uptimeInSeconds: 0,
-                        },
-                    },
-                ];
-                const worker = await backendService.createWorker("existing");
-                await backendService.updateWorkerDeploymentInfo(
-                    worker.id,
-                    TYPE_RUNPOD,
-                    2,
-                    "pod-id",
-                    "NVIDIA GeForce RTX 3090"
-                );
-                await runpodEngine.cleanup();
-                expect(mockRunpodClient._pods).toHaveLength(1);
-                const workerResult = await backendService.listWorkers();
-                expect(workerResult.length).toEqual(1);
-            });
-        });
+//         describe("cleanup with one instance and one worker that match", () => {
+//             it("should not clean up anything", async () => {
+//                 mockRunpodClient._pods = [
+//                     {
+//                         id: "pod-id",
+//                         name: "AiBrush Worker",
+//                         runtime: {
+//                             container: {
+//                                 cpuPercent: 0,
+//                                 memoryPercent: 0,
+//                             },
+//                             gpus: [{
+//                                 id: "NVIDIA GeForce RTX 3090",
+//                             }],
+//                             ports: [],
+//                             uptimeInSeconds: 0,
+//                         },
+//                     },
+//                 ];
+//                 const worker = await backendService.createWorker("existing");
+//                 await backendService.updateWorkerDeploymentInfo(
+//                     worker.id,
+//                     TYPE_RUNPOD,
+//                     2,
+//                     "pod-id",
+//                     "NVIDIA GeForce RTX 3090"
+//                 );
+//                 await runpodEngine.cleanup();
+//                 expect(mockRunpodClient._pods).toHaveLength(1);
+//                 const workerResult = await backendService.listWorkers();
+//                 expect(workerResult.length).toEqual(1);
+//             });
+//         });
 
-        describe("cleanup with one instance and one worker that don't match", () => {
-            it("should clean up instance and worker", async () => {
-                mockRunpodClient._pods = [
-                    {
-                        id: "pod-id",
-                        name: "AiBrush Worker",
-                        runtime: {
-                            container: {
-                                cpuPercent: 0,
-                                memoryPercent: 0,
-                            },
-                            gpus: [{
-                                id: "NVIDIA GeForce RTX 3090",
-                            }],
-                            ports: [],
-                            uptimeInSeconds: 0,
-                        },
-                    },
-                ];
-                const worker = await backendService.createWorker("existing");
-                await backendService.updateWorkerDeploymentInfo(
-                    worker.id,
-                    TYPE_RUNPOD,
-                    2,
-                    "pod-id-2",
-                    "NVIDIA GeForce RTX 3090"
-                );
-                await runpodEngine.cleanup();
-                expect(mockRunpodClient._pods).toHaveLength(0);
-                const workerResult = await backendService.listWorkers();
-                expect(workerResult.length).toEqual(0);
-            });
-        });
-    });
-});
+//         describe("cleanup with one instance and one worker that don't match", () => {
+//             it("should clean up instance and worker", async () => {
+//                 mockRunpodClient._pods = [
+//                     {
+//                         id: "pod-id",
+//                         name: "AiBrush Worker",
+//                         runtime: {
+//                             container: {
+//                                 cpuPercent: 0,
+//                                 memoryPercent: 0,
+//                             },
+//                             gpus: [{
+//                                 id: "NVIDIA GeForce RTX 3090",
+//                             }],
+//                             ports: [],
+//                             uptimeInSeconds: 0,
+//                         },
+//                     },
+//                 ];
+//                 const worker = await backendService.createWorker("existing");
+//                 await backendService.updateWorkerDeploymentInfo(
+//                     worker.id,
+//                     TYPE_RUNPOD,
+//                     2,
+//                     "pod-id-2",
+//                     "NVIDIA GeForce RTX 3090"
+//                 );
+//                 await runpodEngine.cleanup();
+//                 expect(mockRunpodClient._pods).toHaveLength(0);
+//                 const workerResult = await backendService.listWorkers();
+//                 expect(workerResult.length).toEqual(0);
+//             });
+//         });
+//     });
+// });

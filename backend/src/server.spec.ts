@@ -14,8 +14,7 @@ import {
     CreateImageInput,
     UpdateImageInput,
     LoginResult,
-    UpdateImageInputStatusEnum,
-    CreateServiceAccountInputTypeEnum,
+    StatusEnum,
     Worker,
     WorkerStatusEnum,
     ImageUrls,
@@ -39,13 +38,6 @@ async function authenticateUser(backendService: BackendService, httpClient: Axio
     // add the access token to the http client
     httpClient.defaults.headers['Authorization'] = `Bearer ${verifyResponse.accessToken}`
     return verifyResponse
-}
-
-async function authenticateWorker(backendService: BackendService, httpClient: AxiosInstance, worker: Worker): Promise<Authentication> {
-    const code = await backendService.generateWorkerLoginCode(worker.id);
-    const authResult = await backendService.loginAsWorker(code.login_code);
-    httpClient.defaults.headers['Authorization'] = `Bearer ${authResult.accessToken}`;
-    return authResult;
 }
 
 async function refreshUser(client: AIBrushApi, httpClient: AxiosInstance, refreshToken: string) {
@@ -276,8 +268,6 @@ describe("server", () => {
 
         beforeEach(async () => {
             verifyResult = await authenticateUser(backendService, httpClient, "test@test.test")
-            worker = await backendService.createWorker("test worker");
-            worker2 = await backendService.createWorker("test worker 2");
         })
 
         describe("when listing images", () => {
@@ -312,31 +302,35 @@ describe("server", () => {
 
             beforeEach(async () => {
                 const response = await client.createImage({
-                    phrases: ["test"],
-                    negative_phrases: ["foobar"],
+                    params: {
+                        prompt: "test",
+                        negative_prompt: "foobar",
+                        steps: 1,
+                        width: 512,
+                        height: 512,
+                    },
                     label: "test",
-                    width: 512,
-                    height: 512,
-                    iterations: 1,
                     parent: "",
+                    model: "stable_diffusion",
+                    count: 1,
                 })
                 image = response.data.images[0]
             })
 
             it("should return the image", () => {
                 expect(image.id).toBeDefined()
-                expect(image.phrases).toEqual(["test"])
-                expect(image.negative_phrases).toEqual(["foobar"])
+                expect(image.params.prompt).toBe("test")
+                expect(image.params.negative_prompt).toBe("foobar")
                 expect(image.label).toBe("test")
-                expect(image.iterations).toBe(1)
+                expect(image.params.steps).toBe(1)
                 expect(image.parent).toBe("")
-                expect(image.enable_video).toBe(false)
-                expect(image.enable_zoom).toBe(false)
                 expect(image.model).toBe("stable_diffusion")
-                expect(image.glid_3_xl_skip_iterations).toBe(0)
-                expect(image.glid_3_xl_clip_guidance).toBe(false)
-                expect(image.glid_3_xl_clip_guidance_scale).toBe(150)
-                expect(image.stable_diffusion_strength).toBe(0.75)
+
+                // check legacy fields
+                const legacyImage = image as any;
+                expect(legacyImage.phrases).toEqual(["test"])
+                expect(legacyImage.negative_phrases).toEqual(["foobar"])
+                expect(legacyImage.iterations).toBe(1)
             })
 
             describe("when checking the horde queue", () => {
@@ -365,13 +359,12 @@ describe("server", () => {
                 it("should return the image", () => {
                     expect(images.images).toHaveLength(1)
                     expect(images.images[0].id).toBe(image.id)
-                    expect(images.images[0].phrases).toEqual(["test"])
-                    expect(images.images[0].negative_phrases).toEqual(["foobar"])
+                    expect(images.images[0].params.prompt).toBe("test")
+                    expect(images.images[0].params.negative_prompt).toBe("foobar")
                     expect(images.images[0].label).toBe("test")
-                    expect(images.images[0].iterations).toBe(1)
+                    expect(images.images[0].params.steps).toBe(1)
                     expect(images.images[0].parent).toBe("")
-                    expect(images.images[0].current_iterations).toBe(0)
-                    expect(images.images[0].status).toBe(UpdateImageInputStatusEnum.Pending)
+                    expect(images.images[0].status).toBe(StatusEnum.Pending)
                 })
             })
 
@@ -384,14 +377,22 @@ describe("server", () => {
                 })
 
                 it("should return the image", () => {
+                    // expect(img.id).toBeDefined()
+                    // expect(img.phrases).toEqual(["test"])
+                    // expect(img.negative_phrases).toEqual(["foobar"])
+                    // expect(img.label).toBe("test")
+                    // expect(img.iterations).toBe(1)
+                    // expect(img.parent).toBe("")
+                    // expect(img.current_iterations).toBe(0)
+                    // expect(img.status).toBe(StatusEnum.Pending)
+
                     expect(img.id).toBeDefined()
-                    expect(img.phrases).toEqual(["test"])
-                    expect(img.negative_phrases).toEqual(["foobar"])
+                    expect(img.params.prompt).toBe("test")
+                    expect(img.params.negative_prompt).toBe("foobar")
                     expect(img.label).toBe("test")
-                    expect(img.iterations).toBe(1)
+                    expect(img.params.steps).toBe(1)
                     expect(img.parent).toBe("")
-                    expect(img.current_iterations).toBe(0)
-                    expect(img.status).toBe(UpdateImageInputStatusEnum.Pending)
+
                 })
             })
 
@@ -433,44 +434,6 @@ describe("server", () => {
                 });
             })
 
-            describe("when getting image upload urls as a service account", () => {
-                // it should fail with 404
-                beforeEach(async () => {
-                    await authenticateWorker(backendService, httpClient2, worker);
-                });
-
-                it("should fail", async () => {
-                    await expect(client2.getImageUploadUrls(image.id)).rejects.toThrow(/404/)
-                });
-            })
-
-            describe("when getting the image with a service account", () => {
-                let img: Image;
-
-                beforeEach(async () => {
-                    // authenticate as service account
-                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
-                    await authenticateWorker(backendService, httpClient2, worker)
-                })
-
-                beforeEach(async () => {
-                    const response = await client2.getImage(image.id)
-                    img = response.data
-                })
-
-            
-                it("should return the image", () => {
-                    expect(img.id).toBeDefined()
-                    expect(img.phrases).toEqual(["test"])
-                    expect(img.negative_phrases).toEqual(["foobar"])
-                    expect(img.label).toBe("test")
-                    expect(img.iterations).toBe(1)
-                    expect(img.parent).toBe("")
-                    expect(img.current_iterations).toBe(0)
-                    expect(img.status).toBe(UpdateImageInputStatusEnum.Pending)
-                })
-            })
-
             describe("when getting the image by id with another user", () => {
 
                 beforeEach(async () => {
@@ -496,19 +459,17 @@ describe("server", () => {
                 beforeEach(async () => {
                     const response = await client.updateImage(image.id, {
                         label: "test2",
-                        current_iterations: 1,
-                        status: UpdateImageInputStatusEnum.Processing,
-                    })
-                    updatedImage = response.data
-                })
+                        status: StatusEnum.Processing,
+                    });
+                    updatedImage = response.data;
+                });
 
                 it("should return the updated image", () => {
-                    expect(updatedImage.id).toBe(image.id)
-                    expect(updatedImage.label).toBe("test2")
-                    expect(updatedImage.iterations).toBe(1)
-                    expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Processing)
-                    expect(updatedImage.current_iterations).toBe(1)
-                })
+                    expect(updatedImage.id).toBe(image.id);
+                    expect(updatedImage.label).toBe("test2");
+                    expect(updatedImage.params.steps).toBe(1);
+                    expect(updatedImage.status).toBe(StatusEnum.Processing);
+                });
 
                 describe("when listing images", () => {
                     let images: ImageList;
@@ -522,10 +483,9 @@ describe("server", () => {
                         expect(images.images).toHaveLength(1)
                         expect(images.images[0].id).toBe(image.id)
                         expect(images.images[0].label).toBe("test2")
-                        expect(images.images[0].iterations).toBe(1)
+                        expect(images.images[0].params.steps).toBe(1)
                         expect(images.images[0].parent).toBe("")
-                        expect(images.images[0].current_iterations).toBe(1)
-                        expect(images.images[0].status).toBe(UpdateImageInputStatusEnum.Processing)
+                        expect(images.images[0].status).toBe(StatusEnum.Processing)
                     })
                 })
             })
@@ -537,7 +497,7 @@ describe("server", () => {
 
                 beforeEach(async () => {
                     const response = await client.updateImage(image.id, {
-                        status: UpdateImageInputStatusEnum.Error,
+                        status: StatusEnum.Error,
                         error: "test error",
                     })
                     updatedImage = response.data
@@ -545,7 +505,7 @@ describe("server", () => {
 
                 it("should return the updated image", () => {
                     expect(updatedImage.id).toBe(image.id)
-                    expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Error)
+                    expect(updatedImage.status).toBe(StatusEnum.Error)
                     expect(updatedImage.error).toBe("test error")
                 });
             })
@@ -566,8 +526,7 @@ describe("server", () => {
                 it("should reject the call with not found", async () => {
                     await expect(client.updateImage("does-not-exist", {
                         label: "test2",
-                        current_iterations: 1,
-                        status: UpdateImageInputStatusEnum.Processing
+                        status: StatusEnum.Processing
                     })).rejects.toThrow(/Request failed with status code 404/)
                 })
             })
@@ -613,11 +572,15 @@ describe("server", () => {
                     beforeEach(async () => {
                         const response = await client.createImage({
                             parent: image.id,
-                            phrases: ["test2"],
+                            params: {
+                                prompt: "test2",
+                                width: 512,
+                                height: 512,
+                                steps: 1,
+                            },
                             label: "test2",
-                            width: 512,
-                            height: 512,
-                            iterations: 1,
+                            model: "stable_diffusion",
+                            count: 1,
                         })
                         childImage = response.data.images[0]
                     })
@@ -675,19 +638,6 @@ describe("server", () => {
 
             })
 
-            describe("when listing images as a service account", () => {
-
-                beforeEach(async () => {
-                    // authenticate the service account
-                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
-                    await authenticateWorker(backendService, httpClient2, worker);
-                })
-
-                it("should reject the request with forbidden error", async () => {
-                    await expect(client2.listImages()).rejects.toThrow(/Request failed with status code 403/)
-                });
-            })
-
             describe("when updating an image belonging to a different user", () => {
 
                 beforeEach(async () => {
@@ -698,190 +648,8 @@ describe("server", () => {
                 it("should reject the request with not found error", async () => {
                     await expect(client2.updateImage(image.id, {
                         label: "test2",
-                        current_iterations: 1,
-                        status: UpdateImageInputStatusEnum.Processing
+                        status: StatusEnum.Processing
                     })).rejects.toThrow(/Request failed with status code 404/)
-                })
-            })
-
-            describe("when updating a pending image with a service account", () => {
-                // should fail with not found
-                beforeEach(async () => {
-                    // authenticate as service account
-                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
-                    await authenticateWorker(backendService, httpClient2, worker);
-                })
-
-                it("should reject the request with not found error", async () => {
-                    await expect(client2.updateImage(image.id, {
-                        label: "test2",
-                        current_iterations: 1,
-                        status: UpdateImageInputStatusEnum.Processing
-                    })).rejects.toThrow(/Request failed with status code 404/)
-                });
-            })
-
-            describe("when processing an image as a service account", () => {
-                let processingImage: Image;
-
-                beforeEach(async () => {
-                    // authenticate as service account
-                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
-                    await authenticateWorker(backendService, httpClient2, worker);
-                })
-
-                beforeEach(async () => {
-                    // process the image
-                    const response = await client2.processImage()
-                    processingImage = response.data
-                })
-
-                it("should return the image with status=processing", () => {
-                    expect(processingImage.id).toBe(image.id)
-                    expect(processingImage.status).toBe(UpdateImageInputStatusEnum.Processing)
-                })
-
-                it("should update the worker to active", async () => {
-                    const updatedWorker = await backendService.getWorker(worker.id);
-                    expect(updatedWorker.status).toBe(WorkerStatusEnum.Active);
-                });
-
-                describe("when updating a processing image with the wrong service account", () => {
-                    beforeEach(async () => {
-                        // authenticate as second service account
-                        await authenticateWorker(backendService, httpClient2, worker2);
-                    });
-
-                    it("should reject the request with not found error", async () => {
-                        await expect(client2.updateImage(image.id, {
-                            label: "test2",
-                            current_iterations: 1,
-                            status: UpdateImageInputStatusEnum.Processing
-                        })).rejects.toThrow(/Request failed with status code 404/)
-                    });
-                })
-
-                describe("when getting image upload urls after processing", () => {
-                    let uploadUrls: ImageUrls;
-
-                    beforeEach(async () => {
-                        const response = await client2.getImageUploadUrls(processingImage.id)
-                        uploadUrls = response.data
-                    })
-
-                    it("should return the upload urls", () => {
-                        expect(uploadUrls).toBeDefined()
-                    })
-                });
-
-                describe("when processing again with no pending images", () => {
-                    beforeEach(async () => {
-                        // process the image
-                        const response = await client2.processImage()
-                        processingImage = response.data
-                    })
-
-                    it("should return null", () => {
-                        expect(processingImage).toBeNull()
-                    })
-
-                    it("should update the worker to idle", async () => {
-                        const updatedWorker = await backendService.getWorker(worker.id);
-                        expect(updatedWorker.status).toBe(WorkerStatusEnum.Idle);
-                    });
-
-                })
-
-                describe("when updating a processing image to completed with a service account", () => {
-
-                    let updatedImage: Image;
-
-                    beforeEach(async () => {
-                        // authenticate service account
-                        // await authenticateUser(backendService, httpClient2, "service-account@test.test")
-                        await authenticateWorker(backendService, httpClient2, worker);
-                    })
-
-                    beforeEach(async () => {
-                        // update the image
-                        const response = await client2.updateImage(image.id, {
-                            label: "test2",
-                            current_iterations: 1,
-                            status: UpdateImageInputStatusEnum.Completed
-                        })
-                        updatedImage = response.data
-                    })
-
-                    it("should update the image", async () => {
-                        expect(updatedImage.id).toBe(image.id)
-                        expect(updatedImage.label).toBe("test2")
-                        expect(updatedImage.iterations).toBe(1)
-                        expect(updatedImage.status).toBe(UpdateImageInputStatusEnum.Completed)
-                        expect(updatedImage.current_iterations).toBe(1)
-                    })
-
-                    describe("when updating the image again as a service account", () => {
-                        // it will fail with not found
-                        it("should reject the request with not found error", async () => {
-                            await expect(client2.updateImage(image.id, {
-                                label: "test2",
-                                current_iterations: 1,
-                                status: UpdateImageInputStatusEnum.Completed
-                            })).rejects.toThrow(/Request failed with status code 404/)
-                        });
-                    })
-
-                    describe("when getting image upload urls as a service account", () => {
-                        // fails with 404
-                        it("should reject the request with not found error", async () => {
-                            await expect(client2.getImageUploadUrls(image.id)).rejects.toThrow(/Request failed with status code 404/)
-                        });
-                    })
-                })
-            })
-
-            describe("when processing an image with peek=true", () => {
-                let processingImage: Image;
-
-                beforeEach(async () => {
-                    // authenticate as service account
-                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
-                    await authenticateWorker(backendService, httpClient2, worker);
-                })
-
-                beforeEach(async () => {
-                    // process the image
-                    const response = await client2.processImage({
-                        peek: true,
-                    })
-                    processingImage = response.data
-                })
-
-                it("should return the image with status=pending", () => {
-                    expect(processingImage.id).toBe(image.id)
-                    expect(processingImage.status).toBe(UpdateImageInputStatusEnum.Pending)
-                })
-            })
-
-            describe("when processing an image with different model arg", () => {
-                let processingImage: Image;
-
-                beforeEach(async () => {
-                    // authenticate as service account
-                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
-                    await authenticateWorker(backendService, httpClient2, worker);
-                })
-
-                beforeEach(async () => {
-                    // process the image
-                    const response = await client2.processImage({
-                        include_models: ["swinir"]
-                    })
-                    processingImage = response.data
-                })
-
-                it("should return the null", () => {
-                    expect(processingImage).toBeNull();
                 })
             })
 
@@ -942,18 +710,6 @@ describe("server", () => {
                 })
             })
 
-            describe("when deleting an image with a service account", () => {
-                beforeEach(async () => {
-                    // authenticate as service account
-                    // await authenticateUser(backendService, httpClient2, "service-account@test.test")
-                    await authenticateWorker(backendService, httpClient2, worker);
-                })
-
-                it("should reject the request with forbidden error", async () => {
-                    await expect(client2.deleteImage(image.id)).rejects.toThrow(/Request failed with status code 403/)
-                })
-            })
-
             describe("when deleting an image that doesn't exist", () => {
                 it("should reject the request with not found error", async () => {
                     await expect(client.deleteImage("does-not-exist")).rejects.toThrow(/Request failed with status code 404/)
@@ -961,21 +717,67 @@ describe("server", () => {
             })
         })
 
+        describe("when creating an image with legacy parameters", () => {
+            let image: Image;
+
+            beforeEach(async () => {
+                const response = await client.createImage({
+                    label: "test",
+                    parent: "",
+                    model: "stable_diffusion",
+                    count: 1,
+                    phrases: ["test"],
+                    negative_phrases: ["foobar"],
+                    iterations: 1,
+                    width: 768,
+                    height: 768,
+                    stable_diffusion_strength: 0.5,
+                } as any)
+                image = response.data.images[0]
+            })
+
+            it("should return the image", () => {
+                expect(image.id).toBeDefined()
+                expect(image.params.prompt).toBe("test")
+                expect(image.params.negative_prompt).toBe("foobar")
+                expect(image.label).toBe("test")
+                expect(image.params.steps).toBe(1)
+                expect(image.parent).toBe("")
+                expect(image.model).toBe("stable_diffusion")
+
+                // check legacy fields
+                const legacyImage = image as any;
+                expect(legacyImage.phrases).toEqual(["test"])
+                expect(legacyImage.negative_phrases).toEqual(["foobar"])
+                expect(legacyImage.iterations).toBe(1)
+                expect(legacyImage.stable_diffusion_strength).toBe(0.5)
+                expect(legacyImage.width).toBe(768)
+                expect(legacyImage.height).toBe(768)
+            })
+
+        });
+
         describe("when creating too many images", () => {
             it("should reject the request with too many requests error", async () => {
                 await client.createImage({
                     label: "test",
-                    iterations: 1,
-                    status: UpdateImageInputStatusEnum.Pending,
+                    params: {
+                        steps: 1,
+                        prompt: "test",
+                    },
+                    status: StatusEnum.Pending,
                     count: 10,
-                    phrases: ["test"],
+                    model: "stable_diffusion"
                 })
                 await expect(client.createImage({
                     label: "test",
-                    iterations: 1,
-                    status: UpdateImageInputStatusEnum.Pending,
+                    params: {
+                        steps: 1,
+                        prompt: "test",
+                    },
+                    status: StatusEnum.Pending,
                     count: 1,
-                    phrases: ["test"],
+                    model: "stable_diffusion"
                 })).rejects.toThrow(/Request failed with status code 429/)
             })
         })
@@ -989,10 +791,13 @@ describe("server", () => {
                 // create image
                 const response = await client.createImage({
                     label: "test",
-                    iterations: 1,
-                    status: UpdateImageInputStatusEnum.Pending,
+                    params: {
+                        steps: 1,
+                        prompt: "test",
+                    },
+                    status: StatusEnum.Pending,
                     count: 2,
-                    phrases: ["test"],
+                    model: "stable_diffusion"
                 })
                 image1 = response.data.images[0]
                 image2 = response.data.images[1]
@@ -1056,11 +861,15 @@ describe("server", () => {
                 const base64Image = Buffer.from(imageData).toString('base64')
                 const response = await client.createImage({
                     encoded_image: base64Image,
-                    phrases: ["test"],
                     label: "test",
-                    width: 512,
-                    height: 512,
-                    iterations: 1
+                    params: {
+                        steps: 1,
+                        prompt: "test",
+                        width: 512,
+                        height: 512,
+                    },
+                    model: "stable_diffusion",
+                    count: 1,
                 })
                 image = response.data.images[0]
             })
@@ -1088,11 +897,15 @@ describe("server", () => {
                 const response = await client.createImage({
                     encoded_image: base64Image,
                     encoded_mask: base64Image,
-                    phrases: ["test"],
                     label: "test",
-                    width: 512,
-                    height: 512,
-                    iterations: 1
+                    model: "stable_diffusion",
+                    count: 1,
+                    params: {
+                        steps: 1,
+                        prompt: "test",
+                        width: 512,
+                        height: 512,
+                    },
                 })
                 image = response.data.images[0]
             })
@@ -1105,34 +918,6 @@ describe("server", () => {
             })
         }) // end of describe "when creating an image with encoded_mask"
 
-
-        describe("when creating an image with non-default glid-3 xl options", () => {
-            let image: Image;
-
-            beforeEach(async () => {
-                const response = await client.createImage({
-                    phrases: ["test"],
-                    label: "test",
-                    width: 256,
-                    height: 256,
-                    iterations: 2,
-                    parent: "",
-                    model: "glid_3_xl",
-                    glid_3_xl_clip_guidance: true,
-                    glid_3_xl_clip_guidance_scale: 300,
-                    glid_3_xl_skip_iterations: 1
-                })
-                image = response.data.images[0]
-            })
-
-            it("should return the image", () => {
-                expect(image.model).toBe("glid_3_xl")
-                expect(image.glid_3_xl_clip_guidance).toBe(true)
-                expect(image.glid_3_xl_clip_guidance_scale).toBe(300)
-                expect(image.glid_3_xl_skip_iterations).toBe(1)
-            })
-        })
-
         describe("image pagination", () => {
 
 
@@ -1144,11 +929,16 @@ describe("server", () => {
                 // create images
                 for (let i = 0; i < 10; i++) {
                     const resp = await client.createImage({
-                        phrases: ["test"],
                         label: "test",
-                        width: 512,
-                        height: 512,
-                        iterations: 1
+                        params: {
+                            steps: 1,
+                            prompt: "test",
+                            width: 512,
+                            height: 512,
+                        },
+                        status: StatusEnum.Pending,
+                        count: 1,
+                        model: "stable_diffusion"
                     })
                     images.push(resp.data.images[0])
                     await sleep(100)
@@ -1215,144 +1005,6 @@ describe("server", () => {
                 })
             })
         })
-
-        // test create service account
-        describe("when creating a new private service account", () => {
-
-            beforeEach(async () => {
-                // const creds = await client.createServiceAccount({
-                //     type: CreateServiceAccountInputTypeEnum.Private
-                // });
-                const creds = await backendService.createServiceAccountCreds("test@test.test", {
-                    type: CreateServiceAccountInputTypeEnum.Private
-                })
-                httpClient2.defaults.headers["Authorization"] = `Bearer ${creds.accessToken}`
-            })
-
-            describe("when processing images for the creator's account", () => {
-                let createResponse: AxiosResponse<ImageList>;
-                let response: AxiosResponse<Image>;
-
-                // create a new image
-                beforeEach(async () => {
-                    createResponse = await client.createImage({
-                        phrases: ["test"],
-                        label: "test",
-                        width: 512,
-                        height: 512,
-                        iterations: 1,
-                        parent: "",
-                    })
-                })
-
-                beforeEach(async () => {
-                    response = await client2.processImage();
-                })
-
-                it("should return pending images belonging to the creator", () => {
-                    expect(response.status).toBe(200);
-                    expect(response.data).not.toBeNull();
-                    expect(response.data.id).toEqual(createResponse.data.images[0].id);
-                })
-            })
-
-            describe("when processing images for a different user's account", () => {
-                let createResponse: AxiosResponse<ImageList>;
-                let response: AxiosResponse<Image>;
-
-                // create a new image
-                beforeEach(async () => {
-                    // authenticate second user
-                    await authenticateUser(backendService, httpClient, "test2@test")
-                    createResponse = await client.createImage({
-                        phrases: ["test"],
-                        label: "test",
-                        width: 512,
-                        height: 512,
-                        iterations: 1,
-                        parent: "",
-                    })
-                })
-
-                beforeEach(async () => {
-                    response = await client2.processImage();
-                })
-
-                it("should return null", () => {
-                    expect(response.status).toBe(200);
-                    expect(response.data).toBeNull();
-                })
-            })
-        })
-
-        describe("when creating a new public service account", () => {
-            beforeEach(async () => {
-                // const creds = await client.createServiceAccount({
-                //     type: CreateServiceAccountInputTypeEnum.Public
-                // });
-                const creds = await backendService.createServiceAccountCreds("test@test.test", {
-                    type: CreateServiceAccountInputTypeEnum.Public
-                })
-                httpClient2.defaults.headers["Authorization"] = `Bearer ${creds.accessToken}`
-            })
-
-            describe("when processing images for the creator's account", () => {
-                let createResponse: AxiosResponse<ImageList>;
-                let response: AxiosResponse<Image>;
-
-                // create a new image
-                beforeEach(async () => {
-                    createResponse = await client.createImage({
-                        phrases: ["test"],
-                        label: "test",
-                        width: 512,
-                        height: 512,
-                        iterations: 1,
-                        parent: "",
-                    })
-                })
-
-                beforeEach(async () => {
-                    response = await client2.processImage();
-                })
-
-                it("should return pending images belonging to the creator", () => {
-                    expect(response.status).toBe(200);
-                    expect(response.data).not.toBeNull();
-                    expect(response.data.id).toEqual(createResponse.data.images[0].id);
-                })
-            })
-
-            describe("when processing images for a different user's account", () => {
-                let createResponse: AxiosResponse<ImageList>;
-                let response: AxiosResponse<Image>;
-
-                // create a new image
-                beforeEach(async () => {
-                    // authenticate second user
-                    await authenticateUser(backendService, httpClient, "test2@test")
-                    createResponse = await client.createImage({
-                        phrases: ["test"],
-                        label: "test",
-                        width: 512,
-                        height: 512,
-                        iterations: 1,
-                        parent: "",
-                    })
-                })
-
-                beforeEach(async () => {
-                    response = await client2.processImage();
-                })
-
-                it("should return pending images belonging to the creator", () => {
-                    expect(response.status).toBe(200);
-                    expect(response.data).not.toBeNull();
-                    expect(response.data.id).toEqual(createResponse.data.images[0].id);
-                })
-            })
-
-        }) // end create service account test
 
         // is admin tests
         describe("when an admin user checks if they are an admin", () => {

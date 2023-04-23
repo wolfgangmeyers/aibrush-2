@@ -153,40 +153,45 @@ describe("boosts", () => {
             });
         });
 
-        describe("deactivating boost after deposit", () => {
+        describe("listing boosts as an admin", () => {
+            let boostResult: AxiosResponse<BoostList>;
+    
+            beforeEach(async () => {
+                boostResult = await adminSession.client.listBoosts();
+            });
+    
+            it("Should return a list of no active boosts", () => {
+                expect(boostResult.data.boosts.length).toBe(0); // not active
+            });
+        })
+
+        describe("activating boost", () => {
             let updateBoostResult: AxiosResponse<UpdateBoostResponse>;
 
             beforeEach(async () => {
                 updateBoostResult = await session.client.updateBoost({
                     level: 1,
-                    is_active: false,
+                    is_active: true,
                 });
             });
 
-            it("Should return a boost level of 1, non-active and balance of 10000", () => {
+            it("Should return a boost level of 1 and balance of 10000", () => {
+                expect(updateBoostResult.data.balance).toBe(10000);
                 expect(updateBoostResult.data.level).toBe(1);
-                expect(updateBoostResult.data.is_active).toBe(false);
-                // balance should be > 9900, some balance is consumed
-                // by time that the boost was active
-                expect(updateBoostResult.data.balance).toBeGreaterThan(9900);
             });
 
-            describe("re-activating boost before cooldown", () => {
-                let updateBoostResult: AxiosResponse<UpdateBoostResponse>;
-
+            describe("getting current boost for affected user", () => {
+                let boostResult: AxiosResponse<Boost>;
+    
                 beforeEach(async () => {
-                    updateBoostResult = await session.client.updateBoost({
-                        level: 1,
-                        is_active: true,
-                    });
+                    boostResult = await session.client.getBoost();
                 });
-
-                it("Should return error 'Cannot activate boost before cooldown'", () => {
-                    expect(updateBoostResult.data.error).toBe(
-                        "Cannot activate boost yet"
-                    );
+    
+                it("Should return a boost level of 1 and balance of 10000", () => {
+                    expect(boostResult.data.balance).toBe(10000);
+                    expect(boostResult.data.level).toBe(1);
                 });
-            })
+            });
 
             describe("listing boosts as an admin", () => {
                 let boostResult: AxiosResponse<BoostList>;
@@ -195,23 +200,11 @@ describe("boosts", () => {
                     boostResult = await adminSession.client.listBoosts();
                 });
         
-                it("Should return a list of boosts", () => {
-                    expect(boostResult.data.boosts.length).toBe(0);
+                it("Should return a list of active boosts", () => {
+                    expect(boostResult.data.boosts.length).toBe(1); // active
                 });
             })
-        })
-
-        describe("listing boosts as an admin", () => {
-            let boostResult: AxiosResponse<BoostList>;
-    
-            beforeEach(async () => {
-                boostResult = await adminSession.client.listBoosts();
-            });
-    
-            it("Should return a list of boosts", () => {
-                expect(boostResult.data.boosts.length).toBe(1);
-            });
-        })
+        });
     });
 
     describe("depositing boost as a non-admin", () => {
