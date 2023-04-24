@@ -10,9 +10,8 @@ import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
 import {
     CreateImageInput,
-    ImageStatusEnum,
+    StatusEnum,
     Boost,
-    CreateImageInputStatusEnum,
 } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
@@ -156,22 +155,22 @@ export const Homepage: FC<Props> = ({
                 created_at: moment().valueOf(),
                 updated_at: moment().valueOf(),
                 created_by: "",
-                current_iterations: 20,
-                iterations: 20,
-                width: input.width as any,
-                height: input.height as any,
+                params: {
+                    steps: 20,
+                    width: input.params.width,
+                    height: input.params.height,
+                    prompt: input.params.prompt,
+                    negative_prompt: input.params.negative_prompt,
+                    denoising_strength: input.params.denoising_strength,
+                },
                 label: "",
-                enable_video: false,
                 id: uuid.v4(),
                 model: input.model!,
-                negative_phrases: input.negative_phrases!,
                 negative_score: 0,
                 nsfw: !!input.nsfw,
                 parent: input.parent!,
-                phrases: input.phrases!,
                 score: 0,
-                stable_diffusion_strength: input.stable_diffusion_strength!,
-                status: ImageStatusEnum.Completed,
+                status: StatusEnum.Completed,
                 temporary: false,
                 imageData: `data:image/png;base64,${encodedImage}`,
             };
@@ -268,7 +267,7 @@ export const Homepage: FC<Props> = ({
                     acc[image.id] = image.status;
                     return acc;
                 },
-                {} as Record<string, ImageStatusEnum>
+                {} as Record<string, StatusEnum>
             );
 
             try {
@@ -285,7 +284,7 @@ export const Homepage: FC<Props> = ({
                             statusChange = true;
                         }
 
-                        if (img.status == ImageStatusEnum.Error) {
+                        if (img.status == StatusEnum.Error) {
                             onError(
                                 img.error ||
                                     "Some images failed to generate, please make sure your prompt doesn't violate our terms of service"
@@ -295,7 +294,7 @@ export const Homepage: FC<Props> = ({
                             continue;
                         }
 
-                        if (img.status === ImageStatusEnum.Completed) {
+                        if (img.status === StatusEnum.Completed) {
                             const downloadUrls = await api.getImageDownloadUrls(
                                 img.id
                             );
@@ -405,8 +404,8 @@ export const Homepage: FC<Props> = ({
 
     const isPendingOrProcessing = (image: LocalImage) => {
         return (
-            image.status === ImageStatusEnum.Pending ||
-            image.status === ImageStatusEnum.Processing
+            image.status === StatusEnum.Pending ||
+            image.status === StatusEnum.Processing
         );
     };
 
@@ -421,19 +420,19 @@ export const Homepage: FC<Props> = ({
         // otherwise, sort by updated_at
         if (
             a.parent === b.parent &&
-            a.phrases.join("|") == b.phrases.join("|") &&
-            a.status !== ImageStatusEnum.Pending &&
-            b.status !== ImageStatusEnum.Pending
+            a.params.prompt == b.params.prompt &&
+            a.status !== StatusEnum.Pending &&
+            b.status !== StatusEnum.Pending
         ) {
             // if the score is the same, sort by updated_at
             let aScore = a.score;
             let bScore = b.score;
             // working around a bug where negative score was assigned
             // for an empty negative prompt.
-            if (a.phrases.join("").trim() !== "") {
+            if (a.params.prompt!.trim() !== "") {
                 aScore = aScore - a.negative_score;
             }
-            if (b.phrases.join("").trim() !== "") {
+            if (b.params.prompt!.trim() !== "") {
                 bScore = bScore - b.negative_score;
             }
             if (aScore == bScore) {
@@ -498,14 +497,10 @@ export const Homepage: FC<Props> = ({
             const createInput: CreateImageInput = {
                 count: 1,
                 encoded_image: image.imageData!.split(",")[1],
-                phrases: image.phrases,
-                negative_phrases: image.negative_phrases,
-                status: CreateImageInputStatusEnum.Saved,
-                height: image.height as any,
-                width: image.width as any,
+                params: image.params,
+                status: StatusEnum.Saved,
                 temporary: false,
                 label: "",
-                iterations: image.iterations,
                 model: image.model,
             };
             setUploadingProgress(0);
@@ -576,24 +571,24 @@ export const Homepage: FC<Props> = ({
     const completedOrSavedImages = images.filter((image) => {
         return (
             !image.deleted_at &&
-            (image.status === ImageStatusEnum.Completed ||
-                image.status === ImageStatusEnum.Saved)
+            (image.status === StatusEnum.Completed ||
+                image.status === StatusEnum.Saved)
         );
     });
 
     const pendingOrProcessingImages = images.filter(
         (image) =>
             !image.deleted_at &&
-            (image.status === ImageStatusEnum.Pending ||
-                image.status === ImageStatusEnum.Processing)
+            (image.status === StatusEnum.Pending ||
+                image.status === StatusEnum.Processing)
     );
 
     const pendingImages = pendingOrProcessingImages.filter(
-        (image) => image.status === ImageStatusEnum.Pending
+        (image) => image.status === StatusEnum.Pending
     );
 
     const processingImages = pendingOrProcessingImages.filter(
-        (image) => image.status === ImageStatusEnum.Processing
+        (image) => image.status === StatusEnum.Processing
     );
 
     const onUpdateBoostActive = async (active: boolean) => {

@@ -49,6 +49,22 @@ export class LocalImagesStore {
         });
     }
 
+    // migrate old images to new format
+    private hydrateImage(image: LocalImage): LocalImage {
+        if (!image.params) {
+            const legacyImage = image as any;
+            image.params = {
+                prompt: legacyImage.phrases.join(", "),
+                negative_prompt: legacyImage.negative_phrases.join(", "),
+                width: legacyImage.width,
+                height: legacyImage.height,
+                denoising_strength: legacyImage.stable_diffusion_strength,
+                steps: legacyImage.iterations,
+            }
+        }
+        return image;
+    }
+
     async getImage(id: string): Promise<LocalImage | null> {
         if (!this.db) {
             throw new Error("not initialized");
@@ -58,7 +74,7 @@ export class LocalImagesStore {
         const request = store.get(id);
         return new Promise((resolve, reject) => {
             request.onsuccess = (evt) => {
-                resolve(request.result);
+                resolve(this.hydrateImage(request.result));
             };
             request.onerror = (evt) => {
                 console.error("error getting image", evt);
@@ -162,13 +178,13 @@ export class LocalImagesStore {
             request.onsuccess = (evt) => {
                 const cursor = request.result;
                 if (cursor) {
-                    const image: LocalImage = cursor.value;
-                    const prompt = image.phrases.join(", ");
+                    const image: LocalImage = this.hydrateImage(cursor.value);
+                    const prompt = (image.params.prompt || "").toLowerCase();
                     if (
                         !image.deleted_at &&
-                        (!search || prompt.includes(search))
+                        (!search || prompt.includes(search.toLowerCase()))
                     ) {
-                        images.push(cursor.value);
+                        images.push(image);
                     }
                     if (images.length < count) {
                         cursor.continue();

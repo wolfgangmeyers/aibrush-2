@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useRef, useState } from "react";
 import { Modal } from "react-bootstrap";
-import { CreateImageInput, Image, ImageStatusEnum } from "../client/api";
+import { CreateImageInput, Image, StatusEnum } from "../client/api";
 import { LocalImage } from "../lib/localImagesStore";
 import { getUpscaleLevel } from "../lib/upscale";
 
@@ -34,7 +34,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     }
     let score = image.score;
     if (
-        image.negative_phrases.join("").trim() !== "" &&
+        image.params.negative_prompt &&
         image.negative_score != 0
     ) {
         score -= image.negative_score;
@@ -45,19 +45,19 @@ export const ImagePopup: FC<ImagePopupProps> = ({
         const displayStatus = status.charAt(0).toUpperCase() + status.slice(1);
         let icon = "fa fa-question-circle";
         switch (status) {
-            case ImageStatusEnum.Pending:
+            case StatusEnum.Pending:
                 icon = "fas fa-hourglass-half";
                 break;
-            case ImageStatusEnum.Processing:
+            case StatusEnum.Processing:
                 icon = "fas fa-cog fa-spin";
                 break;
-            case ImageStatusEnum.Completed:
+            case StatusEnum.Completed:
                 icon = "fas fa-check";
                 break;
-            case ImageStatusEnum.Saved:
+            case StatusEnum.Saved:
                 icon = "fas fa-save";
                 break;
-            case ImageStatusEnum.Error:
+            case StatusEnum.Error:
                 icon = "fas fa-exclamation-circle";
                 break;
         }
@@ -92,10 +92,8 @@ export const ImagePopup: FC<ImagePopupProps> = ({
 
     let title = image.label;
     if (!title) {
-        title = image.phrases[0];
+        title = image.params.prompt!;
     }
-
-    const upscaleLevel = getUpscaleLevel(image.width!, image.height!);
 
     // if open, show modal with image
     return (
@@ -132,9 +130,9 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                             {statusBadge(image.status)}
                             <div style={{ float: "right" }}>
                                 {onFork &&
-                                    (image.status === ImageStatusEnum.Saved ||
+                                    (image.status === StatusEnum.Saved ||
                                         image.status ===
-                                            ImageStatusEnum.Completed) && (
+                                            StatusEnum.Completed) && (
                                         <button
                                             className="btn btn-secondary btn-sm image-popup-button"
                                             onClick={() => onFork(image)}
@@ -198,7 +196,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                 %
                             </div> */}
                             <div>
-                                Image dimensions: {image.width} x {image.height}
+                                Image dimensions: {image.params.width} x {image.params.height}
                             </div>
                             <div>
                                 Model: {image.model}

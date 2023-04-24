@@ -9,7 +9,6 @@ import { getConfig } from "./config";
 import { Login } from "./pages/Login";
 import { TokenRefresher } from "./components/TokenRefresher";
 import { Healthchecker } from "./components/Healthchecker";
-import { WorkerConfigPage } from "./pages/WorkerConfig";
 import { Admin } from "./pages/admin/Admin";
 import { ImageEditor } from "./pages/image-editor/ImageEditor";
 import { DeletedImages } from "./pages/DeletedImages";
@@ -231,9 +230,6 @@ function App() {
                                     assetsUrl={assetsUrl}
                                     localImages={localImages}
                                 />
-                            </Route>
-                            <Route path="/worker-config">
-                                <WorkerConfigPage api={client} />
                             </Route>
                             <Route path="/deleted-images">
                                 <DeletedImages

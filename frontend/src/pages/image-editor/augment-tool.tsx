@@ -9,9 +9,9 @@ import { sleep } from "../../lib/sleep";
 import {
     AIBrushApi,
     CreateImageInput,
-    CreateImageInputAugmentationEnum,
+    ImageParamsAugmentationEnum,
     Image as APIImage,
-    ImageStatusEnum,
+    StatusEnum,
 } from "../../client";
 import { Renderer } from "./renderer";
 import { BaseTool, Tool } from "./tool";
@@ -71,27 +71,27 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
         const input: CreateImageInput = defaultArgs();
         input.label = "";
         input.encoded_image = encodedImage;
-        input.phrases = image.phrases;
-        input.negative_phrases = image.negative_phrases;
-        input.stable_diffusion_strength = 0.05;
+        input.params.prompt = image.params.prompt;
+        input.params.negative_prompt = image.params.negative_prompt;
+        input.params.denoising_strength = 0.05;
         input.count = 1;
         input.model = "stable_diffusion";
         input.nsfw = true;
         input.temporary = true;
-        input.width = imageData.width;
-        input.height = imageData.height;
-        input.augmentation =
+        input.params.width = imageData.width;
+        input.params.height = imageData.height;
+        input.params.augmentation =
             augmentation === "upscale"
-                ? CreateImageInputAugmentationEnum.Upscale
-                : CreateImageInputAugmentationEnum.FaceRestore;
+                ? ImageParamsAugmentationEnum.Upscale
+                : ImageParamsAugmentationEnum.FaceRestore;
 
         const createResp = await api.createImage(input);
         let processingImage = createResp.data.images![0];
-        while (processingImage.status !== ImageStatusEnum.Completed) {
+        while (processingImage.status !== StatusEnum.Completed) {
             await sleep(2000);
             const checkResp = await api.getImage(processingImage.id);
             processingImage = checkResp.data;
-            if (processingImage.status === ImageStatusEnum.Error) {
+            if (processingImage.status === StatusEnum.Error) {
                 throw new Error("Augmentation failed");
             }
         }

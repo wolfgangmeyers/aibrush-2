@@ -159,34 +159,16 @@ export interface BoostList {
 export interface CreateImageInput {
     /**
      * 
-     * @type {string}
+     * @type {StatusEnum}
      * @memberof CreateImageInput
      */
-    status?: CreateImageInputStatusEnum;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof CreateImageInput
-     */
-    phrases?: Array<string>;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof CreateImageInput
-     */
-    negative_phrases?: Array<string>;
+    status?: StatusEnum;
     /**
      * 
      * @type {string}
      * @memberof CreateImageInput
      */
     label?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    iterations?: number;
     /**
      * 
      * @type {string}
@@ -213,100 +195,22 @@ export interface CreateImageInput {
     encoded_npy?: string;
     /**
      * 
-     * @type {boolean}
-     * @memberof CreateImageInput
-     */
-    enable_video?: boolean;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof CreateImageInput
-     */
-    enable_zoom?: boolean;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    zoom_frequency?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    zoom_scale?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    zoom_shift_x?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    zoom_shift_y?: number;
-    /**
-     * 
      * @type {string}
      * @memberof CreateImageInput
      */
-    model?: string;
+    model: string;
+    /**
+     * 
+     * @type {ImageParams}
+     * @memberof CreateImageInput
+     */
+    params: ImageParams;
     /**
      * 
      * @type {number}
      * @memberof CreateImageInput
      */
-    glid_3_xl_skip_iterations?: number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof CreateImageInput
-     */
-    glid_3_xl_clip_guidance?: boolean;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    glid_3_xl_clip_guidance_scale?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    height?: CreateImageInputHeightEnum;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    width?: CreateImageInputWidthEnum;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    uncrop_offset_x?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    uncrop_offset_y?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    stable_diffusion_strength?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateImageInput
-     */
-    count?: number;
+    count: number;
     /**
      * 
      * @type {boolean}
@@ -319,108 +223,7 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     temporary?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateImageInput
-     */
-    augmentation?: CreateImageInputAugmentationEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateImageInput
-     */
-    controlnet_type?: CreateImageInputControlnetTypeEnum;
 }
-
-/**
-    * @export
-    * @enum {string}
-    */
-export enum CreateImageInputStatusEnum {
-    Pending = 'pending',
-    Processing = 'processing',
-    Ranking = 'ranking',
-    Completed = 'completed',
-    Saved = 'saved',
-    Error = 'error'
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum CreateImageInputHeightEnum {
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896,
-    NUMBER_1024 = 1024
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum CreateImageInputWidthEnum {
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896,
-    NUMBER_1024 = 1024
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum CreateImageInputAugmentationEnum {
-    FaceRestore = 'face_restore',
-    RemoveBackground = 'remove_background',
-    Upscale = 'upscale'
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum CreateImageInputControlnetTypeEnum {
-    Canny = 'canny',
-    Hed = 'hed',
-    Depth = 'depth',
-    Normal = 'normal',
-    Openpose = 'openpose',
-    Seg = 'seg',
-    Scribble = 'scribble',
-    Fakescribbles = 'fakescribbles',
-    Hough = 'hough'
-}
-
-/**
- * 
- * @export
- * @interface CreateServiceAccountInput
- */
-export interface CreateServiceAccountInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateServiceAccountInput
-     */
-    type?: CreateServiceAccountInputTypeEnum;
-}
-
-/**
-    * @export
-    * @enum {string}
-    */
-export enum CreateServiceAccountInputTypeEnum {
-    Public = 'public',
-    Private = 'private'
-}
-
 /**
  * 
  * @export
@@ -545,16 +348,10 @@ export interface Image {
     updated_at: number;
     /**
      * 
-     * @type {Array<string>}
+     * @type {ImageParams}
      * @memberof Image
      */
-    phrases: Array<string>;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof Image
-     */
-    negative_phrases: Array<string>;
+    params: ImageParams;
     /**
      * 
      * @type {string}
@@ -572,18 +369,6 @@ export interface Image {
      * @type {number}
      * @memberof Image
      */
-    iterations: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    current_iterations: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
     score: number;
     /**
      * 
@@ -593,100 +378,16 @@ export interface Image {
     negative_score: number;
     /**
      * 
-     * @type {string}
+     * @type {StatusEnum}
      * @memberof Image
      */
-    status: ImageStatusEnum;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof Image
-     */
-    enable_video: boolean;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof Image
-     */
-    enable_zoom?: boolean;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    zoom_frequency?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    zoom_scale?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    zoom_shift_x?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    zoom_shift_y?: number;
+    status: StatusEnum;
     /**
      * 
      * @type {string}
      * @memberof Image
      */
     model: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    glid_3_xl_skip_iterations?: number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof Image
-     */
-    glid_3_xl_clip_guidance?: boolean;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    glid_3_xl_clip_guidance_scale?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    width: ImageWidthEnum;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    height: ImageHeightEnum;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    uncrop_offset_x?: ImageUncropOffsetXEnum;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    uncrop_offset_y?: ImageUncropOffsetYEnum;
-    /**
-     * 
-     * @type {number}
-     * @memberof Image
-     */
-    stable_diffusion_strength: number;
     /**
      * 
      * @type {boolean}
@@ -710,134 +411,8 @@ export interface Image {
      * @type {string}
      * @memberof Image
      */
-    worker_id?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Image
-     */
-    augmentation?: ImageAugmentationEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof Image
-     */
-    controlnet_type?: ImageControlnetTypeEnum;
-    /**
-     * 
-     * @type {string}
-     * @memberof Image
-     */
     error?: string;
 }
-
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageStatusEnum {
-    Pending = 'pending',
-    Processing = 'processing',
-    Ranking = 'ranking',
-    Completed = 'completed',
-    Saved = 'saved',
-    Error = 'error'
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageWidthEnum {
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896,
-    NUMBER_1024 = 1024
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageHeightEnum {
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896,
-    NUMBER_1024 = 1024
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageUncropOffsetXEnum {
-    NUMBER_MINUS_896 = -896,
-    NUMBER_MINUS_768 = -768,
-    NUMBER_MINUS_640 = -640,
-    NUMBER_MINUS_512 = -512,
-    NUMBER_MINUS_384 = -384,
-    NUMBER_MINUS_256 = -256,
-    NUMBER_MINUS_128 = -128,
-    NUMBER_0 = 0,
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageUncropOffsetYEnum {
-    NUMBER_MINUS_896 = -896,
-    NUMBER_MINUS_768 = -768,
-    NUMBER_MINUS_640 = -640,
-    NUMBER_MINUS_512 = -512,
-    NUMBER_MINUS_384 = -384,
-    NUMBER_MINUS_256 = -256,
-    NUMBER_MINUS_128 = -128,
-    NUMBER_0 = 0,
-    NUMBER_128 = 128,
-    NUMBER_256 = 256,
-    NUMBER_384 = 384,
-    NUMBER_512 = 512,
-    NUMBER_640 = 640,
-    NUMBER_768 = 768,
-    NUMBER_896 = 896
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageAugmentationEnum {
-    FaceRestore = 'face_restore',
-    RemoveBackground = 'remove_background',
-    Upscale = 'upscale'
-}
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ImageControlnetTypeEnum {
-    Canny = 'canny',
-    Hed = 'hed',
-    Depth = 'depth',
-    Normal = 'normal',
-    Openpose = 'openpose',
-    Seg = 'seg',
-    Scribble = 'scribble',
-    Fakescribbles = 'fakescribbles',
-    Hough = 'hough'
-}
-
 /**
  * 
  * @export
@@ -851,6 +426,87 @@ export interface ImageList {
      */
     images?: Array<Image>;
 }
+/**
+ * 
+ * @export
+ * @interface ImageParams
+ */
+export interface ImageParams {
+    /**
+     * 
+     * @type {string}
+     * @memberof ImageParams
+     */
+    prompt?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ImageParams
+     */
+    steps?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ImageParams
+     */
+    negative_prompt?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ImageParams
+     */
+    width?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ImageParams
+     */
+    height?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof ImageParams
+     */
+    denoising_strength?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ImageParams
+     */
+    controlnet_type?: ImageParamsControlnetTypeEnum;
+    /**
+     * 
+     * @type {string}
+     * @memberof ImageParams
+     */
+    augmentation?: ImageParamsAugmentationEnum;
+}
+
+/**
+    * @export
+    * @enum {string}
+    */
+export enum ImageParamsControlnetTypeEnum {
+    Canny = 'canny',
+    Hed = 'hed',
+    Depth = 'depth',
+    Normal = 'normal',
+    Openpose = 'openpose',
+    Seg = 'seg',
+    Scribble = 'scribble',
+    Fakescribbles = 'fakescribbles',
+    Hough = 'hough'
+}
+/**
+    * @export
+    * @enum {string}
+    */
+export enum ImageParamsAugmentationEnum {
+    FaceRestore = 'face_restore',
+    RemoveBackground = 'remove_background',
+    Upscale = 'upscale'
+}
+
 /**
  * 
  * @export
@@ -1023,47 +679,6 @@ export interface Order {
 /**
  * 
  * @export
- * @interface ProcessImageInput
- */
-export interface ProcessImageInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof ProcessImageInput
-     */
-    status?: ProcessImageInputStatusEnum;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof ProcessImageInput
-     */
-    include_models?: Array<string>;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof ProcessImageInput
-     */
-    exclude_models?: Array<string>;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof ProcessImageInput
-     */
-    peek?: boolean;
-}
-
-/**
-    * @export
-    * @enum {string}
-    */
-export enum ProcessImageInputStatusEnum {
-    Pending = 'pending',
-    Ranking = 'ranking'
-}
-
-/**
- * 
- * @export
  * @interface RefreshLoginInput
  */
 export interface RefreshLoginInput {
@@ -1074,6 +689,21 @@ export interface RefreshLoginInput {
      */
     refreshToken?: string;
 }
+/**
+ * 
+ * @export
+ * @enum {string}
+ */
+
+export enum StatusEnum {
+    Pending = 'pending',
+    Processing = 'processing',
+    Ranking = 'ranking',
+    Completed = 'completed',
+    Saved = 'saved',
+    Error = 'error'
+}
+
 /**
  * 
  * @export
@@ -1170,16 +800,10 @@ export interface UpdateImageInput {
     label?: string;
     /**
      * 
-     * @type {number}
+     * @type {StatusEnum}
      * @memberof UpdateImageInput
      */
-    current_iterations?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateImageInput
-     */
-    status?: UpdateImageInputStatusEnum;
+    status?: StatusEnum;
     /**
      * 
      * @type {string}
@@ -1223,20 +847,6 @@ export interface UpdateImageInput {
      */
     error?: string;
 }
-
-/**
-    * @export
-    * @enum {string}
-    */
-export enum UpdateImageInputStatusEnum {
-    Pending = 'pending',
-    Processing = 'processing',
-    Ranking = 'ranking',
-    Completed = 'completed',
-    Saved = 'saved',
-    Error = 'error'
-}
-
 /**
  * 
  * @export
@@ -1625,39 +1235,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Create a service account
-         * @param {CreateServiceAccountInput} [createServiceAccountInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createServiceAccount: async (createServiceAccountInput?: CreateServiceAccountInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/auth/service-accounts`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createServiceAccountInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Create a temporary image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1687,39 +1264,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Create a new worker
-         * @param {UpsertWorkerInput} [upsertWorkerInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createWorker: async (upsertWorkerInput?: UpsertWorkerInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/workers`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(upsertWorkerInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1730,39 +1274,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             assertParamExists('deleteImage', 'id', id)
             const localVarPath = `/api/images/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Delete a worker
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteWorker: async (workerId: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'workerId' is not null or undefined
-            assertParamExists('deleteWorker', 'workerId', workerId)
-            const localVarPath = `/api/workers/{worker_id}`
-                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1849,39 +1360,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(discordLogin, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Generate a login code for a worker
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        generateWorkerLoginCode: async (workerId: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'workerId' is not null or undefined
-            assertParamExists('generateWorkerLoginCode', 'workerId', workerId)
-            const localVarPath = `/api/workers/{worker_id}/login-code`
-                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2240,101 +1718,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Get a worker
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorker: async (workerId: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'workerId' is not null or undefined
-            assertParamExists('getWorker', 'workerId', workerId)
-            const localVarPath = `/api/workers/{worker_id}`
-                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get a worker config
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorkerConfig: async (workerId: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'workerId' is not null or undefined
-            assertParamExists('getWorkerConfig', 'workerId', workerId)
-            const localVarPath = `/api/workers/{worker_id}/config`
-                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get the list of workers
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorkers: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/workers`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Healthcheck
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2497,101 +1880,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(loginInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Log in as a worker
-         * @param {WorkerLoginCode} [workerLoginCode] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        loginAsWorker: async (workerLoginCode?: WorkerLoginCode, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/worker-login`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(workerLoginCode, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Ping a worker
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        pingWorker: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/worker-ping`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get the next pending image and set its status to processing.
-         * @param {ProcessImageInput} [processImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        processImage: async (processImageInput?: ProcessImageInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/process-image`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(processImageInput, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2772,80 +2060,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Update a worker
-         * @param {string} workerId 
-         * @param {UpsertWorkerInput} [upsertWorkerInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateWorker: async (workerId: string, upsertWorkerInput?: UpsertWorkerInput, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'workerId' is not null or undefined
-            assertParamExists('updateWorker', 'workerId', workerId)
-            const localVarPath = `/api/workers/{worker_id}`
-                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(upsertWorkerInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Update a worker config
-         * @param {string} workerId 
-         * @param {UpsertWorkerConfigInput} [upsertWorkerConfigInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateWorkerConfig: async (workerId: string, upsertWorkerConfigInput?: UpsertWorkerConfigInput, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'workerId' is not null or undefined
-            assertParamExists('updateWorkerConfig', 'workerId', workerId)
-            const localVarPath = `/api/workers/{worker_id}/config`
-                .replace(`{${"worker_id"}}`, encodeURIComponent(String(workerId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(upsertWorkerConfigInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Upload the binary image data
          * @param {string} id 
          * @param {any} [body] 
@@ -3002,32 +2216,12 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Create a service account
-         * @param {CreateServiceAccountInput} [createServiceAccountInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createServiceAccount(createServiceAccountInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Create a temporary image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         async createTmpImage(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TemporaryImage>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createTmpImage(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Create a new worker
-         * @param {UpsertWorkerInput} [upsertWorkerInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createWorker(upsertWorkerInput?: UpsertWorkerInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Worker>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createWorker(upsertWorkerInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3038,16 +2232,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async deleteImage(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.deleteImage(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Delete a worker
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async deleteWorker(workerId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteWorker(workerId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3069,16 +2253,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async discordLogin(discordLogin?: DiscordLogin, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.discordLogin(discordLogin, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Generate a login code for a worker
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async generateWorkerLoginCode(workerId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkerLoginCode>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.generateWorkerLoginCode(workerId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3189,35 +2363,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Get a worker
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getWorker(workerId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Worker>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorker(workerId, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get a worker config
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getWorkerConfig(workerId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkerConfig>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkerConfig(workerId, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get the list of workers
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getWorkers(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkerList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkers(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Healthcheck
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3265,35 +2410,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async login(loginInput?: LoginInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.login(loginInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Log in as a worker
-         * @param {WorkerLoginCode} [workerLoginCode] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async loginAsWorker(workerLoginCode?: WorkerLoginCode, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.loginAsWorker(workerLoginCode, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Ping a worker
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async pingWorker(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.pingWorker(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get the next pending image and set its status to processing.
-         * @param {ProcessImageInput} [processImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async processImage(processImageInput?: ProcessImageInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.processImage(processImageInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3346,28 +2462,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async updateLargeImage(updateLargeImageRequest?: UpdateLargeImageRequest, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateLargeImage(updateLargeImageRequest, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Update a worker
-         * @param {string} workerId 
-         * @param {UpsertWorkerInput} [upsertWorkerInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async updateWorker(workerId: string, upsertWorkerInput?: UpsertWorkerInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Worker>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateWorker(workerId, upsertWorkerInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Update a worker config
-         * @param {string} workerId 
-         * @param {UpsertWorkerConfigInput} [upsertWorkerConfigInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async updateWorkerConfig(workerId: string, upsertWorkerConfigInput?: UpsertWorkerConfigInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkerConfig>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateWorkerConfig(workerId, upsertWorkerConfigInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3448,30 +2542,12 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createInviteCode(options).then((request) => request(axios, basePath));
         },
         /**
-         * Create a service account
-         * @param {CreateServiceAccountInput} [createServiceAccountInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: any): AxiosPromise<LoginResult> {
-            return localVarFp.createServiceAccount(createServiceAccountInput, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Create a temporary image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         createTmpImage(options?: any): AxiosPromise<TemporaryImage> {
             return localVarFp.createTmpImage(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Create a new worker
-         * @param {UpsertWorkerInput} [upsertWorkerInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createWorker(upsertWorkerInput?: UpsertWorkerInput, options?: any): AxiosPromise<Worker> {
-            return localVarFp.createWorker(upsertWorkerInput, options).then((request) => request(axios, basePath));
         },
         /**
          * Delete a saved image
@@ -3481,15 +2557,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         deleteImage(id: string, options?: any): AxiosPromise<void> {
             return localVarFp.deleteImage(id, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Delete a worker
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        deleteWorker(workerId: string, options?: any): AxiosPromise<void> {
-            return localVarFp.deleteWorker(workerId, options).then((request) => request(axios, basePath));
         },
         /**
          * Deposit to a user\'s boost
@@ -3509,15 +2576,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         discordLogin(discordLogin?: DiscordLogin, options?: any): AxiosPromise<LoginResult> {
             return localVarFp.discordLogin(discordLogin, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Generate a login code for a worker
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        generateWorkerLoginCode(workerId: string, options?: any): AxiosPromise<WorkerLoginCode> {
-            return localVarFp.generateWorkerLoginCode(workerId, options).then((request) => request(axios, basePath));
         },
         /**
          * Get the assets url
@@ -3616,32 +2674,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getThumbnailData(id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get a worker
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorker(workerId: string, options?: any): AxiosPromise<Worker> {
-            return localVarFp.getWorker(workerId, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get a worker config
-         * @param {string} workerId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorkerConfig(workerId: string, options?: any): AxiosPromise<WorkerConfig> {
-            return localVarFp.getWorkerConfig(workerId, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get the list of workers
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getWorkers(options?: any): AxiosPromise<WorkerList> {
-            return localVarFp.getWorkers(options).then((request) => request(axios, basePath));
-        },
-        /**
          * Healthcheck
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -3685,32 +2717,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         login(loginInput?: LoginInput, options?: any): AxiosPromise<void> {
             return localVarFp.login(loginInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Log in as a worker
-         * @param {WorkerLoginCode} [workerLoginCode] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        loginAsWorker(workerLoginCode?: WorkerLoginCode, options?: any): AxiosPromise<LoginResult> {
-            return localVarFp.loginAsWorker(workerLoginCode, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Ping a worker
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        pingWorker(options?: any): AxiosPromise<void> {
-            return localVarFp.pingWorker(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get the next pending image and set its status to processing.
-         * @param {ProcessImageInput} [processImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        processImage(processImageInput?: ProcessImageInput, options?: any): AxiosPromise<Image> {
-            return localVarFp.processImage(processImageInput, options).then((request) => request(axios, basePath));
         },
         /**
          * Refresh Login code
@@ -3758,26 +2764,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         updateLargeImage(updateLargeImageRequest?: UpdateLargeImageRequest, options?: any): AxiosPromise<void> {
             return localVarFp.updateLargeImage(updateLargeImageRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Update a worker
-         * @param {string} workerId 
-         * @param {UpsertWorkerInput} [upsertWorkerInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateWorker(workerId: string, upsertWorkerInput?: UpsertWorkerInput, options?: any): AxiosPromise<Worker> {
-            return localVarFp.updateWorker(workerId, upsertWorkerInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Update a worker config
-         * @param {string} workerId 
-         * @param {UpsertWorkerConfigInput} [upsertWorkerConfigInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateWorkerConfig(workerId: string, upsertWorkerConfigInput?: UpsertWorkerConfigInput, options?: any): AxiosPromise<WorkerConfig> {
-            return localVarFp.updateWorkerConfig(workerId, upsertWorkerConfigInput, options).then((request) => request(axios, basePath));
         },
         /**
          * Upload the binary image data
@@ -3862,17 +2848,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Create a service account
-     * @param {CreateServiceAccountInput} [createServiceAccountInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createServiceAccount(createServiceAccountInput?: CreateServiceAccountInput, options?: any) {
-        return AIBrushApiFp(this.configuration).createServiceAccount(createServiceAccountInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Create a temporary image
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -3880,17 +2855,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public createTmpImage(options?: any) {
         return AIBrushApiFp(this.configuration).createTmpImage(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Create a new worker
-     * @param {UpsertWorkerInput} [upsertWorkerInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createWorker(upsertWorkerInput?: UpsertWorkerInput, options?: any) {
-        return AIBrushApiFp(this.configuration).createWorker(upsertWorkerInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3902,17 +2866,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public deleteImage(id: string, options?: any) {
         return AIBrushApiFp(this.configuration).deleteImage(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Delete a worker
-     * @param {string} workerId 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public deleteWorker(workerId: string, options?: any) {
-        return AIBrushApiFp(this.configuration).deleteWorker(workerId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3936,17 +2889,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public discordLogin(discordLogin?: DiscordLogin, options?: any) {
         return AIBrushApiFp(this.configuration).discordLogin(discordLogin, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Generate a login code for a worker
-     * @param {string} workerId 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public generateWorkerLoginCode(workerId: string, options?: any) {
-        return AIBrushApiFp(this.configuration).generateWorkerLoginCode(workerId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4068,38 +3010,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Get a worker
-     * @param {string} workerId 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getWorker(workerId: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getWorker(workerId, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get a worker config
-     * @param {string} workerId 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getWorkerConfig(workerId: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getWorkerConfig(workerId, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get the list of workers
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getWorkers(options?: any) {
-        return AIBrushApiFp(this.configuration).getWorkers(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Healthcheck
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
@@ -4152,38 +3062,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public login(loginInput?: LoginInput, options?: any) {
         return AIBrushApiFp(this.configuration).login(loginInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Log in as a worker
-     * @param {WorkerLoginCode} [workerLoginCode] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public loginAsWorker(workerLoginCode?: WorkerLoginCode, options?: any) {
-        return AIBrushApiFp(this.configuration).loginAsWorker(workerLoginCode, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Ping a worker
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public pingWorker(options?: any) {
-        return AIBrushApiFp(this.configuration).pingWorker(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get the next pending image and set its status to processing.
-     * @param {ProcessImageInput} [processImageInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public processImage(processImageInput?: ProcessImageInput, options?: any) {
-        return AIBrushApiFp(this.configuration).processImage(processImageInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4241,30 +3119,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public updateLargeImage(updateLargeImageRequest?: UpdateLargeImageRequest, options?: any) {
         return AIBrushApiFp(this.configuration).updateLargeImage(updateLargeImageRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Update a worker
-     * @param {string} workerId 
-     * @param {UpsertWorkerInput} [upsertWorkerInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public updateWorker(workerId: string, upsertWorkerInput?: UpsertWorkerInput, options?: any) {
-        return AIBrushApiFp(this.configuration).updateWorker(workerId, upsertWorkerInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Update a worker config
-     * @param {string} workerId 
-     * @param {UpsertWorkerConfigInput} [upsertWorkerConfigInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public updateWorkerConfig(workerId: string, upsertWorkerConfigInput?: UpsertWorkerConfigInput, options?: any) {
-        return AIBrushApiFp(this.configuration).updateWorkerConfig(workerId, upsertWorkerConfigInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

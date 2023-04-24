@@ -1,6 +1,4 @@
 import React, { FC, useEffect, useState } from "react";
-import moment from "moment";
-import { Image, ImageStatusEnum } from "../client/api";
 
 interface Props {
     pendingCount: number;

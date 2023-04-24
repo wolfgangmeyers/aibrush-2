@@ -6,7 +6,7 @@ import { useParams, useHistory, Link } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
-import { CreateImageInput, Image, ImageStatusEnum, Boost } from "../client/api";
+import { CreateImageInput, Image, StatusEnum, Boost } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import { BoostWidget } from "../components/BoostWidget";
@@ -149,41 +149,6 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
             });
             setSelectedImage(res.data);
         });
-    };
-
-    const onUpscale = async (image: Image) => {
-        setCreating(true);
-        setErr(null);
-        window.scrollTo(0, 0);
-        try {
-            const imageInput = defaultArgs();
-            imageInput.parent = image.id;
-            imageInput.label = image.label;
-            imageInput.phrases = image.phrases;
-            imageInput.negative_phrases = image.negative_phrases;
-            imageInput.width = image.width! * 2;
-            imageInput.height = image.height! * 2;
-            imageInput.model = "swinir";
-            imageInput.count = 1;
-
-            const newImages = await api.createImage(imageInput);
-            setImages((images) => {
-                // there is a race condition where poll images can fire before this callback
-                // so double-check to avoid duplicates
-                const imagesToAdd = (newImages.data.images || []).filter(
-                    (image) => {
-                        return !images.find((i) => i.id === image.id);
-                    }
-                );
-                return [...imagesToAdd, ...images].sort(sortImages);
-            });
-            history.push("/saved");
-        } catch (e: any) {
-            console.error(e);
-            setErr("Error creating image");
-        } finally {
-            setCreating(false);
-        }
     };
 
     useEffect(() => {
@@ -372,8 +337,8 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
 
     const isPendingOrProcessing = (image: Image) => {
         return (
-            image.status === ImageStatusEnum.Pending ||
-            image.status === ImageStatusEnum.Processing
+            image.status === StatusEnum.Pending ||
+            image.status === StatusEnum.Processing
         );
     };
 
@@ -388,19 +353,19 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
         // otherwise, sort by updated_at
         if (
             a.parent === b.parent &&
-            a.phrases.join("|") == b.phrases.join("|") &&
-            a.status !== ImageStatusEnum.Pending &&
-            b.status !== ImageStatusEnum.Pending
+            a.params.prompt == b.params.prompt &&
+            a.status !== StatusEnum.Pending &&
+            b.status !== StatusEnum.Pending
         ) {
             // if the score is the same, sort by updated_at
             let aScore = a.score;
             let bScore = b.score;
             // working around a bug where negative score was assigned
             // for an empty negative prompt.
-            if (a.phrases.join("").trim() !== "") {
+            if (a.params.prompt!.trim() !== "") {
                 aScore = aScore - a.negative_score;
             }
-            if (b.phrases.join("").trim() !== "") {
+            if (b.params.prompt!.trim() !== "") {
                 bScore = bScore - b.negative_score;
             }
             if (aScore == bScore) {
@@ -498,24 +463,24 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
     const completedOrSavedImages = images.filter((image) => {
         return (
             !image.deleted_at &&
-            (image.status === ImageStatusEnum.Completed ||
-                image.status === ImageStatusEnum.Saved)
+            (image.status === StatusEnum.Completed ||
+                image.status === StatusEnum.Saved)
         );
     });
 
     const pendingOrProcessingImages = images.filter(
         (image) =>
             !image.deleted_at &&
-            (image.status === ImageStatusEnum.Pending ||
-                image.status === ImageStatusEnum.Processing)
+            (image.status === StatusEnum.Pending ||
+                image.status === StatusEnum.Processing)
     );
 
     const pendingImages = pendingOrProcessingImages.filter(
-        (image) => image.status === ImageStatusEnum.Pending
+        (image) => image.status === StatusEnum.Pending
     );
 
     const processingImages = pendingOrProcessingImages.filter(
-        (image) => image.status === ImageStatusEnum.Processing
+        (image) => image.status === StatusEnum.Processing
     );
 
     return (

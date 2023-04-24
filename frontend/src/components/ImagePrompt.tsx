@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useState } from "react";
-import { CreateImageInput, CreateImageInputStatusEnum, Image } from "../client";
+import { CreateImageInput, StatusEnum, Image } from "../client";
 import {
     aspectRatios,
     DEFAULT_ASPECT_RATIO,
@@ -27,26 +27,19 @@ interface Props {
 
 export function defaultArgs(): CreateImageInput {
     return {
-        phrases: ["a painting of a happy corgi wearing sunglasses"],
-        negative_phrases: [],
+        params: {
+            prompt: "a painting of a happy corgi wearing sunglasses",
+            negative_prompt: defaultNegativePrompt,
+            width: 512,
+            height: 512,
+            steps: 20,
+            denoising_strength: 0.75,
+        },
         label: "",
-        iterations: 50,
         encoded_image: "",
         encoded_npy: "",
         encoded_mask: "",
-        enable_video: false,
-        enable_zoom: false,
-        zoom_frequency: 10,
-        zoom_scale: 0.99,
-        zoom_shift_x: 0,
-        zoom_shift_y: 0,
         model: "Epic Diffusion",
-        glid_3_xl_clip_guidance: false,
-        glid_3_xl_clip_guidance_scale: 150,
-        glid_3_xl_skip_iterations: 0,
-        width: 512,
-        height: 512,
-        stable_diffusion_strength: 0.75,
         count: 4,
     };
 }
@@ -105,35 +98,35 @@ export const ImagePrompt: FC<Props> = ({
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const args = defaultArgs();
-        args.phrases = [prompt || ""];
-        args.negative_phrases = [negativePrompt || ""];
+        args.params.prompt = prompt || "";
+        args.params.negative_prompt = negativePrompt || "";
         args.count = count;
         args.parent = parentId || undefined;
-        args.stable_diffusion_strength = variationStrength;
+        args.params.denoising_strength = variationStrength;
         args.nsfw = nsfw;
         args.model = model;
         args.temporary = true;
-        args.controlnet_type = controlnetType as any;
+        args.params.controlnet_type = controlnetType as any;
         if (parent) {
             const bestMatch = getClosestAspectRatio(
-                parent.width!,
-                parent.height!
+                parent.params.width!,
+                parent.params.height!
             );
-            args.width = bestMatch.width;
-            args.height = bestMatch.height;
+            args.params.width = bestMatch.width;
+            args.params.height = bestMatch.height;
         } else {
             const bestMatch = getClosestAspectRatio(
                 aspectRatioDetails.width,
                 aspectRatioDetails.height
             );
-            args.width = bestMatch.width;
-            args.height = bestMatch.height;
+            args.params.width = bestMatch.width;
+            args.params.height = bestMatch.height;
         }
         if (encodedImage) {
             args.encoded_image = await resizeEncodedImage(
                 encodedImage,
-                args.width,
-                args.height
+                args.params.width,
+                args.params.height
             );
         }
 
@@ -147,14 +140,15 @@ export const ImagePrompt: FC<Props> = ({
             return;
         }
         const args = defaultArgs();
-        args.phrases = [prompt || ""];
-        args.negative_phrases = [negativePrompt || ""];
+        args.params.prompt = prompt || "";
+        args.params.negative_prompt = negativePrompt || "";
         args.count = 1;
         args.parent = parentId || undefined;
-        args.stable_diffusion_strength = variationStrength;
-        args.status = CreateImageInputStatusEnum.Completed;
-        args.width = originalWidth;
-        args.height = originalHeight;
+        // args.stable_diffusion_strength = variationStrength;
+        args.params.denoising_strength = variationStrength;
+        args.status = StatusEnum.Completed;
+        args.params.width = originalWidth;
+        args.params.height = originalHeight;
         args.nsfw = nsfw;
         args.model = model;
         if (encodedImage) {
@@ -235,14 +229,14 @@ export const ImagePrompt: FC<Props> = ({
             if (imageData) {
                 setEncodedImage(imageData.split(",")[1]);
             }
-            setPrompt(parent.phrases.join(", "));
+            setPrompt(parent.params.prompt || "");
             setNegativePrompt(
-                parent.negative_phrases.join(", ") || defaultNegativePrompt
+                parent.params.negative_prompt || defaultNegativePrompt
             );
             setCount(4);
             setParentId(parent.id);
             setAdvancedView(true);
-            setVariationStrength(parent.stable_diffusion_strength);
+            setVariationStrength(parent.params.denoising_strength || 0.75);
             setNsfw(parent.nsfw);
             setModel(
                 supportedModels.indexOf(parent.model) > -1 ? parent.model : "Epic Diffusion"

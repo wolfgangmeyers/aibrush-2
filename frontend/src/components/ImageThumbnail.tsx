@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState } from "react";
 import moment from "moment";
-import { Image, ImageStatusEnum } from "../client/api";
+import { Image, StatusEnum } from "../client/api";
 import { LocalImage } from "../lib/localImagesStore";
 
 interface Props {
@@ -29,7 +29,7 @@ export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, censorNSFW, bulkDe
 
     let label = image.label;
     if (image.label === "") {
-        label = image.phrases[0];
+        label = image.params.prompt || "";
     }
     
     let className = "image-thumbnail";
@@ -66,11 +66,11 @@ export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, censorNSFW, bulkDe
                 }} checked readOnly />
             </div>}
 
-            {image.status === ImageStatusEnum.Pending && <div className="image-thumbnail-pending">
+            {image.status === StatusEnum.Pending && <div className="image-thumbnail-pending">
                 <i style={{marginTop: "20px"}} className="fa fa-hourglass-half"></i>
             </div>}
             {
-                image.status === ImageStatusEnum.Processing && <div className="image-thumbnail-pending">
+                image.status === StatusEnum.Processing && <div className="image-thumbnail-pending">
                     <i style={{marginTop: "20px"}} className="fa fa-cog fa-spin"></i>
                 </div>
             }

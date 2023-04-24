@@ -3,10 +3,7 @@ import { useParams, useHistory } from "react-router-dom";
 import axios, { AxiosInstance } from "axios";
 import * as uuid from "uuid";
 
-import {
-    AIBrushApi,
-    CreateImageInputStatusEnum,
-} from "../../client";
+import { AIBrushApi } from "../../client";
 import { getUpscaleLevel } from "../../lib/upscale";
 import "./ImageEditor.css";
 import { createRenderer, Renderer } from "./renderer";
@@ -51,7 +48,11 @@ interface ToolConfig {
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
 
-export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) => {
+export const ImageEditor: React.FC<Props> = ({
+    api,
+    apisocket,
+    localImages,
+}) => {
     const [showSelectionControls, setShowSelectionControls] = useState(false);
     const tools: Array<ToolConfig> = [
         {
@@ -151,7 +152,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) =>
                     />
                 );
             },
-        }
+        },
     ];
 
     const [image, setImage] = useState<LocalImage | null>(null);
@@ -199,11 +200,14 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) =>
         try {
             const newImage: LocalImage = {
                 ...image,
-                width: renderer!.getWidth() as any,
-                height: renderer!.getHeight() as any,
+                params: {
+                    ...image.params,
+                    width: renderer!.getWidth() as any,
+                    height: renderer!.getHeight() as any,
+                },
                 id: uuid.v4(),
-                imageData: `data:image/png;base64,${encodedImage}`
-            }
+                imageData: `data:image/png;base64,${encodedImage}`,
+            };
             await localImages.saveImage(newImage);
 
             // switch url and state to new image
@@ -241,7 +245,7 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) =>
                 const base64ImageData = binaryImageData.toString("base64");
                 imageSrc = `data:image/png;base64,${base64ImageData}`;
             }
-            
+
             const imageElement = new Image();
             imageElement.src = imageSrc;
             imageElement.onload = () => {
@@ -253,7 +257,6 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) =>
                 renderer.setBaseImage(imageElement);
                 setRenderer(renderer);
             };
-            
         }
         loadImage();
     }, [image, id]);
@@ -261,7 +264,12 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) =>
     // this covers the case that an image is upscaled to max, the upscale tool needs to
     // be hidden and deselected.
     useEffect(() => {
-        if (image && tool && tool.name == "upscale" && image.width * image.height >= 2048 * 2048) {
+        if (
+            image &&
+            tool &&
+            tool.name == "upscale" &&
+            image.params.width! * image.params.height! >= 2048 * 2048
+        ) {
             onSelectTool(tools[0]);
         }
     }, [image, tool]);
@@ -295,7 +303,10 @@ export const ImageEditor: React.FC<Props> = ({ api, apisocket, localImages }) =>
         if (!image) {
             return null;
         }
-        if (t.name == "upscale" && image?.width * image?.height >= 2048 * 2048) {
+        if (
+            t.name == "upscale" &&
+            image.params.width! * image.params.height! >= 2048 * 2048
+        ) {
             return null;
         }
         let buttonClass = `btn btn-secondary light-button image-editor-tool-button`;

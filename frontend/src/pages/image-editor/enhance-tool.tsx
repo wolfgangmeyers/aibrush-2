@@ -12,7 +12,7 @@ import {
     CreateImageInput,
     Image as APIImage,
     ImageList,
-    ImageStatusEnum,
+    StatusEnum,
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
@@ -422,21 +422,19 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.label = "";
         input.encoded_image = encodedImage;
         input.parent = image.id;
-        input.phrases = [this.prompt || image.phrases[0]];
-        input.negative_phrases = [
-            this.negativePrompt || image.negative_phrases[0],
-        ];
-        input.stable_diffusion_strength = this.variationStrength;
+        input.params.prompt = this.prompt || image.params.prompt;
+        input.params.negative_prompt = this.negativePrompt || image.params.negative_prompt;
+        input.params.denoising_strength = this.variationStrength;
         input.count = this.count;
         // TODO: allow switching model
         input.model = this.model;
         input.nsfw = image.nsfw;
 
-        input.width = selectionOverlay!.width;
-        input.height = selectionOverlay!.height;
+        input.params.width = selectionOverlay!.width;
+        input.params.height = selectionOverlay!.height;
         // round width and height up to the nearest multiple of 64
-        input.width = Math.ceil(input.width / 64) * 64;
-        input.height = Math.ceil(input.height / 64) * 64;
+        input.params.width = Math.ceil(input.params.width / 64) * 64;
+        input.params.height = Math.ceil(input.params.height / 64) * 64;
         input.temporary = true;
 
         this.state = "uploading";
@@ -475,7 +473,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             const img = JSON.parse(msg) as any;
             if (
                 img.type === NOTIFICATION_IMAGE_UPDATED &&
-                img.status === ImageStatusEnum.Completed
+                img.status === StatusEnum.Completed
             ) {
                 lastUpdate = moment();
                 for (let i = 0; i < newImages!.length; i++) {
@@ -488,13 +486,13 @@ export class EnhanceTool extends BaseTool implements Tool {
                             selectionOverlay!
                         );
                         newImages![i].data = imageData;
-                        newImages![i].status = ImageStatusEnum.Completed;
+                        newImages![i].status = StatusEnum.Completed;
                     }
                 }
-            } else if (img.status == ImageStatusEnum.Error) {
+            } else if (img.status == StatusEnum.Error) {
                 for (let i = 0; i < newImages!.length; i++) {
                     if (newImages![i].id === img.id) {
-                        newImages![i].status = ImageStatusEnum.Error;
+                        newImages![i].status = StatusEnum.Error;
                     }
                 }
             }
@@ -509,8 +507,8 @@ export class EnhanceTool extends BaseTool implements Tool {
                 // poll for completion
                 for (let i = 0; i < newImages!.length; i++) {
                     if (
-                        newImages![i].status === ImageStatusEnum.Completed ||
-                        newImages![i].status === ImageStatusEnum.Error
+                        newImages![i].status === StatusEnum.Completed ||
+                        newImages![i].status === StatusEnum.Error
                     ) {
                         completeCount++;
                         continue;
@@ -527,8 +525,8 @@ export class EnhanceTool extends BaseTool implements Tool {
                     const pendingIds = newImages
                         .filter(
                             (img) =>
-                                img.status === ImageStatusEnum.Pending ||
-                                img.status === ImageStatusEnum.Processing
+                                img.status === StatusEnum.Pending ||
+                                img.status === StatusEnum.Processing
                         )
                         .map((img) => img.id);
                     console.log("Checking pending images", pendingIds);
@@ -542,14 +540,14 @@ export class EnhanceTool extends BaseTool implements Tool {
                     }, {} as Record<string, APIImage>);
                     for (let i = 0; i < newImages!.length; i++) {
                         if (
-                            newImages![i].status === ImageStatusEnum.Pending ||
-                            newImages![i].status === ImageStatusEnum.Processing
+                            newImages![i].status === StatusEnum.Pending ||
+                            newImages![i].status === StatusEnum.Processing
                         ) {
                             const updated = byId[newImages![i].id];
                             if (updated) {
                                 newImages![i].status = updated.status;
                                 if (
-                                    updated.status === ImageStatusEnum.Completed
+                                    updated.status === StatusEnum.Completed
                                 ) {
                                     lastUpdate = moment();
                                     const imageData = await this.loadImageData(
@@ -584,7 +582,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             return b.score - a.score;
         });
         newImages = newImages!.filter((img) => {
-            return img.status === ImageStatusEnum.Completed;
+            return img.status === StatusEnum.Completed;
         });
 
         this.imageData = [];
@@ -674,11 +672,8 @@ export const EnhanceControls: FC<ControlsProps> = ({
     const [count, setCount] = useState(4);
     const [dirty, setDirty] = useState(false);
     const [variationStrength, setVariationStrength] = useState(0.35);
-    const [prompt, setPrompt] = useState(image.phrases[0]);
-    const [negativePrompt, setNegativePrompt] = useState(
-        image.negative_phrases[0]
-    );
-    console.log("negativePrompt", negativePrompt);
+    const [prompt, setPrompt] = useState(image.params.prompt || "");
+    const [negativePrompt, setNegativePrompt] = useState(image.params.negative_prompt || "");
     const [model, setModel] = useState(
         image.model == "swinir" || image.model == "stable_diffusion"
             ? "Epic Diffusion"

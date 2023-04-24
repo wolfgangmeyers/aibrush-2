@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { AIBrushApi } from "../../client/api";
 import { BoostList } from "./BoostList";
 import { GlobalSettings } from "./GlobalSettings";
-import { WorkerList } from "./WorkerList";
 
 interface Props {
     api: AIBrushApi;
@@ -69,8 +68,6 @@ export const Admin: FC<Props> = ({ api }) => {
             </div>
             <hr />
             <BoostList api={api} />
-            <hr />
-            <WorkerList api={api} />
             <hr />
             <GlobalSettings api={api} />
         </div>

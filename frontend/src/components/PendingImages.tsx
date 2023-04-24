@@ -52,7 +52,7 @@ export const PendingImages: FC<Props> = ({
                     </div>
                     <div style={{display: "inline-block", width: "250px"}}>
                         {/* if more than 30 chars, truncate with ellipsis*/}
-                        {truncate(image.phrases.join(", "))}
+                        {truncate(image.params.prompt || "")}
                     </div>
                     <div style={{display: "inline-block", width: "100px"}}>
                         <button
