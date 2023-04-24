@@ -352,7 +352,7 @@ export class BackendService {
             whereClauses.push(
                 `(label ILIKE $` +
                     (args.length + 1) +
-                    ` OR params.prompt ILIKE $` +
+                    ` OR params->>'prompt' ILIKE $` +
                     (args.length + 1) +
                     `)`
             );
