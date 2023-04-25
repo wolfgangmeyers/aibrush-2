@@ -10,6 +10,7 @@ export interface HordeRequest {
     height: number;
     steps: number;
     cfgScale: number;
+    seed: string;
     denoisingStrength: number;
     nsfw: boolean;
     censorNsfw: boolean;

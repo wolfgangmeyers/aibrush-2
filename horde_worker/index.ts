@@ -174,6 +174,7 @@ interface HordeRequest {
     height: number;
     steps: number;
     cfgScale: number;
+    seed: string;
     denoisingStrength: number;
     nsfw: boolean;
     censorNsfw: boolean;
@@ -264,6 +265,7 @@ async function processRequest(request: HordeRequest) {
                     hires_fix: false,
                     post_processing,
                     control_type: request.controlnetType || undefined,
+                    seed: request.seed || undefined
                 },
                 prompt,
                 api_key: hordeApiKey,

@@ -674,6 +674,10 @@ components:
           type: integer
         denoising_strength:
           type: number
+        cfg_scale:
+          type: number
+        seed:
+          type: string
         controlnet_type:
           type: string
           enum: [canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough]

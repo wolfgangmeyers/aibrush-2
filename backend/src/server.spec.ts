@@ -297,7 +297,7 @@ describe("server", () => {
             })
         })
 
-        describe("when creating an image", () => {
+        describe("when creating an image with minimal params", () => {
             let image: Image;
 
             beforeEach(async () => {
@@ -716,6 +716,71 @@ describe("server", () => {
                 })
             })
         })
+
+        describe("when creating an image with full params", () => {
+            let image: Image;
+
+            beforeEach(async () => {
+                const response = await client.createImage({
+                    params: {
+                        prompt: "test",
+                        negative_prompt: "foobar",
+                        steps: 1,
+                        width: 1024,
+                        height: 1024,
+                        augmentation: "remove_background",
+                        cfg_scale: 10,
+                        controlnet_type: "hed",
+                        denoising_strength: 0.9,
+                        seed: "1234",
+                    },
+                    label: "test",
+                    parent: "",
+                    model: "stable_diffusion",
+                    count: 1,
+                })
+                image = response.data.images[0]
+            })
+
+            it("should return the image", () => {
+                expect(image.id).toBeDefined()
+                expect(image.label).toBe("test")
+                expect(image.parent).toBe("")
+                expect(image.model).toBe("stable_diffusion")
+
+
+                expect(image.params.prompt).toBe("test")
+                expect(image.params.negative_prompt).toBe("foobar")
+                expect(image.params.steps).toBe(1)
+                expect(image.params.width).toBe(1024)
+                expect(image.params.height).toBe(1024)
+                expect(image.params.augmentation).toBe("remove_background")
+                expect(image.params.cfg_scale).toBe(10)
+                expect(image.params.controlnet_type).toBe("hed")
+                expect(image.params.denoising_strength).toBe(0.9)
+                expect(image.params.seed).toBe("1234")
+            })
+
+            describe("when checking the horde queue", () => {
+                let req: HordeRequest;
+
+                beforeEach(async () => {
+                    req = await hordeQueue.popImage();
+                });
+
+                it("should return the image", () => {
+                    expect(req).toBeTruthy();
+                    expect(req.imageId).toEqual(image.id);
+                    expect(req.prompt).toEqual("test");
+                    expect(req.negativePrompt).toEqual("foobar");
+                    expect(req.augmentation).toEqual("remove_background");
+                    expect(req.cfgScale).toEqual(10);
+                    expect(req.controlnetType).toEqual("hed");
+                    expect(req.denoisingStrength).toEqual(0.9);
+                    expect(req.seed).toEqual("1234");
+                });
+            })
+        });
 
         describe("when creating an image with legacy parameters", () => {
             let image: Image;

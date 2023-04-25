@@ -25,6 +25,7 @@ export interface HordeRequestPayload {
         hires_fix: boolean;
         post_processing: string[];
         control_type?: string;
+        seed?: string;
     };
     prompt: string;
     api_key: string;
