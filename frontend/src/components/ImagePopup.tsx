@@ -228,6 +228,11 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                     )}
                                 </>
                             )}
+                            {image.params.seed && (
+                                <div>
+                                    Seed: {image.params.seed}
+                                </div>
+                            )}
                             {!image.nsfw && (
                                 <>
                                     <div>

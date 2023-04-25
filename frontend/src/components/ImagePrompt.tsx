@@ -104,7 +104,7 @@ export const ImagePrompt: FC<Props> = ({
         const args = defaultArgs();
         args.params.prompt = prompt || "";
         args.params.negative_prompt = negativePrompt || "";
-        args.count = count;
+        args.count = seed ? 1 : count;
         args.parent = parentId || undefined;
         args.params.denoising_strength = variationStrength;
         args.nsfw = true;
@@ -418,7 +418,7 @@ export const ImagePrompt: FC<Props> = ({
                                 "distorted"
                             </span>
                         </div>
-                        <div className="form-group">
+                        {!seed && <div className="form-group">
                             <label htmlFor="count">Count: {count}</label>
                             {/* range slider from 1 to 20 */}
                             <input
@@ -435,7 +435,7 @@ export const ImagePrompt: FC<Props> = ({
                             <span className="helptext">
                                 This is how many images you want to generate
                             </span>
-                        </div>
+                        </div>}
                         {(parentId || encodedImage) && (
                             <div className="form-group">
                                 {/* variation strength */}

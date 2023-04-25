@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useState, FormEvent } from "react";
 import { Form, FormGroup, FormControl, FormText, FormCheck } from "react-bootstrap";
 
 interface Props {
@@ -9,6 +9,16 @@ interface Props {
 export const SeedInput: FC<Props> = ({seed, setSeed}) => {
     const [useCustomSeed, setUseCustomSeed] = useState(false);
 
+    const onChangeCustomSeed = () => {
+        setUseCustomSeed(!useCustomSeed);
+        if (useCustomSeed) {
+            setSeed("");
+        } else {
+            // set seed to a random number
+            setSeed(Math.floor(Math.random() * 1000000000).toString());
+        }
+    };
+
     return (
         <Form>
             <FormGroup>
@@ -16,7 +26,7 @@ export const SeedInput: FC<Props> = ({seed, setSeed}) => {
                     type="checkbox"
                     label="Use Custom Seed"
                     checked={useCustomSeed}
-                    onChange={(e) => setUseCustomSeed(e.target.checked)}
+                    onChange={(e) => onChangeCustomSeed()}
                 />
             </FormGroup>
 
