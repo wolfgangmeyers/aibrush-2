@@ -422,6 +422,9 @@ export class BackendService {
     }
 
     async getImageUploadUrls(id: string): Promise<ImageUrls> {
+        const initImagePromise = this.filestore.getUploadUrl(
+            `${id}.init_image.png`
+        );
         const imagePromise = this.filestore.getUploadUrl(`${id}.image.png`);
         const maskPromise = this.filestore.getUploadUrl(`${id}.mask.png`);
         const thumbnailPromise = this.filestore.getUploadUrl(
@@ -429,6 +432,7 @@ export class BackendService {
         );
 
         return {
+            init_image_url: await initImagePromise,
             image_url: await imagePromise,
             mask_url: await maskPromise,
             thumbnail_url: await thumbnailPromise,
@@ -436,6 +440,9 @@ export class BackendService {
     }
 
     async getImageDownloadUrls(id: string): Promise<ImageUrls> {
+        const initImagePromise = this.filestore.getDownloadUrl(
+            `${id}.init_image.png`
+        );
         const imagePromise = this.filestore.getDownloadUrl(`${id}.image.png`);
         const maskPromise = this.filestore.getDownloadUrl(`${id}.mask.png`);
         const thumbnailPromise = this.filestore.getDownloadUrl(
@@ -443,6 +450,7 @@ export class BackendService {
         );
 
         return {
+            init_image_url: await initImagePromise,
             image_url: await imagePromise,
             mask_url: await maskPromise,
             thumbnail_url: await thumbnailPromise,

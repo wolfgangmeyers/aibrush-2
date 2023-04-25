@@ -522,6 +522,12 @@ export interface ImageUrls {
      * @type {string}
      * @memberof ImageUrls
      */
+    'init_image_url'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ImageUrls
+     */
     'image_url'?: string;
     /**
      * 
