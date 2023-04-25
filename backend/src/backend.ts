@@ -607,6 +607,7 @@ export class BackendService {
         body: CreateImageInput
     ): Promise<Image> {
         body = this.upgradeLegacyRequest(body);
+        body.params.seed = body.params.seed || Math.floor(Math.random() * 1000000000).toString();
         const client = await this.pool.connect();
         try {
             const result = await client.query(
