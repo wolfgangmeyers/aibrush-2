@@ -775,7 +775,7 @@ export class BackendService {
         }
         const promises: Array<Promise<Image>> = [];
         for (let i = 0; i < count; i++) {
-            promises.push(this.createImage(createdBy, body));
+            promises.push(this.createImage(createdBy, {...body}));
         }
         return Promise.all(promises);
     }
