@@ -470,6 +470,18 @@ export interface ImageParams {
     denoising_strength?: number;
     /**
      * 
+     * @type {number}
+     * @memberof ImageParams
+     */
+    cfg_scale?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ImageParams
+     */
+    seed?: string;
+    /**
+     * 
      * @type {string}
      * @memberof ImageParams
      */

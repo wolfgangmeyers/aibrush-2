@@ -14,6 +14,7 @@ import { getUpscaleLevel } from "../lib/upscale";
 import { resizeEncodedImage } from "../lib/imageutil";
 import { LocalImage } from "../lib/localImagesStore";
 import { controlnetTypes, supportedModels } from "../lib/supportedModels";
+import { SeedInput } from "./SeedInput";
 
 interface Props {
     parent: LocalImage | null;
@@ -66,9 +67,10 @@ export const ImagePrompt: FC<Props> = ({
     const [parentId, setParentId] = useState<string | null>(null);
     const [advancedView, setAdvancedView] = useState<boolean>(false);
     const [encodedImage, setEncodedImage] = useState<string>("");
-    const [nsfw, setNsfw] = useState<boolean>(false);
     const [model, setModel] = useState<string>("Epic Diffusion");
     const [controlnetType, setControlnetType] = useState<string | undefined>();
+    const [cfgScale, setCfgScale] = useState<number>(7.5);
+    const [seed, setSeed] = useState<string>("");
     const defaultAspectRatio = aspectRatios[DEFAULT_ASPECT_RATIO];
 
     const [aspectRatioDetails, setAspectRatioDetails] = useState<AspectRatio>(
@@ -93,6 +95,8 @@ export const ImagePrompt: FC<Props> = ({
         setAspectRatio(DEFAULT_ASPECT_RATIO);
         setAspectRatioDetails(aspectRatios[DEFAULT_ASPECT_RATIO]);
         setEncodedImage("");
+        setCfgScale(7.5);
+        setSeed("");
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -103,10 +107,12 @@ export const ImagePrompt: FC<Props> = ({
         args.count = count;
         args.parent = parentId || undefined;
         args.params.denoising_strength = variationStrength;
-        args.nsfw = nsfw;
+        args.nsfw = true;
         args.model = model;
         args.temporary = true;
         args.params.controlnet_type = controlnetType as any;
+        args.params.cfg_scale = cfgScale;
+        args.params.seed = seed || undefined;
         if (parent) {
             const bestMatch = getClosestAspectRatio(
                 parent.params.width!,
@@ -149,7 +155,8 @@ export const ImagePrompt: FC<Props> = ({
         args.status = StatusEnum.Completed;
         args.params.width = originalWidth;
         args.params.height = originalHeight;
-        args.nsfw = nsfw;
+        args.params.cfg_scale = cfgScale;
+        args.nsfw = true;
         args.model = model;
         if (encodedImage) {
             args.encoded_image = encodedImage;
@@ -237,10 +244,12 @@ export const ImagePrompt: FC<Props> = ({
             setParentId(parent.id);
             setAdvancedView(true);
             setVariationStrength(parent.params.denoising_strength || 0.75);
-            setNsfw(parent.nsfw);
             setModel(
-                supportedModels.indexOf(parent.model) > -1 ? parent.model : "Epic Diffusion"
+                supportedModels.indexOf(parent.model) > -1
+                    ? parent.model
+                    : "Epic Diffusion"
             );
+            setCfgScale(parent.params.cfg_scale || 7.5);
         } else {
             resetState();
         }
@@ -479,38 +488,44 @@ export const ImagePrompt: FC<Props> = ({
                                     ))}
                                 </select>
                                 <span className="helptext">
-                                    Controlnet is an advanced way of controlling the output of image generation. You can read more about it <a target="_blank" href="https://bootcamp.uxdesign.cc/controlnet-and-stable-diffusion-a-game-changer-for-ai-image-generation-83555cb942fc">here.</a>
+                                    Controlnet is an advanced way of controlling
+                                    the output of image generation. You can read
+                                    more about it{" "}
+                                    <a
+                                        target="_blank"
+                                        href="https://bootcamp.uxdesign.cc/controlnet-and-stable-diffusion-a-game-changer-for-ai-image-generation-83555cb942fc"
+                                    >
+                                        here.
+                                    </a>
                                 </span>
                             </div>
                         )}
-                        {/* nsfw toggle button */}
+                        {/* cfg scale. Slider from 1 to 20 in increments of 0.1 */}
                         <div className="form-group">
-                            <label>NSFW</label>
-                            <button
-                                style={{ marginLeft: "16px" }}
-                                type="button"
-                                className="btn btn-primary btn-sm"
-                                onClick={() => setNsfw(!nsfw)}
-                            >
-                                {nsfw && (
-                                    <>
-                                        <i className="fa fa-check"></i>
-                                        &nbsp;Enabled
-                                    </>
-                                )}
-                                {!nsfw && (
-                                    <>
-                                        <i className="fa fa-times"></i>
-                                        &nbsp;Disabled
-                                    </>
-                                )}
-                            </button>
-
-                            <br />
+                            <label>
+                                CFG Scale: {cfgScale.toFixed(1)}
+                            </label>
+                            <input
+                                type="range"
+                                className="form-control-range"
+                                min="1"
+                                max="20"
+                                step="0.1"
+                                value={cfgScale}
+                                onChange={(e) =>
+                                    setCfgScale(parseFloat(e.target.value))
+                                }
+                            />
                             <span className="helptext">
-                                Toggle this if you want to generate NSFW images
+                                Adjust the CFG scale to control how
+                                much the image looks like the prompt.
                             </span>
                         </div>
+                        <SeedInput
+                            seed={seed}
+                            setSeed={setSeed}
+                        />
+
                         <div
                             className="form-group"
                             style={{ minHeight: "20px" }}

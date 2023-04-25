@@ -26,6 +26,7 @@ const metricsClient = new MetricsClient(process.env.NEW_RELIC_LICENSE_KEY);
 interface UpdateImageInput {
     status: string;
     error?: string;
+    nsfw?: boolean;
 }
 
 async function updateImage(
@@ -323,9 +324,15 @@ async function processRequest(request: HordeRequest) {
             thumbnail
         );
         await Promise.all([upload1, upload2]);
+
+        const nsfw: boolean = await processAlchemistImage({
+            source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
+            forms: [{ name: "nsfw" }],
+        })
+
         await updateImage(
             request.imageId,
-            { status: "completed" },
+            { status: "completed", nsfw },
             request.authToken
         );
         console.log("completed request");
