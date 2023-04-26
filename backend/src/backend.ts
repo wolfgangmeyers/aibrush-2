@@ -554,11 +554,12 @@ export class BackendService {
         try {
             await client.query(`DELETE FROM images WHERE id=$1`, [id]);
             const filesToCheck = [
+                `${id}.init_image.png`,
                 `${id}.image.png`,
                 `${id}.thumbnail.png`,
                 `${id}.mask.png`,
-                `${id}.mp4`,
-                `${id}.npy`,
+                // `${id}.mp4`,
+                // `${id}.npy`,
             ];
             const checkPromises = filesToCheck.map((file) =>
                 this.filestore.exists(file)
@@ -650,7 +651,7 @@ export class BackendService {
                     // encoded_image = parentImageData.toString("base64");
                     await this.filestore.copyFile(
                         `${body.parent}.image.png`,
-                        `${image.id}.image.png`
+                        `${image.id}.init_image.png`
                     )
                 } catch (err) {
                     console.error(err);
@@ -665,7 +666,7 @@ export class BackendService {
                 const binary_image = Buffer.from(encoded_image, "base64");
                 promises.push(
                     this.filestore.writeFile(
-                        `${image.id}.image.png`,
+                        `${image.id}.init_image.png`,
                         binary_image
                     )
                 );

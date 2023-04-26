@@ -22,6 +22,7 @@ import { getUpscaleLevel } from "../../lib/upscale";
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 import moment from "moment";
 import { supportedModels } from "../../lib/supportedModels";
+import { ProgressBar } from "../../components/ProgressBar";
 
 type EnhanceToolState = "select" | "default" | "uploading" | "processing" | "confirm" | "erase";
 
@@ -693,22 +694,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
             <div style={{ marginTop: "16px" }}>
                 <i className="fa fa-spinner fa-spin"></i>&nbsp; {state === "processing" ? "Enhancing..." : "Uploading..."}
                 <br />
-                {/* bootstrap progress bar */}
-                <div
-                    className="progress"
-                    style={{ height: "20px", marginTop: "16px" }}
-                >
-                    <div
-                        className="progress-bar"
-                        role="progressbar"
-                        style={{ width: `${progress * 100}%` }}
-                        aria-valuenow={progress * 100}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                    >
-                        {Math.round(progress * 100)}%
-                    </div>
-                </div>
+                <ProgressBar progress={progress} />
             </div>
         );
     }

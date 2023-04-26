@@ -8,11 +8,7 @@ import { useParams, useHistory, Link, useLocation } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
-import {
-    CreateImageInput,
-    StatusEnum,
-    Boost,
-} from "../client/api";
+import { CreateImageInput, StatusEnum, Boost } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import { BoostWidget } from "../components/BoostWidget";
@@ -35,6 +31,8 @@ import {
 } from "../lib/apisocket";
 import { LocalImagesStore, LocalImage } from "../lib/localImagesStore";
 import { ErrorNotification, SuccessNotification } from "../components/Alerts";
+import { sleep } from "../lib/sleep";
+import { ProgressBar } from "../components/ProgressBar";
 
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
@@ -312,6 +310,46 @@ export const Homepage: FC<Props> = ({
                                 binaryImageData.toString("base64");
                             const src = `data:image/png;base64,${base64ImageData}`;
                             img.imageData = src;
+
+                            // TODO: make this less ugly...
+                            if (img.parent) {
+                                const parentImage = await localImages.getImage(
+                                    img.parent
+                                );
+                                if (
+                                    parentImage &&
+                                    parentImage.imageData === src
+                                ) {
+                                    console.log("refreshing image in 5 sec...");
+                                    setTimeout(async () => {
+                                        const resp = await anonymousClient.get(
+                                            downloadUrls.data.image_url!,
+                                            {
+                                                responseType: "arraybuffer",
+                                            }
+                                        );
+                                        const binaryImageData = Buffer.from(
+                                            resp.data,
+                                            "binary"
+                                        );
+                                        const base64ImageData =
+                                            binaryImageData.toString("base64");
+                                        const src = `data:image/png;base64,${base64ImageData}`;
+                                        img.imageData = src;
+                                        await localImages.saveImage(img);
+                                        setImages((images) => {
+                                            return [
+                                                ...images.map((image) => {
+                                                    if (image.id === img.id) {
+                                                        return img;
+                                                    }
+                                                    return image;
+                                                }),
+                                            ].sort(sortImages);
+                                        });
+                                    }, 5000);
+                                }
+                            }
                         }
                         await localImages.saveImage(img);
                     }
@@ -496,29 +534,61 @@ export const Homepage: FC<Props> = ({
             history.push("/");
             const createInput: CreateImageInput = {
                 count: 1,
-                encoded_image: image.imageData!.split(",")[1],
+                // encoded_image: image.imageData!.split(",")[1],
                 params: image.params,
                 status: StatusEnum.Saved,
                 temporary: false,
                 label: "",
                 model: image.model,
             };
-            setUploadingProgress(0);
-            await api.createImage(createInput, {
-                onUploadProgress: (progressEvent: any) => {
-                    const percentCompleted = Math.round(
-                        (progressEvent.loaded) / progressEvent.total
-                    );
-                    setUploadingProgress(percentCompleted);
-                },
-            });
+
+            const encodedImage = image.imageData!.split(",")[1];
+
+            // convert base64 to binary
+            const binaryImageData = Buffer.from(encodedImage, "base64");
+            const encodedThumbnail = await createEncodedThumbnail(encodedImage);
+            const binaryThumbnailData = Buffer.from(encodedThumbnail, "base64");
+
+            const createResp = await api.createImage(createInput);
+            const imageId = createResp.data.images![0].id;
+            const uploadUrls = await api.getImageUploadUrls(imageId);
+            await anonymousClient.put(
+                uploadUrls.data.thumbnail_url!,
+                binaryThumbnailData,
+                {
+                    headers: {
+                        "Content-Type": "image/png",
+                    },
+                    onUploadProgress: (progressEvent: any) => {
+                        const percentCompleted = Math.round(
+                            progressEvent.loaded / progressEvent.total
+                        );
+                        setUploadingProgress(percentCompleted / 2);
+                    },
+                }
+            );
+            await anonymousClient.put(
+                uploadUrls.data.image_url!,
+                binaryImageData,
+                {
+                    headers: {
+                        "Content-Type": "image/png",
+                    },
+                    onUploadProgress: (progressEvent: any) => {
+                        const percentCompleted = Math.round(
+                            progressEvent.loaded / progressEvent.total
+                        );
+                        setUploadingProgress(percentCompleted / 2 + 0.5);
+                    },
+                }
+            );
+
             await localImages.hardDeleteImage(image.id);
             setImages((images) => {
                 return images.filter((i) => i.id !== image.id);
             });
             setSuccess("Image saved");
             setSuccessTime(moment().valueOf());
-            
         } catch (e) {
             console.error(e);
             onError("Error saving image");
@@ -810,14 +880,8 @@ export const Homepage: FC<Props> = ({
             <BusyModal show={savingImage} title="Saving image">
                 {/* bootstrap progress bar for uploadProgress (0-1 value) */}
                 <div className="progress">
-                    <div
-                        className="progress-bar"
-                        role="progressbar"
-                        style={{ width: `${uploadProgress * 100}%` }}
-                        aria-valuenow={uploadProgress * 100}
-                    ></div>
+                    <ProgressBar progress={uploadProgress} />
                 </div>
-                
             </BusyModal>
             <PendingImages
                 images={pendingOrProcessingImages}

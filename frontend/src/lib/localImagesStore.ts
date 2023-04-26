@@ -51,6 +51,9 @@ export class LocalImagesStore {
 
     // migrate old images to new format
     private hydrateImage(image: LocalImage): LocalImage {
+        if (!image) {
+            return image;
+        }
         if (!image.params) {
             const legacyImage = image as any;
             image.params = {

@@ -211,7 +211,7 @@ async function processRequest(request: HordeRequest) {
         prompt = stripBlacklistedTerms(request.nsfw, prompt);
         console.log(prompt);
 
-        const imageExistsPromise = imageExists(`${request.imageId}.image.png`);
+        const imageExistsPromise = imageExists(`${request.imageId}.init_image.png`);
         const maskExistsPromise = imageExists(`${request.imageId}.mask.png`);
         const [imageOk, maskOk] = await Promise.all([
             imageExistsPromise,
@@ -281,7 +281,7 @@ async function processRequest(request: HordeRequest) {
 
             if (imageOk) {
                 // payload.source_image = imageData.toString("base64");
-                payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`;
+                payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.png`;
             }
             if (maskOk) {
                 console.log("mask data found");
