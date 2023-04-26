@@ -120,8 +120,16 @@ export const Homepage: FC<Props> = ({
         setParentImage(null);
         setErr(null);
         window.scrollTo(0, 0);
+        setUploadingProgress(0);
         try {
-            const newImages = await api.createImage(input);
+            const newImages = await api.createImage(input, {
+                onUploadProgress: (progressEvent: any) => {
+                    const percentCompleted = Math.round(
+                        (progressEvent.loaded) / progressEvent.total
+                    );
+                    setUploadingProgress(percentCompleted);
+                },
+            });
             if (newImages.data.images) {
                 for (let image of newImages.data.images || []) {
                     localImages.saveImage(image);
@@ -870,6 +878,7 @@ export const Homepage: FC<Props> = ({
             <ScrollToTop />
             <BusyModal show={creating} title="Creating images">
                 <p>Please wait while we create your image.</p>
+                <ProgressBar progress={uploadProgress} />
             </BusyModal>
             <BusyModal show={bulkDeleting} title="Deleting images">
                 <p>Please wait while we delete your images.</p>
