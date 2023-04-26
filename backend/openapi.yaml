@@ -565,38 +565,69 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GlobalSettings"
-# API to upload temporary images and then merge them into larger images
-# to avoid having to upload the entire image at once
-  /api/tmp-images:
-    post:
-      description: Create a temporary image
-      operationId: createTmpImage
+  /api/stable-diffusion-models:
+    get:
+      summary: Get available models
+      operationId: getModels
       tags:
         - AIBrush
       responses:
-        "200":
-          description: Success
+        '200':
+          description: A list of available models
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TemporaryImage"
-  /api/large-images:
-    post:
-      description: Update a large image
-      operationId: updateLargeImage
-      tags:
-        - AIBrush
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateLargeImageRequest"
-      responses:
-        "204":
-          description: Success
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/StableDiffusionModel'
+
 
 components:
   schemas:
+    StableDiffusionModel:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the model
+        baseline:
+          type: string
+          description: The baseline model used
+        type:
+          type: string
+          description: The type of the model (e.g., ckpt)
+        description:
+          type: string
+          description: A short description of the model
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags associated with the model
+        showcases:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: A list of URIs for showcase images
+        version:
+          type: string
+          description: The version of the model
+        style:
+          type: string
+          description: The style of the model (e.g., anime, furry)
+        nsfw:
+          type: boolean
+          description: Whether the model is Not Safe For Work (NSFW)
+        download_all:
+          type: boolean
+          description: Whether to download all model files
+        config:
+          type: object
+          description: Configuration information for the model
+        available:
+          type: boolean
+          description: Whether the model is available for use
     StatusEnum:
       type: string
       enum:

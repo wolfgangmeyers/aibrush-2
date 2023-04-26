@@ -11,6 +11,7 @@ import os from "os";
 import * as uuid from "uuid";
 import Bugsnag from "@bugsnag/js";
 import BugsnagPluginExpress from "@bugsnag/plugin-express";
+import axios from "axios";
 
 if (process.env.BUGSNAG_API_KEY) {
     Bugsnag.start({
@@ -300,6 +301,18 @@ export class Server {
                 } else {
                     res.send(result);
                 }
+            })
+        );
+
+        // fetch the result of https://github.com/db0/AI-Horde-image-model-reference/blob/main/stable_diffusion.json and return it
+        this.app.get(
+            "/api/stable-diffusion-models",
+            withMetrics("/api/stable-diffusion-models", async (req, res) => {
+                // don't check authentication
+                const resp = await axios.get(
+                    "https://raw.githubusercontent.com/db0/AI-Horde-image-model-reference/main/stable_diffusion.json"
+                );
+                res.json(resp.data);
             })
         );
 
@@ -1031,40 +1044,6 @@ export class Server {
                     req.body.settings_json
                 );
                 res.json(settings);
-            })
-        );
-
-        this.app.post(
-            "/api/tmp-images",
-            withMetrics("/api/tmp-images", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to create tmp image",
-                        jwt
-                    );
-                    return;
-                }
-                const tmpImage = await this.backendService.createTmpImage();
-                res.json(tmpImage);
-            })
-        );
-
-        this.app.post(
-            "/api/large-images",
-            withMetrics("/api/large-images", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to update large image",
-                        jwt
-                    );
-                    return;
-                }
-                await this.backendService.updateLargeImage(req.body);
-                res.sendStatus(204);
             })
         );
 

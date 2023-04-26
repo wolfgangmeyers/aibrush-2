@@ -19,6 +19,7 @@ import {
     WorkerStatusEnum,
     ImageUrls,
     GlobalSettings,
+    StableDiffusionModel,
 } from "./client/api"
 
 // import { Mailcatcher, MailcatcherMessage } from './mailcatcher'
@@ -204,6 +205,19 @@ describe("server", () => {
                 expect(response.data.terms_uri).toBe("https://terms.com");
             })
         })
+
+        describe("when getting the stable diffusion models", () => {
+            let response: AxiosResponse<{[key: string]: StableDiffusionModel}>;
+
+            beforeEach(async () => {
+                response = await client.getModels();
+            })
+
+            it("should return the models", () => {
+                expect(response.status).toBe(200);
+                expect(Object.keys(response.data).length).toBeGreaterThan(0);
+            })
+        });
     })
 
     // describe.skip("when user authenticates", () => {

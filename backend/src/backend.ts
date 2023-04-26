@@ -1424,32 +1424,6 @@ export class BackendService {
         }
     }
 
-    // Update large image optimization
-    // allows user to send smaller image that will be merged to
-    // the larger one
-    async createTmpImage(): Promise<TemporaryImage> {
-        const id = uuid.v4();
-        const uploadUrl = await this.filestore.getUploadUrl(
-            `tmp/${id}.png`,
-        );
-        return {
-            id,
-            upload_url: uploadUrl,
-        };
-    }
-
-    // TODO: consider offloading this to a lambda for better performance
-    async updateLargeImage(req: UpdateLargeImageRequest) {
-        const tmpImagePromise = this.filestore.readBinaryFile(`tmp/${req.tmp_image_id}.png`);
-        const baseImagePromise = this.filestore.readBinaryFile(`${req.image_id}.image.png`);
-        const [tmpImage, baseImage] = await Promise.all([tmpImagePromise, baseImagePromise]);
-        const mergedImage = await mergeImage(baseImage, tmpImage, req.x, req.y);
-        const thumbnail = await this.createThumbnail(mergedImage);
-        const imagePromise = this.filestore.writeFile(`${req.image_id}.image.png`, mergedImage);
-        const thumbnailPromise = this.filestore.writeFile(`${req.image_id}.thumbnail.png`, thumbnail);
-        await Promise.all([imagePromise, thumbnailPromise]);
-    }
-
     // dev-only function
     async uploadTmpImage(id: string, image: Buffer) {
         await this.filestore.writeFile(`tmp/${id}.png`, image);
