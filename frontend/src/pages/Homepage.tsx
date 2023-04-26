@@ -879,9 +879,7 @@ export const Homepage: FC<Props> = ({
             </BusyModal>
             <BusyModal show={savingImage} title="Saving image">
                 {/* bootstrap progress bar for uploadProgress (0-1 value) */}
-                <div className="progress">
-                    <ProgressBar progress={uploadProgress} />
-                </div>
+                <ProgressBar progress={uploadProgress} />
             </BusyModal>
             <PendingImages
                 images={pendingOrProcessingImages}
