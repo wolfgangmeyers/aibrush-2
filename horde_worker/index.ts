@@ -181,7 +181,7 @@ async function processRequest(request: HordeRequest) {
             { status: "processing" },
             request.authToken
         );
-        let prompt = addTrigger(request.prompt, request.model);
+        let prompt = await addTrigger(request.prompt, request.model);
         const negativePrompt = request.negativePrompt;
         if (negativePrompt.length > 0) {
             prompt = `${prompt} ### ${negativePrompt}`;

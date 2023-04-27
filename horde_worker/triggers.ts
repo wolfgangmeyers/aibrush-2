@@ -1,4 +1,5 @@
 import axios from "axios";
+import moment from "moment";
 
 const fetchHordeData = async () => {
     const { data } = await axios.get(
@@ -8,8 +9,10 @@ const fetchHordeData = async () => {
 };
 
 let _triggers: { [key: string]: string[] } = null;
+let _lastUpdated: moment.Moment = null;
 
-fetchHordeData().then((data) => {
+async function initTriggers() {
+    const data = await fetchHordeData();
     _triggers = {};
     Object.keys(data).forEach((key) => {
         const modelInfo = data[key];
@@ -17,9 +20,14 @@ fetchHordeData().then((data) => {
             _triggers[key] = modelInfo.trigger;
         }
     });
-});
+}
 
-export function addTrigger(prompt: string, model: string): string {
+export async function addTrigger(prompt: string, model: string): Promise<string> {
+    // check last updated
+    if (_lastUpdated === null || moment().diff(_lastUpdated, "minutes") > 60) {
+        await initTriggers();
+        _lastUpdated = moment();
+    }
     if (_triggers[model]) {
         const triggerList = _triggers[model];
         for (let trigger of triggerList) {
