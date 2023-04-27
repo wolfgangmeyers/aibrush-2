@@ -675,16 +675,30 @@ export class BackendService {
                         )
                     );
                 }
-                
             }
-            let encoded_npy = body.encoded_npy;
 
-            // if encoded_npy is set, save npy
-            if (encoded_npy) {
-                const binary_npy = Buffer.from(encoded_npy, "base64");
+            // temporary image references. This is more efficient than uploading
+            // image data directly to the api
+            if (body.tmp_image_id) {
                 promises.push(
-                    this.filestore.writeFile(`${image.id}.npy`, binary_npy)
-                );
+                    this.filestore.copyFile(
+                        `tmp/${body.tmp_image_id}.png`,
+                        `${image.id}.init_image.png`
+                ));
+            }
+            if (body.tmp_mask_id) {
+                promises.push(
+                    this.filestore.copyFile(
+                        `tmp/${body.tmp_mask_id}.png`,
+                        `${image.id}.mask.png`
+                ));
+            }
+            if (body.tmp_thumbnail_id) {
+                promises.push(
+                    this.filestore.copyFile(
+                        `tmp/${body.tmp_thumbnail_id}.png`,
+                        `${image.id}.thumbnail.png`
+                ));
             }
 
             let encoded_mask = body.encoded_mask;

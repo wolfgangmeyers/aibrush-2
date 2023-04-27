@@ -675,7 +675,11 @@ components:
           type: string
         encoded_mask:
           type: string
-        encoded_npy:
+        tmp_image_id:
+          type: string
+        tmp_mask_id:
+          type: string
+        tmp_thumbnail_id:
           type: string
         model:
           type: string

@@ -190,7 +190,19 @@ export interface CreateImageInput {
      * @type {string}
      * @memberof CreateImageInput
      */
-    'encoded_npy'?: string;
+    'tmp_image_id'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateImageInput
+     */
+    'tmp_mask_id'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateImageInput
+     */
+    'tmp_thumbnail_id'?: string;
     /**
      * 
      * @type {string}
