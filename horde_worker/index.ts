@@ -169,6 +169,15 @@ const inpaintingModels: { [key: string]: boolean } = {
     anything_v4_inpainting: true,
 };
 
+function stripWeightsFromPrompt(prompt: string): string {
+    if (!prompt) {
+        return prompt;
+    }
+    // Use a regular expression to match and remove the weights and parentheses
+    const strippedPrompt = prompt.replace(/[:()\d]+(\.\d+)?/g, "");
+    return strippedPrompt;
+}
+
 async function processRequest(request: HordeRequest) {
     const metricParams = {
         model: request.model,
@@ -182,14 +191,16 @@ async function processRequest(request: HordeRequest) {
             request.authToken
         );
         let prompt = await addTrigger(request.prompt, request.model);
-        const negativePrompt = request.negativePrompt;
+        const negativePrompt = stripWeightsFromPrompt(request.negativePrompt);
         if (negativePrompt.length > 0) {
             prompt = `${prompt} ### ${negativePrompt}`;
         }
         prompt = stripBlacklistedTerms(request.nsfw, prompt);
         console.log(prompt);
 
-        const imageExistsPromise = imageExists(`${request.imageId}.init_image.png`);
+        const imageExistsPromise = imageExists(
+            `${request.imageId}.init_image.png`
+        );
         const maskExistsPromise = imageExists(`${request.imageId}.mask.png`);
         const [imageOk, maskOk] = await Promise.all([
             imageExistsPromise,
@@ -226,55 +237,55 @@ async function processRequest(request: HordeRequest) {
             post_processing.push(augmentationToForm[request.augmentation]);
         }
         // } else {
-            // regular old image generation
-            const payload: HordeRequestPayload = {
-                params: {
-                    n: 1,
-                    width: request.width,
-                    height: request.height,
-                    steps: 20,
-                    karras: true,
-                    sampler_name: "k_euler",
-                    cfg_scale: request.cfgScale,
-                    denoising_strength: request.controlnetType
-                        ? undefined
-                        : request.denoisingStrength,
-                    // TODO: does this work? Maybe we can use it to handle larger
-                    // areas of an image in the editor
-                    hires_fix: false,
-                    post_processing,
-                    control_type: request.controlnetType || undefined,
-                    seed: request.seed || undefined
-                },
-                prompt,
-                api_key: hordeApiKey,
-                nsfw: request.nsfw,
-                censor_nsfw: !request.nsfw,
-                trusted_workers: false,
-                slow_workers: false,
-                r2: true,
-                models: [request.model],
-                source_processing: "img2img",
-            };
+        // regular old image generation
+        const payload: HordeRequestPayload = {
+            params: {
+                n: 1,
+                width: request.width,
+                height: request.height,
+                steps: 20,
+                karras: true,
+                sampler_name: "k_euler",
+                cfg_scale: request.cfgScale,
+                denoising_strength: request.controlnetType
+                    ? undefined
+                    : request.denoisingStrength,
+                // TODO: does this work? Maybe we can use it to handle larger
+                // areas of an image in the editor
+                hires_fix: false,
+                post_processing,
+                control_type: request.controlnetType || undefined,
+                seed: request.seed || undefined,
+            },
+            prompt,
+            api_key: hordeApiKey,
+            nsfw: request.nsfw,
+            censor_nsfw: !request.nsfw,
+            trusted_workers: false,
+            slow_workers: false,
+            r2: true,
+            models: [request.model],
+            source_processing: "img2img",
+        };
 
-            if (imageOk) {
-                // payload.source_image = imageData.toString("base64");
-                payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.png`;
+        if (imageOk) {
+            // payload.source_image = imageData.toString("base64");
+            payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.png`;
+        }
+        if (maskOk) {
+            console.log("mask data found");
+            // payload.source_mask = maskData.toString("base64");
+            payload.source_mask = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.mask.png`;
+            if (inpaintingModels[request.model]) {
+                payload.source_processing = "inpainting";
+                payload.params.karras = false;
+                payload.params.steps = 50;
             }
-            if (maskOk) {
-                console.log("mask data found");
-                // payload.source_mask = maskData.toString("base64");
-                payload.source_mask = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.mask.png`;
-                if (inpaintingModels[request.model]) {
-                    payload.source_processing = "inpainting";
-                    payload.params.karras = false;
-                    payload.params.steps = 50;
-                }
-            }
+        }
 
-            console.log("sending payload", payload);
+        console.log("sending payload", payload);
 
-            webpImageData = await processImage(payload);
+        webpImageData = await processImage(payload);
         // }
 
         console.log("received response from stable horde");
@@ -306,7 +317,7 @@ async function processRequest(request: HordeRequest) {
         const nsfw: boolean = await processAlchemistImage({
             source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
             forms: [{ name: "nsfw" }],
-        })
+        });
 
         await updateImage(
             request.imageId,
