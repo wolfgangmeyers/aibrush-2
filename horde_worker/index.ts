@@ -5,6 +5,7 @@ import axios from "axios";
 import moment from "moment";
 import { sleep } from "./sleep";
 import { MetricsClient } from "./metrics";
+import { addTrigger } from "./triggers";
 
 import {
     AlchemistPayload,
@@ -137,34 +138,11 @@ function stripBlacklistedTerms(nsfw: boolean, prompt: string): string {
     return prompt;
 }
 
-const triggers: { [key: string]: string[] } = {
-    "GTA5 Artwork Diffusion": ["gtav style"],
-    "AIO Pixel Art": ["16bitscene", "pixelsprite"],
-    OrbAI: ["orbai"],
-    "Ranma Diffusion": ["80sanimestyle"],
-    "App Icon Diffusion": ["IconsMi"],
-};
-
 const augmentationToForm = {
     upscale: "RealESRGAN_x4plus",
     face_restore: "GFPGAN",
     remove_background: "strip_background",
 };
-
-function addTrigger(prompt: string, model: string): string {
-    if (triggers[model]) {
-        const triggerList = triggers[model];
-        for (let trigger of triggerList) {
-            if (
-                prompt.toLocaleLowerCase().includes(trigger.toLocaleLowerCase())
-            ) {
-                return prompt;
-            }
-        }
-        return `${triggerList[0]}, ${prompt}`;
-    }
-    return prompt;
-}
 
 interface HordeRequest {
     authToken: string;
