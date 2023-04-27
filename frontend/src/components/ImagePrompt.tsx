@@ -532,7 +532,7 @@ export const ImagePrompt: FC<Props> = ({
                                 className="form-control-range"
                                 min="1"
                                 max="20"
-                                step="0.1"
+                                step="0.5"
                                 value={cfgScale}
                                 onChange={(e) =>
                                     setCfgScale(parseFloat(e.target.value))
