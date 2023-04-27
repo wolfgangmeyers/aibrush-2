@@ -705,6 +705,7 @@ export const Homepage: FC<Props> = ({
             <SuccessNotification message={success} timestamp={successTime} />
 
             <ImagePrompt
+                api={api}
                 assetsUrl={assetsUrl}
                 creating={creating}
                 onSubmit={onSubmit}

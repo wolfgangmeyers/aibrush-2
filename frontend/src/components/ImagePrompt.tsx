@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useState } from "react";
-import { CreateImageInput, StatusEnum, Image } from "../client";
+import { CreateImageInput, StatusEnum, Image, AIBrushApi } from "../client";
 import {
     aspectRatios,
     DEFAULT_ASPECT_RATIO,
@@ -15,8 +15,10 @@ import { resizeEncodedImage } from "../lib/imageutil";
 import { LocalImage } from "../lib/localImagesStore";
 import { controlnetTypes, supportedModels } from "../lib/supportedModels";
 import { SeedInput } from "./SeedInput";
+import ModelSelector from "./ModelSelector";
 
 interface Props {
+    api: AIBrushApi;
     parent: LocalImage | null;
     creating: boolean;
     assetsUrl: string;
@@ -49,6 +51,7 @@ const defaultNegativePrompt =
     "low quality, distorted, deformed, dull, boring, plain, ugly, noise";
 
 export const ImagePrompt: FC<Props> = ({
+    api,
     parent,
     creating,
     assetsUrl,
@@ -68,6 +71,9 @@ export const ImagePrompt: FC<Props> = ({
     const [advancedView, setAdvancedView] = useState<boolean>(false);
     const [encodedImage, setEncodedImage] = useState<string>("");
     const [model, setModel] = useState<string>("Epic Diffusion");
+
+    const [selectingModel, setSelectingModel] = useState<boolean>(false);
+
     const [controlnetType, setControlnetType] = useState<string | undefined>();
     const [cfgScale, setCfgScale] = useState<number>(7.5);
     const [seed, setSeed] = useState<string>("");
@@ -169,6 +175,11 @@ export const ImagePrompt: FC<Props> = ({
     const handleCancel = () => {
         resetState();
         onCancel();
+    };
+
+    const onSelectModel = (model: string) => {
+        setModel(model);
+        setSelectingModel(false);
     };
 
     const onImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -382,7 +393,7 @@ export const ImagePrompt: FC<Props> = ({
                         </div>
                         <div className="form-group">
                             <label htmlFor="model">Model</label>
-                            <select
+                            {/* <select
                                 className="form-control"
                                 id="model"
                                 value={model}
@@ -396,7 +407,18 @@ export const ImagePrompt: FC<Props> = ({
                                         {model}
                                     </option>
                                 ))}
-                            </select>
+                            </select> */}
+                            {/* replace the select with a button that sets selectingModel to true */}
+                            <div>
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary light-button"
+                                    onClick={() => setSelectingModel(true)}
+                                >
+                                    {model}&nbsp;
+                                    <i className="fas fa-caret-down"></i>
+                                </button>
+                            </div>
                         </div>
                         <div className="form-group">
                             {/* negative prompt */}
@@ -418,24 +440,26 @@ export const ImagePrompt: FC<Props> = ({
                                 "distorted"
                             </span>
                         </div>
-                        {!seed && <div className="form-group">
-                            <label htmlFor="count">Count: {count}</label>
-                            {/* range slider from 1 to 20 */}
-                            <input
-                                type="range"
-                                className="form-control-range"
-                                id="count"
-                                min="1"
-                                max="10"
-                                value={count}
-                                onChange={(e) =>
-                                    setCount(parseInt(e.target.value))
-                                }
-                            />
-                            <span className="helptext">
-                                This is how many images you want to generate
-                            </span>
-                        </div>}
+                        {!seed && (
+                            <div className="form-group">
+                                <label htmlFor="count">Count: {count}</label>
+                                {/* range slider from 1 to 20 */}
+                                <input
+                                    type="range"
+                                    className="form-control-range"
+                                    id="count"
+                                    min="1"
+                                    max="10"
+                                    value={count}
+                                    onChange={(e) =>
+                                        setCount(parseInt(e.target.value))
+                                    }
+                                />
+                                <span className="helptext">
+                                    This is how many images you want to generate
+                                </span>
+                            </div>
+                        )}
                         {(parentId || encodedImage) && (
                             <div className="form-group">
                                 {/* variation strength */}
@@ -502,9 +526,7 @@ export const ImagePrompt: FC<Props> = ({
                         )}
                         {/* cfg scale. Slider from 1 to 20 in increments of 0.1 */}
                         <div className="form-group">
-                            <label>
-                                CFG Scale: {cfgScale.toFixed(1)}
-                            </label>
+                            <label>CFG Scale: {cfgScale.toFixed(1)}</label>
                             <input
                                 type="range"
                                 className="form-control-range"
@@ -517,14 +539,11 @@ export const ImagePrompt: FC<Props> = ({
                                 }
                             />
                             <span className="helptext">
-                                Adjust the CFG scale to control how
-                                much the image looks like the prompt.
+                                Adjust the CFG scale to control how much the
+                                image looks like the prompt.
                             </span>
                         </div>
-                        <SeedInput
-                            seed={seed}
-                            setSeed={setSeed}
-                        />
+                        <SeedInput seed={seed} setSeed={setSeed} />
 
                         <div
                             className="form-group"
@@ -574,6 +593,14 @@ export const ImagePrompt: FC<Props> = ({
                     </div>
                 )}
             </div>
+            {selectingModel && (
+                <ModelSelector
+                    api={api}
+                    onCancel={() => setSelectingModel(false)}
+                    onSelectModel={onSelectModel}
+                    initialSelectedModel={model}
+                />
+            )}
         </form>
     );
 };

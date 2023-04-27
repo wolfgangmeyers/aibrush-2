@@ -628,6 +628,19 @@ components:
         available:
           type: boolean
           description: Whether the model is available for use
+      required:
+        - name
+        - baseline
+        - type
+        - description
+        - tags
+        - showcases
+        - version
+        - style
+        - nsfw
+        - download_all
+        - config
+        - available
     StatusEnum:
       type: string
       enum:
