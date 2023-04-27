@@ -710,73 +710,73 @@ export interface StableDiffusionModel {
      * @type {string}
      * @memberof StableDiffusionModel
      */
-    'name'?: string;
+    'name': string;
     /**
      * The baseline model used
      * @type {string}
      * @memberof StableDiffusionModel
      */
-    'baseline'?: string;
+    'baseline': string;
     /**
      * The type of the model (e.g., ckpt)
      * @type {string}
      * @memberof StableDiffusionModel
      */
-    'type'?: string;
+    'type': string;
     /**
      * A short description of the model
      * @type {string}
      * @memberof StableDiffusionModel
      */
-    'description'?: string;
+    'description': string;
     /**
      * Tags associated with the model
      * @type {Array<string>}
      * @memberof StableDiffusionModel
      */
-    'tags'?: Array<string>;
+    'tags': Array<string>;
     /**
      * A list of URIs for showcase images
      * @type {Array<string>}
      * @memberof StableDiffusionModel
      */
-    'showcases'?: Array<string>;
+    'showcases': Array<string>;
     /**
      * The version of the model
      * @type {string}
      * @memberof StableDiffusionModel
      */
-    'version'?: string;
+    'version': string;
     /**
      * The style of the model (e.g., anime, furry)
      * @type {string}
      * @memberof StableDiffusionModel
      */
-    'style'?: string;
+    'style': string;
     /**
      * Whether the model is Not Safe For Work (NSFW)
      * @type {boolean}
      * @memberof StableDiffusionModel
      */
-    'nsfw'?: boolean;
+    'nsfw': boolean;
     /**
      * Whether to download all model files
      * @type {boolean}
      * @memberof StableDiffusionModel
      */
-    'download_all'?: boolean;
+    'download_all': boolean;
     /**
      * Configuration information for the model
      * @type {object}
      * @memberof StableDiffusionModel
      */
-    'config'?: object;
+    'config': object;
     /**
      * Whether the model is available for use
      * @type {boolean}
      * @memberof StableDiffusionModel
      */
-    'available'?: boolean;
+    'available': boolean;
 }
 /**
  * 
@@ -787,10 +787,10 @@ export interface StableDiffusionModel {
 export const StatusEnum = {
     Pending: 'pending',
     Processing: 'processing',
-    Ranking: 'ranking',
     Completed: 'completed',
     Saved: 'saved',
-    Error: 'error'
+    Error: 'error',
+    Deleted: 'deleted'
 } as const;
 
 export type StatusEnum = typeof StatusEnum[keyof typeof StatusEnum];
@@ -938,37 +938,6 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     'error'?: string;
-}
-/**
- * 
- * @export
- * @interface UpdateLargeImageRequest
- */
-export interface UpdateLargeImageRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateLargeImageRequest
-     */
-    'image_id': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateLargeImageRequest
-     */
-    'tmp_image_id': string;
-    /**
-     * 
-     * @type {number}
-     * @memberof UpdateLargeImageRequest
-     */
-    'x': number;
-    /**
-     * 
-     * @type {number}
-     * @memberof UpdateLargeImageRequest
-     */
-    'y': number;
 }
 /**
  * 
@@ -1300,6 +1269,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          */
         createInviteCode: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/invite-codes`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a new temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createTemporaryImage: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/temporary-images`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2272,6 +2270,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a new temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createTemporaryImage(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TemporaryImage>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createTemporaryImage(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2589,6 +2596,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createInviteCode(options).then((request) => request(axios, basePath));
         },
         /**
+         * Create a new temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createTemporaryImage(options?: any): AxiosPromise<TemporaryImage> {
+            return localVarFp.createTemporaryImage(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2884,6 +2899,16 @@ export class AIBrushApi extends BaseAPI {
      */
     public createInviteCode(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).createInviteCode(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a new temporary image
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createTemporaryImage(options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).createTemporaryImage(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

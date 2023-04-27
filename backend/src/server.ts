@@ -511,15 +511,6 @@ export class Server {
                 })
             );
 
-            // tmp images
-            this.app.put("/api/images/tmp/:id.png", async (req, res) => {
-                await this.backendService.uploadTmpImage(
-                    req.params.id,
-                    req.body
-                );
-                res.sendStatus(201);
-            });
-
             // no-op. This is handled by updating the image data...
             // in production these will be S3 calls
             this.app.put(
@@ -536,6 +527,14 @@ export class Server {
 
         // authenticated routes only past this point
         this.app.use(authMiddleware(this.config, this.logger));
+
+        this.app.post(
+            "/api/temporary-images",
+            withMetrics("/api/temporary-images", async (_, res) => {
+                const image = await this.backendService.createTemporaryImage();
+                res.status(201).json(image);
+            })
+        );
 
         // list images
         this.app.get(

@@ -19,19 +19,10 @@ import {
     User,
     AddMetricsInput,
     Worker,
-    WorkerConfig,
-    WorkerLoginCode,
-    LoginResult,
-    WorkerStatusEnum,
-    Order,
-    UpsertWorkerInput,
-    WorkerGpuConfig,
-    UpsertWorkerConfigInput,
     ImageUrls,
     Boost,
     GlobalSettings,
     TemporaryImage,
-    UpdateLargeImageRequest,
 } from "./client/api";
 import { sleep } from "./sleep";
 import { EmailMessage } from "./email_message";
@@ -41,10 +32,9 @@ import { LoginCode } from "./model";
 import { Filestore, S3Filestore, LocalFilestore } from "./filestore";
 import { MetricsClient } from "./metrics";
 import Bugsnag from "@bugsnag/js";
-import { ConsoleLogger, Logger } from "./logs";
+import { Logger } from "./logs";
 import { Clock, RealClock } from "./clock";
 import { HordeQueue, SQSHordeQueue } from "./horde_queue";
-import { mergeImage } from "./image_helper";
 
 process.env.PGUSER = process.env.PGUSER || "postgres";
 
@@ -1004,7 +994,7 @@ export class BackendService {
             // first list all temporary images, iterate over them and delete them.
             // they might have files in the filestore too
             const result = await client.query(
-                `SELECT * FROM images WHERE temporary=true AND created_at < $1`,
+                `SELECT id FROM images WHERE temporary=true AND created_at < $1`,
                 [new Date().getTime() - 60 * 60 * 1000]
             );
             if (result.rows.length > 0) {
@@ -1041,7 +1031,7 @@ export class BackendService {
                 return;
             }
             const result = await client.query(
-                `SELECT * FROM images WHERE deleted_at < $1`,
+                `SELECT id FROM images WHERE deleted_at < $1`,
                 [this.clock.now().subtract(1, "days").valueOf()]
             );
             if (result.rows.length > 0) {
@@ -1424,9 +1414,13 @@ export class BackendService {
         }
     }
 
-    // dev-only function
-    async uploadTmpImage(id: string, image: Buffer) {
-        await this.filestore.writeFile(`tmp/${id}.png`, image);
+    async createTemporaryImage(): Promise<TemporaryImage> {
+        const tmpImageId = uuid.v4();
+        const uploadUrl = await this.filestore.getUploadUrl(`tmp/${tmpImageId}.png`);
+        return {
+            id: tmpImageId,
+            upload_url: uploadUrl,
+        };
     }
 
     async cleanupIdleBoosts(): Promise<void> {

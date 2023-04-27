@@ -580,7 +580,19 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/StableDiffusionModel'
-
+  /api/temporary-images:
+    post:
+      description: Create a new temporary image
+      operationId: createTemporaryImage
+      tags:
+        - AIBrush
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemporaryImage"
 
 components:
   schemas:
@@ -646,10 +658,10 @@ components:
       enum:
         - pending
         - processing
-        - ranking
         - completed
         - saved
         - error
+        - deleted
     CreateImageInput:
       type: object
       properties:
@@ -1102,22 +1114,6 @@ components:
           type: object
       required:
         - settings_json
-    UpdateLargeImageRequest:
-      type: object
-      properties:
-        image_id:
-          type: string
-        tmp_image_id:
-          type: string
-        x:
-          type: integer
-        y:
-          type: integer
-      required:
-        - image_id
-        - tmp_image_id
-        - x
-        - y
     TemporaryImage:
       type: object
       properties:
