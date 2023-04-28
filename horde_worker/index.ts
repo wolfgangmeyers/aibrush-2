@@ -313,11 +313,13 @@ async function processRequest(request: HordeRequest) {
             thumbnail
         );
         await Promise.all([upload1, upload2]);
-
-        const nsfw: boolean = await processAlchemistImage({
-            source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
-            forms: [{ name: "nsfw" }],
-        });
+        let nsfw = false;
+        if (request.augmentation !== "upscale") {
+            nsfw = await processAlchemistImage({
+                source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
+                forms: [{ name: "nsfw" }],
+            });
+        }
 
         await updateImage(
             request.imageId,
