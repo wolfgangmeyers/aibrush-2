@@ -157,7 +157,7 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
             renderer.setBaseImage(newCanvas);
             newCanvas.remove();
         } catch (err: any) {
-            setError(err.message || "Upscaling failed");
+            setError(err.message || "Augmentation failed");
             setLastError(moment().valueOf());
         } finally {
             setActiveAugmentation(null);

@@ -1219,11 +1219,12 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * Get a list of saved images by id
+         * @param {string} [fields] Comma-separated list of fields to include in the response images. For example: \&quot;id,params,created_at\&quot; 
          * @param {BatchGetImagesInput} [batchGetImagesInput] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        batchGetImages: async (batchGetImagesInput?: BatchGetImagesInput, options: any = {}): Promise<RequestArgs> => {
+        batchGetImages: async (fields?: string, batchGetImagesInput?: BatchGetImagesInput, options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/batch-get-images`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1235,6 +1236,10 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            if (fields !== undefined) {
+                localVarQueryParameter['fields'] = fields;
+            }
 
 
     
@@ -1918,10 +1923,11 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          * @param {string} [filter] 
          * @param {number} [limit] 
          * @param {'asc' | 'desc'} [direction] 
+         * @param {string} [fields] Comma-separated list of fields to include in the response images. For example: \&quot;id,params,created_at\&quot; 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listImages: async (cursor?: number, filter?: string, limit?: number, direction?: 'asc' | 'desc', options: any = {}): Promise<RequestArgs> => {
+        listImages: async (cursor?: number, filter?: string, limit?: number, direction?: 'asc' | 'desc', fields?: string, options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/images`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1948,6 +1954,10 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
             if (direction !== undefined) {
                 localVarQueryParameter['direction'] = direction;
+            }
+
+            if (fields !== undefined) {
+                localVarQueryParameter['fields'] = fields;
             }
 
 
@@ -2263,12 +2273,13 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
         },
         /**
          * Get a list of saved images by id
+         * @param {string} [fields] Comma-separated list of fields to include in the response images. For example: \&quot;id,params,created_at\&quot; 
          * @param {BatchGetImagesInput} [batchGetImagesInput] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async batchGetImages(batchGetImagesInput?: BatchGetImagesInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.batchGetImages(batchGetImagesInput, options);
+        async batchGetImages(fields?: string, batchGetImagesInput?: BatchGetImagesInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.batchGetImages(fields, batchGetImagesInput, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2480,11 +2491,12 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          * @param {string} [filter] 
          * @param {number} [limit] 
          * @param {'asc' | 'desc'} [direction] 
+         * @param {string} [fields] Comma-separated list of fields to include in the response images. For example: \&quot;id,params,created_at\&quot; 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async listImages(cursor?: number, filter?: string, limit?: number, direction?: 'asc' | 'desc', options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listImages(cursor, filter, limit, direction, options);
+        async listImages(cursor?: number, filter?: string, limit?: number, direction?: 'asc' | 'desc', fields?: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listImages(cursor, filter, limit, direction, fields, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2592,12 +2604,13 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * Get a list of saved images by id
+         * @param {string} [fields] Comma-separated list of fields to include in the response images. For example: \&quot;id,params,created_at\&quot; 
          * @param {BatchGetImagesInput} [batchGetImagesInput] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        batchGetImages(batchGetImagesInput?: BatchGetImagesInput, options?: any): AxiosPromise<ImageList> {
-            return localVarFp.batchGetImages(batchGetImagesInput, options).then((request) => request(axios, basePath));
+        batchGetImages(fields?: string, batchGetImagesInput?: BatchGetImagesInput, options?: any): AxiosPromise<ImageList> {
+            return localVarFp.batchGetImages(fields, batchGetImagesInput, options).then((request) => request(axios, basePath));
         },
         /**
          * Create a new image
@@ -2787,11 +2800,12 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          * @param {string} [filter] 
          * @param {number} [limit] 
          * @param {'asc' | 'desc'} [direction] 
+         * @param {string} [fields] Comma-separated list of fields to include in the response images. For example: \&quot;id,params,created_at\&quot; 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listImages(cursor?: number, filter?: string, limit?: number, direction?: 'asc' | 'desc', options?: any): AxiosPromise<ImageList> {
-            return localVarFp.listImages(cursor, filter, limit, direction, options).then((request) => request(axios, basePath));
+        listImages(cursor?: number, filter?: string, limit?: number, direction?: 'asc' | 'desc', fields?: string, options?: any): AxiosPromise<ImageList> {
+            return localVarFp.listImages(cursor, filter, limit, direction, fields, options).then((request) => request(axios, basePath));
         },
         /**
          * Login by email
@@ -2892,13 +2906,14 @@ export class AIBrushApi extends BaseAPI {
 
     /**
      * Get a list of saved images by id
+     * @param {string} [fields] Comma-separated list of fields to include in the response images. For example: \&quot;id,params,created_at\&quot; 
      * @param {BatchGetImagesInput} [batchGetImagesInput] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public batchGetImages(batchGetImagesInput?: BatchGetImagesInput, options?: any) {
-        return AIBrushApiFp(this.configuration).batchGetImages(batchGetImagesInput, options).then((request) => request(this.axios, this.basePath));
+    public batchGetImages(fields?: string, batchGetImagesInput?: BatchGetImagesInput, options?: any) {
+        return AIBrushApiFp(this.configuration).batchGetImages(fields, batchGetImagesInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3131,12 +3146,13 @@ export class AIBrushApi extends BaseAPI {
      * @param {string} [filter] 
      * @param {number} [limit] 
      * @param {'asc' | 'desc'} [direction] 
+     * @param {string} [fields] Comma-separated list of fields to include in the response images. For example: \&quot;id,params,created_at\&quot; 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public listImages(cursor?: number, filter?: string, limit?: number, direction?: 'asc' | 'desc', options?: any) {
-        return AIBrushApiFp(this.configuration).listImages(cursor, filter, limit, direction, options).then((request) => request(this.axios, this.basePath));
+    public listImages(cursor?: number, filter?: string, limit?: number, direction?: 'asc' | 'desc', fields?: string, options?: any) {
+        return AIBrushApiFp(this.configuration).listImages(cursor, filter, limit, direction, fields, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

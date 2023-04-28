@@ -9,7 +9,6 @@ import { AIBrushApi } from "../client";
 import { CreateImageInput, Image, StatusEnum, Boost } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
-import { BoostWidget } from "../components/BoostWidget";
 import {
     createEncodedThumbnail,
     encodedImageToBlob,
@@ -23,16 +22,19 @@ import { PendingImagesThumbnail } from "../components/PendingImagesThumbnail";
 import { PendingImages } from "../components/PendingImages";
 import {
     ApiSocket,
-    NOTIFICATION_BOOST_UPDATED,
     NOTIFICATION_IMAGE_DELETED,
     NOTIFICATION_IMAGE_UPDATED,
 } from "../lib/apisocket";
+import { KVStore } from "../lib/kvstore";
+import { ImagesCache } from "../lib/imagesCache";
 
 interface Props {
     api: AIBrushApi;
     apiSocket: ApiSocket;
     assetsUrl: string;
 }
+
+const savedImagesCache = new ImagesCache();
 
 export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
     const [creating, setCreating] = useState(false);
@@ -53,7 +55,6 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
         [key: string]: boolean;
     }>({});
 
-    const [boost, setBoost] = useState<Boost | null>(null);
     const [censorNSFW, setCensorNSFW] = useState(true);
 
     const { id } = useParams<{ id?: string }>();
@@ -162,14 +163,17 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
             setHasMore(true);
             try {
                 const cursor = moment().add(1, "minutes").valueOf();
-                const resp = await api.listImages(cursor, search, 100, "desc");
-                if (resp.data.images) {
-                    console.log("Initial load images", resp.data.images.length);
-                    setImages(
-                        resp.data.images
-                            .filter((image) => !image.deleted_at)
-                            .sort(sortImages)
-                    );
+                // const resp = await api.listImages(cursor, search, 100, "desc");
+                const imagesResult = await savedImagesCache.listImages(
+                    api,
+                    cursor,
+                    search,
+                    100,
+                    "desc"
+                );
+                if (imagesResult) {
+                    console.log("Initial load images", imagesResult.length);
+                    setImages(imagesResult.sort(sortImages));
                 }
                 return 0;
             } catch (err) {
@@ -194,15 +198,16 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
             }, 0);
 
             try {
-                const resp = await api.listImages(
+                const imagesResult = await savedImagesCache.listImages(
+                    api,
                     cursor + 1,
                     search,
                     100,
                     "asc"
                 );
-                if (resp.data.images) {
+                if (imagesResult) {
                     let latestCursor = cursor;
-                    for (let image of resp.data.images) {
+                    for (let image of imagesResult) {
                         if (image.updated_at > latestCursor) {
                             latestCursor = image.updated_at;
                         }
@@ -210,10 +215,10 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
 
                     // split resp.data.images into "new" and "updated" lists
                     // image is "new" if it's not in images
-                    const newImages = resp.data.images.filter((image) => {
+                    const newImages = imagesResult.filter((image) => {
                         return images.findIndex((i) => i.id === image.id) < 0;
                     });
-                    const updatedImages = resp.data.images.filter((image) => {
+                    const updatedImages = imagesResult.filter((image) => {
                         return images.findIndex((i) => i.id === image.id) >= 0;
                     });
                     setImages((images) => {
@@ -313,27 +318,12 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                     }
                     return updatedImages.sort(sortImages);
                 });
-            } else if (payload.type === NOTIFICATION_BOOST_UPDATED) {
-                const updatedBoost = await api.getBoost();
-                setBoost(updatedBoost.data);
             }
         });
         return () => {
             apiSocket.onMessage(undefined);
         };
     }, [apiSocket]);
-
-    useEffect(() => {
-        const refreshBoost = async () => {
-            const updatedBoost = await api.getBoost();
-            setBoost(updatedBoost.data);
-        };
-        refreshBoost();
-        const interval = setInterval(refreshBoost, 60 * 1000);
-        return () => {
-            clearInterval(interval);
-        };
-    }, [api]);
 
     const isPendingOrProcessing = (image: Image) => {
         return (
@@ -384,18 +374,17 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
             minUpdatedAt = Math.min(minUpdatedAt, image.updated_at);
         });
         // load images in descending order from updated_at
-        const resp = await api.listImages(
+        const imagesResult = await savedImagesCache.listImages(
+            api,
             minUpdatedAt - 1,
             search,
             100,
             "desc"
         );
-        if (resp.data.images && resp.data.images.length > 0) {
+        if (imagesResult && imagesResult.length > 0) {
             // combine images with new images and sort by updated_at descending
             setImages((images) =>
-                [...images, ...(resp.data.images || [])]
-                    .filter((image) => !image.deleted_at)
-                    .sort(sortImages)
+                [...images, ...(imagesResult || [])].sort(sortImages)
             );
         } else {
             setHasMore(false);
@@ -528,7 +517,12 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                                             <i className="fas fa-eye-slash"></i>
                                         )}
                                     </button>
-                                    <Dropdown style={{ display: "inline", marginLeft: "8px" }}>
+                                    <Dropdown
+                                        style={{
+                                            display: "inline",
+                                            marginLeft: "8px",
+                                        }}
+                                    >
                                         <Dropdown.Toggle variant="danger">
                                             <i className="fas fa-trash"></i>
                                         </Dropdown.Toggle>
@@ -552,7 +546,6 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                                             </Dropdown.Item>
                                         </Dropdown.Menu>
                                     </Dropdown>
-                                    
                                 </>
                             )}
                             {bulkDeleteSelecting && (

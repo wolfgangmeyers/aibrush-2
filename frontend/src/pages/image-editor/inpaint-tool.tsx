@@ -525,7 +525,7 @@ export class InpaintTool extends BaseTool implements Tool {
                         )
                         .map((img) => img.id);
                     console.log("Checking pending images", pendingIds);
-                    const updatedImagesResult = await api.batchGetImages({
+                    const updatedImagesResult = await api.batchGetImages(undefined, {
                         ids: pendingIds,
                     });
                     const updatedImages = updatedImagesResult.data.images;

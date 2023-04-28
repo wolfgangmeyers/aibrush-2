@@ -21,7 +21,7 @@ export const Healthchecker: FC<HealthcheckerProps> = ({ api }) => {
     // "service is unavailable"
     return (
         <div className="alert alert-danger" role="alert" style={{ display: healthCheck ? 'none' : 'block' }}>
-            <strong>Service is unavailable</strong>
+            <strong>Looks like we're having some trouble reaching the server.</strong>
         </div>
     );
 }

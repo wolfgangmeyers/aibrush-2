@@ -16,7 +16,6 @@ import {
 } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
-import { BoostWidget } from "../components/BoostWidget";
 import {
     createEncodedThumbnail,
     encodedImageToBlob,
@@ -30,9 +29,6 @@ import { PendingImagesThumbnail } from "../components/PendingImagesThumbnail";
 import { PendingImages } from "../components/PendingImages";
 import {
     ApiSocket,
-    NOTIFICATION_BOOST_UPDATED,
-    NOTIFICATION_IMAGE_DELETED,
-    NOTIFICATION_IMAGE_UPDATED,
 } from "../lib/apisocket";
 import { LocalImagesStore, LocalImage } from "../lib/localImagesStore";
 import { ErrorNotification, SuccessNotification } from "../components/Alerts";
@@ -258,19 +254,6 @@ export const Homepage: FC<Props> = ({
     }, [search]);
 
     useEffect(() => {
-        apiSocket.onMessage(async (message) => {
-            const payload = JSON.parse(message);
-            if (payload.type === NOTIFICATION_BOOST_UPDATED) {
-                const updatedBoost = await api.getBoost();
-                setBoost(updatedBoost.data);
-            }
-        });
-        return () => {
-            apiSocket.onMessage(undefined);
-        };
-    }, [apiSocket]);
-
-    useEffect(() => {
         if (!api) {
             return;
         }
@@ -291,16 +274,16 @@ export const Homepage: FC<Props> = ({
                 return;
             }
 
-            const imageStatuses = pendingOrProcessingImages.reduce(
+            const pendingById = pendingOrProcessingImages.reduce(
                 (acc, image) => {
-                    acc[image.id] = image.status;
+                    acc[image.id] = image;
                     return acc;
                 },
-                {} as Record<string, StatusEnum>
+                {} as Record<string, LocalImage>
             );
 
             try {
-                const resp = await api.batchGetImages({
+                const resp = await api.batchGetImages("id,status", {
                     ids: pendingOrProcessingImages.map((image) => image.id),
                 });
 
@@ -308,10 +291,16 @@ export const Homepage: FC<Props> = ({
                     const updatedImages: Array<LocalImage> =
                         resp.data.images || [];
                     let statusChange = false;
-                    for (let img of updatedImages) {
-                        if (imageStatuses[img.id] !== img.status) {
+                    for (let i = 0; i < updatedImages.length; i++) {
+                        let img = updatedImages[i];
+                        if (pendingById[img.id].status !== img.status) {
                             statusChange = true;
                         }
+                        img = {
+                            ...pendingById[img.id],
+                            ...img,
+                        }
+                        updatedImages[i] = img;
 
                         if (img.status == StatusEnum.Error) {
                             onError(
@@ -341,46 +330,6 @@ export const Homepage: FC<Props> = ({
                                 binaryImageData.toString("base64");
                             const src = `data:image/png;base64,${base64ImageData}`;
                             img.imageData = src;
-
-                            // TODO: make this less ugly...
-                            if (img.parent) {
-                                const parentImage = await localImages.getImage(
-                                    img.parent
-                                );
-                                if (
-                                    parentImage &&
-                                    parentImage.imageData === src
-                                ) {
-                                    console.log("refreshing image in 5 sec...");
-                                    setTimeout(async () => {
-                                        const resp = await anonymousClient.get(
-                                            downloadUrls.data.image_url!,
-                                            {
-                                                responseType: "arraybuffer",
-                                            }
-                                        );
-                                        const binaryImageData = Buffer.from(
-                                            resp.data,
-                                            "binary"
-                                        );
-                                        const base64ImageData =
-                                            binaryImageData.toString("base64");
-                                        const src = `data:image/png;base64,${base64ImageData}`;
-                                        img.imageData = src;
-                                        await localImages.saveImage(img);
-                                        setImages((images) => {
-                                            return [
-                                                ...images.map((image) => {
-                                                    if (image.id === img.id) {
-                                                        return img;
-                                                    }
-                                                    return image;
-                                                }),
-                                            ].sort(sortImages);
-                                        });
-                                    }, 5000);
-                                }
-                            }
                         }
                         await localImages.saveImage(img);
                     }
@@ -690,32 +639,6 @@ export const Homepage: FC<Props> = ({
         (image) => image.status === StatusEnum.Processing
     );
 
-    const onUpdateBoostActive = async (active: boolean) => {
-        if (!boost) return;
-        const resp = await api.updateBoost({
-            is_active: active,
-            level: boost.level,
-        });
-        if (resp.data.error) {
-            alert(resp.data.error);
-        } else {
-            setBoost((await api.getBoost()).data);
-        }
-    };
-
-    const onUpdateBoostLevel = async (level: number) => {
-        if (!boost) return;
-        const resp = await api.updateBoost({
-            is_active: boost.is_active,
-            level: level,
-        });
-        if (resp.data.error) {
-            alert(resp.data.error);
-        } else {
-            setBoost((await api.getBoost()).data);
-        }
-    };
-
     return (
         <>
             <h1 style={{ fontSize: "40px", textAlign: "left" }}>
@@ -734,13 +657,6 @@ export const Homepage: FC<Props> = ({
                 parent={parentImage}
                 onCancel={() => handleCancelFork()}
             />
-            {boost && (
-                <BoostWidget
-                    boost={boost}
-                    onUpdateActive={onUpdateBoostActive}
-                    onUpdateBoostLevel={onUpdateBoostLevel}
-                />
-            )}
             <hr />
 
             <div
