@@ -450,6 +450,23 @@ describe("server", () => {
                 });
             });
 
+            describe("when listing images with limited fields", () => {
+                let images: ImageList;
+
+                beforeEach(async () => {
+                    const response = await client.listImages(undefined, undefined, undefined, undefined, "id,status");
+                    images = response.data;
+                });
+
+                it("should return the image", () => {
+                    expect(images.images).toHaveLength(1);
+                    expect(images.images[0].id).toBe(image.id);
+                    expect(images.images[0].params).toBeUndefined()
+                    expect(images.images[0].label).toBeUndefined()
+                    expect(images.images[0].status).toBe(StatusEnum.Pending);
+                });
+            })
+
             describe("when getting the image by id", () => {
                 let img: Image;
 
@@ -1006,7 +1023,7 @@ describe("server", () => {
                 let images: ImageList;
 
                 beforeEach(async () => {
-                    const response = await client.batchGetImages({
+                    const response = await client.batchGetImages(null, {
                         ids: [image1.id, image2.id],
                     });
                     images = response.data;
@@ -1019,11 +1036,29 @@ describe("server", () => {
                 });
             });
 
+            describe("when getting images with limited fields", () => {
+                let images: ImageList;
+
+                beforeEach(async () => {
+                    const response = await client.batchGetImages("id,status", {
+                        ids: [image1.id, image2.id],
+                    });
+                    images = response.data;
+                });
+
+                it("should return the images", () => {
+                    expect(images.images).toHaveLength(2);
+                    expect(images.images[0].id).toBe(image1.id);
+                    expect(images.images[0].status).toBe(StatusEnum.Pending);
+                    expect(images.images[0].params).toBeUndefined();
+                });
+            })
+
             describe("when getting images that don't exist", () => {
                 let images: ImageList;
 
                 beforeEach(async () => {
-                    const response = await client.batchGetImages({
+                    const response = await client.batchGetImages(null, {
                         ids: [image1.id, image2.id, "does-not-exist"],
                     });
                     images = response.data;
@@ -1049,7 +1084,7 @@ describe("server", () => {
                 });
 
                 beforeEach(async () => {
-                    const response = await client2.batchGetImages({
+                    const response = await client2.batchGetImages(null, {
                         ids: [image1.id, image2.id],
                     });
                     images = response.data;

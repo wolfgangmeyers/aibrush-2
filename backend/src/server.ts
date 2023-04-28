@@ -564,6 +564,10 @@ export class Server {
                         limit = parseInt(req.query.limit as string);
                     } catch (err) {}
                     let filter: string | undefined = req.query.filter as any;
+                    let fields: string[] = undefined;
+                    if (req.query.fields) {
+                        fields = (req.query.fields as string).split(",");
+                    }
 
                     let query = {
                         userId: jwt.userId,
@@ -572,6 +576,7 @@ export class Server {
                         direction,
                         limit,
                         filter,
+                        fields,
                     };
 
                     const images = await this.backendService.listImages(query);
@@ -777,10 +782,15 @@ export class Server {
         this.app.post(
             "/api/batch-get-images",
             withMetrics("/api/batch-get-images", async (req, res) => {
+                let fields: string[] = undefined;
+                if (req.query.fields) {
+                    fields = (req.query.fields as string).split(",");
+                }
                 const jwt = this.authHelper.getJWTFromRequest(req);
                 const images = await this.backendService.batchGetImages(
                     jwt.userId,
-                    req.body.ids
+                    req.body.ids,
+                    fields
                 );
                 res.json({
                     images,

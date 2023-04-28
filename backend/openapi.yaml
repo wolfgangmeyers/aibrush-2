@@ -42,6 +42,14 @@ paths:
             enum:
               - asc
               - desc
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >
+            Comma-separated list of fields to include in the response images.
+            For example: "id,params,created_at"
       responses:
         "200":
           description: Success
@@ -168,6 +176,15 @@ paths:
       operationId: batchGetImages
       tags:
         - AIBrush
+      parameters:
+        - name: fields
+          in: query
+          required: false
+          schema:
+            type: string
+          description: >
+            Comma-separated list of fields to include in the response images.
+            For example: "id,params,created_at"
       requestBody:
         content:
           application/json:

@@ -56,6 +56,24 @@ export const NOTIFICATION_PENDING_IMAGE = "pending_image";
 export const NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated";
 export const NOTIFICATION_BOOST_UPDATED = "boost_updated";
 
+const IMAGE_FIELDS: {[key: string]: boolean} = {
+    id: true,
+    created_at: true,
+    created_by: true,
+    updated_at: true,
+    params: true,
+    label: true,
+    parent: true,
+    score: true,
+    negative_score: true,
+    status: true,
+    model: true,
+    nsfw: true,
+    temporary: true,
+    deleted_at: true,
+    error: true,
+}
+
 export class UserError extends Error {
     constructor(message: string) {
         super(message);
@@ -237,26 +255,28 @@ export class BackendService {
     }
 
     private hydrateImage(image: Image): Image {
-        return {
+        let result: any = {
             ...image,
-            created_at: parseInt(image.created_at || ("0" as any)),
-            updated_at: parseInt(image.updated_at || ("0" as any)),
-            // populate legacy fields
-            phrases: [image.params.prompt],
-            negative_phrases: [image.params.negative_prompt],
-            iterations: image.params.steps,
-            stable_diffusion_strength: image.params.denoising_strength,
-            width: image.params.width,
-            height: image.params.height,
-        } as any;
-    }
-
-    private hydrateWorker(worker: Worker): Worker {
-        return {
-            ...worker,
-            created_at: parseInt(worker.created_at || ("0" as any)),
-            last_ping: parseInt(worker.last_ping || ("0" as any)),
         };
+        if (result.created_at) {
+            result.created_at = parseInt(result.created_at as any);
+        }
+        if (result.updated_at) {
+            result.updated_at = parseInt(result.updated_at as any);
+        }
+        if (result.deleted_at) {
+            result.deleted_at = parseInt(result.deleted_at as any);
+        }
+        // support legacy params
+        if (result.params) {
+            result.phrases = [result.params.prompt];
+            result.negative_phrases = [result.params.negative_prompt];
+            result.iterations = result.params.steps;
+            result.stable_diffusion_strength = result.params.denoising_strength;
+            result.width = result.params.width;
+            result.height = result.params.height;
+        }
+        return result;
     }
 
     private sanitizeChannel(channel: string): string {
@@ -315,6 +335,7 @@ export class BackendService {
         direction?: "asc" | "desc";
         limit?: number;
         filter?: string;
+        fields?: string[];
     }): Promise<ImageList> {
         const client = await this.pool.connect();
         let whereClauses = [];
@@ -358,9 +379,14 @@ export class BackendService {
         }
         const limit = query.limit || 100;
         const orderBy = query.direction === "asc" ? "ASC" : "DESC";
+
+        if (query.fields) {
+            query.fields = query.fields.filter(f => IMAGE_FIELDS[f]);
+        }
+        const selectFields = query.fields && query.fields.length > 0 ? query.fields.join(",") : "*";
         try {
             const result = await client.query(
-                `SELECT i.* FROM images i ${whereClause} ORDER BY updated_at ${orderBy} LIMIT ${limit}`,
+                `SELECT ${selectFields} FROM images ${whereClause} ORDER BY updated_at ${orderBy} LIMIT ${limit}`,
                 args
             );
             return {
@@ -447,11 +473,15 @@ export class BackendService {
         };
     }
 
-    async batchGetImages(userId: string, ids: string[]): Promise<Image[]> {
+    async batchGetImages(userId: string, ids: string[], fields: string[]): Promise<Image[]> {
+        if (fields) {
+            fields = fields.filter(f => IMAGE_FIELDS[f]);
+        }
+        const selectFields = fields && fields.length > 0 ? fields.join(",") : "*";
         const client = await this.pool.connect();
         try {
             const result = await client.query(
-                `SELECT * FROM images WHERE created_by=$1 AND id=ANY($2)`,
+                `SELECT ${selectFields} FROM images WHERE created_by=$1 AND id=ANY($2)`,
                 [userId, ids]
             );
             return result.rows
