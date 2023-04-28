@@ -8,7 +8,12 @@ import { useParams, useHistory, Link, useLocation } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
-import { CreateImageInput, StatusEnum, Boost } from "../client/api";
+import {
+    CreateImageInput,
+    StatusEnum,
+    Boost,
+    TemporaryImage,
+} from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import { BoostWidget } from "../components/BoostWidget";
@@ -122,14 +127,32 @@ export const Homepage: FC<Props> = ({
         window.scrollTo(0, 0);
         setUploadingProgress(0);
         try {
-            const newImages = await api.createImage(input, {
-                onUploadProgress: (progressEvent: any) => {
-                    const percentCompleted = Math.round(
-                        (progressEvent.loaded) / progressEvent.total
-                    );
-                    setUploadingProgress(percentCompleted);
-                },
-            });
+            if (input.encoded_image) {
+                const tmpInitImage = await api.createTemporaryImage();
+                // convert base64 to binary
+                const binaryImageData = Buffer.from(
+                    input.encoded_image,
+                    "base64"
+                );
+                await anonymousClient.put(
+                    tmpInitImage.data.upload_url,
+                    binaryImageData,
+                    {
+                        headers: {
+                            "Content-Type": "image/png",
+                        },
+                        onUploadProgress: (progressEvent: any) => {
+                            const percentCompleted =
+                                progressEvent.loaded / progressEvent.total;
+                            setUploadingProgress(percentCompleted);
+                        },
+                    }
+                );
+                input.encoded_image = undefined;
+                input.tmp_image_id = tmpInitImage.data.id;
+            }
+
+            const newImages = await api.createImage(input);
             if (newImages.data.images) {
                 for (let image of newImages.data.images || []) {
                     localImages.saveImage(image);
@@ -144,7 +167,7 @@ export const Homepage: FC<Props> = ({
             }
         } catch (e: any) {
             console.error(e);
-            onError("Error creating image");
+            onError("Error creating images");
         } finally {
             setCreating(false);
         }
@@ -568,9 +591,8 @@ export const Homepage: FC<Props> = ({
                         "Content-Type": "image/png",
                     },
                     onUploadProgress: (progressEvent: any) => {
-                        const percentCompleted = Math.round(
-                            progressEvent.loaded / progressEvent.total
-                        );
+                        const percentCompleted =
+                            progressEvent.loaded / progressEvent.total;
                         setUploadingProgress(percentCompleted / 2);
                     },
                 }
@@ -583,9 +605,8 @@ export const Homepage: FC<Props> = ({
                         "Content-Type": "image/png",
                     },
                     onUploadProgress: (progressEvent: any) => {
-                        const percentCompleted = Math.round(
-                            progressEvent.loaded / progressEvent.total
-                        );
+                        const percentCompleted =
+                            progressEvent.loaded / progressEvent.total;
                         setUploadingProgress(percentCompleted / 2 + 0.5);
                     },
                 }

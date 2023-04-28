@@ -1,4 +1,5 @@
 import React, { FC, useState, useEffect, useRef } from "react";
+import axios from "axios";
 import { Prompt } from "react-router";
 import { loadImageAsync } from "../../lib/loadImage";
 
@@ -16,7 +17,7 @@ import {
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
-import { ImageUtilWorker } from "../../lib/imageutil";
+import { ImageUtilWorker, loadImageDataElement } from "../../lib/imageutil";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { getUpscaleLevel } from "../../lib/upscale";
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
@@ -24,7 +25,15 @@ import moment from "moment";
 import { supportedModels } from "../../lib/supportedModels";
 import { ProgressBar } from "../../components/ProgressBar";
 
-type EnhanceToolState = "select" | "default" | "uploading" | "processing" | "confirm" | "erase";
+const anonymousClient = axios.create();
+
+type EnhanceToolState =
+    | "select"
+    | "default"
+    | "uploading"
+    | "processing"
+    | "confirm"
+    | "erase";
 
 // eraser width modifier adds a solid core with a feather edge
 // equal to the what is used on enhanced selections
@@ -316,69 +325,50 @@ export class EnhanceTool extends BaseTool implements Tool {
         return `${this.idCounter++}`;
     }
 
-    private loadImageData(
+    private async loadImageData(
         api: AIBrushApi,
         imageId: string,
-        baseImage: APIImage,
-        baseImageData: ImageData,
         selectionOverlay: Rect
     ): Promise<ImageData> {
-        return new Promise((resolve, reject) => {
-            // TODO: use anonymous client to load image data instead with download urls
-            api.getImageData(imageId, {
-                responseType: "arraybuffer",
-            }).then((resp) => {
-                const binaryImageData = Buffer.from(resp.data, "binary");
-                const base64ImageData = binaryImageData.toString("base64");
-                const src = `data:image/png;base64,${base64ImageData}`;
-                const imageElement = new Image();
-                imageElement.src = src;
-                imageElement.onload = () => {
-                    const canvas = document.createElement("canvas");
-                    canvas.width = selectionOverlay.width;
-                    canvas.height = selectionOverlay.height;
-                    const ctx = canvas.getContext("2d");
-                    if (!ctx) {
-                        reject(new Error("Failed to get canvas context"));
-                        return;
-                    }
-                    ctx.drawImage(
-                        imageElement,
-                        0,
-                        0,
-                        selectionOverlay.width,
-                        selectionOverlay.height
-                    );
-                    const imageData = ctx.getImageData(
-                        0,
-                        0,
-                        selectionOverlay.width,
-                        selectionOverlay.height
-                    );
-                    const id = this.newId();
-                    this.worker
-                        .processRequest({
-                            id,
-                            alpha: false,
-                            feather: true,
-                            height: this.renderer.getHeight(),
-                            width: this.renderer.getWidth(),
-                            pixels: imageData.data,
-                            selectionOverlay,
-                        })
-                        .then((resp) => {
-                            const updatedImageData = new ImageData(
-                                resp.pixels,
-                                imageData.width,
-                                imageData.height
-                            );
-                            resolve(updatedImageData);
-                        });
-                    // remove canvas
-                    canvas.remove();
-                };
-            });
+        const imageElement = await loadImageDataElement(api, imageId);
+        const canvas = document.createElement("canvas");
+        canvas.width = selectionOverlay.width;
+        canvas.height = selectionOverlay.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            throw new Error("Failed to get canvas context");
+        }
+        ctx.drawImage(
+            imageElement,
+            0,
+            0,
+            selectionOverlay.width,
+            selectionOverlay.height
+        );
+        const imageData = ctx.getImageData(
+            0,
+            0,
+            selectionOverlay.width,
+            selectionOverlay.height
+        );
+        const id = this.newId();
+        const resp = await this.worker.processRequest({
+            id,
+            alpha: false,
+            feather: true,
+            height: this.renderer.getHeight(),
+            width: this.renderer.getWidth(),
+            pixels: imageData.data,
+            selectionOverlay,
         });
+        const updatedImageData = new ImageData(
+            resp.pixels,
+            imageData.width,
+            imageData.height
+        );
+        // remove canvas
+        canvas.remove();
+        return updatedImageData;
     }
 
     cancel() {
@@ -418,16 +408,38 @@ export class EnhanceTool extends BaseTool implements Tool {
             console.error("No selection");
             return;
         }
+
         const baseImageData = this.renderer.getImageData(selectionOverlay!)!;
         const input: CreateImageInput = defaultArgs();
+
+        const tmpInitImage = await api.createTemporaryImage();
+        // convert base64 to binary
+        const binaryImageData = Buffer.from(encodedImage, "base64");
+        this.state = "uploading";
+        this.updateProgress(0);
+        await anonymousClient.put(
+            tmpInitImage.data.upload_url,
+            binaryImageData,
+            {
+                headers: {
+                    "Content-Type": "image/png",
+                },
+                onUploadProgress: (progressEvent: any) => {
+                    const percentCompleted =
+                        progressEvent.loaded / progressEvent.total;
+                    this.updateProgress(percentCompleted);
+                },
+            }
+        );
+        input.tmp_image_id = tmpInitImage.data.id;
+
         input.label = "";
-        input.encoded_image = encodedImage;
         input.parent = image.id;
         input.params.prompt = this.prompt || image.params.prompt;
-        input.params.negative_prompt = this.negativePrompt || image.params.negative_prompt;
+        input.params.negative_prompt =
+            this.negativePrompt || image.params.negative_prompt;
         input.params.denoising_strength = this.variationStrength;
         input.count = this.count;
-        // TODO: allow switching model
         input.model = this.model;
         input.nsfw = image.nsfw;
 
@@ -438,22 +450,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.params.height = Math.ceil(input.params.height / 64) * 64;
         input.temporary = true;
 
-        this.state = "uploading";
         let resp: ImageList | null = null;
-        this.updateProgress(0);
-        try {
-            resp = (
-                await api.createImage(input, {
-                    onUploadProgress: (progressEvent: any) => {
-                        console.log("progressEvent", progressEvent)
-                        const progress =
-                            progressEvent.loaded / progressEvent.total;
 
-                        // this.progressListener(progress);
-                        this.updateProgress(progress);
-                    },
-                })
-            ).data;
+        try {
+            resp = (await api.createImage(input)).data;
         } catch (err) {
             console.error("Error creating images", err);
             this.notifyError("Failed to create image");
@@ -482,8 +482,6 @@ export class EnhanceTool extends BaseTool implements Tool {
                         const imageData = await this.loadImageData(
                             api,
                             newImages![i].id,
-                            image,
-                            baseImageData,
                             selectionOverlay!
                         );
                         newImages![i].data = imageData;
@@ -547,15 +545,11 @@ export class EnhanceTool extends BaseTool implements Tool {
                             const updated = byId[newImages![i].id];
                             if (updated) {
                                 newImages![i].status = updated.status;
-                                if (
-                                    updated.status === StatusEnum.Completed
-                                ) {
+                                if (updated.status === StatusEnum.Completed) {
                                     lastUpdate = moment();
                                     const imageData = await this.loadImageData(
                                         api,
                                         newImages![i].id,
-                                        image,
-                                        baseImageData,
                                         selectionOverlay!
                                     );
                                     newImages![i].data = imageData;
@@ -674,7 +668,9 @@ export const EnhanceControls: FC<ControlsProps> = ({
     const [dirty, setDirty] = useState(false);
     const [variationStrength, setVariationStrength] = useState(0.35);
     const [prompt, setPrompt] = useState(image.params.prompt || "");
-    const [negativePrompt, setNegativePrompt] = useState(image.params.negative_prompt || "");
+    const [negativePrompt, setNegativePrompt] = useState(
+        image.params.negative_prompt || ""
+    );
     const [model, setModel] = useState(
         image.model == "swinir" || image.model == "stable_diffusion"
             ? "Epic Diffusion"
@@ -692,7 +688,8 @@ export const EnhanceControls: FC<ControlsProps> = ({
     if (state == "processing" || state == "uploading") {
         return (
             <div style={{ marginTop: "16px" }}>
-                <i className="fa fa-spinner fa-spin"></i>&nbsp; {state === "processing" ? "Enhancing..." : "Uploading..."}
+                <i className="fa fa-spinner fa-spin"></i>&nbsp;{" "}
+                {state === "processing" ? "Enhancing..." : "Uploading..."}
                 <br />
                 <ProgressBar progress={progress} />
             </div>

@@ -1,4 +1,5 @@
 import React, { FC, useState, useEffect, useRef } from "react";
+import axios from "axios";
 import { Prompt } from "react-router";
 
 import { sleep } from "../../lib/sleep";
@@ -21,10 +22,13 @@ import {
     applyAlphaMask,
     featherEdges,
     ImageUtilWorker,
+    loadImageDataElement,
 } from "../../lib/imageutil";
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 import moment from "moment";
 import { ProgressBar } from "../../components/ProgressBar";
+
+const anonymousClient = axios.create();
 
 type InpaintToolState =
     | "select"
@@ -278,71 +282,54 @@ export class InpaintTool extends BaseTool implements Tool {
         this.progressListener = listener;
     }
 
-    private loadImageData(
+    private async loadImageData(
         api: AIBrushApi,
         imageId: string,
         alphaMask: ImageData,
-        baseImage: APIImage,
         selectionOverlay: Rect
     ): Promise<ImageData> {
-        return new Promise((resolve, reject) => {
-            api.getImageData(imageId, {
-                responseType: "arraybuffer",
-            }).then((resp) => {
-                const binaryImageData = Buffer.from(resp.data, "binary");
-                const base64ImageData = binaryImageData.toString("base64");
-                const src = `data:image/png;base64,${base64ImageData}`;
-                const imageElement = new Image();
-                imageElement.src = src;
-                imageElement.onload = () => {
-                    const canvas = document.createElement("canvas");
-                    canvas.width = selectionOverlay.width;
-                    canvas.height = selectionOverlay.height;
-                    const ctx = canvas.getContext("2d");
-                    if (!ctx) {
-                        reject(new Error("Failed to get canvas context"));
-                        return;
-                    }
-                    ctx.drawImage(
-                        imageElement,
-                        0,
-                        0,
-                        selectionOverlay.width,
-                        selectionOverlay.height
-                    );
-                    const imageData = ctx.getImageData(
-                        0,
-                        0,
-                        selectionOverlay.width,
-                        selectionOverlay.height
-                    );
+        const imageElement = await loadImageDataElement(api, imageId);
+        const canvas = document.createElement("canvas");
+        canvas.width = selectionOverlay.width;
+        canvas.height = selectionOverlay.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            throw new Error("Failed to get canvas context");
+        }
+        ctx.drawImage(
+            imageElement,
+            0,
+            0,
+            selectionOverlay.width,
+            selectionOverlay.height
+        );
+        const imageData = ctx.getImageData(
+            0,
+            0,
+            selectionOverlay.width,
+            selectionOverlay.height
+        );
 
-                    const id = this.newId();
-                    this.worker
-                        .processRequest({
-                            id,
-                            alpha: true,
-                            alphaPixels: alphaMask.data,
-                            feather: true,
-                            height: this.renderer.getHeight(),
-                            width: this.renderer.getWidth(),
-                            pixels: imageData.data,
-                            selectionOverlay,
-                            featherWidth: 10,
-                        })
-                        .then((resp) => {
-                            const updatedImageData = new ImageData(
-                                resp.pixels,
-                                imageData.width,
-                                imageData.height
-                            );
-                            resolve(updatedImageData);
-                        });
-                    // remove canvas
-                    canvas.remove();
-                };
-            });
+        const id = this.newId();
+        const resp = await this.worker.processRequest({
+            id,
+            alpha: true,
+            alphaPixels: alphaMask.data,
+            feather: true,
+            height: this.renderer.getHeight(),
+            width: this.renderer.getWidth(),
+            pixels: imageData.data,
+            selectionOverlay,
+            featherWidth: 10,
         });
+        const updatedImageData = new ImageData(
+            resp.pixels,
+            imageData.width,
+            imageData.height
+        );
+        // remove canvas
+        canvas.remove();
+        return updatedImageData;
     }
 
     cancel() {
@@ -393,6 +380,9 @@ export class InpaintTool extends BaseTool implements Tool {
             }
         }
 
+        this.state = "uploading";
+        this.updateProgress(0);
+
         // get the erased area, then undo the erase to get the original image
         const encodedMask = this.renderer.getEncodedMask(selectionOverlay);
         const maskData = this.renderer.getImageData(selectionOverlay);
@@ -403,18 +393,45 @@ export class InpaintTool extends BaseTool implements Tool {
 
         const encodedImage = this.renderer.getEncodedImage(selectionOverlay);
 
+        // upload temporary images in parallel
+        const tmpImagePromises = [
+            api.createTemporaryImage(),
+            api.createTemporaryImage(),
+        ];
+        const tmpImages = await Promise.all(tmpImagePromises);
+        const binaryImages = [
+            Buffer.from(encodedImage!, "base64"),
+            Buffer.from(encodedMask!, "base64"),
+        ];
+        const progress = [0, 0];
+        const uploadPromises: Array<Promise<any>> = [];
+        for (let i = 0; i < tmpImages.length; i++) {
+            const tmpImage = tmpImages[i].data;
+            const binaryImage = binaryImages[i];
+            uploadPromises.push(
+                anonymousClient.put(tmpImage.upload_url, binaryImage, {
+                    headers: {
+                        "Content-Type": "image/png",
+                    },
+                    onUploadProgress: (e) => {
+                        progress[i] = e.loaded / e.total;
+                        this.updateProgress((progress[0] + progress[1]) / 2);
+                    },
+                })
+            );
+        }
+        await Promise.all(uploadPromises);
+
         const input: CreateImageInput = defaultArgs();
         input.label = "";
-        input.encoded_image = encodedImage;
-        input.encoded_mask = encodedMask;
+        // input.encoded_image = encodedImage;
+        // input.encoded_mask = encodedMask;
+        input.tmp_image_id = tmpImages[0].data.id;
+        input.tmp_mask_id = tmpImages[1].data.id;
         input.parent = image.id;
-        // input.phrases = [this.prompt || image.phrases[0]];
-        // input.negative_phrases = [
-        //     this.negativePrompt || image.negative_phrases[0],
-        // ];
-        // input.stable_diffusion_strength = this.variationStrength;
         input.params.prompt = this.prompt || image.params.prompt;
-        input.params.negative_prompt = this.negativePrompt || image.params.negative_prompt;
+        input.params.negative_prompt =
+            this.negativePrompt || image.params.negative_prompt;
         input.params.denoising_strength = this.variationStrength;
         input.count = this.count;
         input.model = model;
@@ -427,19 +444,10 @@ export class InpaintTool extends BaseTool implements Tool {
         input.params.height = closestAspectRatio.height;
         input.temporary = true;
 
-        this.state = "uploading";
         let resp: ImageList | null = null;
-        this.updateProgress(0);
+
         try {
-            resp = (
-                await api.createImage(input, {
-                    onUploadProgress: (progressEvent: any) => {
-                        this.updateProgress(
-                            progressEvent.loaded / progressEvent.total
-                        );
-                    },
-                })
-            ).data;
+            resp = (await api.createImage(input)).data;
         } catch (err) {
             console.error("Error creating images", err);
             this.notifyError("Failed to create image");
@@ -470,7 +478,6 @@ export class InpaintTool extends BaseTool implements Tool {
                             api,
                             newImages![i].id,
                             maskData!,
-                            image,
                             selectionOverlay!
                         );
                         newImages![i].data = imageData;
@@ -534,15 +541,12 @@ export class InpaintTool extends BaseTool implements Tool {
                             const updated = byId[newImages![i].id];
                             if (updated) {
                                 newImages![i].status = updated.status;
-                                if (
-                                    updated.status === StatusEnum.Completed
-                                ) {
+                                if (updated.status === StatusEnum.Completed) {
                                     lastUpdate = moment();
                                     const imageData = await this.loadImageData(
                                         api,
                                         newImages![i].id,
                                         maskData!,
-                                        image,
                                         selectionOverlay!
                                     );
                                     newImages![i].data = imageData;
@@ -670,7 +674,9 @@ export const InpaintControls: FC<ControlsProps> = ({
 }) => {
     const [count, setCount] = useState(4);
     const [prompt, setPrompt] = useState(image.params.prompt || "");
-    const [negativePrompt, setNegativePrompt] = useState(image.params.negative_prompt || "");
+    const [negativePrompt, setNegativePrompt] = useState(
+        image.params.negative_prompt || ""
+    );
     const [state, setState] = useState<InpaintToolState>(tool.state);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);

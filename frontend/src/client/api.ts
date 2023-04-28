@@ -192,7 +192,19 @@ export interface CreateImageInput {
      * @type {string}
      * @memberof CreateImageInput
      */
-    encoded_npy?: string;
+    tmp_image_id?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateImageInput
+     */
+    tmp_mask_id?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateImageInput
+     */
+    tmp_thumbnail_id?: string;
     /**
      * 
      * @type {string}
@@ -795,10 +807,10 @@ export interface StableDiffusionModel {
 export enum StatusEnum {
     Pending = 'pending',
     Processing = 'processing',
-    Ranking = 'ranking',
     Completed = 'completed',
     Saved = 'saved',
-    Error = 'error'
+    Error = 'error',
+    Deleted = 'deleted'
 }
 
 /**
@@ -943,37 +955,6 @@ export interface UpdateImageInput {
      * @memberof UpdateImageInput
      */
     error?: string;
-}
-/**
- * 
- * @export
- * @interface UpdateLargeImageRequest
- */
-export interface UpdateLargeImageRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateLargeImageRequest
-     */
-    image_id: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateLargeImageRequest
-     */
-    tmp_image_id: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof UpdateLargeImageRequest
-     */
-    x: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof UpdateLargeImageRequest
-     */
-    y: number;
 }
 /**
  * 
@@ -1309,6 +1290,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          */
         createInviteCode: async (options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/invite-codes`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a new temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createTemporaryImage: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/temporary-images`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2281,6 +2291,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a new temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createTemporaryImage(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TemporaryImage>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createTemporaryImage(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2598,6 +2617,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createInviteCode(options).then((request) => request(axios, basePath));
         },
         /**
+         * Create a new temporary image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createTemporaryImage(options?: any): AxiosPromise<TemporaryImage> {
+            return localVarFp.createTemporaryImage(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Delete a saved image
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2893,6 +2920,16 @@ export class AIBrushApi extends BaseAPI {
      */
     public createInviteCode(options?: any) {
         return AIBrushApiFp(this.configuration).createInviteCode(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a new temporary image
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createTemporaryImage(options?: any) {
+        return AIBrushApiFp(this.configuration).createTemporaryImage(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -40,7 +40,6 @@ export function defaultArgs(): CreateImageInput {
         },
         label: "",
         encoded_image: "",
-        encoded_npy: "",
         encoded_mask: "",
         model: "Epic Diffusion",
         count: 4,

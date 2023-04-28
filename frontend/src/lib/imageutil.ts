@@ -1,4 +1,8 @@
+import axios from "axios";
+import { AIBrushApi } from "../client";
 import { Rect } from "../pages/image-editor/models";
+
+const anonymousClient = axios.create();
 
 export interface SplitResult {
     numTilesX: number;
@@ -7,6 +11,37 @@ export interface SplitResult {
     imageWidth: number;
     imageHeight: number;
     tiles: ImageData[][]; // [x][y]
+}
+
+export function loadImageDataElement(
+    api: AIBrushApi,
+    imageId: string
+): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+        api.getImageDownloadUrls(imageId)
+            .then((urls) => {
+                anonymousClient
+                    .get(urls.data.image_url!, {
+                        responseType: "arraybuffer",
+                    })
+                    .then((resp) => {
+                        const binaryImageData = Buffer.from(
+                            resp.data,
+                            "binary"
+                        );
+                        const base64ImageData =
+                            binaryImageData.toString("base64");
+                        const src = `data:image/png;base64,${base64ImageData}`;
+                        const imageElement = new Image();
+                        imageElement.src = src;
+                        imageElement.onload = () => {
+                            resolve(imageElement);
+                        };
+                    })
+                    .catch((err) => reject(err));
+            })
+            .catch((err) => reject(err));
+    });
 }
 
 // split image for individual upscales
@@ -79,9 +114,13 @@ export function mergeTiles(splitResult: SplitResult): ImageData {
                 // load the tile
                 const tile = splitResult.tiles[x][y];
                 const tileCanvas = imageDataToCanvas(tile);
-                
+
                 // paste the tile into the new image
-                ctx.drawImage(tileCanvas, x * (splitResult.tileSize - 64), y * (splitResult.tileSize - 64));
+                ctx.drawImage(
+                    tileCanvas,
+                    x * (splitResult.tileSize - 64),
+                    y * (splitResult.tileSize - 64)
+                );
             }
         }
         return ctx.getImageData(

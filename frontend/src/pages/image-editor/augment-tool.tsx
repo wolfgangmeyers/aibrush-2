@@ -30,7 +30,6 @@ import { ErrorNotification } from "../../components/Alerts";
 import moment from "moment";
 
 export const anonymousClient = axios.create();
-delete anonymousClient.defaults.headers.common["Authorization"];
 
 interface Props {
     renderer: Renderer;
@@ -70,7 +69,21 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
         c.remove();
         const input: CreateImageInput = defaultArgs();
         input.label = "";
-        input.encoded_image = encodedImage;
+        // input.encoded_image = encodedImage;
+
+        const tmpInitImage = await api.createTemporaryImage();
+        const binaryImageData = Buffer.from(encodedImage, "base64");
+        await anonymousClient.put(
+            tmpInitImage.data.upload_url!,
+            binaryImageData,
+            {
+                headers: {
+                    "Content-Type": "image/png",
+                },
+            }
+        );
+
+        input.tmp_image_id = tmpInitImage.data.id;
         input.params.prompt = image.params.prompt;
         input.params.negative_prompt = image.params.negative_prompt;
         input.params.denoising_strength = 0.05;
