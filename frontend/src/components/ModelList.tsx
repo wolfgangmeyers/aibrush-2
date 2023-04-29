@@ -8,14 +8,16 @@ interface Props {
     selectedModel: string;
 }
 
+const MOBILE_HEIGHT_PERCENT = 0.3;
+
 export const ModelList: FC<Props> = ({ models, onSelectModel, selectedModel }) => {
-    const [maxHeight, setMaxHeight] = useState(window.innerWidth < 576 ? window.innerHeight * 0.2 : window.innerHeight * 0.7); // Set maxHeight to 80% of the viewport height
+    const [maxHeight, setMaxHeight] = useState(window.innerWidth < 576 ? window.innerHeight * MOBILE_HEIGHT_PERCENT : window.innerHeight * 0.7); // Set maxHeight to 80% of the viewport height
 
     useEffect(() => {
         const handleResize = () => {
             let maxHeight = window.innerHeight * 0.7;
             if (window.innerWidth < 576) {
-                maxHeight = window.innerHeight * 0.2;
+                maxHeight = window.innerHeight * MOBILE_HEIGHT_PERCENT;
             }
             setMaxHeight(maxHeight); // Update maxHeight based on the current viewport height
         };
@@ -31,6 +33,8 @@ export const ModelList: FC<Props> = ({ models, onSelectModel, selectedModel }) =
             style={{
                 maxHeight: `${maxHeight}px`,
                 overflowY: "auto",
+                border: "1px solid #808080",
+                marginBottom: "8px",
             }}
         >
             {models.map((model) => (

@@ -4,6 +4,7 @@ import axios from "axios";
 import { AIBrushApi, StableDiffusionModel } from "../client";
 import { ModelList } from "./ModelList";
 import { useCache } from "../lib/localcache";
+import { RecentModels } from "../lib/recentModels";
 
 const httpclient = axios.create();
 
@@ -13,6 +14,8 @@ interface ModelSelectorProps {
     onSelectModel: (model: string) => void;
     onCancel: () => void;
 }
+
+const recentModels = new RecentModels("recent-models", 20);
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({
     api,
@@ -44,21 +47,48 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     };
 
     useEffect(() => {
+
+        const setSortedModels = (selectedModel: StableDiffusionModel, models: StableDiffusionModel[]) => {
+            recentModels.addModel(selectedModel.name);
+
+            const recentModelNames = recentModels.getModels();
+            // map from model name to index
+            const recentModelIndices: { [key: string]: number } = {};
+            recentModelNames.forEach((name, index) => {
+                recentModelIndices[name] = index;
+            });
+            // sort models by recentness
+            const sortedModels = models.sort((a, b) => {
+                const aIndex = recentModelIndices[a.name];
+                const bIndex = recentModelIndices[b.name];
+                if (aIndex === undefined && bIndex === undefined) {
+                    return 0;
+                } else if (aIndex === undefined) {
+                    return 1;
+                } else if (bIndex === undefined) {
+                    return -1;
+                } else {
+                    return aIndex - bIndex;
+                }
+            });
+
+            setModels(sortedModels);
+        }
+
         if (!models || models.length === 0) {
             api.getModels().then((res) => {
                 console.log(res);
-                setModels(Object.values(res.data));
-                setSelectedModel(
-                    res.data[initialSelectedModel] || Object.values(res.data)[0]
-                );
+                const selectedModel = res.data[initialSelectedModel] || Object.values(res.data)[0]
+                console.log("Selected model:", selectedModel);
+                setSelectedModel(selectedModel);
+                setSortedModels(selectedModel, Object.values(res.data));
             });
         } else {
-            setSelectedModel(
-                models.find((model) => model.name === initialSelectedModel) ||
-                    models[0]
-            );
+            const selectedModel = models.find((model) => model.name === initialSelectedModel) ||
+                models[0]
+            setSelectedModel(selectedModel);
+            setSortedModels(selectedModel, models)
         }
-        
     }, [api, models]);
 
     return (
@@ -92,7 +122,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                             src={selectedModel.showcases[0]}
                                             alt="Showcase"
                                             style={{
-                                                width: "100%",
+                                                width: "70%",
                                             }}
                                         />
                                     )}
