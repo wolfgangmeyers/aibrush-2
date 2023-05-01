@@ -211,10 +211,11 @@ export const Homepage: FC<Props> = ({
     };
 
     const onNSFW = async (updatedImage: LocalImage, nsfw: boolean) => {
-        await localImages.saveImage({
+        updatedImage = {
             ...updatedImage,
             nsfw,
-        });
+        }
+        await localImages.saveImage(updatedImage);
         setImages((images) => {
             return images.map((image) => {
                 if (updatedImage.id === image.id) {
@@ -226,6 +227,7 @@ export const Homepage: FC<Props> = ({
                 return image;
             });
         });
+        setSelectedImage(updatedImage);
     };
 
     const loadImages = async (search: string) => {
@@ -283,7 +285,7 @@ export const Homepage: FC<Props> = ({
             );
 
             try {
-                const resp = await api.batchGetImages("id,status", {
+                const resp = await api.batchGetImages("id,status,nsfw", {
                     ids: pendingOrProcessingImages.map((image) => image.id),
                 });
 
