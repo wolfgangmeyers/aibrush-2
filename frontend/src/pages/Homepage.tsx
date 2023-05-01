@@ -11,7 +11,6 @@ import { AIBrushApi } from "../client";
 import {
     CreateImageInput,
     StatusEnum,
-    Boost,
     TemporaryImage,
 } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
@@ -76,7 +75,6 @@ export const Homepage: FC<Props> = ({
         [key: string]: boolean;
     }>({});
 
-    const [boost, setBoost] = useState<Boost | null>(null);
     const [censorNSFW, setCensorNSFW] = useState(true);
 
     const { id } = useParams<{ id?: string }>();
@@ -366,18 +364,6 @@ export const Homepage: FC<Props> = ({
             clearInterval(timerHandle);
         };
     }, [api, images, search]);
-
-    useEffect(() => {
-        const refreshBoost = async () => {
-            const updatedBoost = await api.getBoost();
-            setBoost(updatedBoost.data);
-        };
-        refreshBoost();
-        const interval = setInterval(refreshBoost, 60 * 1000);
-        return () => {
-            clearInterval(interval);
-        };
-    }, [api]);
 
     // load parent image from saved images if an id is on the query string
     useEffect(() => {

@@ -1,7 +1,6 @@
 import React, { FC, useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { AIBrushApi } from "../../client/api";
-import { BoostList } from "./BoostList";
 import { GlobalSettings } from "./GlobalSettings";
 
 interface Props {
@@ -66,8 +65,6 @@ export const Admin: FC<Props> = ({ api }) => {
                     </button>
                 </div>
             </div>
-            <hr />
-            <BoostList api={api} />
             <hr />
             <GlobalSettings api={api} />
         </div>

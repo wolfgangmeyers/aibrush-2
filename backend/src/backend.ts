@@ -20,7 +20,6 @@ import {
     AddMetricsInput,
     Worker,
     ImageUrls,
-    Boost,
     GlobalSettings,
     TemporaryImage,
 } from "./client/api";
@@ -1135,7 +1134,6 @@ export class BackendService {
         await this.cleanupStuckImages();
         await this.cleanupTemporaryImages();
         await this.cleanupDeletedImages();
-        await this.cleanupIdleBoosts();
         const elapsed = this.clock.now().diff(start, "milliseconds");
         this.metrics.addMetric("backend.cleanup", 1, "count", {
             duration: elapsed,
@@ -1238,176 +1236,6 @@ export class BackendService {
         }
     }
 
-    private hydrateBoost(row: any): Boost {
-        return {
-            user_id: row.user_id,
-            activated_at: parseInt(row.activated_at),
-            balance: parseInt(row.balance),
-            level: parseInt(row.level),
-            is_active: row.is_active,
-        };
-    }
-
-    async getBoost(user_id: string): Promise<Boost> {
-        // default is activated_at=0, balance=0, level=0
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `SELECT * FROM boost WHERE user_id=$1`,
-                [hash(user_id)]
-            );
-            if (result.rowCount === 0) {
-                return {
-                    user_id,
-                    activated_at: 0,
-                    balance: 0,
-                    level: 1,
-                    is_active: false,
-                };
-            }
-            return this.hydrateBoost(result.rows[0]);
-        } finally {
-            client.release();
-        }
-    }
-
-    private async saveBoost(boost: Boost): Promise<Boost> {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `INSERT INTO boost (user_id, activated_at, balance, level, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id) DO UPDATE SET level = $4, balance = $3, activated_at = $2, is_active = $5 RETURNING *`,
-                [
-                    hash(boost.user_id),
-                    boost.activated_at,
-                    boost.balance,
-                    boost.level,
-                    boost.is_active,
-                ]
-            );
-            return this.hydrateBoost(result.rows[0]);
-        } finally {
-            client.release();
-        }
-    }
-
-    private async updateBoostBalance(boost: Boost): Promise<Boost> {
-        console.log("existing boost is active");
-        boost.balance -=
-            (this.clock.now().valueOf() - boost.activated_at) * boost.level;
-        if (boost.balance <= 0) {
-            boost.balance = 0;
-            boost.is_active = false;
-        }
-        return await this.saveBoost(boost);
-    }
-
-    async depositBoost(
-        user_id: string,
-        amount: number,
-        level: number,
-        activate = true
-    ): Promise<Boost> {
-        let existingBoost = await this.getBoost(user_id);
-        if (existingBoost.is_active) {
-            // force balance deduction before potentially changing level
-            existingBoost = await this.updateBoostBalance(existingBoost);
-        }
-        let activatedAt = existingBoost.activated_at;
-        if (activate) {
-            activatedAt = this.clock.now().valueOf();
-        }
-        // upsert
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `INSERT INTO boost (user_id, activated_at, balance, level, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id) DO UPDATE SET activated_at = $2, balance = boost.balance + $3, level = $4, is_active = $5 RETURNING *`,
-                [hash(user_id), activatedAt, amount, level, activate]
-            );
-            await this.notify(
-                existingBoost.user_id,
-                JSON.stringify({
-                    type: NOTIFICATION_BOOST_UPDATED,
-                })
-            );
-            return this.hydrateBoost(result.rows[0]);
-        } finally {
-            client.release();
-        }
-    }
-
-    async listActiveBoosts(): Promise<Boost[]> {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `SELECT * FROM boost WHERE is_active AND $1 - activated_at < balance`,
-                [this.clock.now().valueOf()]
-            );
-            return result.rows.map((row: any) => this.hydrateBoost(row));
-        } finally {
-            client.release();
-        }
-    }
-
-    async updateBoost(
-        user_id: string,
-        level: number,
-        isActive: boolean,
-        cooldownCheck = true
-    ): Promise<Boost> {
-        // if level > 0, activated_at must be at least 10 minutes in the past
-        // if level > 0, set activated_at to now
-        let existingBoost = await this.getBoost(user_id);
-        if (
-            cooldownCheck &&
-            this.clock.now().valueOf() - existingBoost.activated_at < 10 * 60 * 1000 &&
-            isActive
-        ) {
-            if (!existingBoost.is_active) {
-                throw new UserError("Cannot activate boost yet");
-            }
-            if (level !== existingBoost.level) {
-                throw new UserError("Cannot change boost level yet");
-            }
-        }
-
-        // if existing is active deduct balance
-        if (existingBoost.is_active) {
-            existingBoost = await this.updateBoostBalance(existingBoost);
-        }
-        if (isActive && existingBoost.balance === 0) {
-            throw new UserError("Cannot activate boost with zero balance");
-        }
-        let activatedAt = existingBoost.activated_at;
-        if (
-            isActive &&
-            (!existingBoost.is_active || level != existingBoost.level)
-        ) {
-            activatedAt = this.clock.now().valueOf();
-        }
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `INSERT INTO boost (user_id, activated_at, balance, level, is_active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id) DO UPDATE SET level = $4, balance = $3, activated_at = $2, is_active = $5 RETURNING *`,
-                [
-                    hash(user_id),
-                    activatedAt,
-                    existingBoost.balance,
-                    level,
-                    isActive,
-                ]
-            );
-            await this.notify(
-                existingBoost.user_id,
-                JSON.stringify({
-                    type: NOTIFICATION_BOOST_UPDATED,
-                })
-            );
-            return this.hydrateBoost(result.rows[0]);
-        } finally {
-            client.release();
-        }
-    }
-
     async getGlobalSettings(key: string): Promise<GlobalSettings> {
         const client = await this.pool.connect();
         try {
@@ -1465,54 +1293,6 @@ export class BackendService {
             id: tmpImageId,
             upload_url: uploadUrl,
         };
-    }
-
-    async cleanupIdleBoosts(): Promise<void> {
-        // list the active boosts, then
-        // check if the boost owner has created any images in
-        // the last 15 minutes. If not, deactivate the boost
-        const activeBoosts = await this.listActiveBoosts();
-        if (activeBoosts.length === 0) {
-            return;
-        }
-        const client = await this.pool.connect();
-        let lock = false;
-        try {
-            lock = await this.acquireLock(client, IDLE_BOOSTS_KEY);
-            if (!lock) {
-                return;
-            }
-            const userIds = activeBoosts.map((boost) => boost.user_id);
-            const result = await client.query(
-                `SELECT created_by, COUNT(*) FROM images WHERE created_by = ANY($1) AND created_at > $2 GROUP BY created_by`,
-                [userIds, this.clock.now().valueOf() - 15 * 60 * 1000]
-            );
-            const activeUserIds = result.rows.map((row: any) => row.created_by);
-            const inactiveBoosts = activeBoosts.filter(
-                (boost) => !activeUserIds.includes(boost.user_id)
-            );
-            if (inactiveBoosts.length === 0) {
-                return;
-            }
-            for (let boost of inactiveBoosts) {
-                // make sure it hasn't been activated in the last 15 minutes
-                if (this.clock.now().valueOf() - boost.activated_at < 15 * 60 * 1000) {
-                    continue;
-                }
-                this.logger.log("deactivating boost");
-                await this.updateBoost(
-                    boost.user_id,
-                    boost.level,
-                    false,
-                    false
-                );
-            }
-        } finally {
-            if (lock) {
-                await this.releaseLock(client, IDLE_BOOSTS_KEY);
-            }
-            client.release();
-        }
     }
 
     private async backfillUserEmail(email: string): Promise<void> {

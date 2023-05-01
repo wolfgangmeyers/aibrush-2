@@ -38,7 +38,6 @@ import {
     UpsertWorkerInput,
 } from "./client";
 import { MetricsClient } from "./metrics";
-import { ScalingService } from "./scaling_service";
 import { Logger } from "./logs";
 import { BOOST_LEVELS } from "./boost";
 
@@ -59,7 +58,6 @@ export class Server {
         private port: string | number,
         private metricsClient: MetricsClient,
         private logger: Logger,
-        private scalingService: ScalingService
     ) {
         this.app = express();
         this.authHelper = new AuthHelper(
@@ -854,132 +852,6 @@ export class Server {
         );
 
         this.app.get(
-            "/api/boost",
-            withMetrics("/api/boost", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log("Service account tried to get boost", jwt);
-                    return;
-                }
-                const boost = await this.backendService.getBoost(jwt.userId);
-                res.json(boost);
-            })
-        );
-
-        this.app.put(
-            "/api/boost",
-            withMetrics("/api/boost", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to update boost level",
-                        jwt
-                    );
-                    return;
-                }
-                const level = req.body.level;
-                if (!BOOST_LEVELS.find((l) => l.level == level)) {
-                    res.status(400).send("Invalid level");
-                    return;
-                }
-                try {
-                    const boost = await this.backendService.updateBoost(
-                        jwt.userId,
-                        req.body.level,
-                        req.body.is_active
-                    );
-                    res.json({
-                        level: boost.level,
-                        balance: boost.balance,
-                        is_active: boost.is_active,
-                    });
-                } catch (e) {
-                    if (e instanceof UserError) {
-                        res.json({
-                            error: e.message,
-                        });
-                    } else {
-                        throw e;
-                    }
-                }
-            })
-        );
-
-        this.app.get(
-            "/api/boost/:userId",
-            withMetrics("/api/boost/:userId", async (req, res) => {
-                // admin only
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log("Service account tried to get boost", jwt);
-                    return;
-                }
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    res.sendStatus(404);
-                    return;
-                }
-                const boost = await this.backendService.getBoost(
-                    req.params.userId
-                );
-                res.json(boost);
-            })
-        );
-
-        // admin only
-        this.app.post(
-            "/api/boost/:userId/deposit",
-            withMetrics("/api/boost/:userId/deposit", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to deposit to boost",
-                        jwt
-                    );
-                    return;
-                }
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    res.sendStatus(404);
-                    return;
-                }
-                const depositRequest = req.body as DepositRequest;
-                const boost = await this.backendService.depositBoost(
-                    req.params.userId,
-                    depositRequest.amount,
-                    depositRequest.level,
-                    false
-                );
-                res.json(boost);
-            })
-        );
-
-        this.app.get(
-            "/api/boosts",
-            withMetrics("/api/boosts", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to list boosts",
-                        jwt
-                    );
-                    return;
-                }
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    res.sendStatus(404);
-                    return;
-                }
-                const boosts = await this.backendService.listActiveBoosts();
-                res.json({
-                    boosts,
-                });
-            })
-        );
-
-        this.app.get(
             "/api/is-admin",
             withMetrics("/api/is-admin", async (req, res) => {
                 const jwt = this.authHelper.getJWTFromRequest(req);
@@ -1148,11 +1020,6 @@ export class Server {
                     Bugsnag.notify(err);
                 }
             }, 10000);
-
-            if (this.config.enableScalingService) {
-                this.scalingService.start();
-                this.scalingService.scale();
-            }
         });
     }
 
@@ -1164,9 +1031,6 @@ export class Server {
         if (this.cleanupHandle) {
             clearInterval(this.cleanupHandle);
             this.cleanupHandle = undefined;
-        }
-        if (this.config.enableScalingService) {
-            this.scalingService.stop();
         }
     }
 }

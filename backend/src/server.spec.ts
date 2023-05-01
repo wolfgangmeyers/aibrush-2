@@ -188,7 +188,6 @@ describe("server", () => {
             35456,
             new MetricsClient(""),
             new ConsoleLogger(),
-            null
         );
         await server.init();
         await server.start();

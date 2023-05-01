@@ -301,6 +301,12 @@ export const ImagePrompt: FC<Props> = ({
                         </button>
                     </div>
                 </div>
+                {/* <div style={{textAlign: "left"}}>
+                    <span className="helptext" style={{color: "#00f0f0"}}>
+                        Cost: 1 credits&nbsp;
+                        <i className="fas fa-info-circle" style={{cursor: "pointer"}} onClick={() => alert("1 credit per image")}></i>
+                    </span>
+                </div> */}
                 <div
                     style={{
                         marginTop: "24px",
