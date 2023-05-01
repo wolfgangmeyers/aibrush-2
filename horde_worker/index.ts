@@ -319,6 +319,7 @@ async function processRequest(request: HordeRequest) {
                 source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
                 forms: [{ name: "nsfw" }],
             });
+            console.log("nsfw result", nsfw);
         }
 
         await updateImage(

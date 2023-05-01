@@ -170,6 +170,7 @@ export async function processAlchemistImage(
             console.log(JSON.stringify(resultsJson));
             if (resultsJson.state === "done") {
                 isDone = true;
+                console.log("alchemy results: " + JSON.stringify(resultsJson));
                 if (payload.forms[0].name == "nsfw") {
                     return resultsJson.forms[0].result.nsfw;
                 }
