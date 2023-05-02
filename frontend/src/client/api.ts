@@ -104,52 +104,15 @@ export interface BatchGetImagesInput {
 /**
  * 
  * @export
- * @interface Boost
+ * @interface CreateDepositCodeInput
  */
-export interface Boost {
-    /**
-     * 
-     * @type {string}
-     * @memberof Boost
-     */
-    user_id: string;
+export interface CreateDepositCodeInput {
     /**
      * 
      * @type {number}
-     * @memberof Boost
+     * @memberof CreateDepositCodeInput
      */
-    activated_at: number;
-    /**
-     * Balance in 1/2 gpu milliseconds (.1 cents)
-     * @type {number}
-     * @memberof Boost
-     */
-    balance: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof Boost
-     */
-    level: number;
-    /**
-     * Whether the boost is active
-     * @type {boolean}
-     * @memberof Boost
-     */
-    is_active?: boolean;
-}
-/**
- * 
- * @export
- * @interface BoostList
- */
-export interface BoostList {
-    /**
-     * 
-     * @type {Array<Boost>}
-     * @memberof BoostList
-     */
-    boosts: Array<Boost>;
+    amount: number;
 }
 /**
  * 
@@ -239,21 +202,53 @@ export interface CreateImageInput {
 /**
  * 
  * @export
+ * @interface Credits
+ */
+export interface Credits {
+    /**
+     * 
+     * @type {number}
+     * @memberof Credits
+     */
+    free_credits: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Credits
+     */
+    paid_credits: number;
+}
+/**
+ * 
+ * @export
+ * @interface DepositCode
+ */
+export interface DepositCode {
+    /**
+     * 
+     * @type {string}
+     * @memberof DepositCode
+     */
+    code: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof DepositCode
+     */
+    amount: number;
+}
+/**
+ * 
+ * @export
  * @interface DepositRequest
  */
 export interface DepositRequest {
     /**
-     * Amount in 1/2 gpu milliseconds (.1 cents)
+     * Amount in credits
      * @type {number}
      * @memberof DepositRequest
      */
     amount: number;
-    /**
-     * Boost level to activate after deposit
-     * @type {number}
-     * @memberof DepositRequest
-     */
-    level: number;
 }
 /**
  * 
@@ -709,6 +704,19 @@ export interface Order {
 /**
  * 
  * @export
+ * @interface RedeemDepositCodeInput
+ */
+export interface RedeemDepositCodeInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof RedeemDepositCodeInput
+     */
+    code: string;
+}
+/**
+ * 
+ * @export
  * @interface RefreshLoginInput
  */
 export interface RefreshLoginInput {
@@ -831,56 +839,6 @@ export interface TemporaryImage {
      * @memberof TemporaryImage
      */
     upload_url: string;
-}
-/**
- * 
- * @export
- * @interface UpdateBoostRequest
- */
-export interface UpdateBoostRequest {
-    /**
-     * Boost level to set for current user
-     * @type {number}
-     * @memberof UpdateBoostRequest
-     */
-    level?: number;
-    /**
-     * Whether to activate or deactivate the boost
-     * @type {boolean}
-     * @memberof UpdateBoostRequest
-     */
-    is_active?: boolean;
-}
-/**
- * 
- * @export
- * @interface UpdateBoostResponse
- */
-export interface UpdateBoostResponse {
-    /**
-     * 
-     * @type {number}
-     * @memberof UpdateBoostResponse
-     */
-    level?: number;
-    /**
-     * Balance in 1/2 gpu milliseconds (.1 cents)
-     * @type {number}
-     * @memberof UpdateBoostResponse
-     */
-    balance?: number;
-    /**
-     * Whether the boost is active
-     * @type {boolean}
-     * @memberof UpdateBoostResponse
-     */
-    is_active?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateBoostResponse
-     */
-    error?: string;
 }
 /**
  * 
@@ -1256,6 +1214,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Create a new deposit code
+         * @param {CreateDepositCodeInput} [createDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createDepositCode: async (createDepositCodeInput?: CreateDepositCodeInput, options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/deposit-codes`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createDepositCodeInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Create a new image
          * @param {CreateImageInput} [createImageInput] 
          * @param {*} [options] Override http request option.
@@ -1380,43 +1371,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Deposit to a user\'s boost
-         * @param {string} userId 
-         * @param {DepositRequest} [depositRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        depositBoost: async (userId: string, depositRequest?: DepositRequest, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'userId' is not null or undefined
-            assertParamExists('depositBoost', 'userId', userId)
-            const localVarPath = `/api/boost/{user_id}/deposit`
-                .replace(`{${"user_id"}}`, encodeURIComponent(String(userId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(depositRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Log in with Discord
          * @param {DiscordLogin} [discordLogin] 
          * @param {*} [options] Override http request option.
@@ -1479,45 +1433,12 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Get the boost for the current user
+         * Get the user\'s credit balance
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getBoost: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/boost`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get the boost for a user
-         * @param {string} userId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getBoostForUser: async (userId: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'userId' is not null or undefined
-            assertParamExists('getBoostForUser', 'userId', userId)
-            const localVarPath = `/api/boost/{user_id}`
-                .replace(`{${"user_id"}}`, encodeURIComponent(String(userId)));
+        getCredits: async (options: any = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/credits`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1889,35 +1810,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Get the boost for all users
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        listBoosts: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/boosts`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {string} [filter] 
@@ -2005,6 +1897,43 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Redeem a deposit code
+         * @param {string} code 
+         * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        redeemDepositCode: async (code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'code' is not null or undefined
+            assertParamExists('redeemDepositCode', 'code', code)
+            const localVarPath = `/api/deposit-codes/{code}`
+                .replace(`{${"code"}}`, encodeURIComponent(String(code)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(redeemDepositCodeInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2031,39 +1960,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(refreshLoginInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Update the boost level for the current user
-         * @param {UpdateBoostRequest} [updateBoostRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateBoost: async (updateBoostRequest?: UpdateBoostRequest, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/boost`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(updateBoostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2283,6 +2179,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a new deposit code
+         * @param {CreateDepositCodeInput} [createDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createDepositCode(createDepositCodeInput?: CreateDepositCodeInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DepositCode>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createDepositCode(createDepositCodeInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Create a new image
          * @param {CreateImageInput} [createImageInput] 
          * @param {*} [options] Override http request option.
@@ -2321,17 +2227,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Deposit to a user\'s boost
-         * @param {string} userId 
-         * @param {DepositRequest} [depositRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async depositBoost(userId: string, depositRequest?: DepositRequest, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Boost>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.depositBoost(userId, depositRequest, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Log in with Discord
          * @param {DiscordLogin} [discordLogin] 
          * @param {*} [options] Override http request option.
@@ -2351,22 +2246,12 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Get the boost for the current user
+         * Get the user\'s credit balance
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async getBoost(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Boost>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getBoost(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get the boost for a user
-         * @param {string} userId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getBoostForUser(userId: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Boost>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getBoostForUser(userId, options);
+        async getCredits(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Credits>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getCredits(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2477,15 +2362,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Get the boost for all users
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async listBoosts(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<BoostList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listBoosts(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {string} [filter] 
@@ -2510,6 +2386,17 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Redeem a deposit code
+         * @param {string} code 
+         * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async redeemDepositCode(code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.redeemDepositCode(code, redeemDepositCodeInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2517,16 +2404,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async refresh(refreshLoginInput?: RefreshLoginInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LoginResult>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.refresh(refreshLoginInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Update the boost level for the current user
-         * @param {UpdateBoostRequest} [updateBoostRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UpdateBoostResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateBoost(updateBoostRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2613,6 +2490,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.batchGetImages(fields, batchGetImagesInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Create a new deposit code
+         * @param {CreateDepositCodeInput} [createDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createDepositCode(createDepositCodeInput?: CreateDepositCodeInput, options?: any): AxiosPromise<DepositCode> {
+            return localVarFp.createDepositCode(createDepositCodeInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Create a new image
          * @param {CreateImageInput} [createImageInput] 
          * @param {*} [options] Override http request option.
@@ -2647,16 +2533,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.deleteImage(id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Deposit to a user\'s boost
-         * @param {string} userId 
-         * @param {DepositRequest} [depositRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        depositBoost(userId: string, depositRequest?: DepositRequest, options?: any): AxiosPromise<Boost> {
-            return localVarFp.depositBoost(userId, depositRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Log in with Discord
          * @param {DiscordLogin} [discordLogin] 
          * @param {*} [options] Override http request option.
@@ -2674,21 +2550,12 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getAssetsUrl(options).then((request) => request(axios, basePath));
         },
         /**
-         * Get the boost for the current user
+         * Get the user\'s credit balance
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getBoost(options?: any): AxiosPromise<Boost> {
-            return localVarFp.getBoost(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get the boost for a user
-         * @param {string} userId 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getBoostForUser(userId: string, options?: any): AxiosPromise<Boost> {
-            return localVarFp.getBoostForUser(userId, options).then((request) => request(axios, basePath));
+        getCredits(options?: any): AxiosPromise<Credits> {
+            return localVarFp.getCredits(options).then((request) => request(axios, basePath));
         },
         /**
          * Get the features
@@ -2787,14 +2654,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.isAdmin(options).then((request) => request(axios, basePath));
         },
         /**
-         * Get the boost for all users
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        listBoosts(options?: any): AxiosPromise<BoostList> {
-            return localVarFp.listBoosts(options).then((request) => request(axios, basePath));
-        },
-        /**
          * Get a list of saved images
          * @param {number} [cursor] 
          * @param {string} [filter] 
@@ -2817,6 +2676,16 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.login(loginInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Redeem a deposit code
+         * @param {string} code 
+         * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        redeemDepositCode(code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options?: any): AxiosPromise<void> {
+            return localVarFp.redeemDepositCode(code, redeemDepositCodeInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2824,15 +2693,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         refresh(refreshLoginInput?: RefreshLoginInput, options?: any): AxiosPromise<LoginResult> {
             return localVarFp.refresh(refreshLoginInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Update the boost level for the current user
-         * @param {UpdateBoostRequest} [updateBoostRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: any): AxiosPromise<UpdateBoostResponse> {
-            return localVarFp.updateBoost(updateBoostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * Update the global settings
@@ -2917,6 +2777,17 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Create a new deposit code
+     * @param {CreateDepositCodeInput} [createDepositCodeInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createDepositCode(createDepositCodeInput?: CreateDepositCodeInput, options?: any) {
+        return AIBrushApiFp(this.configuration).createDepositCode(createDepositCodeInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Create a new image
      * @param {CreateImageInput} [createImageInput] 
      * @param {*} [options] Override http request option.
@@ -2959,18 +2830,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Deposit to a user\'s boost
-     * @param {string} userId 
-     * @param {DepositRequest} [depositRequest] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public depositBoost(userId: string, depositRequest?: DepositRequest, options?: any) {
-        return AIBrushApiFp(this.configuration).depositBoost(userId, depositRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Log in with Discord
      * @param {DiscordLogin} [discordLogin] 
      * @param {*} [options] Override http request option.
@@ -2992,24 +2851,13 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Get the boost for the current user
+     * Get the user\'s credit balance
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public getBoost(options?: any) {
-        return AIBrushApiFp(this.configuration).getBoost(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get the boost for a user
-     * @param {string} userId 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getBoostForUser(userId: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getBoostForUser(userId, options).then((request) => request(this.axios, this.basePath));
+    public getCredits(options?: any) {
+        return AIBrushApiFp(this.configuration).getCredits(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3131,16 +2979,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Get the boost for all users
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public listBoosts(options?: any) {
-        return AIBrushApiFp(this.configuration).listBoosts(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Get a list of saved images
      * @param {number} [cursor] 
      * @param {string} [filter] 
@@ -3167,6 +3005,18 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Redeem a deposit code
+     * @param {string} code 
+     * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public redeemDepositCode(code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options?: any) {
+        return AIBrushApiFp(this.configuration).redeemDepositCode(code, redeemDepositCodeInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Refresh Login code
      * @param {RefreshLoginInput} [refreshLoginInput] 
      * @param {*} [options] Override http request option.
@@ -3175,17 +3025,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public refresh(refreshLoginInput?: RefreshLoginInput, options?: any) {
         return AIBrushApiFp(this.configuration).refresh(refreshLoginInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Update the boost level for the current user
-     * @param {UpdateBoostRequest} [updateBoostRequest] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public updateBoost(updateBoostRequest?: UpdateBoostRequest, options?: any) {
-        return AIBrushApiFp(this.configuration).updateBoost(updateBoostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -20,6 +20,7 @@ import { DiscordLogin } from "./pages/DiscordLogin";
 import { LocalDeletedImages } from "./pages/LocalDeletedImages";
 import { SavedImagesPage } from "./pages/SavedImagesPage";
 import { TestPage } from "./pages/TestPage";
+import { CreditsBalance } from "./components/CreditsBalance";
 
 const config = getConfig();
 const httpClient = axios.default.create();
@@ -184,6 +185,9 @@ function App() {
                                         </Link>
                                     </>
                                 )}
+                            </div>
+                            <div className="col-lg-12" style={{textAlign: "right"}}>
+                                <CreditsBalance api={client} apisocket={apiSocket} />
                             </div>
                         </div>
 

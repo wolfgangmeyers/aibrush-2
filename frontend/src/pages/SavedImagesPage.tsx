@@ -6,7 +6,7 @@ import { useParams, useHistory, Link } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
-import { CreateImageInput, Image, StatusEnum, Boost } from "../client/api";
+import { CreateImageInput, Image, StatusEnum } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import {
@@ -291,7 +291,7 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
     }, [images]);
 
     useEffect(() => {
-        apiSocket.onMessage(async (message) => {
+        const onMessage = async (message: string) => {
             const payload = JSON.parse(message);
             if (
                 payload.type === NOTIFICATION_IMAGE_UPDATED ||
@@ -319,9 +319,10 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                     return updatedImages.sort(sortImages);
                 });
             }
-        });
+        }
+        apiSocket.addMessageListener(onMessage);
         return () => {
-            apiSocket.onMessage(undefined);
+            apiSocket.removeMessageListener(onMessage);
         };
     }, [apiSocket]);
 

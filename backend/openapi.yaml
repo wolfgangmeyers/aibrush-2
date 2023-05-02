@@ -1062,6 +1062,9 @@ components:
           type: integer
         paid_credits:
           type: integer
+      required:
+        - free_credits
+        - paid_credits
     CreateDepositCodeInput:
       type: object
       properties:
@@ -1077,6 +1080,9 @@ components:
           type: string
         amount:
           type: integer
+      required:
+        - code
+        - amount
     RedeemDepositCodeInput:
       type: object
       properties:

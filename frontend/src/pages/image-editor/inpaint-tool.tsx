@@ -464,7 +464,7 @@ export class InpaintTool extends BaseTool implements Tool {
         let completed = false;
         let lastUpdate = moment();
 
-        apisocket.onMessage(async (msg: string) => {
+        const onMessage = async (msg: string) => {
             console.log("inpaint onMessage", msg);
             const img = JSON.parse(msg) as any;
             if (
@@ -491,7 +491,8 @@ export class InpaintTool extends BaseTool implements Tool {
                     }
                 }
             }
-        });
+        }
+        apisocket.addMessageListener(onMessage);
         try {
             let startTime = moment();
             let lastCheck = moment();
@@ -566,7 +567,7 @@ export class InpaintTool extends BaseTool implements Tool {
                 }
             }
         } finally {
-            apisocket.onMessage(undefined);
+            apisocket.removeMessageListener(onMessage);
         }
 
         // sort images by score descending

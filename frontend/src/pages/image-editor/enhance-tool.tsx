@@ -470,7 +470,7 @@ export class EnhanceTool extends BaseTool implements Tool {
 
         let lastUpdate = moment();
 
-        apisocket.onMessage(async (msg: string) => {
+        const onMessage = async (msg: string) => {
             const img = JSON.parse(msg) as any;
             if (
                 img.type === NOTIFICATION_IMAGE_UPDATED &&
@@ -495,7 +495,8 @@ export class EnhanceTool extends BaseTool implements Tool {
                     }
                 }
             }
-        });
+        }
+        apisocket.addMessageListener(onMessage);
         try {
             let startTime = moment();
             let lastCheck = moment();
@@ -569,7 +570,7 @@ export class EnhanceTool extends BaseTool implements Tool {
                 }
             }
         } finally {
-            apisocket.onMessage(undefined);
+            apisocket.removeMessageListener(onMessage);
         }
 
         // sort images by score descending

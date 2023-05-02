@@ -1,8 +1,37 @@
-export interface AspectRatio {
-    displayName: string;
-    width: number;
-    height: number;
-    id: number;
+// export interface AspectRatio {
+//     displayName: string;
+//     width: number;
+//     height: number;
+//     id: number;
+
+//     scale: (size: number) => AspectRatio;
+// }
+
+export class AspectRatio implements AspectRatio {
+    readonly displayName: string;
+    readonly width: number;
+    readonly height: number;
+    readonly id: number;
+
+    constructor(cfg: any) {
+        this.displayName = cfg.displayName;
+        this.width = cfg.width;
+        this.height = cfg.height;
+        this.id = cfg.id;
+    }
+
+    scale(size: number): AspectRatio {
+        const newWidth = this.width * size;
+        const newHeight = this.height * size;
+
+        return new AspectRatio({
+            id: this.id,
+            displayName: this.displayName,
+            // round width and height up to the nearest multiple of 64
+            width: Math.ceil(newWidth / 64) * 64,
+            height: Math.ceil(newHeight / 64) * 64,
+        });
+    }
 }
 
 export const DEFAULT_ASPECT_RATIO = 5;
@@ -74,7 +103,7 @@ export const aspectRatios: AspectRatio[] = [
         height: 1024,
         id: 10,
     }
-];
+].map((cfg) => new AspectRatio(cfg));
 
 export function getClosestAspectRatio(width: number, height: number): AspectRatio {
     const aspectRatio = width / height;
@@ -92,26 +121,4 @@ export function getClosestAspectRatio(width: number, height: number): AspectRati
     return bestMatch;
 }
 
-export function compareSize(a: AspectRatio, width: number, height: number): number {
-    const area1 = a.width * a.height;
-    const area2 = width * height;
-    return area1 - area2;
-}
 
-export function upscale(aspectRatio: AspectRatio): AspectRatio {
-    return {
-        displayName: aspectRatio.displayName,
-        width: aspectRatio.width * 2,
-        height: aspectRatio.height * 2,
-        id: aspectRatio.id,
-    }
-}
-
-export function downscale(aspectRatio: AspectRatio): AspectRatio {
-    return {
-        displayName: aspectRatio.displayName,
-        width: aspectRatio.width / 2,
-        height: aspectRatio.height / 2,
-        id: aspectRatio.id,
-    }
-}

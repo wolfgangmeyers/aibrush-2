@@ -4,8 +4,6 @@ import {
     aspectRatios,
     DEFAULT_ASPECT_RATIO,
     getClosestAspectRatio,
-    upscale,
-    compareSize,
     AspectRatio,
 } from "../lib/aspecRatios";
 import loadImage from "blueimp-load-image";
@@ -16,6 +14,7 @@ import { LocalImage } from "../lib/localImagesStore";
 import { controlnetTypes, supportedModels } from "../lib/supportedModels";
 import { SeedInput } from "./SeedInput";
 import ModelSelector from "./ModelSelector";
+import { calculateImagesCost } from "../lib/credits";
 
 interface Props {
     api: AIBrushApi;
@@ -76,6 +75,7 @@ export const ImagePrompt: FC<Props> = ({
     const [controlnetType, setControlnetType] = useState<string | undefined>();
     const [cfgScale, setCfgScale] = useState<number>(7.5);
     const [seed, setSeed] = useState<string>("");
+    const [size, setSize] = useState<number>(1);
     const defaultAspectRatio = aspectRatios[DEFAULT_ASPECT_RATIO];
 
     const [aspectRatioDetails, setAspectRatioDetails] = useState<AspectRatio>(
@@ -122,14 +122,14 @@ export const ImagePrompt: FC<Props> = ({
             const bestMatch = getClosestAspectRatio(
                 parent.params.width!,
                 parent.params.height!
-            );
+            ).scale(size);
             args.params.width = bestMatch.width;
             args.params.height = bestMatch.height;
         } else {
             const bestMatch = getClosestAspectRatio(
                 aspectRatioDetails.width,
                 aspectRatioDetails.height
-            );
+            ).scale(size);
             args.params.width = bestMatch.width;
             args.params.height = bestMatch.height;
         }
@@ -196,15 +196,6 @@ export const ImagePrompt: FC<Props> = ({
                 const width = img.width;
                 const height = img.height;
                 let bestMatch = getClosestAspectRatio(width, height);
-                while (compareSize(upscale(bestMatch), width, height) <= 0) {
-                    bestMatch = upscale(bestMatch);
-                    if (
-                        getUpscaleLevel(bestMatch.width, bestMatch.height) >= 2
-                    ) {
-                        break;
-                    }
-                }
-                console.log("best match", bestMatch);
 
                 const canvas = document.createElement("canvas");
                 // canvas.width = bestMatch.width;
@@ -272,18 +263,43 @@ export const ImagePrompt: FC<Props> = ({
         }
     }, [encodedImage]);
 
+    const scaledAspectRatio = aspectRatioDetails.scale(size);
+    const imagesCost = calculateImagesCost(
+        count,
+        scaledAspectRatio.width,
+        scaledAspectRatio.height
+    );
+
     return (
         <form onSubmit={handleSubmit}>
             <div className="homepage-prompt">
                 <div className="input-group">
                     <input
-                        className="form-control"
+                        className="form-control prompt"
                         placeholder="What would you like to create?"
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                     />
 
                     <div className="input-group-append">
+                        <select
+                            className="form-control prompt-count"
+                            style={{ borderTopLeftRadius: "0px" }}
+                            value={seed ? 1 : count}
+                            onChange={(e) => setCount(parseInt(e.target.value))}
+                            disabled={!!seed}
+                        >
+                            <option value={1}>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                            <option>6</option>
+                            <option>7</option>
+                            <option>8</option>
+                            <option>9</option>
+                            <option>10</option>
+                        </select>
                         <button
                             type="submit"
                             className="btn btn-secondary light-button"
@@ -301,12 +317,12 @@ export const ImagePrompt: FC<Props> = ({
                         </button>
                     </div>
                 </div>
-                {/* <div style={{textAlign: "left"}}>
+                <div style={{textAlign: "left"}}>
                     <span className="helptext" style={{color: "#00f0f0"}}>
-                        Cost: 1 credits&nbsp;
-                        <i className="fas fa-info-circle" style={{cursor: "pointer"}} onClick={() => alert("1 credit per image")}></i>
+                        Cost: {imagesCost} credit{imagesCost > 1 ? "s" : ""}&nbsp;
+                        <i className="fas fa-info-circle" style={{cursor: "pointer"}} onClick={() => alert("The cost is based on the image count and the size of each image. A single 512x512 image costs 1 credit.")}></i>
                     </span>
-                </div> */}
+                </div>
                 <div
                     style={{
                         marginTop: "24px",
@@ -465,6 +481,27 @@ export const ImagePrompt: FC<Props> = ({
                                 </span>
                             </div>
                         )}
+                        {/* size slider */}
+                        <div className="form-group">
+                            <label htmlFor="size">Size: {scaledAspectRatio.width} x {scaledAspectRatio.height}</label>
+                            {/* range slider from 1 to 2 in increments of 0.1 */}
+                            <input
+                                type="range"
+                                className="form-control-range"
+                                id="size"
+                                min="1"
+                                max="2"
+                                step="0.1"
+                                value={size}
+                                onChange={(e) =>
+                                    setSize(parseFloat(e.target.value))
+                                }
+                            />
+                            <span className="helptext">
+                                This allows you to adjust the size of your images. Larger images cost more credits.
+                            </span>
+                        </div>
+
                         {(parentId || encodedImage) && (
                             <div className="form-group">
                                 {/* variation strength */}
