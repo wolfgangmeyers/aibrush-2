@@ -659,7 +659,7 @@ export class BackendService {
                 RETURNING *`,
                 [
                     uuid.v4(),
-                    createdBy,
+                    hash(createdBy),
                     new Date().getTime(),
                     new Date().getTime(),
                     body.label || "",
@@ -1263,7 +1263,7 @@ export class BackendService {
         try {
             const result = await client.query(
                 `SELECT free_credits, paid_credits FROM credits WHERE user_id=$1`,
-                [userId]
+                [hash(userId)]
             );
             // This shouldn't be possible, but handle it gracefully if it does happen
             if (result.rowCount === 0) {
@@ -1335,7 +1335,7 @@ export class BackendService {
     }
 
     async resetFreeCredits(): Promise<void> {
-        this.withLock(RESET_CREDITS_KEY, async () => {
+        await this.withLock(RESET_CREDITS_KEY, async () => {
 
             // check last event time
             const lastReset = await this.getLastEventTime(RESET_CREDITS_EVENT);
@@ -1357,6 +1357,7 @@ export class BackendService {
     }
 
     async redeemDepositCode(code: string, userId: string): Promise<void> {
+        userId = hash(userId);
         const client = await this.pool.connect();
         try {
             // delete expired deposit codes
