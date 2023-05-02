@@ -842,10 +842,13 @@ export class BackendService {
                 "You already have too many pending or processing images"
             );
         }
-        const credits = await this.getCredits(createdBy);
-        if (credits.free_credits === 0 && credits.paid_credits === 0) {
-            throw new Error("No credits");
-        }
+
+        // TODO: re-enable this
+
+        // const credits = await this.getCredits(createdBy);
+        // if (credits.free_credits === 0 && credits.paid_credits === 0) {
+        //     throw new Error("No credits");
+        // }
         const promises: Array<Promise<Image>> = [];
         for (let i = 0; i < count; i++) {
             promises.push(
