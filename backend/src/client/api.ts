@@ -102,6 +102,19 @@ export interface BatchGetImagesInput {
 /**
  * 
  * @export
+ * @interface CreateDepositCodeInput
+ */
+export interface CreateDepositCodeInput {
+    /**
+     * 
+     * @type {number}
+     * @memberof CreateDepositCodeInput
+     */
+    'amount': number;
+}
+/**
+ * 
+ * @export
  * @interface CreateImageInput
  */
 export interface CreateImageInput {
@@ -183,6 +196,44 @@ export interface CreateImageInput {
      * @memberof CreateImageInput
      */
     'temporary'?: boolean;
+}
+/**
+ * 
+ * @export
+ * @interface Credits
+ */
+export interface Credits {
+    /**
+     * 
+     * @type {number}
+     * @memberof Credits
+     */
+    'free_credits'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof Credits
+     */
+    'paid_credits'?: number;
+}
+/**
+ * 
+ * @export
+ * @interface DepositCode
+ */
+export interface DepositCode {
+    /**
+     * 
+     * @type {string}
+     * @memberof DepositCode
+     */
+    'code'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof DepositCode
+     */
+    'amount'?: number;
 }
 /**
  * 
@@ -641,6 +692,19 @@ export interface Order {
      * @memberof Order
      */
     'amount_paid_cents': number;
+}
+/**
+ * 
+ * @export
+ * @interface RedeemDepositCodeInput
+ */
+export interface RedeemDepositCodeInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof RedeemDepositCodeInput
+     */
+    'code': string;
 }
 /**
  * 
@@ -1141,6 +1205,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Create a new deposit code
+         * @param {CreateDepositCodeInput} [createDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createDepositCode: async (createDepositCodeInput?: CreateDepositCodeInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/deposit-codes`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createDepositCodeInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Create a new image
          * @param {CreateImageInput} [createImageInput] 
          * @param {*} [options] Override http request option.
@@ -1265,43 +1362,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Deposit to a user\'s credit balance
-         * @param {string} userId 
-         * @param {DepositRequest} [depositRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        depositCredits: async (userId: string, depositRequest?: DepositRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'userId' is not null or undefined
-            assertParamExists('depositCredits', 'userId', userId)
-            const localVarPath = `/api/credits/{user_id}/deposit`
-                .replace(`{${"user_id"}}`, encodeURIComponent(String(userId)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(depositRequest, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Log in with Discord
          * @param {DiscordLogin} [discordLogin] 
          * @param {*} [options] Override http request option.
@@ -1341,6 +1401,35 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          */
         getAssetsUrl: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/assets-url`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Get the user\'s credit balance
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getCredits: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/credits`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1799,6 +1888,43 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
+         * Redeem a deposit code
+         * @param {string} code 
+         * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        redeemDepositCode: async (code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'code' is not null or undefined
+            assertParamExists('redeemDepositCode', 'code', code)
+            const localVarPath = `/api/deposit-codes/{code}`
+                .replace(`{${"code"}}`, encodeURIComponent(String(code)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(redeemDepositCodeInput, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2044,6 +2170,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a new deposit code
+         * @param {CreateDepositCodeInput} [createDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createDepositCode(createDepositCodeInput?: CreateDepositCodeInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<DepositCode>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createDepositCode(createDepositCodeInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Create a new image
          * @param {CreateImageInput} [createImageInput] 
          * @param {*} [options] Override http request option.
@@ -2082,17 +2218,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Deposit to a user\'s credit balance
-         * @param {string} userId 
-         * @param {DepositRequest} [depositRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async depositCredits(userId: string, depositRequest?: DepositRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.depositCredits(userId, depositRequest, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Log in with Discord
          * @param {DiscordLogin} [discordLogin] 
          * @param {*} [options] Override http request option.
@@ -2109,6 +2234,15 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async getAssetsUrl(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AssetsUrl>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getAssetsUrl(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * Get the user\'s credit balance
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getCredits(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Credits>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getCredits(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2243,6 +2377,17 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Redeem a deposit code
+         * @param {string} code 
+         * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async redeemDepositCode(code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.redeemDepositCode(code, redeemDepositCodeInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2336,6 +2481,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.batchGetImages(fields, batchGetImagesInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Create a new deposit code
+         * @param {CreateDepositCodeInput} [createDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createDepositCode(createDepositCodeInput?: CreateDepositCodeInput, options?: any): AxiosPromise<DepositCode> {
+            return localVarFp.createDepositCode(createDepositCodeInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Create a new image
          * @param {CreateImageInput} [createImageInput] 
          * @param {*} [options] Override http request option.
@@ -2370,16 +2524,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.deleteImage(id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Deposit to a user\'s credit balance
-         * @param {string} userId 
-         * @param {DepositRequest} [depositRequest] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        depositCredits(userId: string, depositRequest?: DepositRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.depositCredits(userId, depositRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Log in with Discord
          * @param {DiscordLogin} [discordLogin] 
          * @param {*} [options] Override http request option.
@@ -2395,6 +2539,14 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         getAssetsUrl(options?: any): AxiosPromise<AssetsUrl> {
             return localVarFp.getAssetsUrl(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Get the user\'s credit balance
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getCredits(options?: any): AxiosPromise<Credits> {
+            return localVarFp.getCredits(options).then((request) => request(axios, basePath));
         },
         /**
          * Get the features
@@ -2515,6 +2667,16 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.login(loginInput, options).then((request) => request(axios, basePath));
         },
         /**
+         * Redeem a deposit code
+         * @param {string} code 
+         * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        redeemDepositCode(code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options?: any): AxiosPromise<void> {
+            return localVarFp.redeemDepositCode(code, redeemDepositCodeInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Refresh Login code
          * @param {RefreshLoginInput} [refreshLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2606,6 +2768,17 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
+     * Create a new deposit code
+     * @param {CreateDepositCodeInput} [createDepositCodeInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createDepositCode(createDepositCodeInput?: CreateDepositCodeInput, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).createDepositCode(createDepositCodeInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Create a new image
      * @param {CreateImageInput} [createImageInput] 
      * @param {*} [options] Override http request option.
@@ -2648,18 +2821,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Deposit to a user\'s credit balance
-     * @param {string} userId 
-     * @param {DepositRequest} [depositRequest] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public depositCredits(userId: string, depositRequest?: DepositRequest, options?: AxiosRequestConfig) {
-        return AIBrushApiFp(this.configuration).depositCredits(userId, depositRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Log in with Discord
      * @param {DiscordLogin} [discordLogin] 
      * @param {*} [options] Override http request option.
@@ -2678,6 +2839,16 @@ export class AIBrushApi extends BaseAPI {
      */
     public getAssetsUrl(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).getAssetsUrl(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Get the user\'s credit balance
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public getCredits(options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).getCredits(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -2822,6 +2993,18 @@ export class AIBrushApi extends BaseAPI {
      */
     public login(loginInput?: LoginInput, options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).login(loginInput, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Redeem a deposit code
+     * @param {string} code 
+     * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public redeemDepositCode(code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).redeemDepositCode(code, redeemDepositCodeInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

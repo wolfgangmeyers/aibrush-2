@@ -453,26 +453,6 @@ paths:
       responses:
         "200":
           description: Success
-  /api/credits/{user_id}/deposit:
-    post:
-      description: Deposit to a user's credit balance
-      operationId: depositCredits
-      tags:
-        - AIBrush
-      parameters:
-        - name: user_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DepositRequest"
-      responses:
-        "204":
-          description: Success
   /api/global-settings/{key}:
     get:
       description: Get the global settings
@@ -544,6 +524,57 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TemporaryImage"
+  /api/credits:
+    get:
+      description: Get the user's credit balance
+      operationId: getCredits
+      tags:
+        - AIBrush
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Credits"
+  /api/deposit-codes:
+    post:
+      description: Create a new deposit code
+      operationId: createDepositCode
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepositCodeInput"
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositCode"
+  /api/deposit-codes/{code}:
+    post:
+      description: Redeem a deposit code
+      operationId: redeemDepositCode
+      tags:
+        - AIBrush
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RedeemDepositCodeInput"
+      responses:
+        "204":
+          description: Success
 
 components:
   schemas:
@@ -1024,3 +1055,32 @@ components:
       required:
         - id
         - upload_url
+    Credits:
+      type: object
+      properties:
+        free_credits:
+          type: integer
+        paid_credits:
+          type: integer
+    CreateDepositCodeInput:
+      type: object
+      properties:
+        amount:
+          type: integer
+      required:
+        - code
+        - amount
+    DepositCode:
+      type: object
+      properties:
+        code:
+          type: string
+        amount:
+          type: integer
+    RedeemDepositCodeInput:
+      type: object
+      properties:
+        code:
+          type: string
+      required:
+        - code

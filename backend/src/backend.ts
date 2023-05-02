@@ -22,6 +22,9 @@ import {
     ImageUrls,
     GlobalSettings,
     TemporaryImage,
+    Credits,
+    DepositCode,
+    CreateDepositCodeInput,
 } from "./client/api";
 import { sleep } from "./sleep";
 import { EmailMessage } from "./email_message";
@@ -34,18 +37,21 @@ import Bugsnag from "@bugsnag/js";
 import { Logger } from "./logs";
 import { Clock, RealClock } from "./clock";
 import { HordeQueue, SQSHordeQueue } from "./horde_queue";
+import { calculateImagesCost } from "./credits";
 
 process.env.PGUSER = process.env.PGUSER || "postgres";
 
-export const STUCK_IMAGES_KEY = 1;
-export const TEMPORARY_IMAGES_KEY = 2;
-export const DELETED_IMAGES_KEY = 3;
-export const MIGRATIONS_KEY = 4;
-export const SCALING_KEY = 5;
-export const WORK_DISTRIBUTION_KEY = 6;
-export const IDLE_BOOSTS_KEY = 7;
+const STUCK_IMAGES_KEY = 1;
+const TEMPORARY_IMAGES_KEY = 2;
+const DELETED_IMAGES_KEY = 3;
+const MIGRATIONS_KEY = 4;
+const RESET_CREDITS_KEY = 5;
+// const WORK_DISTRIBUTION_KEY = 6;
+// const IDLE_BOOSTS_KEY = 7;
 
-const BLOCK_DURATION_DAYS = 7;
+const RESET_CREDITS_EVENT = "reset_credits";
+
+const DEPOSIT_CODE_DAYS = 7;
 
 export type NotificationListener = (payload: string) => void;
 
@@ -53,9 +59,9 @@ export const NOTIFICATION_IMAGE_UPDATED = "image_updated";
 export const NOTIFICATION_IMAGE_DELETED = "image_deleted";
 export const NOTIFICATION_PENDING_IMAGE = "pending_image";
 export const NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated";
-export const NOTIFICATION_BOOST_UPDATED = "boost_updated";
+export const NOTIFICATION_CREDITS_UPDATED = "credits_updated";
 
-const IMAGE_FIELDS: {[key: string]: boolean} = {
+const IMAGE_FIELDS: { [key: string]: boolean } = {
     id: true,
     created_at: true,
     created_by: true,
@@ -71,7 +77,7 @@ const IMAGE_FIELDS: {[key: string]: boolean} = {
     temporary: true,
     deleted_at: true,
     error: true,
-}
+};
 
 export class UserError extends Error {
     constructor(message: string) {
@@ -130,12 +136,12 @@ export class BackendService {
         private config: Config,
         private metrics: MetricsClient,
         private logger: Logger,
-        clock?: Clock,
+        clock?: Clock
     ) {
         this.authHelper = new AuthHelper(
             config,
             () => this.clock.now().valueOf(),
-            logger,
+            logger
         );
         this.clock = clock || new RealClock();
         if (config.s3Bucket) {
@@ -144,12 +150,9 @@ export class BackendService {
             this.filestore = new LocalFilestore(config.dataFolderName);
         }
         if (config.hordeQueueName) {
-            this.hordeQueue = new SQSHordeQueue(
-                config.hordeQueueName,
-                {
-                    region: config.s3Region || "us-west-2",
-                }
-            )
+            this.hordeQueue = new SQSHordeQueue(config.hordeQueueName, {
+                region: config.s3Region || "us-west-2",
+            });
         }
     }
 
@@ -186,7 +189,7 @@ export class BackendService {
 
         let client: PoolClient = await this.pool.connect();
         try {
-            lock = await this.acquireLock(client, 1);
+            lock = await this.acquireLock(client, MIGRATIONS_KEY);
             if (lock) {
                 await migrate({ client }, "./src/migrations");
                 await sleep(100);
@@ -202,7 +205,7 @@ export class BackendService {
             throw error;
         } finally {
             if (client && lock) {
-                await this.releaseLock(client, 1);
+                await this.releaseLock(client, MIGRATIONS_KEY);
             }
             client.release();
         }
@@ -380,9 +383,12 @@ export class BackendService {
         const orderBy = query.direction === "asc" ? "ASC" : "DESC";
 
         if (query.fields) {
-            query.fields = query.fields.filter(f => IMAGE_FIELDS[f]);
+            query.fields = query.fields.filter((f) => IMAGE_FIELDS[f]);
         }
-        const selectFields = query.fields && query.fields.length > 0 ? query.fields.join(",") : "*";
+        const selectFields =
+            query.fields && query.fields.length > 0
+                ? query.fields.join(",")
+                : "*";
         try {
             const result = await client.query(
                 `SELECT ${selectFields} FROM images ${whereClause} ORDER BY updated_at ${orderBy} LIMIT ${limit}`,
@@ -472,11 +478,16 @@ export class BackendService {
         };
     }
 
-    async batchGetImages(userId: string, ids: string[], fields: string[]): Promise<Image[]> {
+    async batchGetImages(
+        userId: string,
+        ids: string[],
+        fields: string[]
+    ): Promise<Image[]> {
         if (fields) {
-            fields = fields.filter(f => IMAGE_FIELDS[f]);
+            fields = fields.filter((f) => IMAGE_FIELDS[f]);
         }
-        const selectFields = fields && fields.length > 0 ? fields.join(",") : "*";
+        const selectFields =
+            fields && fields.length > 0 ? fields.join(",") : "*";
         const client = await this.pool.connect();
         try {
             const result = await client.query(
@@ -625,7 +636,7 @@ export class BackendService {
                 denoising_strength: old.stable_diffusion_strength,
                 controlnet_type: old.controlnet_type,
                 augmentation: old.augmentation,
-            }
+            };
         }
         return body;
     }
@@ -635,7 +646,9 @@ export class BackendService {
         body: CreateImageInput
     ): Promise<Image> {
         body = this.upgradeLegacyRequest(body);
-        body.params.seed = body.params.seed || Math.floor(Math.random() * 1000000000).toString();
+        body.params.seed =
+            body.params.seed ||
+            Math.floor(Math.random() * 1000000000).toString();
         const client = await this.pool.connect();
         try {
             const result = await client.query(
@@ -671,7 +684,7 @@ export class BackendService {
                     await this.filestore.copyFile(
                         `${body.parent}.image.png`,
                         `${image.id}.init_image.png`
-                    )
+                    );
                 } catch (err) {
                     console.error(err);
                     Bugsnag.notify(err, (event) => {
@@ -713,21 +726,24 @@ export class BackendService {
                     this.filestore.copyFile(
                         `tmp/${body.tmp_image_id}.png`,
                         `${image.id}.init_image.png`
-                ));
+                    )
+                );
             }
             if (body.tmp_mask_id) {
                 promises.push(
                     this.filestore.copyFile(
                         `tmp/${body.tmp_mask_id}.png`,
                         `${image.id}.mask.png`
-                ));
+                    )
+                );
             }
             if (body.tmp_thumbnail_id) {
                 promises.push(
                     this.filestore.copyFile(
                         `tmp/${body.tmp_thumbnail_id}.png`,
                         `${image.id}.thumbnail.png`
-                ));
+                    )
+                );
             }
 
             let encoded_mask = body.encoded_mask;
@@ -752,7 +768,13 @@ export class BackendService {
                 );
                 // TODO: maybe someday we can do just upscale in the horde
                 if (this.hordeQueue && image.model !== "swinir") {
-                    const jwt = this.authHelper.createToken(image.created_by, "access", 3600, null, image.id);
+                    const jwt = this.authHelper.createToken(
+                        image.created_by,
+                        "access",
+                        3600,
+                        null,
+                        image.id
+                    );
                     this.hordeQueue.submitImage({
                         authToken: jwt,
                         imageId: image.id,
@@ -769,7 +791,7 @@ export class BackendService {
                         model: image.model,
                         augmentation: image.params.augmentation,
                         controlnetType: image.params.controlnet_type,
-                    })
+                    });
                     console.log("Submitted to horde: " + image.id);
                 }
             }
@@ -789,7 +811,9 @@ export class BackendService {
         }
     }
 
-    private async getPendingOrProcessingCountForUser(userId: string): Promise<number> {
+    private async getPendingOrProcessingCountForUser(
+        userId: string
+    ): Promise<number> {
         const client = await this.pool.connect();
         try {
             const result = await client.query(
@@ -806,31 +830,39 @@ export class BackendService {
         createdBy: string,
         body: CreateImageInput
     ): Promise<Array<Image>> {
-        const pendingOrProcessingCount = await this.getPendingOrProcessingCountForUser(createdBy);
+        const pendingOrProcessingCount =
+            await this.getPendingOrProcessingCountForUser(createdBy);
         let count = body.count || 1;
         if (count > 10) {
             count = 10;
         }
-        count = Math.min(count, 10 - pendingOrProcessingCount)
+        count = Math.min(count, 10 - pendingOrProcessingCount);
         if (count <= 0) {
-            throw new Error("You already have too many pending or processing images");
+            throw new Error(
+                "You already have too many pending or processing images"
+            );
+        }
+        const credits = await this.getCredits(createdBy);
+        if (credits.free_credits === 0 && credits.paid_credits === 0) {
+            throw new Error("No credits");
         }
         const promises: Array<Promise<Image>> = [];
         for (let i = 0; i < count; i++) {
-            promises.push(this.createImage(createdBy, {
-                ...body,
-                params: {
-                    ...body.params,
-                }
-            }));
+            promises.push(
+                this.createImage(createdBy, {
+                    ...body,
+                    params: {
+                        ...body.params,
+                    },
+                })
+            );
         }
-        return Promise.all(promises);
+        const images = await Promise.all(promises);
+
+        return images;
     }
 
-    async updateImage(
-        id: string,
-        body: UpdateImageInput,
-    ): Promise<Image> {
+    async updateImage(id: string, body: UpdateImageInput): Promise<Image> {
         const existingImage = await this.getImage(id);
         if (!existingImage) {
             this.logger.log("Existing image not found: " + id);
@@ -870,7 +902,6 @@ export class BackendService {
                     id,
                 ]
             );
-
 
             const image = result.rows[0] as Image;
             const promises: Promise<void>[] = [];
@@ -913,6 +944,9 @@ export class BackendService {
                 this.metrics.addMetric("backend.image_completed", 1, "count", {
                     seconds_until_completion: duration_seconds,
                 });
+
+                const cost = calculateImagesCost(1, image.params.width, image.params.height);
+                await this.deductCredits(image.created_by, cost);
             }
             this.notify(
                 image.created_by,
@@ -971,18 +1005,24 @@ export class BackendService {
         const client = await this.pool.connect();
         let filter = " AND deleted_at IS NULL";
         if (include_models) {
-            const in_str = include_models.map((_, i) => `$${args.length + i + 1}`).join(",");
+            const in_str = include_models
+                .map((_, i) => `$${args.length + i + 1}`)
+                .join(",");
             filter += ` AND model in (${in_str})`;
             args.push(...include_models);
         }
         if (exclude_models) {
-            const in_str = exclude_models.map((_, i) => `$${args.length + i + 1}`).join(",");
+            const in_str = exclude_models
+                .map((_, i) => `$${args.length + i + 1}`)
+                .join(",");
             filter += ` AND model NOT IN (${in_str})`;
             args.push(...exclude_models);
         }
         try {
             const result = await client.query(
-                `SELECT DISTINCT created_by FROM images WHERE status='${status || "pending"}'${filter}`,
+                `SELECT DISTINCT created_by FROM images WHERE status='${
+                    status || "pending"
+                }'${filter}`,
                 args
             );
             return result.rows.map((row) => row.created_by);
@@ -1140,27 +1180,6 @@ export class BackendService {
         });
     }
 
-    async updateVideoData(id: string, videoData: Buffer) {
-        // write video data to mp4 file
-        this.logger.log(`writing video data to ${id}.mp4`);
-        const image = await this.getImage(id);
-        await this.filestore.writeFile(
-            `${id}.mp4`,
-            videoData,
-            image.label.replace(" ", "_") + ".mp4"
-        );
-    }
-
-    async getVideoData(id: string): Promise<Buffer> {
-        // read video data from mp4 file
-        // return null if file does not exist
-        try {
-            return await this.filestore.readBinaryFile(`${id}.mp4`);
-        } catch (err) {
-            return null;
-        }
-    }
-
     async isUserAdmin(user: string): Promise<boolean> {
         if (user.indexOf("@") !== -1) {
             user = hash(user);
@@ -1218,7 +1237,6 @@ export class BackendService {
         }
     }
 
-    // this is only for testing
     async createUser(email: string): Promise<boolean> {
         const existingUser = await this.getUser(hash(email));
         if (existingUser) {
@@ -1230,7 +1248,143 @@ export class BackendService {
                 `INSERT INTO users (id, email, active) VALUES ($1, $2, false)`,
                 [hash(email), email]
             );
+            await client.query(
+                `INSERT INTO credits (user_id, free_credits, paid_credits) VALUES ($1, 0, 0)`,
+                [hash(email)]
+            );
             return true;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getCredits(userId: string): Promise<Credits> {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `SELECT free_credits, paid_credits FROM credits WHERE user_id=$1`,
+                [userId]
+            );
+            // This shouldn't be possible, but handle it gracefully if it does happen
+            if (result.rowCount === 0) {
+                Bugsnag.notify(
+                    new Error(`Credits not found for user: ${userId}`)
+                );
+                return {
+                    free_credits: 0,
+                    paid_credits: 0,
+                };
+            }
+            return result.rows[0];
+        } finally {
+            client.release();
+        }
+    }
+
+    async deductCredits(userId: string, amount: number): Promise<void> {
+        // deduct credits from paid_credits first, then from free_credits
+        // paid_credits and free_credits should never drop below 0
+        const credits = await this.getCredits(userId);
+        const client = await this.pool.connect();
+        try {
+            if (credits.paid_credits > 0) {
+                const paidDeduction = Math.min(amount, credits.paid_credits);
+                await client.query(
+                    `UPDATE credits SET paid_credits = paid_credits - $1 WHERE user_id=$2`,
+                    [paidDeduction, userId]
+                );
+                amount -= paidDeduction;
+            }
+            if (amount > 0 && credits.free_credits > 0) {
+                const freeDeduction = Math.min(amount, credits.free_credits);
+                await client.query(
+                    `UPDATE credits SET free_credits = free_credits - $1 WHERE user_id=$2`,
+                    [freeDeduction, userId]
+                );
+            }
+        } finally {
+            client.release();
+        }
+        // notify user of updated credits
+        await this.notify(
+            userId,
+            JSON.stringify({
+                type: NOTIFICATION_CREDITS_UPDATED,
+            })
+        );
+    }
+
+    async createDepositCode(
+        input: CreateDepositCodeInput
+    ): Promise<DepositCode> {
+        // create random code
+        const code = (uuid.v4() + uuid.v4()).replace(/-/g, "");
+        const client = await this.pool.connect();
+        try {
+            await client.query(
+                `INSERT INTO deposit_codes (code, amount, created_at) VALUES ($1, $2, $3)`,
+                [code, input.amount, this.clock.now().valueOf()]
+            );
+            return {
+                code,
+                amount: input.amount,
+            };
+        } finally {
+            client.release();
+        }
+    }
+
+    async resetFreeCredits(): Promise<void> {
+        this.withLock(RESET_CREDITS_KEY, async () => {
+
+            // check last event time
+            const lastReset = await this.getLastEventTime(RESET_CREDITS_EVENT);
+            // if last reset was more than 24 hours ago, reset credits
+            if (lastReset < this.clock.now().subtract(1, "days").valueOf()) {
+
+                const client = await this.pool.connect();
+                try {
+                    await client.query(`UPDATE credits SET free_credits=100`);
+                } finally {
+                    client.release();
+                }
+                await this.setLastEventTime(
+                    RESET_CREDITS_EVENT,
+                    this.clock.now().valueOf()
+                );
+            }
+        })
+    }
+
+    async redeemDepositCode(code: string, userId: string): Promise<void> {
+        const client = await this.pool.connect();
+        try {
+            // delete expired deposit codes
+            await client.query(
+                `DELETE FROM deposit_codes WHERE created_at < $1`,
+                [this.clock.now().subtract(DEPOSIT_CODE_DAYS, "days").valueOf()]
+            );
+            const result = await client.query(
+                `SELECT * FROM deposit_codes WHERE code=$1`,
+                [code]
+            );
+            if (result.rowCount === 0) {
+                throw new Error("Invalid code");
+            }
+            const depositCode = result.rows[0] as DepositCode;
+            await client.query(
+                `UPDATE credits SET paid_credits = paid_credits + $1 WHERE user_id=$2`,
+                [depositCode.amount, userId]
+            );
+            await client.query(`DELETE FROM deposit_codes WHERE code=$1`, [
+                code,
+            ]);
+            await this.notify(
+                userId,
+                JSON.stringify({
+                    type: NOTIFICATION_CREDITS_UPDATED,
+                })
+            );
         } finally {
             client.release();
         }
@@ -1263,8 +1417,8 @@ export class BackendService {
                         stable_diffusion: 0,
                         stable_diffusion_inpainting: 0,
                         swinir: 0,
-                    }
-                }
+                    },
+                };
             default:
                 return {};
         }
@@ -1288,7 +1442,9 @@ export class BackendService {
 
     async createTemporaryImage(): Promise<TemporaryImage> {
         const tmpImageId = uuid.v4();
-        const uploadUrl = await this.filestore.getUploadUrl(`tmp/${tmpImageId}.png`);
+        const uploadUrl = await this.filestore.getUploadUrl(
+            `tmp/${tmpImageId}.png`
+        );
         return {
             id: tmpImageId,
             upload_url: uploadUrl,
@@ -1320,10 +1476,9 @@ export class BackendService {
         // generate crypto random 6 digit code
         const code = uuid.v4().substring(0, 6).toUpperCase();
         // calculate expiration based on config.loginCodeExpirationSeconds
-        const expiresAt = this.clock.now().add(
-            this.config.loginCodeExpirationSeconds,
-            "seconds"
-        );
+        const expiresAt = this.clock
+            .now()
+            .add(this.config.loginCodeExpirationSeconds, "seconds");
         // insert login_code
         const client = await this.pool.connect();
         try {

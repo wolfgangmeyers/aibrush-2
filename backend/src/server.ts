@@ -49,6 +49,7 @@ export class Server {
     private authHelper: AuthHelper;
     cleanupHandle: NodeJS.Timer;
     metricsHandle: NodeJS.Timer;
+    resetCreditsHandle: NodeJS.Timer;
     private hashedServiceAccounts: { [key: string]: boolean } = {};
     private serverId: string = uuid.v4();
 
@@ -57,7 +58,7 @@ export class Server {
         private backendService: BackendService,
         private port: string | number,
         private metricsClient: MetricsClient,
-        private logger: Logger,
+        private logger: Logger
     ) {
         this.app = express();
         this.authHelper = new AuthHelper(
@@ -396,36 +397,6 @@ export class Server {
         );
 
         this.app.get(
-            "/api/images/:id.mp4",
-            withMetrics("/api/images/:id.mp4", async (req, res) => {
-                // get image first and check created_by
-                let image = await this.backendService.getImage(req.params.id);
-                if (!image) {
-                    res.status(404).send("not found");
-                    return;
-                }
-                const videoData = await this.backendService.getVideoData(
-                    req.params.id
-                );
-                // if videoData is null, return 404
-                if (!videoData) {
-                    res.status(404).send("not found");
-                    return;
-                }
-                res.setHeader("Content-Type", "video/mp4");
-                // content disposition attachment
-                res.setHeader(
-                    "Content-Disposition",
-                    `attachment; filename="${image.label.replace(
-                        " ",
-                        "_"
-                    )}.mp4"`
-                );
-                res.send(videoData);
-            })
-        );
-
-        this.app.get(
             "/api/assets-url",
             withMetrics("/api/assets-url", async (req, res) => {
                 const assetsUrl = this.config.assetsBaseUrl;
@@ -615,6 +586,12 @@ export class Server {
                         });
                         return;
                     }
+                    if (err.message.includes("credits")) {
+                        res.status(400).send({
+                            message: "Insufficient credits",
+                        });
+                        return;
+                    }
                     throw err;
                 }
             })
@@ -796,32 +773,6 @@ export class Server {
             })
         );
 
-        this.app.put(
-            "/api/images/:id.mp4",
-            withMetrics("/api/images/:id.mp4", async (req, res) => {
-                // get image first and check created_by
-                let image = await this.backendService.getImage(req.params.id);
-                if (!image) {
-                    res.status(404).send("not found");
-                    return;
-                }
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                // only service account can update video data
-                if (!this.serviceAccountType(jwt)) {
-                    this.logger.log(
-                        `${jwt.userId} attempted to update video data but is not a service acct`
-                    );
-                    res.sendStatus(404);
-                    return;
-                }
-                await this.backendService.updateVideoData(
-                    req.params.id,
-                    req.body
-                );
-                res.sendStatus(204);
-            })
-        );
-
         this.app.post(
             "/api/invite-codes",
             withMetrics("/api/invite-codes", async (req, res) => {
@@ -928,6 +879,56 @@ export class Server {
             })
         );
 
+        this.app.get(
+            "/api/credits",
+            withMetrics("/api/credits", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                const credits = await this.backendService.getCredits(
+                    jwt.userId
+                );
+                res.json(credits);
+            })
+        );
+
+        // only admins can create deposit codes
+        this.app.post(
+            "/api/deposit-codes",
+            withMetrics("/api/deposit-codes", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
+                    res.sendStatus(404);
+                    return;
+                }
+                const depositCode = await this.backendService.createDepositCode(
+                    req.body
+                );
+                res.status(201).json(depositCode);
+            })
+        );
+
+        this.app.post(
+            "/api/deposit-codes/:code",
+            withMetrics("/api/deposit-codes/:code", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                try {
+                    await this.backendService.redeemDepositCode(
+                        req.params.code,
+                        jwt.userId
+                    );
+                } catch (err) {
+                    if (err.message === "Invalid code") {
+                        res.status(404).send({
+                            message: "Invalid code",
+                        });
+                        return;
+                    }
+                    throw err;
+                }
+
+                res.sendStatus(204);
+            })
+        );
+
         if (process.env.BUGSNAG_API_KEY) {
             this.app.use(middleware.errorHandler);
         }
@@ -967,6 +968,10 @@ export class Server {
                     cleanup();
                 }, 1000 * 60);
                 cleanup();
+
+                this.resetCreditsHandle = setInterval(async () => {
+                    await this.backendService.resetFreeCredits();
+                });
             });
 
             let lastIdle = 0;
@@ -1031,6 +1036,14 @@ export class Server {
         if (this.cleanupHandle) {
             clearInterval(this.cleanupHandle);
             this.cleanupHandle = undefined;
+        }
+        if (this.resetCreditsHandle) {
+            clearInterval(this.resetCreditsHandle);
+            this.resetCreditsHandle = undefined;
+        }
+        if (this.metricsHandle) {
+            clearInterval(this.metricsHandle);
+            this.metricsHandle = undefined;
         }
     }
 }

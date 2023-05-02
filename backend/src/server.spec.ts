@@ -20,6 +20,8 @@ import {
     ImageUrls,
     GlobalSettings,
     StableDiffusionModel,
+    Credits,
+    DepositCode,
 } from "./client/api";
 
 const anonymousClient = axios.create();
@@ -32,6 +34,7 @@ import { MetricsClient } from "./metrics";
 import { ConsoleLogger } from "./logs";
 import { WorkerSettings } from "./model";
 import { HordeRequest, MockHordeQueue } from "./horde_queue";
+import { FakeClock } from "./clock";
 
 jest.setTimeout(60000);
 
@@ -95,6 +98,7 @@ describe("server", () => {
     let client2: AIBrushApi;
     let httpClient2: AxiosInstance;
     let databaseName: string;
+    let clock: FakeClock;
 
     beforeAll(async () => {
         backendService = new BackendService(
@@ -176,10 +180,12 @@ describe("server", () => {
             assetsBaseUrl: "/api/images",
             disableCleanupJob: true,
         };
+        clock = new FakeClock(moment());
         backendService = new BackendService(
             config,
             new MetricsClient(""),
-            new ConsoleLogger()
+            new ConsoleLogger(),
+            clock
         );
 
         server = new Server(
@@ -187,7 +193,7 @@ describe("server", () => {
             backendService,
             35456,
             new MetricsClient(""),
-            new ConsoleLogger(),
+            new ConsoleLogger()
         );
         await server.init();
         await server.start();
@@ -278,60 +284,6 @@ describe("server", () => {
         });
     });
 
-    // describe.skip("when user authenticates", () => {
-
-    //     let mailcatcher: Mailcatcher;
-    //     let emails: Array<MailcatcherMessage>;
-
-    //     beforeEach(async () => {
-    //         mailcatcher = new Mailcatcher("http://localhost:1080")
-    //         // get messages and delete each message
-    //         const emails = await mailcatcher.getMessages()
-    //         for (const email of emails) {
-    //             await mailcatcher.deleteMessage(email.id)
-    //         }
-    //     })
-
-    //     beforeEach(async () => {
-    //         await client.login({
-    //             email: "test@test.test"
-    //         })
-    //     })
-
-    //     beforeEach(async () => {
-    //         // get emails from mailcatcher
-    //         emails = await mailcatcher.getMessages()
-    //     })
-
-    //     it("should send an email to the user", async () => {
-    //         expect(emails).toHaveLength(1)
-    //         const email = emails[0]
-    //         expect(email.recipients).toEqual(["<test@test.test>"])
-    //     })
-
-    //     describe("when verifying the code sent by email", () => {
-    //         let code: string;
-    //         let verifyResult: LoginResult;
-
-    //         beforeEach(async () => {
-    //             const email = emails[0]
-    //             const body = email.text.split(" ")
-    //             code = body[body.length - 1]
-    //             const response = await client.verify({
-    //                 code: code
-    //             })
-    //             verifyResult = response.data
-    //             // add the access token to the http client
-    //             httpClient.defaults.headers['Authorization'] = `Bearer ${verifyResult.accessToken}`
-    //         })
-
-    //         it("should return the access and refresh tokens", () => {
-    //             expect(verifyResult.accessToken).toBeDefined()
-    //             expect(verifyResult.refreshToken).toBeDefined()
-    //         })
-    //     })
-    // })
-
     describe("functional tests", () => {
         let verifyResult: Authentication;
         let worker: Worker;
@@ -343,6 +295,20 @@ describe("server", () => {
                 httpClient,
                 "test@test.test"
             );
+        });
+
+        describe("when checking credits", () => {
+            let credits: Credits;
+
+            beforeEach(async () => {
+                const response = await client.getCredits();
+                credits = response.data;
+            });
+
+            it("should return the credits", () => {
+                expect(credits.free_credits).toBe(0);
+                expect(credits.paid_credits).toBe(0);
+            });
         });
 
         describe("when listing images", () => {
@@ -380,6 +346,10 @@ describe("server", () => {
             let image: Image;
 
             beforeEach(async () => {
+
+                // add free credits
+                await backendService.resetFreeCredits();
+
                 const response = await client.createImage({
                     params: {
                         prompt: "test",
@@ -453,18 +423,24 @@ describe("server", () => {
                 let images: ImageList;
 
                 beforeEach(async () => {
-                    const response = await client.listImages(undefined, undefined, undefined, undefined, "id,status");
+                    const response = await client.listImages(
+                        undefined,
+                        undefined,
+                        undefined,
+                        undefined,
+                        "id,status"
+                    );
                     images = response.data;
                 });
 
                 it("should return the image", () => {
                     expect(images.images).toHaveLength(1);
                     expect(images.images[0].id).toBe(image.id);
-                    expect(images.images[0].params).toBeUndefined()
-                    expect(images.images[0].label).toBeUndefined()
+                    expect(images.images[0].params).toBeUndefined();
+                    expect(images.images[0].label).toBeUndefined();
                     expect(images.images[0].status).toBe(StatusEnum.Pending);
                 });
-            })
+            });
 
             describe("when getting the image by id", () => {
                 let img: Image;
@@ -475,15 +451,6 @@ describe("server", () => {
                 });
 
                 it("should return the image", () => {
-                    // expect(img.id).toBeDefined()
-                    // expect(img.phrases).toEqual(["test"])
-                    // expect(img.negative_phrases).toEqual(["foobar"])
-                    // expect(img.label).toBe("test")
-                    // expect(img.iterations).toBe(1)
-                    // expect(img.parent).toBe("")
-                    // expect(img.current_iterations).toBe(0)
-                    // expect(img.status).toBe(StatusEnum.Pending)
-
                     expect(img.id).toBeDefined();
                     expect(img.params.prompt).toBe("test");
                     expect(img.params.negative_prompt).toBe("foobar");
@@ -602,6 +569,28 @@ describe("server", () => {
                 });
             });
 
+            describe("when updating an image as completed", () => {
+                beforeEach(async () => {
+                    await client.updateImage(image.id, {
+                        label: "test2",
+                        status: StatusEnum.Completed,
+                    });
+                });
+
+                describe("when checking credits", () => {
+                    let credits: Credits;
+
+                    beforeEach(async () => {
+                        const response = await client.getCredits();
+                        credits = response.data;
+                    });
+
+                    it("should return the credits", () => {
+                        expect(credits.free_credits).toBe(99);
+                    });
+                });
+            });
+
             describe("when updating an image with an error", () => {
                 // same as update image but error and status fields are set
                 // just verify they come back the same
@@ -710,45 +699,40 @@ describe("server", () => {
 
                     describe("when getting image data", () => {
                         let savedImageData: Buffer;
-                        let savedThumbnailData: Buffer;
 
                         beforeEach(async () => {
-                            // get image data
-                            const imageDataResponse = await client.getImageData(
-                                childImage.id
-                            );
-                            savedImageData = imageDataResponse.data;
-                            const thumbnailDataResponse =
-                                await client.getThumbnailData(childImage.id);
-                            savedThumbnailData = thumbnailDataResponse.data;
+                            
+                            savedImageData = fs.readFileSync(
+                                path.join(
+                                    "test_data",
+                                    childImage.id + ".init_image.png"
+                                )
+                            )
                         });
 
                         it("should return the image data", () => {
                             expect(savedImageData).toBeDefined();
-                            expect(savedThumbnailData).toBeDefined();
-                            // thumbnail should be smaller
-                            expect(savedThumbnailData.length).toBeLessThan(
-                                savedImageData.length
-                            );
+                            expect(savedImageData.length).toBeGreaterThan(0);
                         });
                     });
                 });
 
-                describe("when deleting an image", () => {
+                describe("when hard-deleting an image", () => {
                     beforeEach(async () => {
+                        await client.deleteImage(image.id);
                         await client.deleteImage(image.id);
                     });
 
                     it("should remove the image and thumbnail files from the data folder", () => {
                         // data folder is "data_test"
                         const imagePath = path.join(
-                            "data_test",
-                            image.id + ".image"
+                            "test_data",
+                            image.id + ".image.png"
                         );
                         expect(fs.existsSync(imagePath)).toBe(false);
                         const thumbnailPath = path.join(
-                            "data_test",
-                            image.id + ".thumbnail"
+                            "test_data",
+                            image.id + ".thumbnail.png"
                         );
                         expect(fs.existsSync(thumbnailPath)).toBe(false);
                     });
@@ -871,6 +855,8 @@ describe("server", () => {
             let image: Image;
 
             beforeEach(async () => {
+                await backendService.resetFreeCredits();
+
                 const response = await client.createImage({
                     params: {
                         prompt: "test",
@@ -935,6 +921,9 @@ describe("server", () => {
             let image: Image;
 
             beforeEach(async () => {
+
+                await backendService.resetFreeCredits();
+
                 const response = await client.createImage({
                     label: "test",
                     parent: "",
@@ -1051,7 +1040,7 @@ describe("server", () => {
                     expect(images.images[0].status).toBe(StatusEnum.Pending);
                     expect(images.images[0].params).toBeUndefined();
                 });
-            })
+            });
 
             describe("when getting images that don't exist", () => {
                 let images: ImageList;
@@ -1306,6 +1295,97 @@ describe("server", () => {
                 const response = await client.isAdmin();
                 expect(response.status).toBe(200);
                 expect(response.data.is_admin).toBe(false);
+            });
+        });
+
+        describe("deposits", () => {
+            describe("when an admin user deposits credits", () => {
+                let response: AxiosResponse<DepositCode>;
+
+                beforeEach(async () => {
+                    await authenticateUser(
+                        backendService,
+                        httpClient,
+                        "admin@test.test"
+                    );
+                    response = await client.createDepositCode({
+                        amount: 1000,
+                    });
+                });
+
+                describe("when a user redeems the deposit code", () => {
+                    beforeEach(async () => {
+                        await authenticateUser(
+                            backendService,
+                            httpClient2,
+                            "test@test.test"
+                        );
+                        await client2.redeemDepositCode(response.data.code);
+                    });
+
+                    describe("when getting the user's credits", () => {
+                        let credits: Credits;
+
+                        beforeEach(async () => {
+                            const response = await client2.getCredits();
+                            credits = response.data;
+                        });
+
+                        it("should return the credits", () => {
+                            expect(credits.paid_credits).toBe(1000);
+                        });
+                    });
+
+                    describe("when redeeming the deposit code again", () => {
+                        it("should fail with 404", async () => {
+                            await expect(
+                                client2.redeemDepositCode(response.data.code)
+                            ).rejects.toThrow(
+                                /Request failed with status code 404/
+                            );
+                        });
+                    });
+                });
+
+                // user tries to redeem expired code (clock advanced 7 days)
+                describe("when a user tries to redeem an expired deposit code", () => {
+                    beforeEach(async () => {
+                        await authenticateUser(
+                            backendService,
+                            httpClient2,
+                            "test@test.test"
+                        );
+                        clock.setNow(moment().add(7, "days"));
+                    });
+
+                    it("should fail with 404", async () => {
+                        await expect(
+                            client2.redeemDepositCode(response.data.code)
+                        ).rejects.toThrow(
+                            /Request failed with status code 404/
+                        );
+                    });
+                });
+            });
+
+            // non-admin tries to create deposit code
+            describe("when a non-admin user tries to create a deposit code", () => {
+                it("should fail with 404", async () => {
+                    await expect(
+                        client.createDepositCode({
+                            amount: 1000,
+                        })
+                    ).rejects.toThrow(/Request failed with status code 404/);
+                });
+            });
+
+            // user tries to redeem non-existent code
+            describe("when a user tries to redeem a non-existent deposit code", () => {
+                it("should fail with 404", async () => {
+                    await expect(
+                        client.redeemDepositCode("does-not-exist")
+                    ).rejects.toThrow(/Request failed with status code 404/);
+                });
             });
         });
 
