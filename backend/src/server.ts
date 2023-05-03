@@ -425,7 +425,7 @@ export class Server {
             "/saved/:id",
             "/deleted-images",
             "/local-deleted-images",
-            "/orders",
+            "/pricing",
             "/discord-login",
         ]) {
             this.app.get(

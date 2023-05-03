@@ -54,25 +54,26 @@ const sqsClient = new AWS.SQS({
 // keep track of how many images are being processed
 let activeImageCount = 0;
 
-async function downloadImage(key: string): Promise<Buffer> {
-    // return null if object doesn't exist
-    try {
-        const data = await s3Client
-            .getObject({
-                Bucket: "aibrush2-filestore",
-                Key: key,
-            })
-            .promise();
-        const imageData = data.Body as Buffer;
-        // load with sharp
-        const image = sharp(imageData);
-        // convert to webp and return buffer
-        const webp = await image.webp().toBuffer();
-        return webp;
-    } catch (e) {
-        return null;
-    }
-}
+// // we pass the image url to the horde, so this isn't really needed
+// async function downloadImage(key: string): Promise<Buffer> {
+//     // return null if object doesn't exist
+//     try {
+//         const data = await s3Client
+//             .getObject({
+//                 Bucket: "aibrush2-filestore",
+//                 Key: key,
+//             })
+//             .promise();
+//         const imageData = data.Body as Buffer;
+//         // load with sharp
+//         const image = sharp(imageData);
+//         // convert to webp and return buffer
+//         const webp = await image.webp().toBuffer();
+//         return webp;
+//     } catch (e) {
+//         return null;
+//     }
+// }
 
 // check if an image with a given key exists, without downloading it
 async function imageExists(key: string): Promise<boolean> {

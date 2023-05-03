@@ -21,6 +21,7 @@ import { LocalDeletedImages } from "./pages/LocalDeletedImages";
 import { SavedImagesPage } from "./pages/SavedImagesPage";
 import { TestPage } from "./pages/TestPage";
 import { CreditsBalance } from "./components/CreditsBalance";
+import { PricingPage } from "./pages/pricing/PricingPage";
 
 const config = getConfig();
 const httpClient = axios.default.create();
@@ -172,13 +173,10 @@ function App() {
                                         </a>
                                         <Link
                                             className="btn top-button pulse"
-                                            to="/"
+                                            to="/pricing"
                                             style={{
                                                 width: "47px",
                                             }}
-                                            onClick={() =>
-                                                alert("Coming soon!")
-                                            }
                                         >
                                             {/* font awesome bolt icon */}
                                             <i className="fas fa-bolt"></i>
@@ -245,6 +243,9 @@ function App() {
                                 <LocalDeletedImages
                                     localImages={localImages}
                                 />
+                            </Route>
+                            <Route path="/pricing">
+                                <PricingPage />
                             </Route>
                             <Route path="/testpage">
                                 <TestPage />
