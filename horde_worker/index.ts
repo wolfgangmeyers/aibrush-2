@@ -366,7 +366,7 @@ async function poll() {
         .receiveMessage({
             QueueUrl: paidQueueUrl,
             MaxNumberOfMessages: Math.min(30 - activeImageCount, 10),
-            WaitTimeSeconds: 20,
+            WaitTimeSeconds: 1,
         })
         .promise();
     messages.Messages = messages.Messages || [];
@@ -383,7 +383,7 @@ async function poll() {
                     30 - activeImageCount,
                     10 - (messages.Messages?.length || 0)
                 ),
-                WaitTimeSeconds: 20,
+                WaitTimeSeconds: 1,
             })
             .promise();
         messages.Messages = messages.Messages || [];
