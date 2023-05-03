@@ -131,6 +131,7 @@ export async function processImage(
     }
     const result = resultsJson.generations[0];
     console.log("Request completed by worker " + result.worker_id);
+    console.log("censored: " + result.censored)
     if (result.censored) {
         const err = new Error("Image was censored");
     }
