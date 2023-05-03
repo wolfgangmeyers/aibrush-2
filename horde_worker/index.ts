@@ -13,6 +13,7 @@ import {
     processAlchemistImage,
     processImage,
 } from "./horde";
+import { PromiseResult } from "aws-sdk/lib/request";
 
 if (process.env.BUGSNAG_API_KEY) {
     Bugsnag.start({
@@ -362,52 +363,68 @@ async function poll() {
         await sleep(1000);
         return;
     }
-    let messages = await sqsClient
+    let paidMessages = await sqsClient
         .receiveMessage({
             QueueUrl: paidQueueUrl,
             MaxNumberOfMessages: Math.min(30 - activeImageCount, 10),
             WaitTimeSeconds: 1,
         })
         .promise();
-    messages.Messages = messages.Messages || [];
-    console.log(`received ${messages.Messages?.length || 0} paid messages from queue`)
+    paidMessages.Messages = paidMessages.Messages || [];
+    console.log(
+        `received ${
+            paidMessages.Messages?.length || 0
+        } paid messages from queue`
+    );
+    let freeMessages: PromiseResult<AWS.SQS.ReceiveMessageResult, AWS.AWSError>;
     // if there are less than 30 total messages (active + paid), get some from the free queue
     if (
-        messages.Messages?.length === 0 ||
-        messages.Messages?.length < 30 - activeImageCount
+        paidMessages.Messages?.length === 0 ||
+        paidMessages.Messages?.length < 30 - activeImageCount
     ) {
-        const freeMessages = await sqsClient
+        freeMessages = await sqsClient
             .receiveMessage({
                 QueueUrl: queueUrl,
                 MaxNumberOfMessages: Math.min(
                     30 - activeImageCount,
-                    10 - (messages.Messages?.length || 0)
+                    10 - (paidMessages.Messages?.length || 0)
                 ),
                 WaitTimeSeconds: 1,
             })
             .promise();
-        messages.Messages = messages.Messages || [];
-        console.log(`received ${freeMessages.Messages?.length || 0} free messages from queue`)
-        messages.Messages = messages.Messages.concat(
-            freeMessages.Messages || []
+        freeMessages.Messages = freeMessages.Messages || [];
+        console.log(
+            `received ${
+                freeMessages.Messages?.length || 0
+            } free messages from queue`
         );
     }
-    if (messages.Messages && messages.Messages.length > 0) {
-        activeImageCount += messages.Messages.length;
-        for (const message of messages.Messages) {
+    if (paidMessages.Messages && paidMessages.Messages.length > 0) {
+        activeImageCount += paidMessages.Messages.length;
+        for (const message of paidMessages.Messages) {
             processRequest(JSON.parse(message.Body) as HordeRequest);
         }
-
-        await sqsClient
-            .deleteMessageBatch({
-                QueueUrl: queueUrl,
-                Entries: messages.Messages.map((m) => ({
-                    Id: m.MessageId,
-                    ReceiptHandle: m.ReceiptHandle,
-                })),
-            })
-            .promise();
+        await deleteMessages(paidQueueUrl, paidMessages.Messages);
     }
+    if (freeMessages?.Messages && freeMessages.Messages.length > 0) {
+        activeImageCount += freeMessages.Messages.length;
+        for (const message of freeMessages.Messages) {
+            processRequest(JSON.parse(message.Body) as HordeRequest);
+        }
+        await deleteMessages(queueUrl, freeMessages.Messages);
+    }
+}
+
+async function deleteMessages(queueUrl: string, messages: AWS.SQS.Message[]) {
+    await sqsClient
+        .deleteMessageBatch({
+            QueueUrl: queueUrl,
+            Entries: messages.map((m) => ({
+                Id: m.MessageId,
+                ReceiptHandle: m.ReceiptHandle,
+            })),
+        })
+        .promise();
 }
 
 async function main() {
