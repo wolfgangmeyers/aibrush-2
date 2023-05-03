@@ -133,7 +133,7 @@ export async function processImage(
     console.log("Request completed by worker " + result.worker_id);
     console.log("censored: " + result.censored)
     if (result.censored) {
-        const err = new Error("Image was censored");
+        throw new Error("Image was censored");
     }
     const webpImageResponse = await axios.get(result.img, {
         responseType: "arraybuffer",
