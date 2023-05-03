@@ -1162,14 +1162,17 @@ export class BackendService {
 
     async withLock(key: number, fn: () => Promise<void>): Promise<void> {
         const client = await this.pool.connect();
+        let lock: boolean;
         try {
-            const lock = await this.acquireLock(client, key);
+            lock = await this.acquireLock(client, key);
             if (!lock) {
                 return;
             }
             await fn();
         } finally {
-            await this.releaseLock(client, key);
+            if (lock) {
+                await this.releaseLock(client, key);
+            }
             client.release();
         }
     }
