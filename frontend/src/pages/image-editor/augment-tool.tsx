@@ -28,6 +28,8 @@ import {
 import { defaultArgs } from "../../components/ImagePrompt";
 import { ErrorNotification } from "../../components/Alerts";
 import moment from "moment";
+import { calculateImagesCost } from "../../lib/credits";
+import { CostIndicator } from "../../components/CostIndicator";
 
 export const anonymousClient = axios.create();
 
@@ -224,6 +226,8 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
         );
     }
 
+    const cost = calculateImagesCost(1, image.params.width!, image.params.height!);
+
     // Show buttons for import and export and "save a copy"
     return (
         <>
@@ -251,6 +255,9 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
                     {/* face restore icon */}
                     <i className="fas fa-smile"></i>&nbsp; Restore Faces
                 </button>
+            </div>
+            <div className="form-group" style={{ marginTop: "16px" }}>
+                <CostIndicator imagesCost={cost} />
             </div>
         </>
     );

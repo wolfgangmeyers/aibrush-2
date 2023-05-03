@@ -15,6 +15,7 @@ import { controlnetTypes, supportedModels } from "../lib/supportedModels";
 import { SeedInput } from "./SeedInput";
 import ModelSelector from "./ModelSelector";
 import { calculateImagesCost } from "../lib/credits";
+import { CostIndicator } from "./CostIndicator";
 
 interface Props {
     api: AIBrushApi;
@@ -93,14 +94,14 @@ export const ImagePrompt: FC<Props> = ({
     const resetState = () => {
         setPrompt("");
         setNegativePrompt(defaultNegativePrompt);
-        setCount(4);
+        // setCount(4);
         setAdvancedView(false);
         setParentId(null);
-        setVariationStrength(0.75);
+        // setVariationStrength(0.75);
         setAspectRatio(DEFAULT_ASPECT_RATIO);
         setAspectRatioDetails(aspectRatios[DEFAULT_ASPECT_RATIO]);
         setEncodedImage("");
-        setCfgScale(7.5);
+        // setCfgScale(7.5);
         setSeed("");
     };
 
@@ -317,12 +318,7 @@ export const ImagePrompt: FC<Props> = ({
                         </button>
                     </div>
                 </div>
-                <div style={{textAlign: "left"}}>
-                    <span className="helptext" style={{color: "#00f0f0"}}>
-                        Cost: {imagesCost} credit{imagesCost > 1 ? "s" : ""}&nbsp;
-                        <i className="fas fa-info-circle" style={{cursor: "pointer"}} onClick={() => alert("The cost is based on the image count and the size of each image. A single 512x512 image costs 1 credit.")}></i>
-                    </span>
-                </div>
+                <CostIndicator imagesCost={imagesCost} />
                 <div
                     style={{
                         marginTop: "24px",

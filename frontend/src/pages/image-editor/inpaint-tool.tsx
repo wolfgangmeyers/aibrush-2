@@ -27,6 +27,8 @@ import {
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 import moment from "moment";
 import { ProgressBar } from "../../components/ProgressBar";
+import { calculateImagesCost } from "../../lib/credits";
+import { CostIndicator } from "../../components/CostIndicator";
 
 const anonymousClient = axios.create();
 
@@ -491,7 +493,7 @@ export class InpaintTool extends BaseTool implements Tool {
                     }
                 }
             }
-        }
+        };
         apisocket.addMessageListener(onMessage);
         try {
             let startTime = moment();
@@ -526,9 +528,12 @@ export class InpaintTool extends BaseTool implements Tool {
                         )
                         .map((img) => img.id);
                     console.log("Checking pending images", pendingIds);
-                    const updatedImagesResult = await api.batchGetImages(undefined, {
-                        ids: pendingIds,
-                    });
+                    const updatedImagesResult = await api.batchGetImages(
+                        undefined,
+                        {
+                            ids: pendingIds,
+                        }
+                    );
                     const updatedImages = updatedImagesResult.data.images;
                     const byId = updatedImages!.reduce((acc, img) => {
                         acc[img.id] = img;
@@ -877,16 +882,13 @@ export const InpaintControls: FC<ControlsProps> = ({
                             <option value="anything_v4_inpainting">
                                 Anything v4
                             </option>
-                            <option value="Epic Diffusion Inpainting">
-                                Epic Diffusion
-                            </option>
-                            <option value="Deliberate Inpainting">
-                                Deliberate
-                            </option>
                         </select>
                         <small className="form-text text-muted">
                             Select the inpaint model
                         </small>
+                    </div>
+                    <div className="form-group">
+                        <CostIndicator imagesCost={count} />
                     </div>
                 </>
             )}

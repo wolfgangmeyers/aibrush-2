@@ -24,6 +24,8 @@ import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 import moment from "moment";
 import { supportedModels } from "../../lib/supportedModels";
 import { ProgressBar } from "../../components/ProgressBar";
+import { calculateImagesCost } from "../../lib/credits";
+import { CostIndicator } from "../../components/CostIndicator";
 
 const anonymousClient = axios.create();
 
@@ -686,6 +688,12 @@ export const EnhanceControls: FC<ControlsProps> = ({
     tool.onError(setError);
     tool.onDirty(setDirty);
 
+    const selectionOverlay: Rect = tool.selectionTool.getArgs().selectionOverlay;
+    let cost = count;
+    if (selectionOverlay) {
+        cost = calculateImagesCost(count, selectionOverlay.width, selectionOverlay.height);
+    }
+
     if (state == "processing" || state == "uploading") {
         return (
             <div style={{ marginTop: "16px" }}>
@@ -831,6 +839,9 @@ export const EnhanceControls: FC<ControlsProps> = ({
                         <small className="form-text text-muted">
                             Select the model to use
                         </small>
+                    </div>
+                    <div className="form-group">
+                        <CostIndicator imagesCost={cost} />
                     </div>
                 </>
             )}

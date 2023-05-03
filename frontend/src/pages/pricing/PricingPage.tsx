@@ -26,6 +26,10 @@ export const PricingPage: FC<Props> = ({api}) => {
         });
     };
 
+    const handleBuy = async (product: string) => {
+        alert("Buying credits isn't quite ready yet, but it will be soon!");
+    }
+
     return (
         <>
             <h2>Unlock the Power of AI</h2>
@@ -62,7 +66,7 @@ export const PricingPage: FC<Props> = ({api}) => {
                         description="Dip your toes into the world of AI-generated art with 300 credits. Perfect for first-time users who want to explore the possibilities."
                         buttonText="Buy Now"
                         onButtonClick={() => {
-                            console.log("Basic");
+                            handleBuy("starter");
                         }}
                     />
                 </Col>
@@ -73,7 +77,7 @@ export const PricingPage: FC<Props> = ({api}) => {
                         description="Fuel your creativity with 2000 credits, offering great value for budding artists and enthusiasts. Unleash your potential!"
                         buttonText="Buy Now"
                         onButtonClick={() => {
-                            console.log("Basic");
+                            handleBuy("creative");
                         }}
                     />
                 </Col>
@@ -84,7 +88,7 @@ export const PricingPage: FC<Props> = ({api}) => {
                         description="Get the ultimate AI art experience with 6000 credits. Ideal for professionals and prolific creators who demand the best."
                         buttonText="Buy Now"
                         onButtonClick={() => {
-                            console.log("Basic");
+                            handleBuy("pro");
                         }}
                     />
                 </Col>
