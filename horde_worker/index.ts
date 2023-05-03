@@ -342,6 +342,9 @@ async function processRequest(request: HordeRequest) {
             err = e.response.data.message;
             console.error(JSON.stringify(e.response.data, null, 2));
         }
+        if (e.message && e.message.includes("censored")) {
+            err = e.message;
+        }
         await updateImage(
             request.imageId,
             { status: "error", error: err },
