@@ -1252,7 +1252,7 @@ export class BackendService {
                 [hash(email), email]
             );
             await client.query(
-                `INSERT INTO credits (user_id, free_credits, paid_credits) VALUES ($1, 0, 0)`,
+                `INSERT INTO credits (user_id, free_credits, paid_credits) VALUES ($1, 100, 0)`,
                 [hash(email)]
             );
             return true;
