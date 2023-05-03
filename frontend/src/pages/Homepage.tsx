@@ -283,7 +283,7 @@ export const Homepage: FC<Props> = ({
             );
 
             try {
-                const resp = await api.batchGetImages("id,status,nsfw", {
+                const resp = await api.batchGetImages("id,status,nsfw,error", {
                     ids: pendingOrProcessingImages.map((image) => image.id),
                 });
 
