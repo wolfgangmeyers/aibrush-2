@@ -159,6 +159,11 @@ export class BackendService {
                 region: config.s3Region || "us-west-2",
             });
         }
+        if (config.paidHordeQueueName) {
+            this.paidHordeQueue = new SQSHordeQueue(config.paidHordeQueueName, {
+                region: config.s3Region || "us-west-2",
+            });
+        }
     }
 
     private async sendMail(message: EmailMessage): Promise<void> {
