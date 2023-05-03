@@ -569,7 +569,7 @@ export class BackendService {
         const now = this.clock.now().valueOf();
         // set deleted_at to now
         const image = await this.getImage(id);
-        if (image.temporary) {
+        if (image.temporary || image.status === StatusEnum.Pending || image.status === StatusEnum.Processing || image.status === StatusEnum.Error) {
             // delete image
             await this.hardDeleteImage(id);
             return;
