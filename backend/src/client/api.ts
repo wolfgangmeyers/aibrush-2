@@ -208,13 +208,13 @@ export interface Credits {
      * @type {number}
      * @memberof Credits
      */
-    'free_credits'?: number;
+    'free_credits': number;
     /**
      * 
      * @type {number}
      * @memberof Credits
      */
-    'paid_credits'?: number;
+    'paid_credits': number;
 }
 /**
  * 
@@ -227,13 +227,13 @@ export interface DepositCode {
      * @type {string}
      * @memberof DepositCode
      */
-    'code'?: string;
+    'code': string;
     /**
      * 
      * @type {number}
      * @memberof DepositCode
      */
-    'amount'?: number;
+    'amount': number;
 }
 /**
  * 
@@ -692,19 +692,6 @@ export interface Order {
      * @memberof Order
      */
     'amount_paid_cents': number;
-}
-/**
- * 
- * @export
- * @interface RedeemDepositCodeInput
- */
-export interface RedeemDepositCodeInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof RedeemDepositCodeInput
-     */
-    'code': string;
 }
 /**
  * 
@@ -1890,11 +1877,10 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * Redeem a deposit code
          * @param {string} code 
-         * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        redeemDepositCode: async (code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        redeemDepositCode: async (code: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'code' is not null or undefined
             assertParamExists('redeemDepositCode', 'code', code)
             const localVarPath = `/api/deposit-codes/{code}`
@@ -1912,12 +1898,9 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
 
 
     
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(redeemDepositCodeInput, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2379,12 +2362,11 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
         /**
          * Redeem a deposit code
          * @param {string} code 
-         * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async redeemDepositCode(code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.redeemDepositCode(code, redeemDepositCodeInput, options);
+        async redeemDepositCode(code: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.redeemDepositCode(code, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2669,12 +2651,11 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
         /**
          * Redeem a deposit code
          * @param {string} code 
-         * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        redeemDepositCode(code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options?: any): AxiosPromise<void> {
-            return localVarFp.redeemDepositCode(code, redeemDepositCodeInput, options).then((request) => request(axios, basePath));
+        redeemDepositCode(code: string, options?: any): AxiosPromise<void> {
+            return localVarFp.redeemDepositCode(code, options).then((request) => request(axios, basePath));
         },
         /**
          * Refresh Login code
@@ -2998,13 +2979,12 @@ export class AIBrushApi extends BaseAPI {
     /**
      * Redeem a deposit code
      * @param {string} code 
-     * @param {RedeemDepositCodeInput} [redeemDepositCodeInput] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public redeemDepositCode(code: string, redeemDepositCodeInput?: RedeemDepositCodeInput, options?: AxiosRequestConfig) {
-        return AIBrushApiFp(this.configuration).redeemDepositCode(code, redeemDepositCodeInput, options).then((request) => request(this.axios, this.basePath));
+    public redeemDepositCode(code: string, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).redeemDepositCode(code, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

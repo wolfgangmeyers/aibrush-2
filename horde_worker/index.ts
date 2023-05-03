@@ -106,6 +106,7 @@ async function uploadImage(key: string, data: Buffer): Promise<void> {
 const hordeApiKey = process.env.STABLE_HORDE_API_KEY;
 const hordeBaseUrl = "https://stablehorde.net/api";
 const queueUrl = process.env.HORDE_QUEUE_URL;
+const paidQueueUrl = process.env.PAID_HORDE_QUEUE_URL;
 
 const blacklisted_terms = ["loli"];
 
@@ -361,16 +362,36 @@ async function poll() {
         await sleep(1000);
         return;
     }
-    const messages = await sqsClient
+    let messages = await sqsClient
         .receiveMessage({
-            QueueUrl: queueUrl,
+            QueueUrl: paidQueueUrl,
             MaxNumberOfMessages: Math.min(30 - activeImageCount, 10),
             WaitTimeSeconds: 20,
         })
         .promise();
-    console.log(
-        `received ${messages.Messages?.length || 0} messages from queue`
-    );
+    messages.Messages = messages.Messages || [];
+    console.log(`received ${messages.Messages?.length || 0} paid messages from queue`)
+    // if there are less than 30 total messages (active + paid), get some from the free queue
+    if (
+        messages.Messages?.length === 0 ||
+        messages.Messages?.length < 30 - activeImageCount
+    ) {
+        const freeMessages = await sqsClient
+            .receiveMessage({
+                QueueUrl: queueUrl,
+                MaxNumberOfMessages: Math.min(
+                    30 - activeImageCount,
+                    10 - (messages.Messages?.length || 0)
+                ),
+                WaitTimeSeconds: 20,
+            })
+            .promise();
+        messages.Messages = messages.Messages || [];
+        console.log(`received ${freeMessages.Messages?.length || 0} free messages from queue`)
+        messages.Messages = messages.Messages.concat(
+            freeMessages.Messages || []
+        );
+    }
     if (messages.Messages) {
         activeImageCount += messages.Messages.length;
         for (const message of messages.Messages) {

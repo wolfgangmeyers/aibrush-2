@@ -13,6 +13,7 @@ describe("backend notifications", () => {
     let testHelper: TestHelper;
     let databaseName: string;
     let hordeQueue: MockHordeQueue;
+    let paidHordeQueue: MockHordeQueue;
 
     beforeAll(async () => {
         testHelper = new TestHelper();
@@ -29,7 +30,10 @@ describe("backend notifications", () => {
             new ConsoleLogger()
         );
         await backendService.init();
+        hordeQueue = new MockHordeQueue();
+        paidHordeQueue = new MockHordeQueue();
         backendService.setHordeQueueForTesting(hordeQueue);
+        backendService.setPaidHordeQueueForTesting(paidHordeQueue);
 
         await backendService.createUser("test@test.test");
     });
@@ -40,6 +44,11 @@ describe("backend notifications", () => {
     });
 
     describe("create an image with no credits", () => {
+
+        beforeEach(async () => {
+            await backendService.deductCredits("test@test.test", 100);
+        });
+
         it("should fail with an error", async () => {
             await expect(
                 backendService.createImages("test@test.test", {
@@ -87,6 +96,13 @@ describe("backend notifications", () => {
         it("should deduct 1 credit", () => {
             expect(credits.free_credits).toEqual(99);
         });
+
+        it("should submit through free horde queue", async () => {
+            let image = await hordeQueue.popImage();
+            expect(image).toBeDefined();
+            image = await paidHordeQueue.popImage();
+            expect(image).toBeUndefined();
+        });
     });
 
     describe("create a 512x512 image with paid credits", () => {
@@ -119,6 +135,13 @@ describe("backend notifications", () => {
 
         it("should deduct 1 credit", () => {
             expect(credits.paid_credits).toEqual(99);
+        });
+
+        it("should submit through paid horde queue", async () => {
+            let image = await hordeQueue.popImage();
+            expect(image).toBeUndefined();
+            image = await paidHordeQueue.popImage();
+            expect(image).toBeDefined();
         });
     });
 

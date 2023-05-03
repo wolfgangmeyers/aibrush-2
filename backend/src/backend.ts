@@ -124,12 +124,17 @@ export class BackendService {
     private notificationsClient: Client;
     private clock: Clock;
     private hordeQueue: HordeQueue;
+    private paidHordeQueue: HordeQueue;
 
     private notificationListeners: { [key: string]: NotificationListener[] } =
         {};
 
     setHordeQueueForTesting(queue: HordeQueue) {
         this.hordeQueue = queue;
+    }
+
+    setPaidHordeQueueForTesting(queue: HordeQueue) {
+        this.paidHordeQueue = queue;
     }
 
     constructor(
@@ -588,8 +593,6 @@ export class BackendService {
                 `${id}.image.png`,
                 `${id}.thumbnail.png`,
                 `${id}.mask.png`,
-                // `${id}.mp4`,
-                // `${id}.npy`,
             ];
             const checkPromises = filesToCheck.map((file) =>
                 this.filestore.exists(file)
@@ -643,7 +646,8 @@ export class BackendService {
 
     private async createImage(
         createdBy: string,
-        body: CreateImageInput
+        body: CreateImageInput,
+        paid: boolean
     ): Promise<Image> {
         body = this.upgradeLegacyRequest(body);
         body.params.seed =
@@ -766,8 +770,8 @@ export class BackendService {
                         type: NOTIFICATION_PENDING_IMAGE,
                     })
                 );
-                // TODO: maybe someday we can do just upscale in the horde
-                if (this.hordeQueue && image.model !== "swinir") {
+                const hordeQueue = paid ? this.paidHordeQueue : this.hordeQueue;
+                if (hordeQueue) {
                     const jwt = this.authHelper.createToken(
                         image.created_by,
                         "access",
@@ -775,7 +779,7 @@ export class BackendService {
                         null,
                         image.id
                     );
-                    this.hordeQueue.submitImage({
+                    hordeQueue.submitImage({
                         authToken: jwt,
                         imageId: image.id,
                         prompt: image.params.prompt,
@@ -843,12 +847,10 @@ export class BackendService {
             );
         }
 
-        // TODO: re-enable this
-
-        // const credits = await this.getCredits(createdBy);
-        // if (credits.free_credits === 0 && credits.paid_credits === 0) {
-        //     throw new Error("No credits");
-        // }
+        const credits = await this.getCredits(createdBy);
+        if (credits.free_credits === 0 && credits.paid_credits === 0) {
+            throw new Error("No credits");
+        }
         const promises: Array<Promise<Image>> = [];
         for (let i = 0; i < count; i++) {
             promises.push(
@@ -857,7 +859,7 @@ export class BackendService {
                     params: {
                         ...body.params,
                     },
-                })
+                }, credits.paid_credits > 0)
             );
         }
         const images = await Promise.all(promises);
@@ -1285,6 +1287,7 @@ export class BackendService {
     }
 
     async deductCredits(userId: string, amount: number): Promise<void> {
+        userId = hash(userId);
         // deduct credits from paid_credits first, then from free_credits
         // paid_credits and free_credits should never drop below 0
         const credits = await this.getCredits(userId);
