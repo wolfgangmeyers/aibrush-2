@@ -392,7 +392,7 @@ async function poll() {
             freeMessages.Messages || []
         );
     }
-    if (messages.Messages) {
+    if (messages.Messages && messages.Messages.length > 0) {
         activeImageCount += messages.Messages.length;
         for (const message of messages.Messages) {
             processRequest(JSON.parse(message.Body) as HordeRequest);
