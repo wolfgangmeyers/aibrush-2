@@ -243,6 +243,9 @@ export class BackendService {
         if (this.hordeQueue) {
             await this.hordeQueue.init();
         }
+        if (this.paidHordeQueue) {
+            await this.paidHordeQueue.init();
+        }
 
         // emergency cleanup logic...
         // const images = await this.listImages({limit: 100000});
