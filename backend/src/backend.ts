@@ -1321,7 +1321,7 @@ export class BackendService {
         input: CreateDepositCodeInput
     ): Promise<DepositCode> {
         // create random code
-        const code = (uuid.v4() + uuid.v4()).replace(/-/g, "");
+        const code = (uuid.v4()).replace(/-/g, "");
         const client = await this.pool.connect();
         try {
             await client.query(

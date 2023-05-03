@@ -245,7 +245,7 @@ function App() {
                                 />
                             </Route>
                             <Route path="/pricing">
-                                <PricingPage />
+                                <PricingPage api={client} />
                             </Route>
                             <Route path="/testpage">
                                 <TestPage />
