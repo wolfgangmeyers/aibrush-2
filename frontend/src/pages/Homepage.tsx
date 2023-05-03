@@ -33,6 +33,7 @@ import { LocalImagesStore, LocalImage } from "../lib/localImagesStore";
 import { ErrorNotification, SuccessNotification } from "../components/Alerts";
 import { sleep } from "../lib/sleep";
 import { ProgressBar } from "../components/ProgressBar";
+import OutOfCreditsModal from "../components/OutOfCreditsModal";
 
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
@@ -76,6 +77,7 @@ export const Homepage: FC<Props> = ({
     }>({});
 
     const [censorNSFW, setCensorNSFW] = useState(true);
+    const [outOfCredits, setOutOfCredits] = useState(false);
 
     const { id } = useParams<{ id?: string }>();
     const history = useHistory();
@@ -161,6 +163,10 @@ export const Homepage: FC<Props> = ({
             }
         } catch (e: any) {
             console.error(e);
+            if (e.response?.data?.message?.includes("credits")) {
+                setOutOfCredits(true);
+                return;
+            }
             onError("Error creating images");
         } finally {
             setCreating(false);
@@ -825,6 +831,7 @@ export const Homepage: FC<Props> = ({
                     setImages(images.filter((i) => i.id !== image.id));
                 }}
             />
+            <OutOfCreditsModal show={outOfCredits} onHide={() => setOutOfCredits(false)} />
         </>
     );
 };
