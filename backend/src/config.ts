@@ -28,6 +28,8 @@ export interface Config {
     discordClientId?: string;
     discordClientSecret?: string;
     discordRedirectUri?: string;
+    stripeSecretKey?: string;
+    stripeWebhookSecret?: string;
 }
 
 export const loadConfig = (): Config => {
@@ -56,6 +58,8 @@ export const loadConfig = (): Config => {
         discordClientId: process.env.DISCORD_CLIENT_ID,
         discordClientSecret: process.env.DISCORD_CLIENT_SECRET,
         discordRedirectUri: process.env.DISCORD_REDIRECT_URI,
+        stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+        stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     };
     return config;
 }

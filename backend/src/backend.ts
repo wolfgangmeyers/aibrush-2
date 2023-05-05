@@ -25,6 +25,7 @@ import {
     Credits,
     DepositCode,
     CreateDepositCodeInput,
+    CreateStripeSessionInput,
 } from "./client/api";
 import { sleep } from "./sleep";
 import { EmailMessage } from "./email_message";
@@ -38,6 +39,8 @@ import { Logger } from "./logs";
 import { Clock, RealClock } from "./clock";
 import { HordeQueue, SQSHordeQueue } from "./horde_queue";
 import { calculateImagesCost } from "./credits";
+import { calculateCredits, StripeHelper, StripeHelperImpl } from "./stripe_helper";
+import Stripe from "stripe";
 
 process.env.PGUSER = process.env.PGUSER || "postgres";
 
@@ -125,6 +128,7 @@ export class BackendService {
     private clock: Clock;
     private hordeQueue: HordeQueue;
     private paidHordeQueue: HordeQueue;
+    private stripeHelper: StripeHelper;
 
     private notificationListeners: { [key: string]: NotificationListener[] } =
         {};
@@ -135,6 +139,10 @@ export class BackendService {
 
     setPaidHordeQueueForTesting(queue: HordeQueue) {
         this.paidHordeQueue = queue;
+    }
+
+    setStripeHelperForTesting(helper: StripeHelper) {
+        this.stripeHelper = helper;
     }
 
     constructor(
@@ -163,6 +171,9 @@ export class BackendService {
             this.paidHordeQueue = new SQSHordeQueue(config.paidHordeQueueName, {
                 region: config.s3Region || "us-west-2",
             });
+        }
+        if (config.stripeSecretKey && config.stripeWebhookSecret) {
+            this.stripeHelper = new StripeHelperImpl(config.stripeSecretKey, config.stripeWebhookSecret);
         }
     }
 
@@ -569,7 +580,12 @@ export class BackendService {
         const now = this.clock.now().valueOf();
         // set deleted_at to now
         const image = await this.getImage(id);
-        if (image.temporary || image.status === StatusEnum.Pending || image.status === StatusEnum.Processing || image.status === StatusEnum.Error) {
+        if (
+            image.temporary ||
+            image.status === StatusEnum.Pending ||
+            image.status === StatusEnum.Processing ||
+            image.status === StatusEnum.Error
+        ) {
             // delete image
             await this.hardDeleteImage(id);
             return;
@@ -862,12 +878,16 @@ export class BackendService {
         const promises: Array<Promise<Image>> = [];
         for (let i = 0; i < count; i++) {
             promises.push(
-                this.createImage(createdBy, {
-                    ...body,
-                    params: {
-                        ...body.params,
+                this.createImage(
+                    createdBy,
+                    {
+                        ...body,
+                        params: {
+                            ...body.params,
+                        },
                     },
-                }, credits.paid_credits > 0)
+                    credits.paid_credits > 0
+                )
             );
         }
         const images = await Promise.all(promises);
@@ -958,7 +978,11 @@ export class BackendService {
                     seconds_until_completion: duration_seconds,
                 });
 
-                const cost = calculateImagesCost(1, image.params.width, image.params.height);
+                const cost = calculateImagesCost(
+                    1,
+                    image.params.width,
+                    image.params.height
+                );
                 await this.deductCredits(image.created_by, cost);
             }
             this.notify(
@@ -1009,40 +1033,40 @@ export class BackendService {
         }
     }
 
-    private async getUsersWithPendingImages(
-        status: string,
-        include_models: string[] | null,
-        exclude_models: string[] | null
-    ): Promise<Array<string>> {
-        const args = [];
-        const client = await this.pool.connect();
-        let filter = " AND deleted_at IS NULL";
-        if (include_models) {
-            const in_str = include_models
-                .map((_, i) => `$${args.length + i + 1}`)
-                .join(",");
-            filter += ` AND model in (${in_str})`;
-            args.push(...include_models);
-        }
-        if (exclude_models) {
-            const in_str = exclude_models
-                .map((_, i) => `$${args.length + i + 1}`)
-                .join(",");
-            filter += ` AND model NOT IN (${in_str})`;
-            args.push(...exclude_models);
-        }
-        try {
-            const result = await client.query(
-                `SELECT DISTINCT created_by FROM images WHERE status='${
-                    status || "pending"
-                }'${filter}`,
-                args
-            );
-            return result.rows.map((row) => row.created_by);
-        } finally {
-            client.release();
-        }
-    }
+    // private async getUsersWithPendingImages(
+    //     status: string,
+    //     include_models: string[] | null,
+    //     exclude_models: string[] | null
+    // ): Promise<Array<string>> {
+    //     const args = [];
+    //     const client = await this.pool.connect();
+    //     let filter = " AND deleted_at IS NULL";
+    //     if (include_models) {
+    //         const in_str = include_models
+    //             .map((_, i) => `$${args.length + i + 1}`)
+    //             .join(",");
+    //         filter += ` AND model in (${in_str})`;
+    //         args.push(...include_models);
+    //     }
+    //     if (exclude_models) {
+    //         const in_str = exclude_models
+    //             .map((_, i) => `$${args.length + i + 1}`)
+    //             .join(",");
+    //         filter += ` AND model NOT IN (${in_str})`;
+    //         args.push(...exclude_models);
+    //     }
+    //     try {
+    //         const result = await client.query(
+    //             `SELECT DISTINCT created_by FROM images WHERE status='${
+    //                 status || "pending"
+    //             }'${filter}`,
+    //             args
+    //         );
+    //         return result.rows.map((row) => row.created_by);
+    //     } finally {
+    //         client.release();
+    //     }
+    // }
 
     // for all images with status "processing" that have not been updated in more than 5 minutes,
     // update status to "pending"
@@ -1190,6 +1214,7 @@ export class BackendService {
         await this.cleanupStuckImages();
         await this.cleanupTemporaryImages();
         await this.cleanupDeletedImages();
+        await this.cleanupStripeSessions();
         const elapsed = this.clock.now().diff(start, "milliseconds");
         this.metrics.addMetric("backend.cleanup", 1, "count", {
             duration: elapsed,
@@ -1209,6 +1234,7 @@ export class BackendService {
     }
 
     async getUser(id: string): Promise<User> {
+        id = hash(id);
         const client = await this.pool.connect();
         try {
             const result = await client.query(
@@ -1224,29 +1250,12 @@ export class BackendService {
         }
     }
 
-    async createInviteCode(): Promise<InviteCode> {
-        const client = await this.pool.connect();
-        try {
-            const id = (uuid.v4() + uuid.v4()).replace(/-/g, "");
-            await client.query(
-                `INSERT INTO invite_codes(id, created_at) VALUES($1, $2)`,
-                [id, this.clock.now().valueOf()]
-            );
-            return {
-                id,
-            };
-        } finally {
-            client.release();
-        }
-    }
-
-    async deleteExpiredInviteCodes(): Promise<void> {
-        // lifespan is 7 days
+    async saveCustomerId(userId: string, customerId: string): Promise<void> {
         const client = await this.pool.connect();
         try {
             await client.query(
-                `DELETE FROM invite_codes WHERE created_at < $1`,
-                [this.clock.now().subtract(7, "days").valueOf()]
+                `UPDATE users SET customer_id=$1 WHERE id=$2`,
+                [customerId, userId]
             );
         } finally {
             client.release();
@@ -1254,14 +1263,14 @@ export class BackendService {
     }
 
     async createUser(email: string): Promise<boolean> {
-        const existingUser = await this.getUser(hash(email));
+        const existingUser = await this.getUser(email);
         if (existingUser) {
             return false;
         }
         const client = await this.pool.connect();
         try {
             await client.query(
-                `INSERT INTO users (id, email, active) VALUES ($1, $2, false)`,
+                `INSERT INTO users (id, email, active) VALUES ($1, $2, true)`,
                 [hash(email), email]
             );
             await client.query(
@@ -1335,7 +1344,7 @@ export class BackendService {
         input: CreateDepositCodeInput
     ): Promise<DepositCode> {
         // create random code
-        const code = (uuid.v4()).replace(/-/g, "");
+        const code = uuid.v4().replace(/-/g, "");
         const client = await this.pool.connect();
         try {
             await client.query(
@@ -1353,12 +1362,10 @@ export class BackendService {
 
     async resetFreeCredits(): Promise<void> {
         await this.withLock(RESET_CREDITS_KEY, async () => {
-
             // check last event time
             const lastReset = await this.getLastEventTime(RESET_CREDITS_EVENT);
             // if last reset was more than 24 hours ago, reset credits
             if (lastReset < this.clock.now().subtract(1, "days").valueOf()) {
-
                 const client = await this.pool.connect();
                 try {
                     await client.query(`UPDATE credits SET free_credits=100`);
@@ -1370,7 +1377,7 @@ export class BackendService {
                     this.clock.now().valueOf()
                 );
             }
-        })
+        });
     }
 
     async redeemDepositCode(code: string, userId: string): Promise<void> {
@@ -1405,6 +1412,52 @@ export class BackendService {
             );
         } finally {
             client.release();
+        }
+    }
+
+    async depositCredits(userId: string, amount: number): Promise<void> {
+        userId = hash(userId);
+        const client = await this.pool.connect();
+        try {
+            await client.query(
+                `UPDATE credits SET paid_credits = paid_credits + $1 WHERE user_id=$2`,
+                [amount, userId]
+            );
+            await this.notify(
+                userId,
+                JSON.stringify({
+                    type: NOTIFICATION_CREDITS_UPDATED,
+                })
+            );
+        } finally {
+            client.release();
+        }
+    }
+
+    async handleStripeEvent(payload: any, signature: string): Promise<void> {
+        const stripeEvent = this.stripeHelper.constructEvent(
+            payload,
+            signature,
+        );
+        if (stripeEvent.type === "checkout.session.completed") {
+            const session = stripeEvent.data.object as Stripe.Checkout.Session;
+            const userId = await this.getUserForStripeSession(session.id);
+            if (!userId) {
+                throw new Error("User not found");
+            }
+            const user = await this.getUser(userId);
+            if (!user.customer_id) {
+                await this.saveCustomerId(userId, session.customer as string);
+            }
+            const lineItems = await this.stripeHelper.listLineItems(session.id);
+            for (const lineItem of lineItems.data) {
+                const credits = calculateCredits(
+                    lineItem.price.id,
+                    lineItem.quantity
+                );
+                await this.depositCredits(userId, credits);
+            }
+            await this.deleteStripeSession(session.id);
         }
     }
 
@@ -1612,6 +1665,72 @@ export class BackendService {
             }
         }
         return null;
+    }
+
+    // use this.stripeHelper to create a session, then store it in the database
+    async createStripeSession(
+        userId: string,
+        input: CreateStripeSessionInput,
+    ): Promise<string> {
+        userId = hash(userId);
+        const user = await this.getUser(userId);
+        const sessionId = await this.stripeHelper.createCheckoutSession(
+            input.product_id,
+            input.success_url,
+            input.cancel_url,
+            user.customer_id || undefined,
+        );
+        const client = await this.pool.connect();
+        try {
+            await client.query(
+                `INSERT INTO stripe_sessions (session_id, user_id, created_at) VALUES ($1, $2, $3)`,
+                [sessionId, userId, this.clock.now().valueOf()]
+            );
+            return sessionId;
+        } finally {
+            client.release();
+        }
+    }
+
+    async getUserForStripeSession(sessionId: string): Promise<string> {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `SELECT user_id FROM stripe_sessions WHERE session_id=$1`,
+                [sessionId]
+            );
+            if (result.rows.length === 0) {
+                return null;
+            }
+            return result.rows[0].user_id as string;
+        } finally {
+            client.release();
+        }
+    }
+
+    async deleteStripeSession(sessionId: string): Promise<void> {
+        const client = await this.pool.connect();
+        try {
+            await client.query(
+                `DELETE FROM stripe_sessions WHERE session_id=$1`,
+                [sessionId]
+            );
+        } finally {
+            client.release();
+        }
+    }
+
+    // clean up sessions that are more than 24 hours old
+    async cleanupStripeSessions(): Promise<void> {
+        const client = await this.pool.connect();
+        try {
+            await client.query(
+                `DELETE FROM stripe_sessions WHERE created_at < $1`,
+                [this.clock.now().subtract(24, "hours").valueOf()]
+            );
+        } finally {
+            client.release();
+        }
     }
 
     // list databases for testing

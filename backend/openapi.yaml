@@ -570,6 +570,24 @@ paths:
       responses:
         "204":
           description: Success
+  /api/stripe-sessions:
+    post:
+      description: Create a new Stripe session
+      operationId: createStripeSession
+      tags:
+        - AIBrush
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStripeSessionInput"
+      responses:
+        "201":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeSession"
 
 components:
   schemas:
@@ -842,6 +860,8 @@ components:
           type: string
         active:
           type: boolean
+        customer_id:
+          type: string
     InviteCode:
       type: object
       properties:
@@ -1078,3 +1098,23 @@ components:
       required:
         - code
         - amount
+    CreateStripeSessionInput:
+      type: object
+      properties:
+        product_id:
+          type: string
+        success_url:
+          type: string
+        cancel_url:
+          type: string
+      required:
+        - product_id
+        - success_url
+        - cancel_url
+    StripeSession:
+      type: object
+      properties:
+        session_id:
+          type: string
+      required:
+        - session_id

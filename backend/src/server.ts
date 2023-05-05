@@ -427,6 +427,8 @@ export class Server {
             "/local-deleted-images",
             "/pricing",
             "/discord-login",
+            "/stripe-success",
+            "/stripe-cancel",
         ]) {
             this.app.get(
                 route,
@@ -773,35 +775,6 @@ export class Server {
             })
         );
 
-        this.app.post(
-            "/api/invite-codes",
-            withMetrics("/api/invite-codes", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (jwt.serviceAccountConfig) {
-                    res.status(403).send("Forbidden");
-                    this.logger.log(
-                        "Service account tried to create invite code",
-                        jwt
-                    );
-                    return;
-                }
-                // service accounts can't create invite codes
-                if (this.serviceAccountType(jwt)) {
-                    res.sendStatus(403);
-                    return;
-                }
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    this.logger.log(
-                        `user ${jwt.userId} tried to create invite code but is not an admin`
-                    );
-                    res.sendStatus(404);
-                    return;
-                }
-                const inviteCode = await this.backendService.createInviteCode();
-                res.status(201).json(inviteCode);
-            })
-        );
-
         this.app.get(
             "/api/is-admin",
             withMetrics("/api/is-admin", async (req, res) => {
@@ -926,6 +899,32 @@ export class Server {
                 }
 
                 res.sendStatus(204);
+            })
+        );
+
+        this.app.post(
+            "/api/stripe-sessions",
+            withMetrics("/api/stripe-sessions", async (req, res) => {
+                const jwt = this.authHelper.getJWTFromRequest(req);
+                const session = await this.backendService.createStripeSession(
+                    jwt.userId,
+                    req.body
+                );
+                res.status(201).json(session);
+            })
+        );
+
+        this.app.post(
+            "/api/stripe-webhook",
+            withMetrics("/api/stripe-webhook", async (req, res) => {
+                const sig = req.headers["stripe-signature"] as string;
+                try {
+                    await this.backendService.handleStripeEvent(req.body, sig);
+                } catch (err) {
+                    this.logger.log("Error handling stripe event", err);
+                    res.sendStatus(400);
+                    return;
+                }
             })
         );
 

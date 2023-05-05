@@ -200,6 +200,31 @@ export interface CreateImageInput {
 /**
  * 
  * @export
+ * @interface CreateStripeSessionInput
+ */
+export interface CreateStripeSessionInput {
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateStripeSessionInput
+     */
+    'product_id': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateStripeSessionInput
+     */
+    'success_url': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateStripeSessionInput
+     */
+    'cancel_url': string;
+}
+/**
+ * 
+ * @export
  * @interface Credits
  */
 export interface Credits {
@@ -806,6 +831,19 @@ export type StatusEnum = typeof StatusEnum[keyof typeof StatusEnum];
 /**
  * 
  * @export
+ * @interface StripeSession
+ */
+export interface StripeSession {
+    /**
+     * 
+     * @type {string}
+     * @memberof StripeSession
+     */
+    'session_id': string;
+}
+/**
+ * 
+ * @export
  * @interface TemporaryImage
  */
 export interface TemporaryImage {
@@ -954,6 +992,12 @@ export interface User {
      * @memberof User
      */
     'active'?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    'customer_id'?: string;
 }
 /**
  * 
@@ -1280,6 +1324,39 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Create a new Stripe session
+         * @param {CreateStripeSessionInput} [createStripeSessionInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createStripeSession: async (createStripeSessionInput?: CreateStripeSessionInput, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/stripe-sessions`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createStripeSessionInput, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2182,6 +2259,16 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * Create a new Stripe session
+         * @param {CreateStripeSessionInput} [createStripeSessionInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createStripeSession(createStripeSessionInput?: CreateStripeSessionInput, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<StripeSession>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createStripeSession(createStripeSessionInput, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * Create a new temporary image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2489,6 +2576,15 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createInviteCode(options).then((request) => request(axios, basePath));
         },
         /**
+         * Create a new Stripe session
+         * @param {CreateStripeSessionInput} [createStripeSessionInput] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createStripeSession(createStripeSessionInput?: CreateStripeSessionInput, options?: any): AxiosPromise<StripeSession> {
+            return localVarFp.createStripeSession(createStripeSessionInput, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Create a new temporary image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2778,6 +2874,17 @@ export class AIBrushApi extends BaseAPI {
      */
     public createInviteCode(options?: AxiosRequestConfig) {
         return AIBrushApiFp(this.configuration).createInviteCode(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Create a new Stripe session
+     * @param {CreateStripeSessionInput} [createStripeSessionInput] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof AIBrushApi
+     */
+    public createStripeSession(createStripeSessionInput?: CreateStripeSessionInput, options?: AxiosRequestConfig) {
+        return AIBrushApiFp(this.configuration).createStripeSession(createStripeSessionInput, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
