@@ -379,19 +379,21 @@ async function poll() {
             paidMessages.Messages?.length || 0
         } paid messages from queue`
     );
+    if (paidMessages.Messages && paidMessages.Messages.length > 0) {
+        activeImageCount += paidMessages.Messages.length;
+        for (const message of paidMessages.Messages) {
+            processRequest(JSON.parse(message.Body) as HordeRequest);
+        }
+        await deleteMessages(paidQueueUrl, paidMessages.Messages);
+    }
+
     let freeMessages: PromiseResult<AWS.SQS.ReceiveMessageResult, AWS.AWSError>;
     // if there are less than 30 total messages (active + paid), get some from the free queue
-    if (
-        paidMessages.Messages?.length === 0 ||
-        paidMessages.Messages?.length < 30 - activeImageCount
-    ) {
+    if (activeImageCount < 30) {
         freeMessages = await sqsClient
             .receiveMessage({
                 QueueUrl: queueUrl,
-                MaxNumberOfMessages: Math.min(
-                    30 - activeImageCount,
-                    10 - (paidMessages.Messages?.length || 0)
-                ),
+                MaxNumberOfMessages: Math.min(30 - activeImageCount, 10),
                 WaitTimeSeconds: 1,
             })
             .promise();
@@ -402,13 +404,7 @@ async function poll() {
             } free messages from queue`
         );
     }
-    if (paidMessages.Messages && paidMessages.Messages.length > 0) {
-        activeImageCount += paidMessages.Messages.length;
-        for (const message of paidMessages.Messages) {
-            processRequest(JSON.parse(message.Body) as HordeRequest);
-        }
-        await deleteMessages(paidQueueUrl, paidMessages.Messages);
-    }
+
     if (freeMessages?.Messages && freeMessages.Messages.length > 0) {
         activeImageCount += freeMessages.Messages.length;
         for (const message of freeMessages.Messages) {
