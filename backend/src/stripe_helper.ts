@@ -1,13 +1,13 @@
 import Stripe from "stripe";
 
 const productToPriceId = {
-    starter: "price_1N4aooC2IU2ctHz6KEfr4HLk",
+    starter: "price_1N4tCDC2IU2ctHz6scCdJOyp",
     creative: "price_1N4apZC2IU2ctHz6qgWuj6Bn",
     pro: "price_1N4aqMC2IU2ctHz6iWyy7dvn",
 };
 
 const priceIdToCredits = {
-    price_1N4aooC2IU2ctHz6KEfr4HLk: 600,
+    price_1N4tCDC2IU2ctHz6scCdJOyp: 600,
     price_1N4apZC2IU2ctHz6qgWuj6Bn: 2000,
     price_1N4aqMC2IU2ctHz6iWyy7dvn: 6000,
 };
