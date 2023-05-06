@@ -93,8 +93,8 @@ export const PricingPage: FC<Props> = ({ api }) => {
                 <Col lg={4} className="d-flex justify-content-center">
                     <PricingCard
                         title="Starter"
-                        price={1}
-                        description="Dip your toes into the world of AI-generated art with 300 credits. Perfect for first-time users who want to explore the possibilities."
+                        price={2}
+                        description="Dip your toes into the world of AI-generated art with 600 credits. Perfect for first-time users who want to explore the possibilities."
                         buttonText="Buy Now"
                         onButtonClick={() => {
                             handleBuy("starter");
