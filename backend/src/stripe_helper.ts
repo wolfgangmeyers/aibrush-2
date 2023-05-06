@@ -7,7 +7,7 @@ const productToPriceId = {
 };
 
 const priceIdToCredits = {
-    price_1N4aooC2IU2ctHz6KEfr4HLk: 300,
+    price_1N4aooC2IU2ctHz6KEfr4HLk: 600,
     price_1N4apZC2IU2ctHz6qgWuj6Bn: 2000,
     price_1N4aqMC2IU2ctHz6iWyy7dvn: 6000,
 };
