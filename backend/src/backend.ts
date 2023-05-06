@@ -1456,7 +1456,6 @@ export class BackendService {
                     lineItem.price.id,
                     lineItem.quantity
                 );
-                console.log("line item", lineItem, "credits", credits, "user", userId);
                 await this.depositCredits(userId, credits);
             }
             await this.deleteStripeSession(session.id);
