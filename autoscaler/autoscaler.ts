@@ -1,6 +1,7 @@
 import MetricsHelper from "./MetricsHelper";
 import HerokuHelper from "./HerokuHelper";
 import moment from "moment";
+import { MetricsClient } from "./metrics";
 
 interface AutoscalerConfiguration {
     minCpu: number;
@@ -10,19 +11,14 @@ interface AutoscalerConfiguration {
 }
 
 class Autoscaler {
-    private metricsHelper: MetricsHelper;
-    private herokuHelper: HerokuHelper;
-    private config: AutoscalerConfiguration;
     private lastScalingEvent: moment.Moment | null;
 
     constructor(
-        metricsHelper: MetricsHelper,
-        herokuHelper: HerokuHelper,
-        config: AutoscalerConfiguration
+        private metricsHelper: MetricsHelper,
+        private metricsClient: MetricsClient,
+        private herokuHelper: HerokuHelper,
+        private config: AutoscalerConfiguration
     ) {
-        this.metricsHelper = metricsHelper;
-        this.herokuHelper = herokuHelper;
-        this.config = config;
         this.lastScalingEvent = null;
     }
 
@@ -58,6 +54,12 @@ class Autoscaler {
         } else {
             console.log(`No scaling action: CPU=${cpu}, Memory=${mem}`);
         }
+        this.metricsClient.addMetric(
+            "autoscaler.performAutoscaling",
+            1,
+            "count",
+            {}
+        );
     }
 }
 
