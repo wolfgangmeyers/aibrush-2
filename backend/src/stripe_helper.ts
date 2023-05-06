@@ -1,13 +1,9 @@
 import Stripe from "stripe";
-// product name to priceid mappings (test mode):
-// starter -> price_1N4UbAC2IU2ctHz6r6eoJ1BE
-// creative -> price_1N4UbpC2IU2ctHz6IzDX3ScZ
-// pro -> price_1N4UcIC2IU2ctHz6xqGVQ8iw
 
 const productToPriceId = {
-    starter: "price_1N4UbAC2IU2ctHz6r6eoJ1BE",
-    creative: "price_1N4UbpC2IU2ctHz6IzDX3ScZ",
-    pro: "price_1N4UcIC2IU2ctHz6xqGVQ8iw",
+    starter: "price_1N4aooC2IU2ctHz6KEfr4HLk",
+    creative: "price_1N4apZC2IU2ctHz6qgWuj6Bn",
+    pro: "price_1N4aqMC2IU2ctHz6iWyy7dvn",
 };
 
 const priceIdToCredits = {

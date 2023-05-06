@@ -1,5 +1,6 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { Row, Col, Form, Button } from "react-bootstrap";
+import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { AIBrushApi } from "../../client";
 import PricingCard from "./PricingCard";
 
@@ -10,25 +11,55 @@ interface Props {
     api: AIBrushApi;
 }
 
-export const PricingPage: FC<Props> = ({api}) => {
-
+export const PricingPage: FC<Props> = ({ api }) => {
     const [code, setCode] = useState<string>("");
-    const [redeemingState, setRedeemingState] = useState<"busy" | "success" | "failure" | undefined>(undefined);
+    const [redeemingState, setRedeemingState] = useState<
+        "busy" | "success" | "failure" | undefined
+    >(undefined);
+    const [stripe, setStripe] = useState<Stripe | undefined>(undefined);
 
     const handleRedeemCode = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setRedeemingState("busy");
         setCode("");
-        api.redeemDepositCode(code).then(() => {
-            setRedeemingState("success");
-        }).catch(() => {
-            setRedeemingState("failure");
-        });
+        api.redeemDepositCode(code)
+            .then(() => {
+                setRedeemingState("success");
+            })
+            .catch(() => {
+                setRedeemingState("failure");
+            });
     };
 
     const handleBuy = async (product: string) => {
-        alert("Buying credits isn't quite ready yet, but it will be soon!");
-    }
+        if (!stripe) {
+            // alert the user that payments aren't working, and they need to contact support
+            alert("Payments are not working right now. Please contact support at admin@aibrush.art.");
+            return;
+        }
+        console.log("buying product", product);
+        const baseUrl = `${window.location.protocol}//${window.location.host}`;
+        const result = await api.createStripeSession({
+            product_id: product,
+            success_url: `${baseUrl}/stripe-success`,
+            cancel_url: `${baseUrl}/stripe-cancel`,
+        });
+        console.log("got session id", result.data)
+        await stripe.redirectToCheckout({ sessionId: result.data.session_id });
+    };
+
+    useEffect(() => {
+        const loadStripeLibrary = async () => {
+            const stripeInstance = await loadStripe("pk_live_51MB0zEC2IU2ctHz653kY6uo9UcwgPxmcw2ISGzThAAQMtklAV2kfuceigzlL9LjCNyXCJkcIouVajlX8ErrRtWaz00Tqobzi2s");
+            if (!stripeInstance) {
+                console.error("Failed to load Stripe library");
+                return;
+            }
+            setStripe(stripeInstance);
+        };
+
+        loadStripeLibrary();
+    }, []);
 
     return (
         <>
@@ -109,7 +140,10 @@ export const PricingPage: FC<Props> = ({api}) => {
                                 onChange={(e) => setCode(e.target.value)}
                             />
                         </Form.Group>
-                        <div className="text-center" style={{marginBottom: "50px"}}>
+                        <div
+                            className="text-center"
+                            style={{ marginBottom: "50px" }}
+                        >
                             <Button variant="primary" type="submit">
                                 Redeem
                             </Button>
@@ -118,7 +152,10 @@ export const PricingPage: FC<Props> = ({api}) => {
                 </Col>
             </Row>
             {redeemingState && (
-                <RedeemPopup state={redeemingState} onHide={() => setRedeemingState(undefined)} />
+                <RedeemPopup
+                    state={redeemingState}
+                    onHide={() => setRedeemingState(undefined)}
+                />
             )}
         </>
     );

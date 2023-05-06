@@ -8,11 +8,7 @@ import { useParams, useHistory, Link, useLocation } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
 import { AIBrushApi } from "../client";
-import {
-    CreateImageInput,
-    StatusEnum,
-    TemporaryImage,
-} from "../client/api";
+import { CreateImageInput, StatusEnum, TemporaryImage } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import {
@@ -26,14 +22,13 @@ import { ImagePopup } from "../components/ImagePopup";
 import { BusyModal } from "../components/BusyModal";
 import { PendingImagesThumbnail } from "../components/PendingImagesThumbnail";
 import { PendingImages } from "../components/PendingImages";
-import {
-    ApiSocket,
-} from "../lib/apisocket";
+import { ApiSocket } from "../lib/apisocket";
 import { LocalImagesStore, LocalImage } from "../lib/localImagesStore";
 import { ErrorNotification, SuccessNotification } from "../components/Alerts";
 import { sleep } from "../lib/sleep";
 import { ProgressBar } from "../components/ProgressBar";
 import OutOfCreditsModal from "../components/OutOfCreditsModal";
+import PaymentStatusModal from "../components/PaymentStatusModal";
 
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
@@ -43,6 +38,7 @@ interface Props {
     apiSocket: ApiSocket;
     assetsUrl: string;
     localImages: LocalImagesStore;
+    paymentStatus?: "success" | "canceled";
 }
 
 export const Homepage: FC<Props> = ({
@@ -50,6 +46,7 @@ export const Homepage: FC<Props> = ({
     apiSocket,
     assetsUrl,
     localImages,
+    paymentStatus,
 }) => {
     const [creating, setCreating] = useState(false);
     const [selectedImage, setSelectedImage] = useState<LocalImage | null>(null);
@@ -218,7 +215,7 @@ export const Homepage: FC<Props> = ({
         updatedImage = {
             ...updatedImage,
             nsfw,
-        }
+        };
         await localImages.saveImage(updatedImage);
         setImages((images) => {
             return images.map((image) => {
@@ -305,7 +302,7 @@ export const Homepage: FC<Props> = ({
                         img = {
                             ...pendingById[img.id],
                             ...img,
-                        }
+                        };
                         updatedImages[i] = img;
 
                         if (img.status == StatusEnum.Error) {
@@ -831,7 +828,11 @@ export const Homepage: FC<Props> = ({
                     setImages(images.filter((i) => i.id !== image.id));
                 }}
             />
-            <OutOfCreditsModal show={outOfCredits} onHide={() => setOutOfCredits(false)} />
+            <OutOfCreditsModal
+                show={outOfCredits}
+                onHide={() => setOutOfCredits(false)}
+            />
+            <PaymentStatusModal paymentStatus={paymentStatus} />
         </>
     );
 };

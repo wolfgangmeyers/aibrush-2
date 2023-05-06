@@ -184,8 +184,14 @@ function App() {
                                     </>
                                 )}
                             </div>
-                            <div className="col-lg-12" style={{textAlign: "right"}}>
-                                <CreditsBalance api={client} apisocket={apiSocket} />
+                            <div
+                                className="col-lg-12"
+                                style={{ textAlign: "right" }}
+                            >
+                                <CreditsBalance
+                                    api={client}
+                                    apisocket={apiSocket}
+                                />
                             </div>
                         </div>
 
@@ -199,6 +205,24 @@ function App() {
                                     apiSocket={apiSocket}
                                     assetsUrl={assetsUrl}
                                     localImages={localImages}
+                                />
+                            </Route>
+                            <Route path="/stripe-success">
+                                <Homepage
+                                    api={client}
+                                    apiSocket={apiSocket}
+                                    assetsUrl={assetsUrl}
+                                    localImages={localImages}
+                                    paymentStatus="success"
+                                />
+                            </Route>
+                            <Route path="/stripe-cancel">
+                                <Homepage
+                                    api={client}
+                                    apiSocket={apiSocket}
+                                    assetsUrl={assetsUrl}
+                                    localImages={localImages}
+                                    paymentStatus="canceled"
                                 />
                             </Route>
                             <Route path="/images/:id">
@@ -240,9 +264,7 @@ function App() {
                                 />
                             </Route>
                             <Route path="/local-deleted-images">
-                                <LocalDeletedImages
-                                    localImages={localImages}
-                                />
+                                <LocalDeletedImages localImages={localImages} />
                             </Route>
                             <Route path="/pricing">
                                 <PricingPage api={client} />
@@ -294,7 +316,9 @@ function App() {
                             >
                                 Contact
                             </a>
-                            <span style={{ float: "right", marginRight: "50px" }}>
+                            <span
+                                style={{ float: "right", marginRight: "50px" }}
+                            >
                                 Powered by the{" "}
                                 <a
                                     href="https://stablehorde.net/"
