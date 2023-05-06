@@ -53,7 +53,7 @@ describe("backend stripe sessions", () => {
         let sessionId: string;
 
         beforeEach(async () => {
-            sessionId = await backendService.createStripeSession(
+            const result = await backendService.createStripeSession(
                 "test@test.test",
                 {
                     product_id: "starter",
@@ -61,6 +61,7 @@ describe("backend stripe sessions", () => {
                     cancel_url: "http://localhost:3001/stripe-cancel",
                 }
             );
+            sessionId = result.session_id;
         });
 
         it("should return a session id", async () => {
