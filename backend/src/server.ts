@@ -444,6 +444,21 @@ export class Server {
             );
         }
 
+        // stripe webhook is anonymous too. Signature is verified in backend service
+        this.app.post(
+            "/api/stripe-webhook",
+            withMetrics("/api/stripe-webhook", async (req, res) => {
+                const sig = req.headers["stripe-signature"] as string;
+                try {
+                    await this.backendService.handleStripeEvent(req.body, sig);
+                } catch (err) {
+                    this.logger.log("Error handling stripe event", err);
+                    res.sendStatus(400);
+                    return;
+                }
+            })
+        );
+
         this.app.get(
             "/api/features",
             withMetrics("/api/features", async (req, res) => {
@@ -911,20 +926,6 @@ export class Server {
                     req.body
                 );
                 res.status(201).json(session);
-            })
-        );
-
-        this.app.post(
-            "/api/stripe-webhook",
-            withMetrics("/api/stripe-webhook", async (req, res) => {
-                const sig = req.headers["stripe-signature"] as string;
-                try {
-                    await this.backendService.handleStripeEvent(req.body, sig);
-                } catch (err) {
-                    this.logger.log("Error handling stripe event", err);
-                    res.sendStatus(400);
-                    return;
-                }
             })
         );
 
