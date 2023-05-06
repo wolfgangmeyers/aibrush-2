@@ -26,6 +26,7 @@ import {
     DepositCode,
     CreateDepositCodeInput,
     CreateStripeSessionInput,
+    StripeSession,
 } from "./client/api";
 import { sleep } from "./sleep";
 import { EmailMessage } from "./email_message";
@@ -1671,7 +1672,7 @@ export class BackendService {
     async createStripeSession(
         userId: string,
         input: CreateStripeSessionInput,
-    ): Promise<string> {
+    ): Promise<StripeSession> {
         userId = hash(userId);
         const user = await this.getUser(userId);
         const sessionId = await this.stripeHelper.createCheckoutSession(
@@ -1686,7 +1687,9 @@ export class BackendService {
                 `INSERT INTO stripe_sessions (session_id, user_id, created_at) VALUES ($1, $2, $3)`,
                 [sessionId, userId, this.clock.now().valueOf()]
             );
-            return sessionId;
+            return {
+                session_id: sessionId,
+            };
         } finally {
             client.release();
         }
