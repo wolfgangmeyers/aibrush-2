@@ -12,6 +12,7 @@ import * as uuid from "uuid";
 import Bugsnag from "@bugsnag/js";
 import BugsnagPluginExpress from "@bugsnag/plugin-express";
 import axios from "axios";
+import rateLimit from "express-rate-limit";
 
 if (process.env.BUGSNAG_API_KEY) {
     Bugsnag.start({
@@ -169,6 +170,13 @@ export class Server {
         );
         this.app.use(cors());
         this.app.use(cookies());
+
+        const limiter = rateLimit({
+            windowMs: 60 * 1000,
+            max: 60,
+            message: "Too many requests from this IP, please try again later",
+        });
+        this.app.use(limiter);
 
         // implement and add middleware to force https only when the host is not localhost
         this.app.use((req, res, next) => {
