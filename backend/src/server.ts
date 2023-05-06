@@ -970,7 +970,7 @@ export class Server {
 
                 this.resetCreditsHandle = setInterval(async () => {
                     await this.backendService.resetFreeCredits();
-                });
+                }, 1000 * 60 * 60);
             });
 
             let lastIdle = 0;
