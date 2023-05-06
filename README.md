@@ -1,6 +1,6 @@
 # aibrush
 AiBrush is a web-based tool for AI-based
-creation of artwork. It is currently powered by Stable Diffusion and SwinIR.
+creation of artwork.
 You can try it out for free at https://www.aibrush.art
 
 This is the second iteration of AiBrush (you can also check out the non-functional [first iteration](https://github.com/wolfgangmeyers/aibrush) based on [Big Sleep](https://github.com/lucidrains/big-sleep)).
