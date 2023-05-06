@@ -227,6 +227,7 @@ export class Server {
                 const sig = req.headers["stripe-signature"] as string;
                 try {
                     await this.backendService.handleStripeEvent(req.body, sig);
+                    res.sendStatus(200);
                 } catch (err) {
                     this.logger.log("Error handling stripe event", err);
                     res.sendStatus(400);
