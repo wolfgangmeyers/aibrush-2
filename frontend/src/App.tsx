@@ -165,7 +165,7 @@ function App() {
                                         {/* Link to discord */}
                                         <a
                                             className="btn btn-primary top-button"
-                                            href="https://discord.gg/VPYyAJBkhC"
+                                            href="https://discord.gg/HYcFpDeqKJ"
                                             target="_blank"
                                         >
                                             {/* font awesome discord icon */}
