@@ -7,9 +7,9 @@ const productToPriceId = {
 };
 
 const priceIdToCredits = {
-    price_1N4UbAC2IU2ctHz6r6eoJ1BE: 300,
-    price_1N4UbpC2IU2ctHz6IzDX3ScZ: 2000,
-    price_1N4UcIC2IU2ctHz6xqGVQ8iw: 6000,
+    price_1N4aooC2IU2ctHz6KEfr4HLk: 300,
+    price_1N4apZC2IU2ctHz6qgWuj6Bn: 2000,
+    price_1N4aqMC2IU2ctHz6iWyy7dvn: 6000,
 };
 
 export interface StripeHelper {
