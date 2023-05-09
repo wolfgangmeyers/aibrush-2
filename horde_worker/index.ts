@@ -194,9 +194,11 @@ async function processRequest(request: HordeRequest) {
             request.authToken
         );
         let prompt = await addTrigger(request.prompt, request.model);
-        const negativePrompt = stripWeightsFromPrompt(request.negativePrompt);
+        prompt = prompt.trim();
+        let negativePrompt = stripWeightsFromPrompt(request.negativePrompt);
         if (negativePrompt.length > 0) {
-            prompt = `${prompt} ### ${negativePrompt}`;
+            negativePrompt = negativePrompt.trim();
+            prompt = `${prompt}###${negativePrompt}`;
         }
         prompt = stripBlacklistedTerms(request.nsfw, prompt);
         console.log(prompt);
