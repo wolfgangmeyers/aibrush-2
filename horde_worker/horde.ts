@@ -28,7 +28,7 @@ export interface HordeRequestPayload {
         seed?: string;
     };
     prompt: string;
-    api_key: string;
+    api_key?: string;
     nsfw: boolean;
     censor_nsfw: boolean;
     trusted_workers: boolean;

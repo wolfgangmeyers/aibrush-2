@@ -482,11 +482,15 @@ export class Renderer {
         }
     }
 
-    private convertErasureToMask(erasure: ImageData): ImageData {
+    private convertErasureToMask(erasure: ImageData, reverse=false): ImageData {
         // for each pixel, if alpha < 255, set to white, otherwise set to black
         const mask = erasure;
         for (let i = 0; i < erasure.data.length; i += 4) {
-            if (erasure.data[i + 3] < 255) {
+            let white = erasure.data[i + 3] < 255
+            if (reverse) {
+                white = !white
+            }
+            if (white) {
                 mask.data[i] = 255;
                 mask.data[i + 1] = 255;
                 mask.data[i + 2] = 255;
