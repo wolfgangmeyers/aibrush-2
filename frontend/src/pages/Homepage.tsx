@@ -460,7 +460,7 @@ export const Homepage: FC<Props> = ({
             minUpdatedAt = Math.min(minUpdatedAt, image.updated_at);
         });
         // load images in descending order from updated_at
-        const resp = await localImages.listImages(
+        let resp = await localImages.listImages(
             minUpdatedAt - 1,
             "prev",
             100,
@@ -468,11 +468,17 @@ export const Homepage: FC<Props> = ({
         );
         if (resp.length > 0) {
             // combine images with new images and sort by updated_at descending
-            setImages((images) =>
-                [...images, ...resp]
+            setImages((images) => {
+                // filtering is required due to a race condition
+                const imagesById = images.reduce((acc, image) => {
+                    acc[image.id] = image;
+                    return acc;
+                }, {} as { [key: string]: LocalImage });
+                resp = resp.filter((image) => !imagesById[image.id]);
+                return [...images, ...resp]
                     .filter((image) => !image.deleted_at)
-                    .sort(sortImages)
-            );
+                    .sort(sortImages);
+            });
         } else {
             setHasMore(false);
         }

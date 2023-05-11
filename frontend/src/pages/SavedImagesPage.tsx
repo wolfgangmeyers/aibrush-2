@@ -319,7 +319,7 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                     return updatedImages.sort(sortImages);
                 });
             }
-        }
+        };
         apiSocket.addMessageListener(onMessage);
         return () => {
             apiSocket.removeMessageListener(onMessage);
@@ -375,7 +375,7 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
             minUpdatedAt = Math.min(minUpdatedAt, image.updated_at);
         });
         // load images in descending order from updated_at
-        const imagesResult = await savedImagesCache.listImages(
+        let imagesResult = await savedImagesCache.listImages(
             api,
             minUpdatedAt - 1,
             search,
@@ -384,9 +384,16 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
         );
         if (imagesResult && imagesResult.length > 0) {
             // combine images with new images and sort by updated_at descending
-            setImages((images) =>
-                [...images, ...(imagesResult || [])].sort(sortImages)
-            );
+            setImages((images) => {
+                const imagesById = images.reduce((acc, image) => {
+                    acc[image.id] = image;
+                    return acc;
+                }, {} as { [key: string]: Image });
+                imagesResult = (imagesResult || []).filter(
+                    (image) => !imagesById[image.id]
+                );
+                return [...images, ...(imagesResult || [])].sort(sortImages);
+            });
         } else {
             setHasMore(false);
         }
