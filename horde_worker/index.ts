@@ -149,7 +149,7 @@ function stripWeightsFromPrompt(prompt: string): string {
     return strippedPrompt;
 }
 
-function combinePrompts(prompt, negativePrompt) {
+function combinePrompts(prompt: string, negativePrompt: string): string {
     const separator = "###";
     const maxChars = 1000;
     const maxPromptLength = maxChars - separator.length;
