@@ -2,7 +2,8 @@ import React, { FC, useEffect, useRef, useState } from "react";
 import { Modal } from "react-bootstrap";
 import { CreateImageInput, Image, StatusEnum } from "../client/api";
 import { LocalImage } from "../lib/localImagesStore";
-import { getUpscaleLevel } from "../lib/upscale";
+import CopyToClipboard from "react-copy-to-clipboard";
+import CopyToClipboardIcon from "./CopyToClipboardIcon";
 
 interface ImagePopupProps {
     assetsUrl: string;
@@ -33,10 +34,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
         src = image.imageData;
     }
     let score = image.score;
-    if (
-        image.params.negative_prompt &&
-        image.negative_score != 0
-    ) {
+    if (image.params.negative_prompt && image.negative_score != 0) {
         score -= image.negative_score;
     }
     const [showNSFW, setShowNSFW] = useState(false);
@@ -94,6 +92,9 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     if (!title) {
         title = image.params.prompt!;
     }
+    if (title.indexOf(",") > 0) {
+        title = title.substring(0, title.indexOf(","));
+    }
 
     // if open, show modal with image
     return (
@@ -110,7 +111,10 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                         display: "block",
                         marginLeft: "auto",
                         marginRight: "auto",
-                        filter: (image.nsfw && censorNSFW) && !showNSFW ? "blur(30px)" : "",
+                        filter:
+                            image.nsfw && censorNSFW && !showNSFW
+                                ? "blur(30px)"
+                                : "",
                     }}
                     id={`image-popup-${image.id}`}
                     src={src}
@@ -174,7 +178,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         &nbsp;SAVE
                                     </button>
                                 )}
-                                {(image.nsfw && censorNSFW) && (
+                                {image.nsfw && censorNSFW && (
                                     <button
                                         className="btn btn-primary btn-sm image-popup-button"
                                         onClick={() => setShowNSFW(!showNSFW)}
@@ -196,11 +200,10 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                 %
                             </div> */}
                             <div>
-                                Image dimensions: {image.params.width} x {image.params.height}
+                                Image dimensions: {image.params.width} x{" "}
+                                {image.params.height}
                             </div>
-                            <div>
-                                Model: {image.model}
-                            </div>
+                            <div>Model: {image.model}</div>
                             {image.nsfw && (
                                 <>
                                     <div>
@@ -219,9 +222,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                     {onNSFW && (
                                         <a
                                             href="javascript:void(0)"
-                                            onClick={() =>
-                                                onNSFW(image, false)
-                                            }
+                                            onClick={() => onNSFW(image, false)}
                                         >
                                             Mark as Safe for Work
                                         </a>
@@ -229,9 +230,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                 </>
                             )}
                             {image.params.seed && (
-                                <div>
-                                    Seed: {image.params.seed}
-                                </div>
+                                <div>Seed: {image.params.seed}</div>
                             )}
                             {!image.nsfw && (
                                 <>
@@ -251,15 +250,21 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                     {onNSFW && (
                                         <a
                                             href="javascript:void(0)"
-                                            onClick={() =>
-                                                onNSFW(image, true)
-                                            }
+                                            onClick={() => onNSFW(image, true)}
                                         >
                                             Mark as Not Safe for Work
                                         </a>
                                     )}
                                 </>
                             )}
+                            <div style={{marginTop: "8px"}}>
+                                Prompt: {image.params.prompt}
+                                <CopyToClipboardIcon text={image.params.prompt!} />
+                            </div>
+                            <div style={{marginTop: "8px"}}>
+                                Negative Prompt: {image.params.negative_prompt}
+                                <CopyToClipboardIcon text={image.params.negative_prompt!} />
+                            </div>
                         </div>
                     </div>
                 </div>

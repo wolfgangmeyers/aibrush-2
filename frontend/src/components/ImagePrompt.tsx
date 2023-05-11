@@ -16,6 +16,8 @@ import { SeedInput } from "./SeedInput";
 import ModelSelector from "./ModelSelector";
 import { calculateImagesCost } from "../lib/credits";
 import { CostIndicator } from "./CostIndicator";
+import { recentPrompts, recentNegativePrompts } from "../lib/recentList";
+import TextInputWithHistory from "./TextInputWithHistory";
 
 interface Props {
     api: AIBrushApi;
@@ -31,8 +33,8 @@ interface Props {
 export function defaultArgs(): CreateImageInput {
     return {
         params: {
-            prompt: "a painting of a happy corgi wearing sunglasses",
-            negative_prompt: defaultNegativePrompt,
+            prompt: "",
+            negative_prompt: defaultNegativePrompt(),
             width: 512,
             height: 512,
             steps: 20,
@@ -46,8 +48,9 @@ export function defaultArgs(): CreateImageInput {
     };
 }
 
-const defaultNegativePrompt =
-    "low quality, distorted, deformed, dull, boring, plain, ugly, noise";
+function defaultNegativePrompt(): string {
+    return recentNegativePrompts.getItems()[0] || "low quality, distorted, deformed, dull, boring, plain, ugly, noise";
+}
 
 export const ImagePrompt: FC<Props> = ({
     api,
@@ -60,7 +63,7 @@ export const ImagePrompt: FC<Props> = ({
 }) => {
     const [prompt, setPrompt] = useState<string>("");
     const [negativePrompt, setNegativePrompt] = useState<string>(
-        defaultNegativePrompt
+        defaultNegativePrompt()
     );
     const [count, setCount] = useState<number>(4);
     const [variationStrength, setVariationStrength] = useState<number>(0.75);
@@ -93,7 +96,7 @@ export const ImagePrompt: FC<Props> = ({
 
     const resetState = () => {
         setPrompt("");
-        setNegativePrompt(defaultNegativePrompt);
+        setNegativePrompt(recentNegativePrompts.getItems()[0] || defaultNegativePrompt);
         // setCount(4);
         setAdvancedView(false);
         setParentId(null);
@@ -106,6 +109,9 @@ export const ImagePrompt: FC<Props> = ({
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        if (negativePrompt) {
+            recentNegativePrompts.addItem(negativePrompt);
+        }
         e.preventDefault();
         const args = defaultArgs();
         args.params.prompt = prompt || "";
@@ -150,6 +156,9 @@ export const ImagePrompt: FC<Props> = ({
         if (!encodedImage) {
             console.error("Cannot edit without existing image");
             return;
+        }
+        if (negativePrompt) {
+            recentNegativePrompts.addItem(negativePrompt);
         }
         const args = defaultArgs();
         args.params.prompt = prompt || "";
@@ -240,7 +249,7 @@ export const ImagePrompt: FC<Props> = ({
             }
             setPrompt(parent.params.prompt || "");
             setNegativePrompt(
-                parent.params.negative_prompt || defaultNegativePrompt
+                parent.params.negative_prompt || defaultNegativePrompt()
             );
             setCount(4);
             setParentId(parent.id);
@@ -442,7 +451,7 @@ export const ImagePrompt: FC<Props> = ({
                             <label htmlFor="negativePrompt">
                                 Negative Prompt
                             </label>
-                            <input
+                            {/* <input
                                 type="text"
                                 className="form-control"
                                 id="negativePrompt"
@@ -451,6 +460,11 @@ export const ImagePrompt: FC<Props> = ({
                                 onChange={(e) =>
                                     setNegativePrompt(e.target.value)
                                 }
+                            /> */}
+                            <TextInputWithHistory
+                                history={recentNegativePrompts.getItems()}
+                                value={negativePrompt}
+                                onChange={setNegativePrompt}
                             />
                             <span className="helptext">
                                 Try descriptive words like "blurry" or

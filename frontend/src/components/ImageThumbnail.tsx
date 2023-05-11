@@ -31,6 +31,9 @@ export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, censorNSFW, bulkDe
     if (image.label === "") {
         label = image.params.prompt || "";
     }
+    if (label.indexOf(",") !== -1) {
+        label = label.substring(0, label.indexOf(","));
+    }
     
     let className = "image-thumbnail";
     if (bulkDelete) {

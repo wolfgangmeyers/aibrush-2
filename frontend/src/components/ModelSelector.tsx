@@ -4,7 +4,7 @@ import axios from "axios";
 import { AIBrushApi, StableDiffusionModel } from "../client";
 import { ModelList } from "./ModelList";
 import { useCache } from "../lib/localcache";
-import { RecentModels } from "../lib/recentModels";
+import { recentModels } from "../lib/recentList";
 
 const httpclient = axios.create();
 
@@ -15,7 +15,7 @@ interface ModelSelectorProps {
     onCancel: () => void;
 }
 
-const recentModels = new RecentModels("recent-models", 20);
+
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({
     api,
@@ -24,7 +24,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     onCancel,
 }) => {
     const [models, setModels] = useCache<StableDiffusionModel[]>("models", []);
-    const [selectedModel, setSelectedModel] = useState<StableDiffusionModel | null>(null);
+    const [selectedModel, setSelectedModel] =
+        useState<StableDiffusionModel | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
 
     const filteredModels = models.filter((model) =>
@@ -47,11 +48,13 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     };
 
     useEffect(() => {
+        const setSortedModels = (
+            selectedModel: StableDiffusionModel,
+            models: StableDiffusionModel[]
+        ) => {
+            recentModels.addItem(selectedModel.name);
 
-        const setSortedModels = (selectedModel: StableDiffusionModel, models: StableDiffusionModel[]) => {
-            recentModels.addModel(selectedModel.name);
-
-            const recentModelNames = recentModels.getModels();
+            const recentModelNames = recentModels.getItems();
             // map from model name to index
             const recentModelIndices: { [key: string]: number } = {};
             recentModelNames.forEach((name, index) => {
@@ -73,23 +76,32 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             });
 
             setModels(sortedModels);
-        }
+        };
 
         if (!models || models.length === 0) {
             api.getModels().then((res) => {
                 console.log(res);
-                const selectedModel = res.data[initialSelectedModel] || Object.values(res.data)[0]
+                const selectedModel =
+                    res.data[initialSelectedModel] ||
+                    Object.values(res.data)[0];
                 console.log("Selected model:", selectedModel);
                 setSelectedModel(selectedModel);
                 setSortedModels(selectedModel, Object.values(res.data));
             });
         } else {
-            const selectedModel = models.find((model) => model.name === initialSelectedModel) ||
-                models[0]
+            const selectedModel =
+                models.find((model) => model.name === initialSelectedModel) ||
+                models[0];
             setSelectedModel(selectedModel);
-            setSortedModels(selectedModel, models)
+            setSortedModels(selectedModel, models);
         }
     }, [api, models]);
+
+    useEffect(() => {
+        if (initialSelectedModel) {
+            recentModels.addItem(initialSelectedModel);
+        }
+    }, [initialSelectedModel]);
 
     return (
         <>
@@ -117,15 +129,16 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                 <>
                                     <h5>{selectedModel.name}</h5>
                                     <p>{selectedModel.description}</p>
-                                    {selectedModel.showcases && selectedModel.showcases.length > 0 && (
-                                        <img
-                                            src={selectedModel.showcases[0]}
-                                            alt="Showcase"
-                                            style={{
-                                                width: "70%",
-                                            }}
-                                        />
-                                    )}
+                                    {selectedModel.showcases &&
+                                        selectedModel.showcases.length > 0 && (
+                                            <img
+                                                src={selectedModel.showcases[0]}
+                                                alt="Showcase"
+                                                style={{
+                                                    width: "70%",
+                                                }}
+                                            />
+                                        )}
                                 </>
                             )}
                         </Col>
