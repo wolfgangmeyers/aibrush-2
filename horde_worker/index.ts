@@ -109,38 +109,6 @@ const hordeBaseUrl = "https://stablehorde.net/api";
 const queueUrl = process.env.HORDE_QUEUE_URL;
 const paidQueueUrl = process.env.PAID_HORDE_QUEUE_URL;
 
-const blacklisted_terms = ["loli"];
-
-const blacklisted_nsfw_terms = [
-    "child",
-    "teen",
-    "girl",
-    "boy",
-    "young",
-    "youth",
-    "underage",
-    "infant",
-    "baby",
-    "under 18",
-    "daughter",
-    "year-old",
-    "year old",
-];
-
-// refactor to typescript:
-function stripBlacklistedTerms(nsfw: boolean, prompt: string): string {
-    prompt = prompt.toLocaleLowerCase();
-    for (let term of blacklisted_terms) {
-        prompt = prompt.replace(term, "");
-    }
-    if (nsfw) {
-        for (let term of blacklisted_nsfw_terms) {
-            prompt = prompt.replace(term, "");
-        }
-    }
-    return prompt;
-}
-
 const augmentationToForm = {
     upscale: "RealESRGAN_x4plus",
     face_restore: "GFPGAN",
@@ -181,6 +149,43 @@ function stripWeightsFromPrompt(prompt: string): string {
     return strippedPrompt;
 }
 
+function combinePrompts(prompt, negativePrompt) {
+    const separator = "###";
+    const maxChars = 1000;
+    const maxPromptLength = maxChars - separator.length;
+
+    // If there's no negative prompt, simply truncate the prompt and return it.
+    if (!negativePrompt) {
+        return prompt.substring(0, maxChars);
+    }
+
+    let promptLength = prompt.length;
+    let negativePromptLength = negativePrompt.length;
+
+    if (promptLength + negativePromptLength <= maxPromptLength) {
+        // If the combined length is less than maxPromptLength, no need to truncate
+        return `${prompt}${separator}${negativePrompt}`;
+    }
+
+    // Determine how many characters to take from each prompt
+    let halfLength = Math.floor(maxPromptLength / 2);
+    if (promptLength <= halfLength) {
+        // If the prompt is shorter than half length, take all of it and truncate the negative prompt
+        negativePromptLength = maxPromptLength - promptLength;
+    } else if (negativePromptLength <= halfLength) {
+        // If the negative prompt is shorter than half length, take all of it and truncate the prompt
+        promptLength = maxPromptLength - negativePromptLength;
+    } else {
+        // If both prompts are longer than half length, truncate both
+        promptLength = negativePromptLength = halfLength;
+    }
+
+    // Truncate prompts and combine
+    prompt = prompt.substring(0, promptLength);
+    negativePrompt = negativePrompt.substring(0, negativePromptLength);
+    return `${prompt}${separator}${negativePrompt}`;
+}
+
 async function processRequest(request: HordeRequest) {
     const metricParams = {
         model: request.model,
@@ -196,11 +201,8 @@ async function processRequest(request: HordeRequest) {
         let prompt = await addTrigger(request.prompt, request.model);
         prompt = prompt.trim();
         let negativePrompt = stripWeightsFromPrompt(request.negativePrompt);
-        if (negativePrompt.length > 0) {
-            negativePrompt = negativePrompt.trim();
-            prompt = `${prompt}###${negativePrompt}`;
-        }
-        prompt = stripBlacklistedTerms(request.nsfw, prompt);
+        negativePrompt = negativePrompt.trim();
+        prompt = combinePrompts(prompt, negativePrompt);
         console.log(prompt);
 
         const imageExistsPromise = imageExists(
