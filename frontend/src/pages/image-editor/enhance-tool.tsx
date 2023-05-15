@@ -26,6 +26,7 @@ import { supportedModels } from "../../lib/supportedModels";
 import { ProgressBar } from "../../components/ProgressBar";
 import { calculateImagesCost } from "../../lib/credits";
 import { CostIndicator } from "../../components/CostIndicator";
+import ModelSelector from "../../components/ModelSelector";
 
 const anonymousClient = axios.create();
 
@@ -497,7 +498,7 @@ export class EnhanceTool extends BaseTool implements Tool {
                     }
                 }
             }
-        }
+        };
         apisocket.addMessageListener(onMessage);
         try {
             let startTime = moment();
@@ -532,9 +533,12 @@ export class EnhanceTool extends BaseTool implements Tool {
                         )
                         .map((img) => img.id);
                     console.log("Checking pending images", pendingIds);
-                    const updatedImagesResult = await api.batchGetImages(undefined, {
-                        ids: pendingIds,
-                    });
+                    const updatedImagesResult = await api.batchGetImages(
+                        undefined,
+                        {
+                            ids: pendingIds,
+                        }
+                    );
                     const updatedImages = updatedImagesResult.data.images;
                     const byId = updatedImages!.reduce((acc, img) => {
                         acc[img.id] = img;
@@ -679,6 +683,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
             ? "Epic Diffusion"
             : image.model
     );
+    const [selectingModel, setSelectingModel] = useState<boolean>(false);
     const [state, setState] = useState<EnhanceToolState>(tool.state);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -688,10 +693,15 @@ export const EnhanceControls: FC<ControlsProps> = ({
     tool.onError(setError);
     tool.onDirty(setDirty);
 
-    const selectionOverlay: Rect = tool.selectionTool.getArgs().selectionOverlay;
+    const selectionOverlay: Rect =
+        tool.selectionTool.getArgs().selectionOverlay;
     let cost = count;
     if (selectionOverlay) {
-        cost = calculateImagesCost(count, selectionOverlay.width, selectionOverlay.height);
+        cost = calculateImagesCost(
+            count,
+            selectionOverlay.width,
+            selectionOverlay.height
+        );
     }
 
     if (state == "processing" || state == "uploading") {
@@ -824,7 +834,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     </div>
                     <div className="form-group">
                         <label htmlFor="model">Model</label>
-                        <select
+                        {/* <select
                             className="form-control"
                             id="model"
                             value={model}
@@ -835,7 +845,17 @@ export const EnhanceControls: FC<ControlsProps> = ({
                                     {model}
                                 </option>
                             ))}
-                        </select>
+                        </select> */}
+                        <div>
+                            <button
+                                type="button"
+                                className="btn btn-secondary light-button"
+                                onClick={() => setSelectingModel(true)}
+                            >
+                                {model}&nbsp;
+                                <i className="fas fa-caret-down"></i>
+                            </button>
+                        </div>
                         <small className="form-text text-muted">
                             Select the model to use
                         </small>
@@ -924,6 +944,14 @@ export const EnhanceControls: FC<ControlsProps> = ({
                 when={dirty}
                 message="Are you sure you want to leave? Your changes will be lost."
             />
+            {selectingModel && (
+                <ModelSelector
+                    api={api}
+                    onCancel={() => setSelectingModel(false)}
+                    onSelectModel={model => {setModel(model); setSelectingModel(false)}}
+                    initialSelectedModel={model}
+                />
+            )}
         </div>
     );
 };
