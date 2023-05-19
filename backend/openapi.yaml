@@ -635,6 +635,9 @@ components:
         available:
           type: boolean
           description: Whether the model is available for use
+        inpainting:
+          type: boolean
+          description: Whether the model is an inpainting model
       required:
         - name
         - baseline
@@ -648,6 +651,7 @@ components:
         - download_all
         - config
         - available
+        - inpainting
     StatusEnum:
       type: string
       enum:

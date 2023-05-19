@@ -27,6 +27,8 @@ import { ProgressBar } from "../../components/ProgressBar";
 import { calculateImagesCost } from "../../lib/credits";
 import { CostIndicator } from "../../components/CostIndicator";
 import ModelSelector from "../../components/ModelSelector";
+import { PencilTool } from "./pencil-tool";
+import { MaskEditor } from "./mask-editor-controls";
 
 const anonymousClient = axios.create();
 
@@ -36,7 +38,8 @@ type EnhanceToolState =
     | "uploading"
     | "processing"
     | "confirm"
-    | "erase";
+    | "erase"
+    | "mask";
 
 // eraser width modifier adds a solid core with a feather edge
 // equal to the what is used on enhanced selections
@@ -48,6 +51,8 @@ interface ImageWithData extends APIImage {
 
 export class EnhanceTool extends BaseTool implements Tool {
     readonly selectionTool: SelectionTool;
+    readonly pencilTool: PencilTool;
+
     private prompt: string = "";
     private negativePrompt: string = "";
     private model: string = "Epic Diffusion";
@@ -104,6 +109,9 @@ export class EnhanceTool extends BaseTool implements Tool {
             if (this._state == "select") {
                 this.selectionTool.destroy();
             }
+            if (this._state === "mask") {
+                this.renderer.setCursor(undefined);
+            }
             if (this._state === "erase") {
                 this.renderer.setCursor(undefined);
             }
@@ -135,6 +143,12 @@ export class EnhanceTool extends BaseTool implements Tool {
     constructor(renderer: Renderer) {
         super(renderer, "enhance");
         this.selectionTool = new SelectionTool(renderer);
+        this.pencilTool = new PencilTool(
+            renderer,
+            "mask",
+            "#000000",
+            "mask-editor"
+        );
         if (this.selectSupported()) {
             this.state = "select";
         } else {
@@ -153,12 +167,20 @@ export class EnhanceTool extends BaseTool implements Tool {
             };
         }
         this.selectionTool.updateArgs(selectionArgs);
+        this.pencilTool.updateArgs({
+            ...this.pencilTool.getArgs(),
+            brushColor: "#000000",
+        });
         this.worker = new ImageUtilWorker();
     }
 
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
         if (this.state == "select") {
             this.selectionTool.onMouseDown(event);
+            return;
+        }
+        if (this.state == "mask") {
+            this.pencilTool.onMouseDown(event);
             return;
         }
         let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
@@ -260,6 +282,10 @@ export class EnhanceTool extends BaseTool implements Tool {
             this.selectionTool.onMouseMove(event);
             return;
         }
+        if (this.state == "mask") {
+            this.pencilTool.onMouseMove(event);
+            return;
+        }
         let { x, y } = this.zoomHelper.translateMouseToCanvasCoordinates(
             event.nativeEvent.offsetX,
             event.nativeEvent.offsetY
@@ -278,6 +304,9 @@ export class EnhanceTool extends BaseTool implements Tool {
         if (this.state == "select") {
             this.selectionTool.onMouseUp(event);
         }
+        if (this.state == "mask") {
+            this.pencilTool.onMouseUp(event);
+        }
         this.panning = false;
         this.erasing = false;
     }
@@ -285,6 +314,9 @@ export class EnhanceTool extends BaseTool implements Tool {
     onMouseLeave(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>): void {
         if (this.state == "select") {
             this.selectionTool.onMouseLeave(event);
+        }
+        if (this.state == "mask") {
+            this.pencilTool.onMouseLeave(event);
         }
         this.panning = false;
         this.erasing = false;
@@ -396,6 +428,19 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.state = "erase";
     }
 
+    mask() {
+        if (this.renderer.isMasked()) {
+            this.renderer.deleteMask();
+        }
+        this.renderer.createMask();
+        this.state = "mask";
+    }
+
+    deleteMask() {
+        this.renderer.deleteMask();
+        this.state = "default";
+    }
+
     private updateProgress(progress: number) {
         if (this.progressListener) {
             this.progressListener(progress);
@@ -411,8 +456,11 @@ export class EnhanceTool extends BaseTool implements Tool {
             console.error("No selection");
             return;
         }
+        let encodedMask: string | undefined;
+        if (this.renderer.isMasked()) {
+            encodedMask = this.renderer.getEncodedMask(selectionOverlay!, "mask");
+        }
 
-        const baseImageData = this.renderer.getImageData(selectionOverlay!)!;
         const input: CreateImageInput = defaultArgs();
 
         const tmpInitImage = await api.createTemporaryImage();
@@ -428,13 +476,31 @@ export class EnhanceTool extends BaseTool implements Tool {
                     "Content-Type": "image/png",
                 },
                 onUploadProgress: (progressEvent: any) => {
-                    const percentCompleted =
+                    let percentCompleted =
                         progressEvent.loaded / progressEvent.total;
+                    if (encodedMask) {
+                        percentCompleted /= 2;
+                    }
                     this.updateProgress(percentCompleted);
                 },
             }
         );
         input.tmp_image_id = tmpInitImage.data.id;
+
+        if (encodedMask) {
+            const tmpMaskImage = await api.createTemporaryImage();
+            const binaryMaskData = Buffer.from(encodedMask, "base64");
+            await anonymousClient.put(tmpMaskImage.data.upload_url, binaryMaskData, {
+                headers: {
+                    "Content-Type": "image/png",
+                },
+                onUploadProgress: (progressEvent: any) => {
+                    let percentCompleted = 0.5 + progressEvent.loaded / progressEvent.total / 2;
+                    this.updateProgress(percentCompleted);
+                },
+            });
+            input.tmp_mask_id = tmpMaskImage.data.id;
+        }
 
         input.label = "";
         input.parent = image.id;
@@ -872,6 +938,15 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     undesired sections before saving
                 </p>
             )}
+            {state === "mask" && (
+                <MaskEditor
+                    onConfirm={() => (tool.state = "default")}
+                    onRevert={() => {
+                        tool.deleteMask();
+                    }}
+                    tool={tool.pencilTool}
+                />
+            )}
 
             <div className="form-group">
                 {state === "select" && (
@@ -922,22 +997,40 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     </>
                 )}
                 {state === "default" && (
-                    <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => {
-                            tool.updateArgs({
-                                count,
-                                variationStrength,
-                                prompt,
-                                negativePrompt,
-                                model,
-                            });
-                            tool.submit(api, apisocket, image);
-                        }}
-                        style={{ marginRight: "8px" }}
-                    >
-                        <i className="fa fa-magic"></i>&nbsp; Enhance
-                    </button>
+                    <>
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => {
+                                tool.updateArgs({
+                                    count,
+                                    variationStrength,
+                                    prompt,
+                                    negativePrompt,
+                                    model,
+                                });
+                                tool.submit(api, apisocket, image);
+                            }}
+                            style={{ marginRight: "8px" }}
+                        >
+                            <i className="fa fa-magic"></i>&nbsp; Enhance
+                        </button>
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => tool.mask()}
+                            style={{ marginRight: "8px" }}
+                        >
+                            <i className="fa fa-cut"></i>&nbsp; Mask
+                        </button>
+                        {tool.renderer.isMasked() && (
+                            <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => tool.renderer.deleteMask()}
+                                style={{ marginRight: "8px" }}
+                            >
+                                <i className="fa fa-cut"></i>&nbsp; Unmask
+                            </button>
+                        )}
+                    </>
                 )}
             </div>
             <Prompt
@@ -948,8 +1041,12 @@ export const EnhanceControls: FC<ControlsProps> = ({
                 <ModelSelector
                     api={api}
                     onCancel={() => setSelectingModel(false)}
-                    onSelectModel={model => {setModel(model); setSelectingModel(false)}}
+                    onSelectModel={(model) => {
+                        setModel(model);
+                        setSelectingModel(false);
+                    }}
                     initialSelectedModel={model}
+                    inpainting={false}
                 />
             )}
         </div>

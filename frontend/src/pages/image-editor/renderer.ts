@@ -10,6 +10,7 @@ export class Renderer {
     private backgroundLayer: HTMLCanvasElement;
     private baseImageLayer: HTMLCanvasElement;
     private editLayer: HTMLCanvasElement;
+    private maskLayer: HTMLCanvasElement | undefined;
     // private overlayLayer: HTMLCanvasElement;
 
     private selectionOverlay: Rect | undefined;
@@ -146,10 +147,44 @@ export class Renderer {
             // context.drawImage(this.backgroundLayer, 0, 0);
             context.drawImage(this.baseImageLayer, 0, 0);
             context.drawImage(this.editLayer, 0, 0);
+            // draw this.maskLayer at 0.3 opacity
+            if (this.maskLayer) {
+                context.globalAlpha = 0.3;
+                context.drawImage(this.maskLayer, 0, 0);
+                context.globalAlpha = 1;
+            }
+
             // context.drawImage(this.overlayLayer, 0, 0);
             this.drawOverlay(context, this.width, this.height);
             context.setTransform(1, 0, 0, 1, 0, 0);
         }
+    }
+
+    createMask() {
+        this.maskLayer = document.createElement("canvas");
+        this.maskLayer.width = this.width;
+        this.maskLayer.height = this.height;
+        this.resetMask();
+    }
+
+    resetMask() {
+        if (this.maskLayer) {
+            const ctx = this.maskLayer.getContext("2d");
+            if (ctx) {
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillRect(0, 0, this.width, this.height);
+            }
+            this.render();
+        }
+    }
+
+    deleteMask() {
+        this.maskLayer = undefined;
+        this.render();
+    }
+
+    isMasked() {
+        return this.maskLayer !== undefined;
     }
 
     getCanvas(): HTMLCanvasElement {
@@ -213,6 +248,7 @@ export class Renderer {
             this.baseImageLayer.height = image.height;
             this.editLayer.width = image.width;
             this.editLayer.height = image.height;
+            this.maskLayer = undefined;
             // set image size
             this.width = image.width;
             this.height = image.height;
@@ -482,14 +518,13 @@ export class Renderer {
         }
     }
 
-    private convertErasureToMask(erasure: ImageData, reverse=false): ImageData {
+    private convertErasureToMask(
+        erasure: ImageData,
+    ): ImageData {
         // for each pixel, if alpha < 255, set to white, otherwise set to black
         const mask = erasure;
         for (let i = 0; i < erasure.data.length; i += 4) {
-            let white = erasure.data[i + 3] < 255
-            if (reverse) {
-                white = !white
-            }
+            let white = erasure.data[i + 3] < 255;
             if (white) {
                 mask.data[i] = 255;
                 mask.data[i + 1] = 255;
@@ -505,13 +540,26 @@ export class Renderer {
         return mask;
     }
 
-    getEncodedMask(selection: Rect | null): string | undefined {
-        const imageData = this.getImageData(selection)!;
-        const mask = this.convertErasureToMask(imageData);
-        return this.imageDataToEncodedImage(mask);
+    getEncodedMask(
+        selection: Rect | null,
+        layer: "base" | "mask" = "base"
+    ): string | undefined {
+        const imageData = this.getImageData(selection, layer)!;
+        if (!imageData) {
+            return;
+        }
+        if (layer === "base") {
+            const mask = this.convertErasureToMask(imageData);
+            return this.imageDataToEncodedImage(mask);
+        } else {
+            return this.imageDataToEncodedImage(imageData);
+        }
     }
 
-    getImageData(selection: Rect | null): ImageData | undefined {
+    getImageData(
+        selection: Rect | null,
+        layer: "base" | "mask" = "base"
+    ): ImageData | undefined {
         if (!selection) {
             selection = {
                 x: 0,
@@ -521,7 +569,12 @@ export class Renderer {
             };
         }
         // get image data of the selection
-        let context = this.baseImageLayer.getContext("2d");
+        const imageLayer =
+            layer === "base" ? this.baseImageLayer : this.maskLayer;
+        if (!imageLayer) {
+            return;
+        }
+        let context = imageLayer.getContext("2d");
         if (context) {
             const imageData = context.getImageData(
                 selection.x,
@@ -543,9 +596,13 @@ export class Renderer {
         }
     }
 
-    drawPoint(x: number, y: number, brushSize: number, color: string): void {
+    drawPoint(x: number, y: number, brushSize: number, color: string, layer: "base" | "mask" = "base"): void {
         // draw on selection layer
-        const context = this.editLayer.getContext("2d");
+        const imageLayer = layer === "base" ? this.editLayer : this.maskLayer;
+        if (!imageLayer) {
+            return;
+        }
+        const context = imageLayer.getContext("2d");
         if (context) {
             context.fillStyle = color;
             context.beginPath();
@@ -627,10 +684,15 @@ export class Renderer {
         x2: number,
         y2: number,
         brushSize: number,
-        color: string
+        color: string,
+        layer: "base" | "mask" = "base"
     ): void {
+        const imageLayer = layer === "base" ? this.editLayer : this.maskLayer;
+        if (!imageLayer) {
+            return;
+        }
         // draw on selection layer
-        const context = this.editLayer.getContext("2d");
+        const context = imageLayer.getContext("2d");
         if (context) {
             context.strokeStyle = color;
             context.lineWidth = brushSize;

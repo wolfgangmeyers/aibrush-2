@@ -651,6 +651,7 @@ export const ImagePrompt: FC<Props> = ({
                     onCancel={() => setSelectingModel(false)}
                     onSelectModel={onSelectModel}
                     initialSelectedModel={model}
+                    inpainting={false}
                 />
             )}
         </form>

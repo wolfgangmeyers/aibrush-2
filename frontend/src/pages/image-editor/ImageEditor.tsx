@@ -10,7 +10,7 @@ import { createRenderer, Renderer } from "./renderer";
 import { Tool, BaseTool } from "./tool";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { EnhanceTool, EnhanceControls } from "./enhance-tool";
-import { PencilTool, Controls as PencilControls } from "./pencil-tool";
+import { PencilTool, Controls as PencilControls, defaultColors } from "./pencil-tool";
 import { SmudgeTool, SmudgeControls } from "./smudge-tool";
 import { ImportExportControls } from "./import-export";
 import { InpaintControls, InpaintTool } from "./inpaint-tool";
@@ -96,13 +96,14 @@ export const ImageEditor: React.FC<Props> = ({
         {
             name: "pencil",
             iconClass: "fas fa-pencil-alt",
-            constructor: (r: Renderer) => new PencilTool(r),
+            constructor: (r: Renderer) => new PencilTool(r, "base"),
             defaultArgs: {},
             renderControls: (t: Tool, renderer: Renderer) => {
                 return (
                     <PencilControls
                         tool={t as PencilTool}
                         renderer={renderer}
+                        colors={defaultColors}
                     />
                 );
             },

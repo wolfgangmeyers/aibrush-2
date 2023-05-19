@@ -817,6 +817,12 @@ export interface StableDiffusionModel {
      * @memberof StableDiffusionModel
      */
     available: boolean;
+    /**
+     * Whether the model is an inpainting model
+     * @type {boolean}
+     * @memberof StableDiffusionModel
+     */
+    inpainting: boolean;
 }
 /**
  * 

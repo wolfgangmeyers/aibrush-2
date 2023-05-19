@@ -13,6 +13,7 @@ interface ModelSelectorProps {
     initialSelectedModel: string;
     onSelectModel: (model: string) => void;
     onCancel: () => void;
+    inpainting: boolean;
 }
 
 
@@ -22,6 +23,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     initialSelectedModel,
     onSelectModel,
     onCancel,
+    inpainting,
 }) => {
     const [models, setModels] = useCache<StableDiffusionModel[]>("models", []);
     const [selectedModel, setSelectedModel] =
@@ -29,7 +31,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     const [searchTerm, setSearchTerm] = useState("");
 
     const filteredModels = models.filter((model) =>
-        model.name.toLowerCase().includes(searchTerm.toLowerCase())
+        model.inpainting === inpainting && model.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleSelect = () => {

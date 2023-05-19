@@ -7,7 +7,7 @@ import { ZoomHelper } from "./zoomHelper";
 import { PaletteButton } from "./PaletteButton";
 import { ColorPicker } from "./ColorPicker";
 
-const defaultColors = [
+export const defaultColors = [
     "#FFFFFF",
     "#5A2C02",
     "#386EB6",
@@ -22,8 +22,6 @@ const defaultColors = [
 
 export class PencilTool extends BaseTool implements Tool {
     private brushSize = 10;
-    private brushColor = defaultColors[0];
-    private palette: string[] = [...defaultColors];
 
     private panning = false;
     private isDrawing = false;
@@ -44,12 +42,16 @@ export class PencilTool extends BaseTool implements Tool {
         return this._dirty;
     }
 
-
     private dirtyListener?: (dirty: boolean) => void;
     private colorPickedListener?: (color: string) => void;
 
-    constructor(renderer: Renderer) {
-        super(renderer, "pencil");
+    constructor(
+        renderer: Renderer,
+        private layer: "base" | "mask",
+        private brushColor = defaultColors[0],
+        name = "pencil"
+    ) {
+        super(renderer, name);
     }
 
     private sync() {
@@ -60,7 +62,7 @@ export class PencilTool extends BaseTool implements Tool {
                 radius: this.renderer.getWidth() / 20,
                 color: this.lastPickedColor,
                 type: "colorpicker",
-            })
+            });
         } else {
             this.renderer.setCursor({
                 x: this.lastX,
@@ -70,14 +72,12 @@ export class PencilTool extends BaseTool implements Tool {
                 type: "circle-fill",
             });
         }
-        
     }
 
     updateArgs(args: any) {
         super.updateArgs(args);
         this.brushSize = args.brushSize || 10;
         this.brushColor = args.brushColor || defaultColors[0];
-        this.palette = args.palette || [...defaultColors];
         this.sync();
     }
 
@@ -90,7 +90,13 @@ export class PencilTool extends BaseTool implements Tool {
                 event.nativeEvent.offsetX,
                 event.nativeEvent.offsetY
             );
-            this.renderer.drawPoint(x, y, this.brushSize, this.brushColor);
+            this.renderer.drawPoint(
+                x,
+                y,
+                this.brushSize,
+                this.brushColor,
+                this.layer
+            );
             this.isDrawing = true;
             this.lastX = x;
             this.lastY = y;
@@ -118,7 +124,8 @@ export class PencilTool extends BaseTool implements Tool {
                     x,
                     y,
                     this.brushSize,
-                    this.brushColor
+                    this.brushColor,
+                    this.layer
                 );
                 this.dirty = true;
             }
@@ -192,6 +199,7 @@ export class PencilTool extends BaseTool implements Tool {
 interface ControlsProps {
     renderer: Renderer;
     tool: PencilTool;
+    colors: string[];
 }
 
 const MAX_PALETTE_SIZE = 30;
@@ -207,10 +215,10 @@ function addToPalette(palette: string[], color: string): string[] {
     return palette;
 }
 
-export const Controls: FC<ControlsProps> = ({ renderer, tool }) => {
+export const Controls: FC<ControlsProps> = ({ renderer, tool, colors }) => {
     const [brushSize, setBrushSize] = useState(10);
-    const [brushColor, setBrushColor] = useState(defaultColors[0]);
-    const [palette, setPalette] = useState(defaultColors);
+    const [brushColor, setBrushColor] = useState(colors[0]);
+    const [palette, setPalette] = useState(colors);
     const [dirty, setDirty] = useState(false);
 
     tool.onDirty(setDirty);
@@ -233,9 +241,12 @@ export const Controls: FC<ControlsProps> = ({ renderer, tool }) => {
     return (
         <div style={{ marginTop: "16px" }}>
             <div className="form-group">
-                <label style={{width: "100%"}}>
+                <label style={{ width: "100%" }}>
                     Brush size
-                    <small className="form-text text-muted" style={{float: "right"}}>
+                    <small
+                        className="form-text text-muted"
+                        style={{ float: "right" }}
+                    >
                         {brushSize}px
                     </small>
                 </label>
@@ -280,10 +291,13 @@ export const Controls: FC<ControlsProps> = ({ renderer, tool }) => {
                     onColorSelected={(color) => onColorSelected(color)}
                 />
             </div>
-            <div className="form-group" style={{
-                marginTop: "16px",
-                visibility: dirty ? "visible" : "hidden",
-            }}>
+            <div
+                className="form-group"
+                style={{
+                    marginTop: "16px",
+                    visibility: dirty ? "visible" : "hidden",
+                }}
+            >
                 <button
                     className="btn btn-secondary"
                     onClick={() => tool.cancel()}
@@ -301,15 +315,3 @@ export const Controls: FC<ControlsProps> = ({ renderer, tool }) => {
         </div>
     );
 };
-
-// TODO list:
-// reset to initial colors
-// color picker
-// eyedropper
-// color history
-
-// zoom/pan
-// actual drawing
-// undo/redo
-// save
-// revert
