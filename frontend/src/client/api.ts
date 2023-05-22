@@ -161,6 +161,12 @@ export interface CreateImageInput {
      * @type {string}
      * @memberof CreateImageInput
      */
+    tmp_jpg_id?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateImageInput
+     */
     tmp_mask_id?: string;
     /**
      * 
@@ -1380,10 +1386,13 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * Create a new temporary image
+         * @param {string} format 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createTemporaryImage: async (options: any = {}): Promise<RequestArgs> => {
+        createTemporaryImage: async (format: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'format' is not null or undefined
+            assertParamExists('createTemporaryImage', 'format', format)
             const localVarPath = `/api/temporary-images`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1395,6 +1404,10 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            if (format !== undefined) {
+                localVarQueryParameter['format'] = format;
+            }
 
 
     
@@ -2285,11 +2298,12 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
         },
         /**
          * Create a new temporary image
+         * @param {string} format 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createTemporaryImage(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TemporaryImage>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createTemporaryImage(options);
+        async createTemporaryImage(format: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TemporaryImage>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createTemporaryImage(format, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2601,11 +2615,12 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * Create a new temporary image
+         * @param {string} format 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createTemporaryImage(options?: any): AxiosPromise<TemporaryImage> {
-            return localVarFp.createTemporaryImage(options).then((request) => request(axios, basePath));
+        createTemporaryImage(format: string, options?: any): AxiosPromise<TemporaryImage> {
+            return localVarFp.createTemporaryImage(format, options).then((request) => request(axios, basePath));
         },
         /**
          * Delete a saved image
@@ -2904,12 +2919,13 @@ export class AIBrushApi extends BaseAPI {
 
     /**
      * Create a new temporary image
+     * @param {string} format 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AIBrushApi
      */
-    public createTemporaryImage(options?: any) {
-        return AIBrushApiFp(this.configuration).createTemporaryImage(options).then((request) => request(this.axios, this.basePath));
+    public createTemporaryImage(format: string, options?: any) {
+        return AIBrushApiFp(this.configuration).createTemporaryImage(format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

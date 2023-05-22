@@ -17,7 +17,7 @@ import {
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
-import { ImageUtilWorker, loadImageDataElement } from "../../lib/imageutil";
+import { convertPNGToJPG, ImageUtilWorker, ImageWorkerRequest, loadImageDataElement } from "../../lib/imageutil";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { getUpscaleLevel } from "../../lib/upscale";
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
@@ -65,6 +65,7 @@ export class EnhanceTool extends BaseTool implements Tool {
     private _state: EnhanceToolState = "default";
     private stateHandler: (state: EnhanceToolState) => void = () => {};
     private selectionControlsListener: (show: boolean) => void = () => {};
+    private maskHandler: (isMasked: boolean) => void = () => {};
 
     private imageData: Array<ImageData> = [];
     private selectedImageDataIndex: number = -1;
@@ -348,6 +349,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.stateHandler = handler;
     }
 
+    onChangeMask(handler: (isMasked: boolean) => void) {
+        this.maskHandler = handler;
+    }
+
     onShowSelectionControls(listener: (show: boolean) => void): void {
         this.selectionControlsListener = listener;
     }
@@ -363,6 +368,7 @@ export class EnhanceTool extends BaseTool implements Tool {
     private async loadImageData(
         api: AIBrushApi,
         imageId: string,
+        maskData: ImageData | undefined,
         selectionOverlay: Rect
     ): Promise<ImageData> {
         const imageElement = await loadImageDataElement(api, imageId);
@@ -387,15 +393,20 @@ export class EnhanceTool extends BaseTool implements Tool {
             selectionOverlay.height
         );
         const id = this.newId();
-        const resp = await this.worker.processRequest({
+        const req: ImageWorkerRequest = {
             id,
-            alpha: false,
+            alphaMode: "none",
             feather: true,
             height: this.renderer.getHeight(),
             width: this.renderer.getWidth(),
             pixels: imageData.data,
             selectionOverlay,
-        });
+        }
+        if (maskData) {
+            req.alphaMode = "mask";
+            req.alphaPixels = maskData.data;
+        }
+        const resp = await this.worker.processRequest(req);
         const updatedImageData = new ImageData(
             resp.pixels,
             imageData.width,
@@ -434,11 +445,15 @@ export class EnhanceTool extends BaseTool implements Tool {
         }
         this.renderer.createMask();
         this.state = "mask";
+        this.maskHandler(true);
     }
 
     deleteMask() {
         this.renderer.deleteMask();
-        this.state = "default";
+        if (this.state == "mask") {
+            this.state = "default";
+        }
+        this.maskHandler(false);
     }
 
     private updateProgress(progress: number) {
@@ -451,19 +466,22 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.dirty = true;
         this.notifyError(null);
         const selectionOverlay = this.renderer.getSelectionOverlay();
-        const encodedImage = this.renderer.getEncodedImage(selectionOverlay!);
+        let encodedImage = this.renderer.getEncodedImage(selectionOverlay!);
         if (!encodedImage) {
             console.error("No selection");
             return;
         }
+        encodedImage = await convertPNGToJPG(encodedImage);
         let encodedMask: string | undefined;
+        let maskData: ImageData | undefined;
         if (this.renderer.isMasked()) {
             encodedMask = this.renderer.getEncodedMask(selectionOverlay!, "mask");
+            maskData = this.renderer.getImageData(selectionOverlay!, "mask");
         }
 
         const input: CreateImageInput = defaultArgs();
 
-        const tmpInitImage = await api.createTemporaryImage();
+        const tmpInitImage = await api.createTemporaryImage("jpg");
         // convert base64 to binary
         const binaryImageData = Buffer.from(encodedImage, "base64");
         this.state = "uploading";
@@ -473,7 +491,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             binaryImageData,
             {
                 headers: {
-                    "Content-Type": "image/png",
+                    "Content-Type": "image/jpeg",
                 },
                 onUploadProgress: (progressEvent: any) => {
                     let percentCompleted =
@@ -485,10 +503,10 @@ export class EnhanceTool extends BaseTool implements Tool {
                 },
             }
         );
-        input.tmp_image_id = tmpInitImage.data.id;
+        input.tmp_jpg_id = tmpInitImage.data.id;
 
         if (encodedMask) {
-            const tmpMaskImage = await api.createTemporaryImage();
+            const tmpMaskImage = await api.createTemporaryImage("png");
             const binaryMaskData = Buffer.from(encodedMask, "base64");
             await anonymousClient.put(tmpMaskImage.data.upload_url, binaryMaskData, {
                 headers: {
@@ -551,6 +569,7 @@ export class EnhanceTool extends BaseTool implements Tool {
                         const imageData = await this.loadImageData(
                             api,
                             newImages![i].id,
+                            maskData,
                             selectionOverlay!
                         );
                         newImages![i].data = imageData;
@@ -623,6 +642,7 @@ export class EnhanceTool extends BaseTool implements Tool {
                                     const imageData = await this.loadImageData(
                                         api,
                                         newImages![i].id,
+                                        maskData,
                                         selectionOverlay!
                                     );
                                     newImages![i].data = imageData;
@@ -668,6 +688,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.selectedImageDataIndex = 0;
         this.selectedImageData = this.imageData[0];
         this.state = "confirm";
+        this.deleteMask();
     }
 
     select(direction: "left" | "right") {
@@ -716,6 +737,9 @@ export class EnhanceTool extends BaseTool implements Tool {
     }
 
     destroy(): boolean {
+        if (this.renderer.isMasked()) {
+            this.renderer.deleteMask();
+        }
         this.renderer.setCursor(undefined);
         this.worker.destroy();
         return true;
@@ -751,10 +775,12 @@ export const EnhanceControls: FC<ControlsProps> = ({
     );
     const [selectingModel, setSelectingModel] = useState<boolean>(false);
     const [state, setState] = useState<EnhanceToolState>(tool.state);
+    const [isMasked, setIsMasked] = useState<boolean>(tool.renderer.isMasked());
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
     tool.onChangeState(setState);
+    tool.onChangeMask(setIsMasked);
     tool.onProgress(setProgress);
     tool.onError(setError);
     tool.onDirty(setDirty);
@@ -1021,10 +1047,10 @@ export const EnhanceControls: FC<ControlsProps> = ({
                         >
                             <i className="fa fa-cut"></i>&nbsp; Mask
                         </button>
-                        {tool.renderer.isMasked() && (
+                        {isMasked && (
                             <button
                                 className="btn btn-danger btn-sm"
-                                onClick={() => tool.renderer.deleteMask()}
+                                onClick={() => tool.deleteMask()}
                                 style={{ marginRight: "8px" }}
                             >
                                 <i className="fa fa-cut"></i>&nbsp; Unmask

@@ -66,6 +66,11 @@ export const MaskEditor: FC<MaskEditorProps> = ({
                 ))}
             </div>
             <div className="form-group" style={{ marginTop: "16px" }}>
+                <i className="fa fa-info-circle"></i>&nbsp;Masking: areas that
+                are painted white will be changed, areas that are painted black
+                will be left unchanged.
+            </div>
+            <div className="form-group" style={{ marginTop: "16px" }}>
                 <button className="btn btn-secondary" onClick={onRevert}>
                     Revert
                 </button>

@@ -29,6 +29,7 @@ import moment from "moment";
 import { ProgressBar } from "../../components/ProgressBar";
 import { calculateImagesCost } from "../../lib/credits";
 import { CostIndicator } from "../../components/CostIndicator";
+import ModelSelector from "../../components/ModelSelector";
 
 const anonymousClient = axios.create();
 
@@ -50,7 +51,6 @@ export class InpaintTool extends BaseTool implements Tool {
     private prompt: string = "";
     private negativePrompt: string = "";
     private count: number = 4;
-    private variationStrength: number = 0.35;
     private brushSize: number = 10;
     private _dirty = false;
     private worker: ImageUtilWorker;
@@ -260,7 +260,6 @@ export class InpaintTool extends BaseTool implements Tool {
         this.prompt = args.prompt || "";
         this.negativePrompt = args.negativePrompt || "";
         this.count = args.count || 4;
-        this.variationStrength = args.variationStrength || 0.75;
         this.brushSize = args.brushSize || 10;
 
         this.updateCursor(
@@ -315,7 +314,7 @@ export class InpaintTool extends BaseTool implements Tool {
         const id = this.newId();
         const resp = await this.worker.processRequest({
             id,
-            alpha: true,
+            alphaMode: "alpha",
             alphaPixels: alphaMask.data,
             feather: true,
             height: this.renderer.getHeight(),
@@ -397,8 +396,8 @@ export class InpaintTool extends BaseTool implements Tool {
 
         // upload temporary images in parallel
         const tmpImagePromises = [
-            api.createTemporaryImage(),
-            api.createTemporaryImage(),
+            api.createTemporaryImage("png"),
+            api.createTemporaryImage("png"),
         ];
         const tmpImages = await Promise.all(tmpImagePromises);
         const binaryImages = [
@@ -434,7 +433,7 @@ export class InpaintTool extends BaseTool implements Tool {
         input.params.prompt = this.prompt || image.params.prompt;
         input.params.negative_prompt =
             this.negativePrompt || image.params.negative_prompt;
-        input.params.denoising_strength = this.variationStrength;
+        input.params.denoising_strength = 1;
         input.count = this.count;
         input.model = model;
 
@@ -691,7 +690,8 @@ export const InpaintControls: FC<ControlsProps> = ({
     const [outpaint, setoutpaint] = useState<boolean | undefined>(
         tool.getArgs().outpaint
     );
-    const [model, setModel] = useState("stable_diffusion_inpainting");
+    const [model, setModel] = useState("Deliberate Inpainting");
+    const [selectingModel, setSelectingModel] = useState(false);
 
     useEffect(() => {
         tool.updateArgs({
@@ -703,6 +703,11 @@ export const InpaintControls: FC<ControlsProps> = ({
     tool.onProgress(setProgress);
     tool.onError(setError);
     tool.onDirty(setDirty);
+
+    const onSelectModel = (model: string) => {
+        setModel(model);
+        setSelectingModel(false);
+    };
 
     if (state === "uploading" || state === "processing") {
         return (
@@ -861,28 +866,16 @@ export const InpaintControls: FC<ControlsProps> = ({
                     {/* options: stable_diffusion_inpainting, "Epic Diffusion", "Deliberate" */}
                     <div className="form-group">
                         <label htmlFor="model">Model</label>
-                        <select
-                            className="form-control"
-                            id="model"
-                            value={model}
-                            onChange={(e) => {
-                                setModel(e.target.value);
-                            }}
-                        >
-                            <option value="stable_diffusion_inpainting">
-                                Stable Diffusion
-                            </option>
-
-                            <option value="stable_diffusion_2_inpainting">
-                                Stable Diffusion 2
-                            </option>
-                            <option value="dreamlike_diffusion_inpainting">
-                                Dreamlike Diffusion
-                            </option>
-                            <option value="anything_v4_inpainting">
-                                Anything v4
-                            </option>
-                        </select>
+                        <div>
+                            <button
+                                type="button"
+                                className="btn btn-secondary light-button"
+                                onClick={() => setSelectingModel(true)}
+                            >
+                                {model}&nbsp;
+                                <i className="fas fa-caret-down"></i>
+                            </button>
+                        </div>
                         <small className="form-text text-muted">
                             Select the inpaint model
                         </small>
@@ -974,6 +967,15 @@ export const InpaintControls: FC<ControlsProps> = ({
                 when={dirty}
                 message="Are you sure you want to leave? Your changes will be lost."
             />
+            {selectingModel && (
+                <ModelSelector
+                    api={api}
+                    onCancel={() => setSelectingModel(false)}
+                    onSelectModel={onSelectModel}
+                    initialSelectedModel={model}
+                    inpainting={true}
+                />
+            )}
         </div>
     );
 };

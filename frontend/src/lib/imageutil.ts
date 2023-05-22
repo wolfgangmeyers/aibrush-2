@@ -13,6 +13,29 @@ export interface SplitResult {
     tiles: ImageData[][]; // [x][y]
 }
 
+export function convertPNGToJPG(encodedImage: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+            const canvas = document.createElement("canvas");
+            try {
+                canvas.width = image.width;
+                canvas.height = image.height;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) {
+                    throw new Error("Could not get canvas context");
+                }
+                ctx.drawImage(image, 0, 0);
+                const dataUrl = canvas.toDataURL("image/jpeg");
+                resolve(dataUrl.split(",")[1]);
+            } finally {
+                canvas.remove();
+            }
+        };
+        image.src = `data:image/png;base64,${encodedImage}`
+    });
+}
+
 export function loadImageDataElement(
     api: AIBrushApi,
     imageId: string
@@ -295,7 +318,7 @@ export interface ImageWorkerRequest {
     id: string;
     feather: boolean;
     upscale?: boolean;
-    alpha: boolean;
+    alphaMode: "none" | "mask" | "alpha";
     pixels: Uint8ClampedArray;
     alphaPixels?: Uint8ClampedArray;
     width: number;
@@ -418,7 +441,8 @@ export function binaryImageToDataBase64(binaryImage: any): string {
 export function resizeEncodedImage(
     encodedImage: string,
     width: number,
-    height: number
+    height: number,
+    format: "png" | "jpeg",
 ): Promise<string> {
     return new Promise((resolve, reject) => {
         // use html5 canvas
@@ -428,7 +452,7 @@ export function resizeEncodedImage(
         canvas.height = height;
 
         const image = new Image();
-        image.src = `data:image/png;base64,${encodedImage}`;
+        image.src = `data:image/${format};base64,${encodedImage}`;
         image.onload = () => {
             const context = canvas.getContext("2d");
             if (!context) {
@@ -450,7 +474,7 @@ export function resizeEncodedImage(
             );
 
             // save to png
-            const imageUrl = canvas.toDataURL("image/png");
+            const imageUrl = canvas.toDataURL("image/${format}");
             const base64 = imageUrl.split(",")[1];
             resolve(base64);
         };

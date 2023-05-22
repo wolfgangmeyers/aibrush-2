@@ -12,6 +12,7 @@ import { CreateImageInput, StatusEnum, TemporaryImage } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import {
+    convertPNGToJPG,
     createEncodedThumbnail,
     encodedImageToBlob,
     uploadBlob,
@@ -121,10 +122,11 @@ export const Homepage: FC<Props> = ({
         setUploadingProgress(0);
         try {
             if (input.encoded_image) {
-                const tmpInitImage = await api.createTemporaryImage();
+                const encodedJpg = await convertPNGToJPG(input.encoded_image);
+                const tmpInitImage = await api.createTemporaryImage("jpg");
                 // convert base64 to binary
                 const binaryImageData = Buffer.from(
-                    input.encoded_image,
+                    encodedJpg,
                     "base64"
                 );
                 await anonymousClient.put(
@@ -132,7 +134,7 @@ export const Homepage: FC<Props> = ({
                     binaryImageData,
                     {
                         headers: {
-                            "Content-Type": "image/png",
+                            "Content-Type": "image/jpeg",
                         },
                         onUploadProgress: (progressEvent: any) => {
                             const percentCompleted =
@@ -142,7 +144,7 @@ export const Homepage: FC<Props> = ({
                     }
                 );
                 input.encoded_image = undefined;
-                input.tmp_image_id = tmpInitImage.data.id;
+                input.tmp_jpg_id = tmpInitImage.data.id;
             }
 
             const newImages = await api.createImage(input);

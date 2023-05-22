@@ -144,7 +144,8 @@ export const ImagePrompt: FC<Props> = ({
             args.encoded_image = await resizeEncodedImage(
                 encodedImage,
                 args.params.width,
-                args.params.height
+                args.params.height,
+                "png"
             );
         }
 
@@ -419,22 +420,6 @@ export const ImagePrompt: FC<Props> = ({
                         </div>
                         <div className="form-group">
                             <label htmlFor="model">Model</label>
-                            {/* <select
-                                className="form-control"
-                                id="model"
-                                value={model}
-                                onChange={(e) => setModel(e.target.value)}
-                            >
-                                {supportedModels.map((model) => (
-                                    <option
-                                        value={model}
-                                        key={`model-${model}`}
-                                    >
-                                        {model}
-                                    </option>
-                                ))}
-                            </select> */}
-                            {/* replace the select with a button that sets selectingModel to true */}
                             <div>
                                 <button
                                     type="button"

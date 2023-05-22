@@ -67,13 +67,13 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
             throw new Error("Image worker not initialized");
         }
         let c = imageDataToCanvas(imageData);
-        let encodedImage = c.toDataURL("image/png").split(",")[1];
+        let encodedImage = c.toDataURL("image/jpeg").split(",")[1];
         c.remove();
         const input: CreateImageInput = defaultArgs();
         input.label = "";
         // input.encoded_image = encodedImage;
 
-        const tmpInitImage = await api.createTemporaryImage();
+        const tmpInitImage = await api.createTemporaryImage("jpg");
         const binaryImageData = Buffer.from(encodedImage, "base64");
         await anonymousClient.put(
             tmpInitImage.data.upload_url!,

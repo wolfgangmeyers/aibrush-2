@@ -101,7 +101,7 @@ export const TestPage: FC = () => {
                                 const feathered =
                                     await imageWorker.processRequest({
                                         id,
-                                        alpha: false,
+                                        alphaMode: "none",
                                         feather: true,
                                         width: splitResult.imageWidth,
                                         height: splitResult.imageHeight,
