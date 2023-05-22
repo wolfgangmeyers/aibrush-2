@@ -44,7 +44,7 @@ export class S3Filestore implements Filestore {
             Bucket: this.bucket,
             Key: filename,
             Expires: 60 * 60 * 1,
-            ContentType: "image/png",
+            ContentType: filename.endsWith(".jpg") ? "image/jpeg" : "image/png",
         });
     }
 
