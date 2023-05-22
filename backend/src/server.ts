@@ -526,8 +526,10 @@ export class Server {
 
         this.app.post(
             "/api/temporary-images",
-            withMetrics("/api/temporary-images", async (_, res) => {
-                const image = await this.backendService.createTemporaryImage();
+            withMetrics("/api/temporary-images", async (req, res) => {
+                // get image format, default to png (format=png on query string)
+                const format = (req.query.format as string) || "png";
+                const image = await this.backendService.createTemporaryImage(format);
                 res.status(201).json(image);
             })
         );

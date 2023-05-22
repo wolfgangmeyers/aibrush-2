@@ -77,7 +77,7 @@ async function uploadTemporaryImage(
     client: AIBrushApi,
     filename: string
 ): Promise<string> {
-    const tmpImage = await client.createTemporaryImage();
+    const tmpImage = await client.createTemporaryImage("png");
     const uploadUrl = tmpImage.data.upload_url;
     const imageData = fs.readFileSync(filename);
     await anonymousClient.put(uploadUrl, imageData, {

@@ -1521,10 +1521,10 @@ export class BackendService {
         }
     }
 
-    async createTemporaryImage(): Promise<TemporaryImage> {
+    async createTemporaryImage(format: string): Promise<TemporaryImage> {
         const tmpImageId = uuid.v4();
         const uploadUrl = await this.filestore.getUploadUrl(
-            `tmp/${tmpImageId}.png`
+            `tmp/${tmpImageId}.${format}`
         );
         return {
             id: tmpImageId,
