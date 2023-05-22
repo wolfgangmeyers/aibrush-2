@@ -517,6 +517,12 @@ paths:
       operationId: createTemporaryImage
       tags:
         - AIBrush
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
         "201":
           description: Success
@@ -675,6 +681,8 @@ components:
         encoded_mask:
           type: string
         tmp_image_id:
+          type: string
+        tmp_jpg_id:
           type: string
         tmp_mask_id:
           type: string

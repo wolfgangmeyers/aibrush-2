@@ -615,6 +615,7 @@ export class BackendService {
             await client.query(`DELETE FROM images WHERE id=$1`, [id]);
             const filesToCheck = [
                 `${id}.init_image.png`,
+                `${id}.init_image.jpg`,
                 `${id}.image.png`,
                 `${id}.thumbnail.png`,
                 `${id}.mask.png`,
@@ -755,6 +756,14 @@ export class BackendService {
                     this.filestore.copyFile(
                         `tmp/${body.tmp_image_id}.png`,
                         `${image.id}.init_image.png`
+                    )
+                );
+            }
+            if (body.tmp_jpg_id) {
+                promises.push(
+                    this.filestore.copyFile(
+                        `tmp/${body.tmp_jpg_id}.jpg`,
+                        `${image.id}.init_image.jpg`
                     )
                 );
             }

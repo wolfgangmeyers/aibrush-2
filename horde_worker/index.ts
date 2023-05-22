@@ -208,9 +208,11 @@ async function processRequest(request: HordeRequest) {
         const imageExistsPromise = imageExists(
             `${request.imageId}.init_image.png`
         );
+        const jpgExistsPromise = imageExists(`${request.imageId}.init_image.jpg`);
         const maskExistsPromise = imageExists(`${request.imageId}.mask.png`);
-        const [imageOk, maskOk] = await Promise.all([
+        const [imageOk, jpgOk, maskOk] = await Promise.all([
             imageExistsPromise,
+            jpgExistsPromise,
             maskExistsPromise,
         ]);
 
@@ -225,7 +227,7 @@ async function processRequest(request: HordeRequest) {
                 request.imageId,
                 `(${request.augmentation})`
             );
-            if (!imageOk) {
+            if (!imageOk && !jpgOk) {
                 updateImage(
                     request.imageId,
                     {
@@ -278,6 +280,8 @@ async function processRequest(request: HordeRequest) {
         if (imageOk) {
             // payload.source_image = imageData.toString("base64");
             payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.png`;
+        } else if (jpgOk) {
+            payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.jpg`;
         }
         if (maskOk) {
             console.log("mask data found");
