@@ -133,13 +133,6 @@ interface HordeRequest {
     controlnetType: string | null;
 }
 
-const inpaintingModels: { [key: string]: boolean } = {
-    stable_diffusion_inpainting: true,
-    stable_diffusion_2_inpainting: true,
-    dreamlike_diffusion_inpainting: true,
-    anything_v4_inpainting: true,
-};
-
 function stripWeightsFromPrompt(prompt: string): string {
     if (!prompt) {
         return prompt;
@@ -287,7 +280,7 @@ async function processRequest(request: HordeRequest) {
             console.log("mask data found");
             // payload.source_mask = maskData.toString("base64");
             payload.source_mask = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.mask.png`;
-            if (inpaintingModels[request.model]) {
+            if (request.model.toLowerCase().includes("inpainting")) {
                 payload.source_processing = "inpainting";
                 payload.params.karras = false;
                 payload.params.steps = 50;
