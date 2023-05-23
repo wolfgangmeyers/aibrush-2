@@ -178,6 +178,28 @@ export class Renderer {
         }
     }
 
+    invertMask() {
+        if (this.maskLayer) {
+            const ctx = this.maskLayer.getContext("2d");
+            if (ctx) {
+                // change black to white, white to black
+                const imageData = ctx.getImageData(
+                    0,
+                    0,
+                    this.width,
+                    this.height
+                );
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    imageData.data[i] = 255 - imageData.data[i];
+                    imageData.data[i + 1] = 255 - imageData.data[i + 1];
+                    imageData.data[i + 2] = 255 - imageData.data[i + 2];
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+            this.render();
+        }
+    }
+
     deleteMask() {
         this.maskLayer = undefined;
         this.render();

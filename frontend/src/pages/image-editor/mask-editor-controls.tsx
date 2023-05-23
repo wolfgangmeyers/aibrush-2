@@ -71,8 +71,18 @@ export const MaskEditor: FC<MaskEditorProps> = ({
                 will be left unchanged.
             </div>
             <div className="form-group" style={{ marginTop: "16px" }}>
-                <button className="btn btn-secondary" onClick={onRevert}>
-                    Revert
+                <button
+                    className="btn btn-secondary"
+                    onClick={() => tool.renderer.invertMask()}
+                >
+                    Invert
+                </button>
+                <button
+                    className="btn btn-secondary"
+                    onClick={onRevert}
+                    style={{ marginLeft: "8px" }}
+                >
+                    Cancel
                 </button>
                 <button
                     className="btn btn-primary"
