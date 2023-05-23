@@ -10,7 +10,7 @@ interface MaskEditorProps {
     onRevert: () => void;
 }
 
-const colors = ["#000000", "#FFFFFF"];
+const colors = ["#FFFFFF", "#000000"];
 
 export const MaskEditor: FC<MaskEditorProps> = ({
     // renderer,

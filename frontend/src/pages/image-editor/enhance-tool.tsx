@@ -107,15 +107,16 @@ export class EnhanceTool extends BaseTool implements Tool {
 
     set state(state: EnhanceToolState) {
         if (state !== this._state) {
+            this.renderer.setCursor(undefined);
             if (this._state == "select") {
                 this.selectionTool.destroy();
             }
-            if (this._state === "mask") {
-                this.renderer.setCursor(undefined);
-            }
-            if (this._state === "erase") {
-                this.renderer.setCursor(undefined);
-            }
+            // if (this._state === "mask") {
+            //     this.renderer.setCursor(undefined);
+            // }
+            // if (this._state === "erase") {
+            //     this.renderer.setCursor(undefined);
+            // }
             this._state = state;
             this.stateHandler(state);
             if (state == "confirm") {
@@ -147,7 +148,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.pencilTool = new PencilTool(
             renderer,
             "mask",
-            "#000000",
+            "#FFFFFF",
             "mask-editor"
         );
         if (this.selectSupported()) {
@@ -170,8 +171,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.selectionTool.updateArgs(selectionArgs);
         this.pencilTool.updateArgs({
             ...this.pencilTool.getArgs(),
-            brushColor: "#000000",
+            brushColor: "#FFFFFF",
         });
+        // unset the cursor from the pencil tool (hack)
+        this.renderer.setCursor(undefined);
         this.worker = new ImageUtilWorker();
     }
 

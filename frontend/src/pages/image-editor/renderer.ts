@@ -171,7 +171,7 @@ export class Renderer {
         if (this.maskLayer) {
             const ctx = this.maskLayer.getContext("2d");
             if (ctx) {
-                ctx.fillStyle = "#FFFFFF";
+                ctx.fillStyle = "#000000";
                 ctx.fillRect(0, 0, this.width, this.height);
             }
             this.render();

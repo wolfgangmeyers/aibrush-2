@@ -396,8 +396,8 @@ export const ImagePrompt: FC<Props> = ({
                                     {/* upload image */}
                                     <i className="fas fa-upload"></i>&nbsp;
                                     {encodedImage || parent
-                                        ? "Replace Image"
-                                        : "Upload Image"}
+                                        ? "Replace"
+                                        : "Upload"}
                                     <input
                                         id="loadimage"
                                         type="file"
@@ -413,7 +413,7 @@ export const ImagePrompt: FC<Props> = ({
                                     >
                                         {/* remove image */}
                                         <i className="fas fa-trash"></i>&nbsp;
-                                        Remove Image
+                                        Remove
                                     </label>
                                 )}
                             </div>
