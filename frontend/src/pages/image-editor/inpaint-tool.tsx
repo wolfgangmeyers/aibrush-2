@@ -30,6 +30,7 @@ import { ProgressBar } from "../../components/ProgressBar";
 import { calculateImagesCost } from "../../lib/credits";
 import { CostIndicator } from "../../components/CostIndicator";
 import ModelSelector from "../../components/ModelSelector";
+import { ResetToDefaultIcon } from "../../components/ResetToDefaultIcon";
 
 const anonymousClient = axios.create();
 
@@ -815,7 +816,10 @@ export const InpaintControls: FC<ControlsProps> = ({
                         parameters below and continue
                     </p>
                     <div className="form-group">
-                        <label htmlFor="prompt">Prompt</label>
+                        <label htmlFor="prompt">
+                            Prompt&nbsp;
+                            <ResetToDefaultIcon onClick={() => setPrompt(image.params.prompt || "")} />
+                        </label>
                         <input
                             type="text"
                             className="form-control"
@@ -831,7 +835,10 @@ export const InpaintControls: FC<ControlsProps> = ({
                     </div>
                     {/* negative prompt */}
                     <div className="form-group">
-                        <label htmlFor="negativeprompt">Negative prompt</label>
+                        <label htmlFor="negativeprompt">
+                            Negative prompt&nbsp;
+                            <ResetToDefaultIcon onClick={() => setNegativePrompt(image.params.negative_prompt || "")} />
+                        </label>
                         <input
                             type="text"
                             className="form-control"

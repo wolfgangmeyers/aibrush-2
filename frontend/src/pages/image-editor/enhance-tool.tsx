@@ -29,6 +29,7 @@ import { CostIndicator } from "../../components/CostIndicator";
 import ModelSelector from "../../components/ModelSelector";
 import { PencilTool } from "./pencil-tool";
 import { MaskEditor } from "./mask-editor-controls";
+import { ResetToDefaultIcon } from "../../components/ResetToDefaultIcon";
 
 const anonymousClient = axios.create();
 
@@ -856,7 +857,12 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     </p>
                     {/* prompt */}
                     <div className="form-group">
-                        <label htmlFor="prompt">Prompt</label>
+                        <label htmlFor="prompt">
+                            Prompt&nbsp;
+                            <ResetToDefaultIcon onClick={() => setPrompt(image.params.prompt || "")} />
+                        </label>
+                        {/* refresh icon */}
+                        
                         <input
                             type="text"
                             className="form-control"
@@ -866,13 +872,17 @@ export const EnhanceControls: FC<ControlsProps> = ({
                                 setPrompt(e.target.value);
                             }}
                         />
+                        
                         <small className="form-text text-muted">
                             Customize the text prompt here
                         </small>
                     </div>
                     {/* negative prompt */}
                     <div className="form-group">
-                        <label htmlFor="negative-prompt">Negative Prompt</label>
+                        <label htmlFor="negative-prompt">
+                            Negative Prompt&nbsp;
+                            <ResetToDefaultIcon onClick={() => setNegativePrompt(image.params.negative_prompt || "")} />
+                        </label>
                         <input
                             type="text"
                             className="form-control"
