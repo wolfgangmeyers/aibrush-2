@@ -1,5 +1,5 @@
 .image-editor-canvas {
-    width: 80%;
+    width: 95%;
 }
 
 .canvas-select-left {
@@ -18,7 +18,8 @@
 /* extra large screen */
 @media (min-width: 1500px) {
     .image-editor-canvas {
-        width: 60%;
+        width: 95%;
+        height: 95%;
     }
 
     .canvas-select-left {
@@ -34,7 +35,7 @@
 /* phones */
 @media (max-width: 480px) {
     .image-editor-canvas {
-        width: 90%;
+        width: 100%;
     }
 }
 

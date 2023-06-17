@@ -48,8 +48,8 @@ export class ZoomHelper {
         let rect = (
             event.target as HTMLCanvasElement
         ).getBoundingClientRect();
-        movementX = (movementX / rect.width) * 512;
-        movementY = (movementY / rect.height) * 512;
+        movementX = (movementX / rect.width) * this.renderer.getCanvas().width;
+        movementY = (movementY / rect.height) * this.renderer.getCanvas().height;
 
         let zoom = this.renderer.getZoom();
         let offsetX = this.renderer.getOffsetX();
@@ -139,8 +139,8 @@ export class ZoomHelper {
         // x = (x / rect.width) * this.renderer.getWidth();
         // y = (y / rect.height) * this.renderer.getHeight();
 
-        x = (x / rect.width) * 512;
-        y = (y / rect.height) * 512;
+        x = (x / rect.width) * this.renderer.getCanvas().width;
+        y = (y / rect.height) * this.renderer.getCanvas().height;
 
         x = Math.round(x - offsetX);
         y = Math.round(y - offsetY);

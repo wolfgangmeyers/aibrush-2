@@ -27,12 +27,10 @@ export class Renderer {
     private snapshotListener: (() => void) | null = null;
 
     constructor(private readonly canvas: HTMLCanvasElement) {
-        canvas.width = 512;
-        canvas.height = 512;
         // invisible canvas elements
         this.backgroundLayer = document.createElement("canvas");
-        this.backgroundLayer.width = 512;
-        this.backgroundLayer.height = 512;
+        this.backgroundLayer.width = canvas.width;
+        this.backgroundLayer.height = canvas.height;
         this.baseImageLayer = document.createElement("canvas");
         this.editLayer = document.createElement("canvas");
         // this.overlayLayer = document.createElement("canvas");
@@ -40,6 +38,15 @@ export class Renderer {
         this.zoom = 1;
         this.offsetX = 0;
         this.offsetY = 0;
+    }
+
+    updateCanvasSize(width: number, height: number) {
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.backgroundLayer.width = width;
+        this.backgroundLayer.height = height;
+        this.initializeBackgroundLayer();
+        this.render();
     }
 
     undo(allowRedo: boolean = true) {
@@ -294,21 +301,30 @@ export class Renderer {
     }
 
     resetView() {
-        // determine zoom based on image difference from canvas size
-        const maxWidth = Math.max(this.width, this.height);
-        const zoom = this.canvas.width / maxWidth;
-
-        let offsetX = 0;
-        let offsetY = 0;
-
-        if (this.width > this.height) {
-            offsetY = (this.width - this.height) / 2;
-        } else if (this.height > this.width) {
-            offsetX = (this.height - this.width) / 2;
+        // Determine the aspect ratios of the image and canvas
+        const imageAspectRatio = this.width / this.height;
+        const canvasAspectRatio = this.canvas.width / this.canvas.height;
+    
+        let zoom, offsetX, offsetY;
+    
+        if (imageAspectRatio > canvasAspectRatio) {
+            // The image is wider than the canvas, so we should fit the image to the width of the canvas
+            zoom = this.canvas.width / this.width;
+            offsetX = 0;
+            // Calculate the amount of empty space in the height (in image coordinate space), and divide by 2 to center
+            offsetY = (this.height - (this.canvas.height / zoom)) / -2;
+        } else {
+            // The image is taller or equal aspect ratio to the canvas, so we should fit the image to the height of the canvas
+            zoom = this.canvas.height / this.height;
+            offsetY = 0;
+            // Calculate the amount of empty space in the width (in image coordinate space), and divide by 2 to center
+            offsetX = (this.width - (this.canvas.width / zoom)) / -2;
         }
-
+    
         this.updateZoomAndOffset(zoom, offsetX, offsetY);
     }
+    
+    
 
     setEditImage(imageData: ImageData | null) {
         this.hasSelection = !!imageData;
@@ -540,9 +556,7 @@ export class Renderer {
         }
     }
 
-    private convertErasureToMask(
-        erasure: ImageData,
-    ): ImageData {
+    private convertErasureToMask(erasure: ImageData): ImageData {
         // for each pixel, if alpha < 255, set to white, otherwise set to black
         const mask = erasure;
         for (let i = 0; i < erasure.data.length; i += 4) {
@@ -618,7 +632,13 @@ export class Renderer {
         }
     }
 
-    drawPoint(x: number, y: number, brushSize: number, color: string, layer: "base" | "mask" = "base"): void {
+    drawPoint(
+        x: number,
+        y: number,
+        brushSize: number,
+        color: string,
+        layer: "base" | "mask" = "base"
+    ): void {
         // draw on selection layer
         const imageLayer = layer === "base" ? this.editLayer : this.maskLayer;
         if (!imageLayer) {

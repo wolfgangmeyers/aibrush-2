@@ -10,7 +10,11 @@ import { createRenderer, Renderer } from "./renderer";
 import { Tool, BaseTool } from "./tool";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { EnhanceTool, EnhanceControls } from "./enhance-tool";
-import { PencilTool, Controls as PencilControls, defaultColors } from "./pencil-tool";
+import {
+    PencilTool,
+    Controls as PencilControls,
+    defaultColors,
+} from "./pencil-tool";
 import { SmudgeTool, SmudgeControls } from "./smudge-tool";
 import { ImportExportControls } from "./import-export";
 import { InpaintControls, InpaintTool } from "./inpaint-tool";
@@ -159,6 +163,7 @@ export const ImageEditor: React.FC<Props> = ({
     const [image, setImage] = useState<LocalImage | null>(null);
     const [renderer, setRenderer] = useState<Renderer | null>(null);
     const [tool, setTool] = useState<Tool | null>(null);
+    const [toolConfig, setToolConfig] = useState<ToolConfig | null>(null);
     const [canUndo, setCanUndo] = useState(false);
     const [canRedo, setCanRedo] = useState(false);
     const [busyMessage, setBusyMessage] = useState<string | null>(null);
@@ -177,6 +182,7 @@ export const ImageEditor: React.FC<Props> = ({
             }
             const newTool = toolconfig.constructor(renderer);
             setTool(newTool);
+            setToolConfig(toolconfig);
             newTool.onSaveImage((encodedImage, args = {}) => {
                 console.log("Saving image...");
                 saveNewImage(encodedImage, args);
@@ -300,14 +306,30 @@ export const ImageEditor: React.FC<Props> = ({
         }
     }, [tool, canvasRef.current]);
 
+    // implement a useEffect hook that resizes the canvas (renderer.updateCanvasSize(width, height)) when the window is resized, and also on initial load
+    // the canvas size should be set based on the current screen size
+    useEffect(() => {
+        if (renderer) {
+            const listener = () => {
+                let width = window.innerWidth * 0.85;
+                let height = window.innerHeight;
+                if (window.innerWidth <= 992) {
+                    width = window.innerWidth;
+                    height = window.innerHeight * 0.85;
+                }
+                renderer.updateCanvasSize(width, height);
+                renderer.resetView();
+            };
+            window.addEventListener("resize", listener);
+            listener();
+            return () => {
+                window.removeEventListener("resize", listener);
+            };
+        }
+    }, [renderer]);
+
     function renderTool(t: ToolConfig) {
         if (!image) {
-            return null;
-        }
-        if (
-            t.name == "upscale" &&
-            image.params.width! * image.params.height! >= 2048 * 2048
-        ) {
             return null;
         }
         let buttonClass = `btn btn-secondary light-button image-editor-tool-button`;
@@ -316,16 +338,20 @@ export const ImageEditor: React.FC<Props> = ({
             buttonClass = `btn btn-primary image-editor-tool-button`;
         }
         return (
-            <div className="form-group" key={t.name}>
-                <button className={buttonClass} onClick={() => onSelectTool(t)}>
+            <>
+                <button
+                    style={{ margin: "4px" }}
+                    className={buttonClass}
+                    onClick={() => onSelectTool(t)}
+                >
                     <i className={t.iconClass}></i>
                 </button>
                 {/* capitalize tool name */}
-                <label>
+                {/* <label>
                     {t.name.charAt(0).toUpperCase() + t.name.slice(1)}
                 </label>
-                {isSelected && t.renderControls(tool!, renderer!)}
-            </div>
+                {isSelected && t.renderControls(tool!, renderer!)} */}
+            </>
         );
     }
 
@@ -352,10 +378,26 @@ export const ImageEditor: React.FC<Props> = ({
                 className="row"
                 style={{ marginTop: "32px", paddingBottom: "120px" }}
             >
-                <div className="col-lg-3">
+                <div
+                    className="col-lg-3"
+                    style={{ textAlign: "left", marginBottom: "8px" }}
+                >
                     {renderer && (
                         <>
-                            {tools.map((tool) => renderTool(tool))}
+                            <div style={{marginBottom: "16px"}}>{tools.map((t) => renderTool(t))}</div>
+                            {tool && toolConfig && (
+                                <>
+                                    {/* capitalize tool name */}
+                                    <h4 style={{marginLeft: "16px"}}>
+                                        {tool.name.charAt(0).toUpperCase() +
+                                            tool.name.slice(1)}
+                                    </h4>
+                                    {toolConfig.renderControls(
+                                        tool!,
+                                        renderer!
+                                    )}
+                                </>
+                            )}
                             {(canRedo || canUndo) && (
                                 <div className="form-group">
                                     <div className="btn-group">
@@ -393,6 +435,8 @@ export const ImageEditor: React.FC<Props> = ({
                                     touchAction: "none",
                                     userSelect: "none",
                                 }}
+                                width={768}
+                                height={512}
                                 ref={canvasRef}
                                 className="image-editor-canvas"
                                 onMouseDown={(e) =>
