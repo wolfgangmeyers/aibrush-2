@@ -39,9 +39,6 @@ import Bugsnag from "@bugsnag/js";
 import { Logger } from "./logs";
 import { Clock, RealClock } from "./clock";
 import { HordeQueue, SQSHordeQueue } from "./horde_queue";
-import { calculateImagesCost } from "./credits";
-import { calculateCredits, StripeHelper, StripeHelperImpl } from "./stripe_helper";
-import Stripe from "stripe";
 
 process.env.PGUSER = process.env.PGUSER || "postgres";
 
@@ -128,22 +125,12 @@ export class BackendService {
     private notificationsClient: Client;
     private clock: Clock;
     private hordeQueue: HordeQueue;
-    private paidHordeQueue: HordeQueue;
-    private stripeHelper: StripeHelper;
 
     private notificationListeners: { [key: string]: NotificationListener[] } =
         {};
 
     setHordeQueueForTesting(queue: HordeQueue) {
         this.hordeQueue = queue;
-    }
-
-    setPaidHordeQueueForTesting(queue: HordeQueue) {
-        this.paidHordeQueue = queue;
-    }
-
-    setStripeHelperForTesting(helper: StripeHelper) {
-        this.stripeHelper = helper;
     }
 
     constructor(
@@ -167,14 +154,6 @@ export class BackendService {
             this.hordeQueue = new SQSHordeQueue(config.hordeQueueName, {
                 region: config.s3Region || "us-west-2",
             });
-        }
-        if (config.paidHordeQueueName) {
-            this.paidHordeQueue = new SQSHordeQueue(config.paidHordeQueueName, {
-                region: config.s3Region || "us-west-2",
-            });
-        }
-        if (config.stripeSecretKey && config.stripeWebhookSecret) {
-            this.stripeHelper = new StripeHelperImpl(config.stripeSecretKey, config.stripeWebhookSecret);
         }
     }
 
@@ -254,9 +233,6 @@ export class BackendService {
         });
         if (this.hordeQueue) {
             await this.hordeQueue.init();
-        }
-        if (this.paidHordeQueue) {
-            await this.paidHordeQueue.init();
         }
 
         // emergency cleanup logic...
@@ -673,7 +649,6 @@ export class BackendService {
     private async createImage(
         createdBy: string,
         body: CreateImageInput,
-        paid: boolean
     ): Promise<Image> {
         body = this.upgradeLegacyRequest(body);
         body.params.seed =
@@ -804,7 +779,7 @@ export class BackendService {
                         type: NOTIFICATION_PENDING_IMAGE,
                     })
                 );
-                const hordeQueue = paid ? this.paidHordeQueue : this.hordeQueue;
+                const hordeQueue = this.hordeQueue;
                 if (hordeQueue) {
                     const jwt = this.authHelper.createToken(
                         image.created_by,
@@ -881,10 +856,6 @@ export class BackendService {
             );
         }
 
-        const credits = await this.getCredits(createdBy);
-        if (credits.free_credits === 0 && credits.paid_credits === 0) {
-            throw new Error("No credits");
-        }
         const promises: Array<Promise<Image>> = [];
         for (let i = 0; i < count; i++) {
             promises.push(
@@ -896,7 +867,6 @@ export class BackendService {
                             ...body.params,
                         },
                     },
-                    credits.paid_credits > 0
                 )
             );
         }
@@ -987,13 +957,6 @@ export class BackendService {
                 this.metrics.addMetric("backend.image_completed", 1, "count", {
                     seconds_until_completion: duration_seconds,
                 });
-
-                const cost = calculateImagesCost(
-                    1,
-                    image.params.width,
-                    image.params.height
-                );
-                await this.deductCredits(image.created_by, cost);
             }
             this.notify(
                 image.created_by,
@@ -1224,7 +1187,6 @@ export class BackendService {
         await this.cleanupStuckImages();
         await this.cleanupTemporaryImages();
         await this.cleanupDeletedImages();
-        await this.cleanupStripeSessions();
         const elapsed = this.clock.now().diff(start, "milliseconds");
         this.metrics.addMetric("backend.cleanup", 1, "count", {
             duration: elapsed,
@@ -1290,184 +1252,6 @@ export class BackendService {
             return true;
         } finally {
             client.release();
-        }
-    }
-
-    async getCredits(userId: string): Promise<Credits> {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `SELECT free_credits, paid_credits FROM credits WHERE user_id=$1`,
-                [hash(userId)]
-            );
-            // This shouldn't be possible, but handle it gracefully if it does happen
-            if (result.rowCount === 0) {
-                Bugsnag.notify(
-                    new Error(`Credits not found for user: ${userId}`)
-                );
-                return {
-                    free_credits: 0,
-                    paid_credits: 0,
-                };
-            }
-            return result.rows[0];
-        } finally {
-            client.release();
-        }
-    }
-
-    async deductCredits(userId: string, amount: number): Promise<void> {
-        userId = hash(userId);
-        // deduct credits from paid_credits first, then from free_credits
-        // paid_credits and free_credits should never drop below 0
-        const credits = await this.getCredits(userId);
-        const client = await this.pool.connect();
-        try {
-            if (credits.paid_credits > 0) {
-                const paidDeduction = Math.min(amount, credits.paid_credits);
-                await client.query(
-                    `UPDATE credits SET paid_credits = paid_credits - $1 WHERE user_id=$2`,
-                    [paidDeduction, userId]
-                );
-                amount -= paidDeduction;
-            }
-            if (amount > 0 && credits.free_credits > 0) {
-                const freeDeduction = Math.min(amount, credits.free_credits);
-                await client.query(
-                    `UPDATE credits SET free_credits = free_credits - $1 WHERE user_id=$2`,
-                    [freeDeduction, userId]
-                );
-            }
-        } finally {
-            client.release();
-        }
-        // notify user of updated credits
-        await this.notify(
-            userId,
-            JSON.stringify({
-                type: NOTIFICATION_CREDITS_UPDATED,
-            })
-        );
-    }
-
-    async createDepositCode(
-        input: CreateDepositCodeInput
-    ): Promise<DepositCode> {
-        // create random code
-        const code = uuid.v4().replace(/-/g, "");
-        const client = await this.pool.connect();
-        try {
-            await client.query(
-                `INSERT INTO deposit_codes (code, amount, created_at) VALUES ($1, $2, $3)`,
-                [code, input.amount, this.clock.now().valueOf()]
-            );
-            return {
-                code,
-                amount: input.amount,
-            };
-        } finally {
-            client.release();
-        }
-    }
-
-    async resetFreeCredits(): Promise<void> {
-        await this.withLock(RESET_CREDITS_KEY, async () => {
-            // check last event time
-            const lastReset = await this.getLastEventTime(RESET_CREDITS_EVENT);
-            // if last reset was more than 24 hours ago, reset credits
-            if (lastReset < this.clock.now().subtract(1, "days").valueOf()) {
-                const client = await this.pool.connect();
-                try {
-                    await client.query(`UPDATE credits SET free_credits=100`);
-                } finally {
-                    client.release();
-                }
-                await this.setLastEventTime(
-                    RESET_CREDITS_EVENT,
-                    this.clock.now().valueOf()
-                );
-            }
-        });
-    }
-
-    async redeemDepositCode(code: string, userId: string): Promise<void> {
-        userId = hash(userId);
-        const client = await this.pool.connect();
-        try {
-            // delete expired deposit codes
-            await client.query(
-                `DELETE FROM deposit_codes WHERE created_at < $1`,
-                [this.clock.now().subtract(DEPOSIT_CODE_DAYS, "days").valueOf()]
-            );
-            const result = await client.query(
-                `SELECT * FROM deposit_codes WHERE code=$1`,
-                [code]
-            );
-            if (result.rowCount === 0) {
-                throw new Error("Invalid code");
-            }
-            const depositCode = result.rows[0] as DepositCode;
-            await client.query(
-                `UPDATE credits SET paid_credits = paid_credits + $1 WHERE user_id=$2`,
-                [depositCode.amount, userId]
-            );
-            await client.query(`DELETE FROM deposit_codes WHERE code=$1`, [
-                code,
-            ]);
-            await this.notify(
-                userId,
-                JSON.stringify({
-                    type: NOTIFICATION_CREDITS_UPDATED,
-                })
-            );
-        } finally {
-            client.release();
-        }
-    }
-
-    async depositCredits(userId: string, amount: number): Promise<void> {
-        userId = hash(userId);
-        const client = await this.pool.connect();
-        try {
-            await client.query(
-                `UPDATE credits SET paid_credits = paid_credits + $1 WHERE user_id=$2`,
-                [amount, userId]
-            );
-            await this.notify(
-                userId,
-                JSON.stringify({
-                    type: NOTIFICATION_CREDITS_UPDATED,
-                })
-            );
-        } finally {
-            client.release();
-        }
-    }
-
-    async handleStripeEvent(payload: any, signature: string): Promise<void> {
-        const stripeEvent = this.stripeHelper.constructEvent(
-            payload,
-            signature,
-        );
-        if (stripeEvent.type === "checkout.session.completed") {
-            const session = stripeEvent.data.object as Stripe.Checkout.Session;
-            const userId = await this.getUserForStripeSession(session.id);
-            if (!userId) {
-                throw new Error("User not found");
-            }
-            const user = await this.getUser(userId);
-            if (!user.customer_id) {
-                await this.saveCustomerId(userId, session.customer as string);
-            }
-            const lineItems = await this.stripeHelper.listLineItems(session.id);
-            for (const lineItem of lineItems.data) {
-                const credits = calculateCredits(
-                    lineItem.price.id,
-                    lineItem.quantity
-                );
-                await this.depositCredits(userId, credits);
-            }
-            await this.deleteStripeSession(session.id);
         }
     }
 
@@ -1675,74 +1459,6 @@ export class BackendService {
             }
         }
         return null;
-    }
-
-    // use this.stripeHelper to create a session, then store it in the database
-    async createStripeSession(
-        userId: string,
-        input: CreateStripeSessionInput,
-    ): Promise<StripeSession> {
-        userId = hash(userId);
-        const user = await this.getUser(userId);
-        const sessionId = await this.stripeHelper.createCheckoutSession(
-            input.product_id,
-            input.success_url,
-            input.cancel_url,
-            user.customer_id || undefined,
-        );
-        const client = await this.pool.connect();
-        try {
-            await client.query(
-                `INSERT INTO stripe_sessions (session_id, user_id, created_at) VALUES ($1, $2, $3)`,
-                [sessionId, userId, this.clock.now().valueOf()]
-            );
-            return {
-                session_id: sessionId,
-            };
-        } finally {
-            client.release();
-        }
-    }
-
-    async getUserForStripeSession(sessionId: string): Promise<string> {
-        const client = await this.pool.connect();
-        try {
-            const result = await client.query(
-                `SELECT user_id FROM stripe_sessions WHERE session_id=$1`,
-                [sessionId]
-            );
-            if (result.rows.length === 0) {
-                return null;
-            }
-            return result.rows[0].user_id as string;
-        } finally {
-            client.release();
-        }
-    }
-
-    async deleteStripeSession(sessionId: string): Promise<void> {
-        const client = await this.pool.connect();
-        try {
-            await client.query(
-                `DELETE FROM stripe_sessions WHERE session_id=$1`,
-                [sessionId]
-            );
-        } finally {
-            client.release();
-        }
-    }
-
-    // clean up sessions that are more than 24 hours old
-    async cleanupStripeSessions(): Promise<void> {
-        const client = await this.pool.connect();
-        try {
-            await client.query(
-                `DELETE FROM stripe_sessions WHERE created_at < $1`,
-                [this.clock.now().subtract(24, "hours").valueOf()]
-            );
-        } finally {
-            client.release();
-        }
     }
 
     // list databases for testing

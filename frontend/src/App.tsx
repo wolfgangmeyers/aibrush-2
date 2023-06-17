@@ -21,7 +21,6 @@ import { LocalDeletedImages } from "./pages/LocalDeletedImages";
 import { SavedImagesPage } from "./pages/SavedImagesPage";
 import { TestPage } from "./pages/TestPage";
 import { CreditsBalance } from "./components/CreditsBalance";
-import { PricingPage } from "./pages/pricing/PricingPage";
 
 const config = getConfig();
 const httpClient = axios.default.create();
@@ -171,16 +170,15 @@ function App() {
                                             {/* font awesome discord icon */}
                                             <i className="fab fa-discord"></i>
                                         </a>
-                                        <Link
-                                            className="btn top-button pulse"
-                                            to="/pricing"
-                                            style={{
-                                                width: "47px",
-                                            }}
+                                        {/* link to github */}
+                                        <a
+                                            className="btn btn-primary top-button"
+                                            href="https://github.com/wolfgangmeyers/aibrush-2"
+                                            target="_blank"
                                         >
-                                            {/* font awesome bolt icon */}
-                                            <i className="fas fa-bolt"></i>
-                                        </Link>
+                                            {/* font awesome github icon */}
+                                            <i className="fab fa-github"></i>
+                                        </a>
                                     </>
                                 )}
                             </div>
@@ -265,9 +263,6 @@ function App() {
                             </Route>
                             <Route path="/local-deleted-images">
                                 <LocalDeletedImages localImages={localImages} />
-                            </Route>
-                            <Route path="/pricing">
-                                <PricingPage api={client} />
                             </Route>
                             <Route path="/testpage">
                                 <TestPage />

@@ -272,6 +272,7 @@ export const Controls: FC<ControlsProps> = ({ renderer, tool, colors }) => {
                         selectedColor={brushColor}
                         color={color}
                         onClick={(color) => setBrushColor(color)}
+                        onColorSelected={(color) => onColorSelected(color)}
                     />
                 ))}
                 {/* <div

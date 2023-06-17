@@ -1,9 +1,0 @@
-.pricing-page-desc {
-    max-width: 70%;
-}
-
-@media (max-width: 768px) {
-    .pricing-page-desc {
-        max-width: 100%;
-    }
-}

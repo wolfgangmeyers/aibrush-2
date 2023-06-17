@@ -347,9 +347,6 @@ describe("server", () => {
 
             beforeEach(async () => {
 
-                // add free credits
-                await backendService.resetFreeCredits();
-
                 const response = await client.createImage({
                     params: {
                         prompt: "test",
@@ -855,8 +852,6 @@ describe("server", () => {
             let image: Image;
 
             beforeEach(async () => {
-                await backendService.resetFreeCredits();
-
                 const response = await client.createImage({
                     params: {
                         prompt: "test",
@@ -921,9 +916,6 @@ describe("server", () => {
             let image: Image;
 
             beforeEach(async () => {
-
-                await backendService.resetFreeCredits();
-
                 const response = await client.createImage({
                     label: "test",
                     parent: "",

@@ -228,22 +228,6 @@ export class Server {
             };
         };
 
-        this.app.post(
-            "/api/stripe-webhook",
-            express.raw({ type: "application/json" }),
-            withMetrics("/api/stripe-webhook", async (req, res) => {
-                const sig = req.headers["stripe-signature"] as string;
-                try {
-                    await this.backendService.handleStripeEvent(req.body, sig);
-                    res.sendStatus(200);
-                } catch (err) {
-                    this.logger.log("Error handling stripe event", err);
-                    res.sendStatus(400);
-                    return;
-                }
-            })
-        );
-
         this.app.use(
             express.json({
                 limit: "10mb",
@@ -879,68 +863,6 @@ export class Server {
             })
         );
 
-        this.app.get(
-            "/api/credits",
-            withMetrics("/api/credits", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                const credits = await this.backendService.getCredits(
-                    jwt.userId
-                );
-                res.json(credits);
-            })
-        );
-
-        // only admins can create deposit codes
-        this.app.post(
-            "/api/deposit-codes",
-            withMetrics("/api/deposit-codes", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                if (!(await this.backendService.isUserAdmin(jwt.userId))) {
-                    res.sendStatus(404);
-                    return;
-                }
-                const depositCode = await this.backendService.createDepositCode(
-                    req.body
-                );
-                res.status(201).json(depositCode);
-            })
-        );
-
-        this.app.post(
-            "/api/deposit-codes/:code",
-            withMetrics("/api/deposit-codes/:code", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                try {
-                    await this.backendService.redeemDepositCode(
-                        req.params.code,
-                        jwt.userId
-                    );
-                } catch (err) {
-                    if (err.message === "Invalid code") {
-                        res.status(404).send({
-                            message: "Invalid code",
-                        });
-                        return;
-                    }
-                    throw err;
-                }
-
-                res.sendStatus(204);
-            })
-        );
-
-        this.app.post(
-            "/api/stripe-sessions",
-            withMetrics("/api/stripe-sessions", async (req, res) => {
-                const jwt = this.authHelper.getJWTFromRequest(req);
-                const session = await this.backendService.createStripeSession(
-                    jwt.userId,
-                    req.body
-                );
-                res.status(201).json(session);
-            })
-        );
-
         if (process.env.BUGSNAG_API_KEY) {
             this.app.use(middleware.errorHandler);
         }
@@ -980,10 +902,6 @@ export class Server {
                     cleanup();
                 }, 1000 * 60);
                 cleanup();
-
-                this.resetCreditsHandle = setInterval(async () => {
-                    await this.backendService.resetFreeCredits();
-                }, 1000 * 60 * 60);
             });
 
             let lastIdle = 0;
