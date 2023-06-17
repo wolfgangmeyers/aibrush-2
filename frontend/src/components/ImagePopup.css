@@ -1,0 +1,18 @@
+
+.image-popup-left-button {
+    position: absolute !important;
+    left: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 1 !important;
+    padding: 5px 10px !important;
+}
+
+.image-popup-right-button {
+    position: absolute !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 1 !important;
+    padding: 5px 10px !important;
+}

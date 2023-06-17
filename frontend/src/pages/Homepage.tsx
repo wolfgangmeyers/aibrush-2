@@ -638,6 +638,20 @@ export const Homepage: FC<Props> = ({
         (image) => image.status === StatusEnum.Processing
     );
 
+    const onSwipe = (image: LocalImage, direction: number) => {
+        // select the previous or next image from the currently selected one
+        const index = images.findIndex((i) => i.id === image.id);
+        if (index === -1) {
+            return;
+        }
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= images.length) {
+            return;
+        }
+        const newImage = images[newIndex];
+        onThumbnailClicked(newImage);
+    }
+
     return (
         <>
             <h1 style={{ fontSize: "40px", textAlign: "left" }}>
@@ -810,6 +824,7 @@ export const Homepage: FC<Props> = ({
                     }}
                     onNSFW={onNSFW}
                     censorNSFW={censorNSFW}
+                    onSwipe={onSwipe}
                 />
             )}
             <ScrollToTop />

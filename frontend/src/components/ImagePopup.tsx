@@ -15,6 +15,7 @@ interface ImagePopupProps {
     onEdit?: (image: LocalImage) => void;
     onNSFW?: (image: LocalImage, nsfw: boolean) => void;
     onSave?: (image: LocalImage) => void;
+    onSwipe?: (image: LocalImage, direction: number) => void;
 }
 
 export const ImagePopup: FC<ImagePopupProps> = ({
@@ -27,6 +28,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     onEdit,
     onNSFW,
     onSave,
+    onSwipe,
 }) => {
     const img = useRef<HTMLImageElement>(null);
     let src = `${assetsUrl}/${image.id}.image.png?updated_at=${image.updated_at}`;
@@ -96,6 +98,12 @@ export const ImagePopup: FC<ImagePopupProps> = ({
         title = title.substring(0, title.indexOf(","));
     }
 
+    let swipeArrowMargin = "10px";
+    if (window.innerWidth < 992) {
+        swipeArrowMargin = "-30px";
+    }
+    const maxImageHeight = (window.innerHeight * 0.6) + "px";
+
     // if open, show modal with image
     return (
         <Modal show={true} onHide={onClose} size="xl">
@@ -103,23 +111,55 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                 <Modal.Title>{title}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <img
-                    ref={img}
-                    style={{
-                        maxWidth: "100%",
-                        maxHeight: "1024px",
-                        display: "block",
-                        marginLeft: "auto",
-                        marginRight: "auto",
-                        filter:
-                            image.nsfw && censorNSFW && !showNSFW
-                                ? "blur(30px)"
-                                : "",
-                    }}
-                    id={`image-popup-${image.id}`}
-                    src={src}
-                    alt={image.label}
-                />
+                <div style={{ position: "relative" }}>
+                    {/* Left button */}
+                    {onSwipe && <button
+                        className="btn btn-secondary btn-sm image-popup-left-button"
+                        style={{
+                            position: "absolute",
+                            left: swipeArrowMargin,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            zIndex: 1,
+                            padding: "5px 10px",
+                        }}
+                        onClick={() => onSwipe(image, -1)}
+                    >
+                        <i className="fas fa-chevron-left"></i>
+                    </button>}
+                    <img
+                        ref={img}
+                        style={{
+                            maxWidth: "100%",
+                            maxHeight: maxImageHeight,
+                            display: "block",
+                            marginLeft: "auto",
+                            marginRight: "auto",
+                            filter:
+                                image.nsfw && censorNSFW && !showNSFW
+                                    ? "blur(30px)"
+                                    : "",
+                        }}
+                        id={`image-popup-${image.id}`}
+                        src={src}
+                        alt={image.label}
+                    />
+                    {/* Right button */}
+                    <button
+                        className="btn btn-secondary btn-sm .image-popup-right-button"
+                        style={{
+                            position: "absolute",
+                            right: swipeArrowMargin,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            zIndex: 1,
+                            padding: "5px 10px",
+                        }}
+                        onClick={() => onSwipe && onSwipe(image, 1)}
+                    >
+                        <i className="fas fa-chevron-right"></i>
+                    </button>
+                </div>
                 {/* List these fields: status, iterations, phrases */}
                 <div className="row">
                     <div className="col-lg-12"></div>
@@ -257,13 +297,17 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                     )}
                                 </>
                             )}
-                            <div style={{marginTop: "8px"}}>
+                            <div style={{ marginTop: "8px" }}>
                                 Prompt: {image.params.prompt}
-                                <CopyToClipboardIcon text={image.params.prompt!} />
+                                <CopyToClipboardIcon
+                                    text={image.params.prompt!}
+                                />
                             </div>
-                            <div style={{marginTop: "8px"}}>
+                            <div style={{ marginTop: "8px" }}>
                                 Negative Prompt: {image.params.negative_prompt}
-                                <CopyToClipboardIcon text={image.params.negative_prompt!} />
+                                <CopyToClipboardIcon
+                                    text={image.params.negative_prompt!}
+                                />
                             </div>
                         </div>
                     </div>
