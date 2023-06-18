@@ -399,47 +399,55 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
         // use html5 canvas
         // crop to square aspect ratio on 128x128 canvas
         const canvas = document.createElement("canvas");
-        canvas.width = 128;
-        canvas.height = 128;
+        const thumbSize = 128;
+        canvas.width = thumbSize;
+        canvas.height = thumbSize;
 
         const image = new Image();
         image.src = `data:image/png;base64,${encodedImage}`;
         image.onload = () => {
             const context = canvas.getContext("2d");
             if (!context) {
-                throw new Error("Could not create canvas context");
+                reject(new Error("Could not create canvas context"));
+                return;
             }
-            const width = 128;
-            const height = 128;
-            canvas.width = width;
-            canvas.height = height;
 
-            const aspectRatio = image.width / image.height;
-            const cropWidth =
-                aspectRatio > 1 ? image.width : image.height * aspectRatio;
-            const cropHeight =
-                aspectRatio > 1 ? image.width / aspectRatio : image.height;
-            const cropX = (image.width - cropWidth) / 2;
-            const cropY = (image.height - cropHeight) / 2;
+            let cropX, cropY, cropDimension;
+            if (image.width > image.height) {
+                cropDimension = image.height;
+                cropX = (image.width - image.height) / 2;
+                cropY = 0;
+            } else {
+                cropDimension = image.width;
+                cropX = 0;
+                cropY = (image.height - image.width) / 2;
+            }
+
+            // Draw the image onto the canvas
             context.drawImage(
-                image,
-                cropX,
-                cropY,
-                cropWidth,
-                cropHeight,
-                0,
-                0,
-                width,
-                height
+                image,           // Source image
+                cropX,           // Source x
+                cropY,           // Source y
+                cropDimension,   // Source width
+                cropDimension,   // Source height
+                0,               // Destination x
+                0,               // Destination y
+                thumbSize,       // Destination width
+                thumbSize        // Destination height
             );
 
-            // save to png
+            // Save to png
             const imageUrl = canvas.toDataURL("image/png");
             const base64 = imageUrl.split(",")[1];
             resolve(base64);
         };
+
+        image.onerror = (error) => {
+            reject(error);
+        };
     });
 }
+
 
 export function decodeImage(encodedImage: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
