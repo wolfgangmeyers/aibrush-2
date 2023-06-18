@@ -13,6 +13,7 @@ import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import {
     convertPNGToJPG,
+    createBlankImage,
     createEncodedThumbnail,
     encodedImageToBlob,
     uploadBlob,
@@ -178,7 +179,14 @@ export const Homepage: FC<Props> = ({
         setErr(null);
         window.scrollTo(0, 0);
         try {
-            const encodedImage = input.encoded_image!;
+            let encodedImage = input.encoded_image;
+            if (!encodedImage) {
+                encodedImage = createBlankImage(
+                    "#ffffff",
+                    input.params.width!,
+                    input.params.height!,
+                )
+            }
             const newImage: LocalImage = {
                 created_at: moment().valueOf(),
                 updated_at: moment().valueOf(),
@@ -513,12 +521,12 @@ export const Homepage: FC<Props> = ({
             history.push("/");
             const createInput: CreateImageInput = {
                 count: 1,
-                // encoded_image: image.imageData!.split(",")[1],
                 params: image.params,
                 status: StatusEnum.Saved,
                 temporary: false,
                 label: "",
                 model: image.model,
+                nsfw: image.nsfw,
             };
 
             const encodedImage = image.imageData!.split(",")[1];

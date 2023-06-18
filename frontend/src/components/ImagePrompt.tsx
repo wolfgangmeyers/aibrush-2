@@ -49,7 +49,10 @@ export function defaultArgs(): CreateImageInput {
 }
 
 function defaultNegativePrompt(): string {
-    return recentNegativePrompts.getItems()[0] || "low quality, distorted, deformed, dull, boring, plain, ugly, noise";
+    return (
+        recentNegativePrompts.getItems()[0] ||
+        "low quality, distorted, deformed, dull, boring, plain, ugly, noise"
+    );
 }
 
 export const ImagePrompt: FC<Props> = ({
@@ -96,7 +99,9 @@ export const ImagePrompt: FC<Props> = ({
 
     const resetState = () => {
         setPrompt("");
-        setNegativePrompt(recentNegativePrompts.getItems()[0] || defaultNegativePrompt);
+        setNegativePrompt(
+            recentNegativePrompts.getItems()[0] || defaultNegativePrompt
+        );
         // setCount(4);
         setAdvancedView(false);
         setParentId(null);
@@ -154,10 +159,6 @@ export const ImagePrompt: FC<Props> = ({
     };
 
     const handleEdit = () => {
-        if (!encodedImage) {
-            console.error("Cannot edit without existing image");
-            return;
-        }
         if (negativePrompt) {
             recentNegativePrompts.addItem(negativePrompt);
         }
@@ -172,7 +173,7 @@ export const ImagePrompt: FC<Props> = ({
         args.params.width = originalWidth;
         args.params.height = originalHeight;
         args.params.cfg_scale = cfgScale;
-        args.nsfw = true;
+        args.nsfw = false;
         args.model = model;
         if (encodedImage) {
             args.encoded_image = encodedImage;
@@ -478,7 +479,10 @@ export const ImagePrompt: FC<Props> = ({
                         )}
                         {/* size slider */}
                         <div className="form-group">
-                            <label htmlFor="size">Size: {scaledAspectRatio.width} x {scaledAspectRatio.height}</label>
+                            <label htmlFor="size">
+                                Size: {scaledAspectRatio.width} x{" "}
+                                {scaledAspectRatio.height}
+                            </label>
                             {/* range slider from 1 to 2 in increments of 0.1 */}
                             <input
                                 type="range"
@@ -493,7 +497,8 @@ export const ImagePrompt: FC<Props> = ({
                                 }
                             />
                             <span className="helptext">
-                                This allows you to adjust the size of your images. Larger images cost more credits.
+                                This allows you to adjust the size of your
+                                images. Larger images cost more credits.
                             </span>
                         </div>
 
@@ -613,18 +618,17 @@ export const ImagePrompt: FC<Props> = ({
                                     )}
                                     &nbsp;PAINT
                                 </button>
-                                {encodedImage && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-secondary light-button"
-                                        onClick={handleEdit}
-                                        style={{ marginLeft: "8px" }}
-                                        disabled={!prompt || creating}
-                                    >
-                                        <i className="fas fa-edit"></i>
-                                        &nbsp;EDIT
-                                    </button>
-                                )}
+
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary light-button"
+                                    onClick={handleEdit}
+                                    style={{ marginLeft: "8px" }}
+                                    disabled={!prompt || creating}
+                                >
+                                    <i className="fas fa-edit"></i>
+                                    &nbsp;EDIT
+                                </button>
                             </div>
                         </div>
                     </div>

@@ -32,7 +32,7 @@ export function convertPNGToJPG(encodedImage: string): Promise<string> {
                 canvas.remove();
             }
         };
-        image.src = `data:image/png;base64,${encodedImage}`
+        image.src = `data:image/png;base64,${encodedImage}`;
     });
 }
 
@@ -314,6 +314,24 @@ export function applyAlphaMask(imageData: ImageData, alphaMask: ImageData) {
     }
 }
 
+export function createBlankImage(
+    color: string,
+    width: number,
+    height: number
+): string {
+    const canvas = document.createElement("canvas");
+    try {
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext("2d")!;
+        context.fillStyle = color;
+        context.fillRect(0, 0, width, height);
+        return canvas.toDataURL().split(",")[1];
+    } finally {
+        canvas.remove();
+    }
+}
+
 export interface ImageWorkerRequest {
     id: string;
     feather: boolean;
@@ -442,7 +460,7 @@ export function resizeEncodedImage(
     encodedImage: string,
     width: number,
     height: number,
-    format: "png" | "jpeg",
+    format: "png" | "jpeg"
 ): Promise<string> {
     return new Promise((resolve, reject) => {
         // use html5 canvas
