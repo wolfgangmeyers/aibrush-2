@@ -4,6 +4,7 @@ import { CreateImageInput, Image, StatusEnum } from "../client/api";
 import { LocalImage } from "../lib/localImagesStore";
 import CopyToClipboard from "react-copy-to-clipboard";
 import CopyToClipboardIcon from "./CopyToClipboardIcon";
+import { Swipe } from "./Swipe";
 
 interface ImagePopupProps {
     assetsUrl: string;
@@ -102,7 +103,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     if (window.innerWidth < 992) {
         swipeArrowMargin = "-30px";
     }
-    const maxImageHeight = (window.innerHeight * 0.6) + "px";
+    const maxImageHeight = window.innerHeight * 0.6 + "px";
 
     // if open, show modal with image
     return (
@@ -113,37 +114,45 @@ export const ImagePopup: FC<ImagePopupProps> = ({
             <Modal.Body>
                 <div style={{ position: "relative" }}>
                     {/* Left button */}
-                    {onSwipe && <button
-                        className="btn btn-secondary btn-sm image-popup-left-button"
-                        style={{
-                            position: "absolute",
-                            left: swipeArrowMargin,
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            zIndex: 1,
-                            padding: "5px 10px",
-                        }}
-                        onClick={() => onSwipe(image, -1)}
+                    {onSwipe && (
+                        <button
+                            className="btn btn-secondary btn-sm image-popup-left-button"
+                            style={{
+                                position: "absolute",
+                                left: swipeArrowMargin,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                zIndex: 1,
+                                padding: "5px 10px",
+                            }}
+                            onClick={() => onSwipe(image, -1)}
+                        >
+                            <i className="fas fa-chevron-left"></i>
+                        </button>
+                    )}
+                    <Swipe
+                        onSwipe={(direction) =>
+                            onSwipe && onSwipe(image, direction)
+                        }
                     >
-                        <i className="fas fa-chevron-left"></i>
-                    </button>}
-                    <img
-                        ref={img}
-                        style={{
-                            maxWidth: "100%",
-                            maxHeight: maxImageHeight,
-                            display: "block",
-                            marginLeft: "auto",
-                            marginRight: "auto",
-                            filter:
-                                image.nsfw && censorNSFW && !showNSFW
-                                    ? "blur(30px)"
-                                    : "",
-                        }}
-                        id={`image-popup-${image.id}`}
-                        src={src}
-                        alt={image.label}
-                    />
+                        <img
+                            ref={img}
+                            style={{
+                                maxWidth: "100%",
+                                maxHeight: maxImageHeight,
+                                display: "block",
+                                marginLeft: "auto",
+                                marginRight: "auto",
+                                filter:
+                                    image.nsfw && censorNSFW && !showNSFW
+                                        ? "blur(30px)"
+                                        : "",
+                            }}
+                            id={`image-popup-${image.id}`}
+                            src={src}
+                            alt={image.label}
+                        />
+                    </Swipe>
                     {/* Right button */}
                     <button
                         className="btn btn-secondary btn-sm .image-popup-right-button"
