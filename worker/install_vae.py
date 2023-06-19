@@ -14,7 +14,7 @@ if sd_file.endswith(".safetensors"):
 else:
     sd_model = torch.load(sd_file, map_location="cpu")["state_dict"]
 if vae_file.endswith(".safetensors"):
-    vae_model = load_file(vae_file, device="cpu")["state_dict"]
+    vae_model = load_file(vae_file, device="cpu")
 else:
     vae_model = torch.load(vae_file, map_location="cpu")["state_dict"]
 
