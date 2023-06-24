@@ -804,6 +804,7 @@ export class BackendService {
                         model: image.model,
                         augmentation: image.params.augmentation,
                         controlnetType: image.params.controlnet_type,
+                        loras: image.params.loras || [],
                     });
                     console.log("Submitted to horde: " + image.id);
                 }

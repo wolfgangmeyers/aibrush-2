@@ -26,6 +26,7 @@ export interface HordeRequestPayload {
         post_processing: string[];
         control_type?: string;
         seed?: string;
+        loras?: HordeLoraConfig[];
     };
     prompt: string;
     api_key?: string;
@@ -39,6 +40,13 @@ export interface HordeRequestPayload {
     source_image?: string;
     source_mask?: string;
     workers?: string[];
+}
+
+export interface HordeLoraConfig {
+    name: string;
+    model: number;
+    clip: number;
+    inject_trigger?: string;
 }
 
 export interface AlchemistForm {

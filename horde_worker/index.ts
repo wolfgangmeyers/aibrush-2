@@ -131,6 +131,12 @@ interface HordeRequest {
     model: string;
     augmentation: "face_restore" | "remove_background" | "upscale";
     controlnetType: string | null;
+    loras: LoraConfig[];
+}
+
+export interface LoraConfig {
+    name: string;
+    strength: number;
 }
 
 function stripWeightsFromPrompt(prompt: string): string {
@@ -258,6 +264,11 @@ async function processRequest(request: HordeRequest) {
                 post_processing,
                 control_type: request.controlnetType || undefined,
                 seed: request.seed || undefined,
+                loras: request.loras && request.loras.map((lora) => ({
+                    name: lora.name,
+                    model: lora.strength,
+                    clip: lora.strength,
+                })),
             },
             prompt,
             api_key: hordeApiKey,

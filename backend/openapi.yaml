@@ -725,6 +725,16 @@ components:
           nullable: true
         error:
           type: string
+    LoraConfig:
+      type: object
+      properties:
+        name:
+          type: string
+        strength:
+          type: number
+      required:
+        - name
+        - strength
 
     ImageParams:
       type: object
@@ -751,7 +761,10 @@ components:
         augmentation:
           type: string
           enum: [face_restore, remove_background, upscale]
-
+        loras:
+          type: array
+          items:
+            $ref: '#/components/schemas/LoraConfig'
     Image:
       properties:
         id:

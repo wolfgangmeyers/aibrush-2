@@ -17,6 +17,12 @@ export interface HordeRequest {
     model: string;
     augmentation: "face_restore" | "remove_background" | "upscale";
     controlnetType: string | null;
+    loras: LoraConfig[];
+}
+
+export interface LoraConfig {
+    name: string;
+    strength: number;
 }
 
 export interface HordeQueue {
