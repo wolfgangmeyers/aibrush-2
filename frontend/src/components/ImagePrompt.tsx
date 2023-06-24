@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useState } from "react";
-import { CreateImageInput, StatusEnum, Image, AIBrushApi } from "../client";
+import { CreateImageInput, StatusEnum, Image, AIBrushApi, LoraConfig } from "../client";
 import {
     aspectRatios,
     DEFAULT_ASPECT_RATIO,
@@ -18,6 +18,9 @@ import { calculateImagesCost } from "../lib/credits";
 import { CostIndicator } from "./CostIndicator";
 import { recentPrompts, recentNegativePrompts } from "../lib/recentList";
 import TextInputWithHistory from "./TextInputWithHistory";
+import { LoraModal, SelectedLora } from "./LoraSelector";
+import { SelectedLoraTag } from "./SelectedLora";
+import { LoraTriggers } from "./LoraTriggers";
 
 interface Props {
     api: AIBrushApi;
@@ -83,6 +86,10 @@ export const ImagePrompt: FC<Props> = ({
     const [cfgScale, setCfgScale] = useState<number>(7.5);
     const [seed, setSeed] = useState<string>("");
     const [size, setSize] = useState<number>(1);
+
+    const [selectingLora, setSelectingLora] = useState<boolean>(false);
+    const [selectedLoras, setSelectedLoras] = useState<SelectedLora[]>([]);
+
     const defaultAspectRatio = aspectRatios[DEFAULT_ASPECT_RATIO];
 
     const [aspectRatioDetails, setAspectRatioDetails] = useState<AspectRatio>(
@@ -130,6 +137,7 @@ export const ImagePrompt: FC<Props> = ({
         args.params.controlnet_type = controlnetType as any;
         args.params.cfg_scale = cfgScale;
         args.params.seed = seed || undefined;
+        args.params.loras = selectedLoras.map(l => l.config);
         if (parent) {
             const bestMatch = getClosestAspectRatio(
                 parent.params.width!,
@@ -282,162 +290,206 @@ export const ImagePrompt: FC<Props> = ({
         scaledAspectRatio.height
     );
 
-    return (
-        <form onSubmit={handleSubmit}>
-            <div className="homepage-prompt">
-                <div className="input-group">
-                    <input
-                        className="form-control prompt"
-                        placeholder="What would you like to create?"
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                    />
+    const onAddLora = (lora: SelectedLora) => {
+        setSelectedLoras([...selectedLoras, lora]);
+        setSelectingLora(false);
+    };
 
-                    <div className="input-group-append">
-                        <select
-                            className="form-control prompt-count"
-                            style={{ borderTopLeftRadius: "0px" }}
-                            value={seed ? 1 : count}
-                            onChange={(e) => setCount(parseInt(e.target.value))}
-                            disabled={!!seed}
-                        >
-                            <option value={1}>1</option>
-                            <option>2</option>
-                            <option>3</option>
-                            <option>4</option>
-                            <option>5</option>
-                            <option>6</option>
-                            <option>7</option>
-                            <option>8</option>
-                            <option>9</option>
-                            <option>10</option>
-                        </select>
-                        <button
-                            type="submit"
-                            className="btn btn-secondary light-button"
-                            style={{ marginLeft: "8px" }}
-                            disabled={!prompt || creating}
-                        >
-                            {/* paintbrush button */}
-                            {!creating && (
-                                <i className="fas fa-paint-brush"></i>
-                            )}
-                            {/* spinner button */}
-                            {creating && (
-                                <i className="fas fa-spinner fa-spin"></i>
-                            )}
-                        </button>
+    const onRemoveLora = (lora: SelectedLora) => {
+        setSelectedLoras(
+            selectedLoras.filter((selectedLora) => selectedLora.config.name !== lora.config.name)
+        );
+    };
+
+    const onAddTrigger = (trigger: string) => {
+        const parts = [prompt];
+        if (prompt.length > 0 && !prompt.endsWith(",")) {
+            parts.push(", ");
+        }
+        parts.push(trigger);
+        setPrompt(parts.join(""));
+    }
+
+    return (
+        <>
+            <form onSubmit={handleSubmit}>
+                <div className="homepage-prompt">
+                    <div className="input-group">
+                        <input
+                            className="form-control prompt"
+                            placeholder="What would you like to create?"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                        />
+
+                        <div className="input-group-append">
+                            <select
+                                className="form-control prompt-count"
+                                style={{ borderTopLeftRadius: "0px" }}
+                                value={seed ? 1 : count}
+                                onChange={(e) =>
+                                    setCount(parseInt(e.target.value))
+                                }
+                                disabled={!!seed}
+                            >
+                                <option value={1}>1</option>
+                                <option>2</option>
+                                <option>3</option>
+                                <option>4</option>
+                                <option>5</option>
+                                <option>6</option>
+                                <option>7</option>
+                                <option>8</option>
+                                <option>9</option>
+                                <option>10</option>
+                            </select>
+                            <button
+                                type="submit"
+                                className="btn btn-secondary light-button"
+                                style={{ marginLeft: "8px" }}
+                                disabled={!prompt || creating}
+                            >
+                                {/* paintbrush button */}
+                                {!creating && (
+                                    <i className="fas fa-paint-brush"></i>
+                                )}
+                                {/* spinner button */}
+                                {creating && (
+                                    <i className="fas fa-spinner fa-spin"></i>
+                                )}
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <CostIndicator imagesCost={imagesCost} />
-                <div
-                    style={{
-                        marginTop: "24px",
-                    }}
-                >
-                    <a
-                        href="javascript:void(0)"
-                        onClick={() => setAdvancedView(!advancedView)}
+                    {selectedLoras.length > 0 && (
+                        <LoraTriggers prompt={prompt} selectedLoras={selectedLoras} onAddTrigger={onAddTrigger} />
+                    )}
+                    <CostIndicator imagesCost={imagesCost} />
+                    <div
                         style={{
-                            color: "white",
-                            textDecoration: "underline",
+                            marginTop: "24px",
                         }}
                     >
-                        Advanced
-                    </a>
-                    &nbsp;
-                    {advancedView ? (
-                        <i className="fas fa-chevron-up"></i>
-                    ) : (
-                        <i className="fas fa-chevron-down"></i>
-                    )}
-                </div>
-                {advancedView && (
-                    <div className="homepage-prompt-advanced">
-                        {encodedImage && (
+                        <a
+                            href="javascript:void(0)"
+                            onClick={() => setAdvancedView(!advancedView)}
+                            style={{
+                                color: "white",
+                                textDecoration: "underline",
+                            }}
+                        >
+                            Advanced
+                        </a>
+                        &nbsp;
+                        {advancedView ? (
+                            <i className="fas fa-chevron-up"></i>
+                        ) : (
+                            <i className="fas fa-chevron-down"></i>
+                        )}
+                    </div>
+                    {advancedView && (
+                        <div className="homepage-prompt-advanced">
+                            {encodedImage && (
+                                <div className="form-group">
+                                    <label>Init Image</label>
+                                    <img
+                                        style={{
+                                            display: "block",
+                                            marginLeft: "auto",
+                                            marginRight: "auto",
+                                            maxWidth: "100%",
+                                        }}
+                                        src={`data:image/png;base64,${encodedImage}`}
+                                    />
+                                </div>
+                            )}
+                            {!parent && !encodedImage && (
+                                <AspectRatioSelector
+                                    aspectRatio={aspectRatio}
+                                    onChange={(aspectRatioId) => {
+                                        setAspectRatio(aspectRatioId);
+                                        setAspectRatioDetails(
+                                            aspectRatios[aspectRatioId]
+                                        );
+                                    }}
+                                />
+                            )}
                             <div className="form-group">
-                                <label>Init Image</label>
-                                <img
+                                <div
                                     style={{
                                         display: "block",
-                                        marginLeft: "auto",
+                                        maxWidth: encodedImage
+                                            ? "350px"
+                                            : "180px",
+                                        marginTop: "40px",
                                         marginRight: "auto",
-                                        maxWidth: "100%",
+                                        marginLeft: "auto",
                                     }}
-                                    src={`data:image/png;base64,${encodedImage}`}
-                                />
-                            </div>
-                        )}
-                        {!parent && !encodedImage && (
-                            <AspectRatioSelector
-                                aspectRatio={aspectRatio}
-                                onChange={(aspectRatioId) => {
-                                    setAspectRatio(aspectRatioId);
-                                    setAspectRatioDetails(
-                                        aspectRatios[aspectRatioId]
-                                    );
-                                }}
-                            />
-                        )}
-                        <div className="form-group">
-                            <div
-                                style={{
-                                    display: "block",
-                                    maxWidth: encodedImage ? "350px" : "180px",
-                                    marginTop: "40px",
-                                    marginRight: "auto",
-                                    marginLeft: "auto",
-                                }}
-                            >
-                                <label
-                                    id="loadimage-wrapper"
-                                    className={`btn btn-primary `}
-                                    style={{ display: "inline" }}
                                 >
-                                    {/* upload image */}
-                                    <i className="fas fa-upload"></i>&nbsp;
-                                    {encodedImage || parent
-                                        ? "Replace"
-                                        : "Upload"}
-                                    <input
-                                        id="loadimage"
-                                        type="file"
-                                        style={{ display: "none" }}
-                                        onChange={onImageSelected}
-                                    />
-                                </label>
-                                {encodedImage && (
                                     <label
-                                        className="btn btn-secondary"
-                                        onClick={() => setEncodedImage("")}
+                                        id="loadimage-wrapper"
+                                        className={`btn btn-primary `}
                                         style={{ display: "inline" }}
                                     >
-                                        {/* remove image */}
-                                        <i className="fas fa-trash"></i>&nbsp;
-                                        Remove
+                                        {/* upload image */}
+                                        <i className="fas fa-upload"></i>&nbsp;
+                                        {encodedImage || parent
+                                            ? "Replace"
+                                            : "Upload"}
+                                        <input
+                                            id="loadimage"
+                                            type="file"
+                                            style={{ display: "none" }}
+                                            onChange={onImageSelected}
+                                        />
                                     </label>
-                                )}
+                                    {encodedImage && (
+                                        <label
+                                            className="btn btn-secondary"
+                                            onClick={() => setEncodedImage("")}
+                                            style={{ display: "inline" }}
+                                        >
+                                            {/* remove image */}
+                                            <i className="fas fa-trash"></i>
+                                            &nbsp; Remove
+                                        </label>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="model">Model</label>
-                            <div>
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary light-button"
-                                    onClick={() => setSelectingModel(true)}
-                                >
-                                    {model}&nbsp;
-                                    <i className="fas fa-caret-down"></i>
-                                </button>
+                            <div className="form-group">
+                                <label htmlFor="model">Model</label>
+                                <div>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary light-button"
+                                        onClick={() => setSelectingModel(true)}
+                                    >
+                                        {model}&nbsp;
+                                        <i className="fas fa-caret-down"></i>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div className="form-group">
-                            {/* negative prompt */}
-                            <label htmlFor="negativePrompt">
-                                Negative Prompt
-                            </label>
-                            {/* <input
+                            <div className="form-group">
+                                {/* loras */}
+                                <label htmlFor="loras">Loras</label>
+                                <div>
+                                    {selectedLoras.map(lora => <SelectedLoraTag lora={lora} onRemove={lora => onRemoveLora(lora)} />)}
+                                    {/* add lora button */}
+                                    {selectedLoras.length < 5 && <button
+                                        type="button"
+                                        className="btn btn-secondary light-button"
+                                        style={{ marginLeft: "8px" }}
+                                        onClick={() => setSelectingLora(true)}
+                                    >
+                                        <i className="fas fa-plus"></i>&nbsp;Add Lora
+                                    </button>}
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                {/* negative prompt */}
+                                <label htmlFor="negativePrompt">
+                                    Negative Prompt
+                                </label>
+                                {/* <input
                                 type="text"
                                 className="form-control"
                                 id="negativePrompt"
@@ -447,193 +499,197 @@ export const ImagePrompt: FC<Props> = ({
                                     setNegativePrompt(e.target.value)
                                 }
                             /> */}
-                            <TextInputWithHistory
-                                history={recentNegativePrompts.getItems()}
-                                value={negativePrompt}
-                                onChange={setNegativePrompt}
-                            />
-                            <span className="helptext">
-                                Try descriptive words like "blurry" or
-                                "distorted"
-                            </span>
-                        </div>
-                        {!seed && (
+                                <TextInputWithHistory
+                                    history={recentNegativePrompts.getItems()}
+                                    value={negativePrompt}
+                                    onChange={setNegativePrompt}
+                                />
+                                <span className="helptext">
+                                    Try descriptive words like "blurry" or
+                                    "distorted"
+                                </span>
+                            </div>
+                            {!seed && (
+                                <div className="form-group">
+                                    <label htmlFor="count">
+                                        Count: {count}
+                                    </label>
+                                    {/* range slider from 1 to 20 */}
+                                    <input
+                                        type="range"
+                                        className="form-control-range"
+                                        id="count"
+                                        min="1"
+                                        max="10"
+                                        value={count}
+                                        onChange={(e) =>
+                                            setCount(parseInt(e.target.value))
+                                        }
+                                    />
+                                    <span className="helptext">
+                                        This is how many images you want to
+                                        generate
+                                    </span>
+                                </div>
+                            )}
+                            {/* size slider */}
                             <div className="form-group">
-                                <label htmlFor="count">Count: {count}</label>
-                                {/* range slider from 1 to 20 */}
+                                <label htmlFor="size">
+                                    Size: {scaledAspectRatio.width} x{" "}
+                                    {scaledAspectRatio.height}
+                                </label>
+                                {/* range slider from 1 to 2 in increments of 0.1 */}
                                 <input
                                     type="range"
                                     className="form-control-range"
-                                    id="count"
+                                    id="size"
                                     min="1"
-                                    max="10"
-                                    value={count}
+                                    max="2"
+                                    step="0.1"
+                                    value={size}
                                     onChange={(e) =>
-                                        setCount(parseInt(e.target.value))
+                                        setSize(parseFloat(e.target.value))
                                     }
                                 />
                                 <span className="helptext">
-                                    This is how many images you want to generate
+                                    This allows you to adjust the size of your
+                                    images. Larger images cost more credits.
                                 </span>
                             </div>
-                        )}
-                        {/* size slider */}
-                        <div className="form-group">
-                            <label htmlFor="size">
-                                Size: {scaledAspectRatio.width} x{" "}
-                                {scaledAspectRatio.height}
-                            </label>
-                            {/* range slider from 1 to 2 in increments of 0.1 */}
-                            <input
-                                type="range"
-                                className="form-control-range"
-                                id="size"
-                                min="1"
-                                max="2"
-                                step="0.1"
-                                value={size}
-                                onChange={(e) =>
-                                    setSize(parseFloat(e.target.value))
-                                }
-                            />
-                            <span className="helptext">
-                                This allows you to adjust the size of your
-                                images. Larger images cost more credits.
-                            </span>
-                        </div>
 
-                        {(parentId || encodedImage) && (
+                            {(parentId || encodedImage) && (
+                                <div className="form-group">
+                                    {/* variation strength */}
+                                    <label htmlFor="variationStrength">
+                                        Variation Strength:&nbsp;
+                                        {(variationStrength * 100).toFixed(0)}%
+                                    </label>
+                                    <input
+                                        type="range"
+                                        className="form-control-range"
+                                        id="variationStrength"
+                                        min="0.05"
+                                        max="0.95"
+                                        step="0.05"
+                                        value={variationStrength}
+                                        onChange={(e) =>
+                                            setVariationStrength(
+                                                parseFloat(e.target.value)
+                                            )
+                                        }
+                                    />
+                                    <span className="helptext">
+                                        This is how much variation you want to
+                                        see from the parent image
+                                    </span>
+                                </div>
+                            )}
+                            {encodedImage && (
+                                // controlnet type - canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough
+                                <div className="form-group">
+                                    <label htmlFor="controlNetType">
+                                        Control Net Type
+                                    </label>
+                                    <select
+                                        className="form-control"
+                                        id="controlNetType"
+                                        value={controlnetType}
+                                        onChange={(e) =>
+                                            setControlnetType(e.target.value)
+                                        }
+                                    >
+                                        <option value="">None</option>
+                                        {controlnetTypes.map((type) => (
+                                            <option
+                                                value={type}
+                                                key={`type-${type}`}
+                                            >
+                                                {type}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <span className="helptext">
+                                        Controlnet is an advanced way of
+                                        controlling the output of image
+                                        generation. You can read more about it{" "}
+                                        <a
+                                            target="_blank"
+                                            href="https://bootcamp.uxdesign.cc/controlnet-and-stable-diffusion-a-game-changer-for-ai-image-generation-83555cb942fc"
+                                        >
+                                            here.
+                                        </a>
+                                    </span>
+                                </div>
+                            )}
+                            {/* cfg scale. Slider from 1 to 20 in increments of 0.1 */}
                             <div className="form-group">
-                                {/* variation strength */}
-                                <label htmlFor="variationStrength">
-                                    Variation Strength:&nbsp;
-                                    {(variationStrength * 100).toFixed(0)}%
-                                </label>
+                                <label>CFG Scale: {cfgScale.toFixed(1)}</label>
                                 <input
                                     type="range"
                                     className="form-control-range"
-                                    id="variationStrength"
-                                    min="0.05"
-                                    max="0.95"
-                                    step="0.05"
-                                    value={variationStrength}
+                                    min="1"
+                                    max="20"
+                                    step="0.5"
+                                    value={cfgScale}
                                     onChange={(e) =>
-                                        setVariationStrength(
-                                            parseFloat(e.target.value)
-                                        )
+                                        setCfgScale(parseFloat(e.target.value))
                                     }
                                 />
                                 <span className="helptext">
-                                    This is how much variation you want to see
-                                    from the parent image
+                                    Adjust the CFG scale to control how much the
+                                    image looks like the prompt.
                                 </span>
                             </div>
-                        )}
-                        {encodedImage && (
-                            // controlnet type - canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough
-                            <div className="form-group">
-                                <label htmlFor="controlNetType">
-                                    Control Net Type
-                                </label>
-                                <select
-                                    className="form-control"
-                                    id="controlNetType"
-                                    value={controlnetType}
-                                    onChange={(e) =>
-                                        setControlnetType(e.target.value)
-                                    }
-                                >
-                                    <option value="">None</option>
-                                    {controlnetTypes.map((type) => (
-                                        <option
-                                            value={type}
-                                            key={`type-${type}`}
-                                        >
-                                            {type}
-                                        </option>
-                                    ))}
-                                </select>
-                                <span className="helptext">
-                                    Controlnet is an advanced way of controlling
-                                    the output of image generation. You can read
-                                    more about it{" "}
-                                    <a
-                                        target="_blank"
-                                        href="https://bootcamp.uxdesign.cc/controlnet-and-stable-diffusion-a-game-changer-for-ai-image-generation-83555cb942fc"
-                                    >
-                                        here.
-                                    </a>
-                                </span>
-                            </div>
-                        )}
-                        {/* cfg scale. Slider from 1 to 20 in increments of 0.1 */}
-                        <div className="form-group">
-                            <label>CFG Scale: {cfgScale.toFixed(1)}</label>
-                            <input
-                                type="range"
-                                className="form-control-range"
-                                min="1"
-                                max="20"
-                                step="0.5"
-                                value={cfgScale}
-                                onChange={(e) =>
-                                    setCfgScale(parseFloat(e.target.value))
-                                }
-                            />
-                            <span className="helptext">
-                                Adjust the CFG scale to control how much the
-                                image looks like the prompt.
-                            </span>
-                        </div>
-                        <SeedInput seed={seed} setSeed={setSeed} />
+                            <SeedInput seed={seed} setSeed={setSeed} />
 
-                        <div
-                            className="form-group"
-                            style={{ minHeight: "20px" }}
-                        >
-                            <div className="float-right">
-                                {parent && (
+                            <div
+                                className="form-group"
+                                style={{ minHeight: "20px" }}
+                            >
+                                <div className="float-right">
+                                    {parent && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary light-button"
+                                            onClick={handleCancel}
+                                        >
+                                            <i className="fas fa-times"></i>
+                                            &nbsp;CANCEL
+                                        </button>
+                                    )}
+                                    <button
+                                        type="submit"
+                                        className="btn btn-primary"
+                                        style={{ marginLeft: "8px" }}
+                                        disabled={!prompt || creating}
+                                    >
+                                        {/* paintbrush button */}
+                                        {!creating && (
+                                            <i className="fas fa-paint-brush"></i>
+                                        )}
+                                        {/* spinner button */}
+                                        {creating && (
+                                            <i className="fas fa-spinner fa-spin"></i>
+                                        )}
+                                        &nbsp;PAINT
+                                    </button>
+
                                     <button
                                         type="button"
                                         className="btn btn-secondary light-button"
-                                        onClick={handleCancel}
+                                        onClick={handleEdit}
+                                        style={{ marginLeft: "8px" }}
+                                        disabled={!prompt || creating}
                                     >
-                                        <i className="fas fa-times"></i>
-                                        &nbsp;CANCEL
+                                        <i className="fas fa-edit"></i>
+                                        &nbsp;EDIT
                                     </button>
-                                )}
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    style={{ marginLeft: "8px" }}
-                                    disabled={!prompt || creating}
-                                >
-                                    {/* paintbrush button */}
-                                    {!creating && (
-                                        <i className="fas fa-paint-brush"></i>
-                                    )}
-                                    {/* spinner button */}
-                                    {creating && (
-                                        <i className="fas fa-spinner fa-spin"></i>
-                                    )}
-                                    &nbsp;PAINT
-                                </button>
-
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary light-button"
-                                    onClick={handleEdit}
-                                    style={{ marginLeft: "8px" }}
-                                    disabled={!prompt || creating}
-                                >
-                                    <i className="fas fa-edit"></i>
-                                    &nbsp;EDIT
-                                </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            </form>
             {selectingModel && (
                 <ModelSelector
                     api={api}
@@ -643,6 +699,12 @@ export const ImagePrompt: FC<Props> = ({
                     inpainting={false}
                 />
             )}
-        </form>
+            {selectingLora && (
+                <LoraModal
+                    onCancel={() => setSelectingLora(false)}
+                    onConfirm={lora => onAddLora(lora)}
+                />
+            )}
+        </>
     );
 };

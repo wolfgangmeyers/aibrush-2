@@ -22,7 +22,6 @@ import {
     ImageUrls,
     GlobalSettings,
     TemporaryImage,
-    Credits,
     DepositCode,
     CreateDepositCodeInput,
     CreateStripeSessionInput,
@@ -46,13 +45,6 @@ const STUCK_IMAGES_KEY = 1;
 const TEMPORARY_IMAGES_KEY = 2;
 const DELETED_IMAGES_KEY = 3;
 const MIGRATIONS_KEY = 4;
-const RESET_CREDITS_KEY = 5;
-// const WORK_DISTRIBUTION_KEY = 6;
-// const IDLE_BOOSTS_KEY = 7;
-
-const RESET_CREDITS_EVENT = "reset_credits";
-
-const DEPOSIT_CODE_DAYS = 7;
 
 export type NotificationListener = (payload: string) => void;
 
@@ -60,7 +52,6 @@ export const NOTIFICATION_IMAGE_UPDATED = "image_updated";
 export const NOTIFICATION_IMAGE_DELETED = "image_deleted";
 export const NOTIFICATION_PENDING_IMAGE = "pending_image";
 export const NOTIFICATION_WORKER_CONFIG_UPDATED = "worker_config_updated";
-export const NOTIFICATION_CREDITS_UPDATED = "credits_updated";
 
 const IMAGE_FIELDS: { [key: string]: boolean } = {
     id: true,
@@ -1245,10 +1236,6 @@ export class BackendService {
             await client.query(
                 `INSERT INTO users (id, email, active) VALUES ($1, $2, true)`,
                 [hash(email), email]
-            );
-            await client.query(
-                `INSERT INTO credits (user_id, free_credits, paid_credits) VALUES ($1, 100, 0)`,
-                [hash(email)]
             );
             return true;
         } finally {

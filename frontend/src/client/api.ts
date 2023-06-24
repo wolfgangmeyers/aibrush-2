@@ -530,6 +530,12 @@ export interface ImageParams {
      * @memberof ImageParams
      */
     augmentation?: ImageParamsAugmentationEnum;
+    /**
+     * 
+     * @type {Array<LoraConfig>}
+     * @memberof ImageParams
+     */
+    loras?: Array<LoraConfig>;
 }
 
 /**
@@ -663,6 +669,25 @@ export interface LoginResult {
      * @memberof LoginResult
      */
     refreshToken?: string;
+}
+/**
+ * 
+ * @export
+ * @interface LoraConfig
+ */
+export interface LoraConfig {
+    /**
+     * 
+     * @type {string}
+     * @memberof LoraConfig
+     */
+    name: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof LoraConfig
+     */
+    strength: number;
 }
 /**
  * 
