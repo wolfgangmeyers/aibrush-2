@@ -107,7 +107,6 @@ async function uploadImage(key: string, data: Buffer): Promise<void> {
 const hordeApiKey = process.env.STABLE_HORDE_API_KEY;
 const hordeBaseUrl = "https://stablehorde.net/api";
 const queueUrl = process.env.HORDE_QUEUE_URL;
-const paidQueueUrl = process.env.PAID_HORDE_QUEUE_URL;
 
 const augmentationToForm = {
     upscale: "RealESRGAN_x4plus",
@@ -378,26 +377,6 @@ async function poll() {
         await sleep(1000);
         return;
     }
-    let paidMessages = await sqsClient
-        .receiveMessage({
-            QueueUrl: paidQueueUrl,
-            MaxNumberOfMessages: Math.min(30 - activeImageCount, 10),
-            WaitTimeSeconds: 1,
-        })
-        .promise();
-    paidMessages.Messages = paidMessages.Messages || [];
-    console.log(
-        `received ${
-            paidMessages.Messages?.length || 0
-        } paid messages from queue`
-    );
-    if (paidMessages.Messages && paidMessages.Messages.length > 0) {
-        activeImageCount += paidMessages.Messages.length;
-        for (const message of paidMessages.Messages) {
-            processRequest(JSON.parse(message.Body) as HordeRequest);
-        }
-        await deleteMessages(paidQueueUrl, paidMessages.Messages);
-    }
 
     let freeMessages: PromiseResult<AWS.SQS.ReceiveMessageResult, AWS.AWSError>;
     // if there are less than 30 total messages (active + paid), get some from the free queue
@@ -406,7 +385,7 @@ async function poll() {
             .receiveMessage({
                 QueueUrl: queueUrl,
                 MaxNumberOfMessages: Math.min(30 - activeImageCount, 10),
-                WaitTimeSeconds: 1,
+                WaitTimeSeconds: 20,
             })
             .promise();
         freeMessages.Messages = freeMessages.Messages || [];
