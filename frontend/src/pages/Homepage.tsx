@@ -497,11 +497,27 @@ export const Homepage: FC<Props> = ({
     const onDelete = async (image: LocalImage) => {
         try {
             // await api.deleteImage(image.id);
+            let nextImage = null;
+            if (selectedImage) {
+                const index = images.findIndex(
+                    (i) => i.id === selectedImage.id
+                );
+                if (index > 0) {
+                    nextImage = images[index - 1];
+                } else if (index === 0 && images.length > 1) {
+                    nextImage = images[1];
+                }
+
+            }
             await localImages.deleteImage(image.id);
             setImages((images) => {
                 return images.filter((i) => i.id !== image.id);
             });
-            history.push("/");
+            if (nextImage) {
+                history.push(`/images/${nextImage.id}`);
+            } else {
+                history.push("/");
+            }
         } catch (e) {
             console.error(e);
             onError("Error deleting image");

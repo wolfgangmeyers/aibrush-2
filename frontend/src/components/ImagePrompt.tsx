@@ -11,7 +11,7 @@ import { AspectRatioSelector } from "./AspectRatioSelector";
 import { getUpscaleLevel } from "../lib/upscale";
 import { resizeEncodedImage } from "../lib/imageutil";
 import { LocalImage } from "../lib/localImagesStore";
-import { controlnetTypes, supportedModels } from "../lib/supportedModels";
+import { controlnetTypes } from "../lib/supportedModels";
 import { SeedInput } from "./SeedInput";
 import ModelSelector from "./ModelSelector";
 import { calculateImagesCost } from "../lib/credits";
@@ -266,9 +266,7 @@ export const ImagePrompt: FC<Props> = ({
             setAdvancedView(true);
             setVariationStrength(parent.params.denoising_strength || 0.75);
             setModel(
-                supportedModels.indexOf(parent.model) > -1
-                    ? parent.model
-                    : "Epic Diffusion"
+                parent.model
             );
             setCfgScale(parent.params.cfg_scale || 7.5);
         } else {
