@@ -16,7 +16,7 @@ export class RecentList {
         localStorage.setItem(this.key, JSON.stringify(models));
     }
 
-    addItem(model: string): void {
+    addItem(model: string): (string | undefined) {
         const recentModels = this.getRecentItems();
         const modelIndex = recentModels.indexOf(model);
 
@@ -26,11 +26,13 @@ export class RecentList {
 
         recentModels.unshift(model);
 
+        let removed: string | undefined;
         if (recentModels.length > this.listSize) {
-            recentModels.pop();
+            removed = recentModels.pop();
         }
 
         this.saveRecentItems(recentModels);
+        return removed;
     }
 
     getItems(): string[] {
@@ -41,3 +43,4 @@ export class RecentList {
 export const recentModels = new RecentList("recent-models", 20);
 export const recentNegativePrompts = new RecentList("recent-negative-prompts", 20);
 export const recentPrompts = new RecentList("recent-positive-prompts", 20);
+export const recentLoras = new RecentList("recent-loras", 20);

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { FC, useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
@@ -7,15 +7,11 @@ import Alert from "react-bootstrap/Alert";
 import DOMPurify from "dompurify";
 
 import { Item } from "../lib/civit_loras";
-import { Col, Row } from "react-bootstrap";
+import { Col, ListGroup, Row } from "react-bootstrap";
 import { LoraConfig } from "../client";
+import { recentLoras } from "../lib/recentLoras";
 
 // https://chat.openai.com/share/34a593c7-a8e5-4490-9cc7-8a1d019b8b82
-
-// TODO: dompurify to sanitize html
-// display descriptions
-
-// https://civitai.com/api/v1/models/87668
 
 export interface SelectedLora {
     config: LoraConfig;
@@ -27,13 +23,11 @@ interface LoraModalProps {
     onCancel: () => void;
 }
 
-export const LoraModal: React.FC<LoraModalProps> = ({
-    onConfirm,
-    onCancel,
-}) => {
+export const LoraModal: FC<LoraModalProps> = ({ onConfirm, onCancel }) => {
     const [inputValue, setInputValue] = useState("");
     const [strength, setStrength] = useState(1);
     const [item, setItem] = useState<Item | null>(null);
+    const [recentItems, setRecentItems] = useState<Item[]>([]);
     const [error, setError] = useState<string | null>(null);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,6 +53,26 @@ export const LoraModal: React.FC<LoraModalProps> = ({
         }
     }, [inputValue]);
 
+    const handleConfirm = () => {
+        recentLoras.addLora(item!);
+        onConfirm({
+            config: {
+                name: `${item!.id}`,
+                strength,
+            },
+            lora: item!,
+        })
+    }
+
+    useEffect(() => {
+        // Fetch recent Loras when component mounts
+        const fetchRecentLoras = async () => {
+            const items = await recentLoras.listRecentLoras();
+            setRecentItems(items);
+        };
+        fetchRecentLoras();
+    }, []);
+
     const renderContent = () => {
         if (error) {
             return <Alert variant="danger">{error}</Alert>;
@@ -69,7 +83,9 @@ export const LoraModal: React.FC<LoraModalProps> = ({
                 <div>
                     <h5>{item.name}</h5>
                     <div
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.description) }}
+                        dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(item.description),
+                        }}
                     />
 
                     <p>Allow Commercial Use: {item.allowCommercialUse}</p>
@@ -137,26 +153,43 @@ export const LoraModal: React.FC<LoraModalProps> = ({
                 <Modal.Title>Enter LORA URL or Model Number</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                {!item && <Form onSubmit={e => {
-                    e.preventDefault();
-                    handleSearch();
-                }}>
-                    <Form.Group as={Row}>
-                        <Col sm={10}>
-                            <Form.Control
-                                type="text"
-                                placeholder="Enter LORA URL or Model Number"
-                                value={inputValue}
-                                onChange={handleInputChange}
-                            />
-                        </Col>
-                        <Col sm={2}>
-                            <Button variant="primary" onClick={handleSearch}>
-                                Search
-                            </Button>
-                        </Col>
-                    </Form.Group>
-                </Form>}
+                {!item && (
+                    <>
+                        <Form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleSearch();
+                            }}
+                        >
+                            <Form.Group as={Row}>
+                                <Col sm={10}>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Enter LORA URL or Model Number"
+                                        value={inputValue}
+                                        onChange={handleInputChange}
+                                    />
+                                </Col>
+                                <Col sm={2}>
+                                    <Button
+                                        variant="primary"
+                                        onClick={handleSearch}
+                                    >
+                                        Search
+                                    </Button>
+                                </Col>
+                            </Form.Group>
+                        </Form>
+                        <h5 className="mt-3">Recently Used Loras:</h5>
+                        <ListGroup>
+                            {recentItems.map((recentItem, index) => (
+                                <ListGroup.Item key={index} action onClick={() => setItem(recentItem)}>
+                                    {recentItem.name}
+                                </ListGroup.Item>
+                            ))}
+                        </ListGroup>
+                    </>
+                )}
                 {/* show a strength slider only if an item has been loaded */}
                 {item && (
                     <Form.Group as={Row}>
@@ -170,7 +203,9 @@ export const LoraModal: React.FC<LoraModalProps> = ({
                                 max={5}
                                 step={0.1}
                                 value={strength}
-                                onChange={e => setStrength(parseFloat(e.target.value))}
+                                onChange={(e) =>
+                                    setStrength(parseFloat(e.target.value))
+                                }
                             />
                         </Col>
                     </Form.Group>
@@ -181,13 +216,11 @@ export const LoraModal: React.FC<LoraModalProps> = ({
                 <Button variant="secondary" onClick={onCancel}>
                     Cancel
                 </Button>
-                <Button variant="primary" disabled={!item} onClick={() => onConfirm({
-                    config: {
-                        name: `${item!.id}`,
-                        strength,
-                    },
-                    lora: item!,
-                })}>
+                <Button
+                    variant="primary"
+                    disabled={!item}
+                    onClick={() => handleConfirm()}
+                >
                     OK
                 </Button>
             </Modal.Footer>

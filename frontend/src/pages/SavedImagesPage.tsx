@@ -25,7 +25,6 @@ import {
     NOTIFICATION_IMAGE_DELETED,
     NOTIFICATION_IMAGE_UPDATED,
 } from "../lib/apisocket";
-import { KVStore } from "../lib/kvstore";
 import { ImagesCache } from "../lib/imagesCache";
 
 interface Props {
