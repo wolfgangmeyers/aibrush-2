@@ -29,6 +29,7 @@ export const LoraModal: FC<LoraModalProps> = ({ onConfirm, onCancel }) => {
     const [item, setItem] = useState<Item | null>(null);
     const [recentItems, setRecentItems] = useState<Item[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setInputValue(event.target.value);
@@ -42,6 +43,7 @@ export const LoraModal: FC<LoraModalProps> = ({ onConfirm, onCancel }) => {
             return;
         }
 
+        setBusy(true);
         try {
             const response = await axios.get(
                 `https://civitai.com/api/v1/models/${modelId}`
@@ -50,6 +52,8 @@ export const LoraModal: FC<LoraModalProps> = ({ onConfirm, onCancel }) => {
             setError(null);
         } catch (error) {
             setError("Failed to fetch data");
+        } finally {
+            setBusy(false);
         }
     }, [inputValue]);
 
@@ -174,8 +178,9 @@ export const LoraModal: FC<LoraModalProps> = ({ onConfirm, onCancel }) => {
                                     <Button
                                         variant="primary"
                                         onClick={handleSearch}
+                                        disabled={busy || !inputValue}
                                     >
-                                        Search
+                                        {busy ? "Loading..." : "Search"}
                                     </Button>
                                 </Col>
                             </Form.Group>

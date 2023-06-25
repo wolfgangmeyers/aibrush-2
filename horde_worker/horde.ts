@@ -56,6 +56,7 @@ export interface AlchemistForm {
 export interface AlchemistPayload {
     source_image: string;
     forms: AlchemistForm[];
+    slow_workers: boolean;
 }
 
 export interface AlchemistResult {

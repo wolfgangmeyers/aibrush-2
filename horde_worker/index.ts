@@ -239,6 +239,7 @@ async function processRequest(request: HordeRequest) {
             const payload: AlchemistPayload = {
                 source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.png`,
                 forms: [{ name: augmentationToForm[request.augmentation] }],
+                slow_workers: false,
             };
             webpImageData = await processAlchemistImage(payload);
             // post_processing.push(augmentationToForm[request.augmentation]);
@@ -332,6 +333,7 @@ async function processRequest(request: HordeRequest) {
             nsfw = await processAlchemistImage({
                 source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
                 forms: [{ name: "nsfw" }],
+                slow_workers: false,
             });
             // console.log("nsfw result", nsfw);
         }
