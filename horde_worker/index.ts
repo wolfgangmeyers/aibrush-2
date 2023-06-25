@@ -206,7 +206,9 @@ async function processRequest(request: HordeRequest) {
         const imageExistsPromise = imageExists(
             `${request.imageId}.init_image.png`
         );
-        const jpgExistsPromise = imageExists(`${request.imageId}.init_image.jpg`);
+        const jpgExistsPromise = imageExists(
+            `${request.imageId}.init_image.jpg`
+        );
         const maskExistsPromise = imageExists(`${request.imageId}.mask.png`);
         const [imageOk, jpgOk, maskOk] = await Promise.all([
             imageExistsPromise,
@@ -240,67 +242,71 @@ async function processRequest(request: HordeRequest) {
                 source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.png`,
                 forms: [{ name: augmentationToForm[request.augmentation] }],
                 slow_workers: false,
+                trusted_workers: false,
             };
+            console.log("sending payload", payload);
             webpImageData = await processAlchemistImage(payload);
             // post_processing.push(augmentationToForm[request.augmentation]);
-        // }
+            // }
         } else {
-        // regular old image generation
-        const payload: HordeRequestPayload = {
-            params: {
-                n: 1,
-                width: request.width,
-                height: request.height,
-                steps: 20,
-                karras: true,
-                sampler_name: "k_euler",
-                cfg_scale: request.cfgScale,
-                denoising_strength: request.controlnetType
-                    ? undefined
-                    : request.denoisingStrength,
-                // TODO: does this work? Maybe we can use it to handle larger
-                // areas of an image in the editor
-                hires_fix: false,
-                post_processing,
-                control_type: request.controlnetType || undefined,
-                seed: request.seed || undefined,
-                loras: request.loras && request.loras.map((lora) => ({
-                    name: lora.name,
-                    model: lora.strength,
-                    clip: lora.strength,
-                })),
-            },
-            prompt,
-            api_key: hordeApiKey,
-            nsfw: request.nsfw,
-            censor_nsfw: !request.nsfw,
-            trusted_workers: false,
-            slow_workers: false,
-            r2: true,
-            models: [request.model],
-            source_processing: "img2img",
-        };
+            // regular old image generation
+            const payload: HordeRequestPayload = {
+                params: {
+                    n: 1,
+                    width: request.width,
+                    height: request.height,
+                    steps: 20,
+                    karras: true,
+                    sampler_name: "k_euler",
+                    cfg_scale: request.cfgScale,
+                    denoising_strength: request.controlnetType
+                        ? undefined
+                        : request.denoisingStrength,
+                    // TODO: does this work? Maybe we can use it to handle larger
+                    // areas of an image in the editor
+                    hires_fix: false,
+                    post_processing,
+                    control_type: request.controlnetType || undefined,
+                    seed: request.seed || undefined,
+                    loras:
+                        request.loras &&
+                        request.loras.map((lora) => ({
+                            name: lora.name,
+                            model: lora.strength,
+                            clip: lora.strength,
+                        })),
+                },
+                prompt,
+                api_key: hordeApiKey,
+                nsfw: request.nsfw,
+                censor_nsfw: !request.nsfw,
+                trusted_workers: false,
+                slow_workers: false,
+                r2: true,
+                models: [request.model],
+                source_processing: "img2img",
+            };
 
-        if (imageOk) {
-            // payload.source_image = imageData.toString("base64");
-            payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.png`;
-        } else if (jpgOk) {
-            payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.jpg`;
-        }
-        if (maskOk) {
-            console.log("mask data found");
-            // payload.source_mask = maskData.toString("base64");
-            payload.source_mask = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.mask.png`;
-            if (request.model.toLowerCase().indexOf("inpainting") !== -1) {
-                payload.source_processing = "inpainting";
-                payload.params.karras = false;
-                payload.params.steps = 50;
+            if (imageOk) {
+                // payload.source_image = imageData.toString("base64");
+                payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.png`;
+            } else if (jpgOk) {
+                payload.source_image = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.jpg`;
             }
-        }
+            if (maskOk) {
+                console.log("mask data found");
+                // payload.source_mask = maskData.toString("base64");
+                payload.source_mask = `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.mask.png`;
+                if (request.model.toLowerCase().indexOf("inpainting") !== -1) {
+                    payload.source_processing = "inpainting";
+                    payload.params.karras = false;
+                    payload.params.steps = 50;
+                }
+            }
 
-        console.log("sending payload", payload);
+            console.log("sending payload", payload);
 
-        webpImageData = await processImage(payload);
+            webpImageData = await processImage(payload);
         }
 
         console.log("received response from stable horde");
@@ -334,6 +340,7 @@ async function processRequest(request: HordeRequest) {
                 source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
                 forms: [{ name: "nsfw" }],
                 slow_workers: false,
+                trusted_workers: false,
             });
             // console.log("nsfw result", nsfw);
         }
