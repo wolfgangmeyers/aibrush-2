@@ -192,7 +192,7 @@ export async function processAlchemistImage(
                 console.log(`completed in ${moment().diff(start, "seconds")} seconds`)
                 return webpImageResponse.data;
             } else {
-                if (moment().diff(start, "seconds") > 400) {
+                if (moment().diff(start, "seconds") > 600) {
                     console.log("Horde request timed out");
                     await axios.delete(`${hordeBaseUrl}/v2/interrogate/status/${reqId}`, {
                         headers: {
