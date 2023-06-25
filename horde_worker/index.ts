@@ -237,7 +237,7 @@ async function processRequest(request: HordeRequest) {
                 return;
             }
             const payload: AlchemistPayload = {
-                source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.image.png`,
+                source_image: `https://aibrush2-filestore.s3.amazonaws.com/${request.imageId}.init_image.png`,
                 forms: [{ name: augmentationToForm[request.augmentation] }],
             };
             webpImageData = await processAlchemistImage(payload);
