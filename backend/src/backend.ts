@@ -671,7 +671,7 @@ export class BackendService {
             );
             const image = result.rows[0] as Image;
             let encoded_image = body.encoded_image;
-            if (!encoded_image && body.parent) {
+            if (!encoded_image && !body.tmp_jpg_id && !body.tmp_image_id && body.parent) {
                 try {
                     // const parentImageData = await this.filestore.readBinaryFile(
                     //     `${body.parent}.image.png`
