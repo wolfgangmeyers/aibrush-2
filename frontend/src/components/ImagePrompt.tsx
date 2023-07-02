@@ -470,7 +470,7 @@ export const ImagePrompt: FC<Props> = ({
                                 {/* loras */}
                                 <label htmlFor="loras">Loras</label>
                                 <div>
-                                    {selectedLoras.map(lora => <SelectedLoraTag lora={lora} onRemove={lora => onRemoveLora(lora)} />)}
+                                    {selectedLoras.map(lora => <SelectedLoraTag key={lora.lora.name} lora={lora} onRemove={lora => onRemoveLora(lora)} />)}
                                     {/* add lora button */}
                                     {selectedLoras.length < 5 && <button
                                         type="button"

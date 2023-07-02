@@ -16,7 +16,7 @@ export const LoraTriggers: FC<Props> = ({
     for (const lora of selectedLoras) {
         for (let trigger of lora.lora.modelVersions[0].trainedWords) {
             if (
-                prompt.indexOf(trigger) === -1 &&
+                prompt.toLowerCase().indexOf(trigger.toLowerCase()) === -1 &&
                 allTriggers.indexOf(trigger) === -1
             ) {
                 allTriggers.push(trigger);

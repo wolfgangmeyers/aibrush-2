@@ -13,11 +13,17 @@ import {
     CreateImageInput,
     Image as APIImage,
     ImageList,
+    LoraConfig,
     StatusEnum,
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
-import { convertPNGToJPG, ImageUtilWorker, ImageWorkerRequest, loadImageDataElement } from "../../lib/imageutil";
+import {
+    convertPNGToJPG,
+    ImageUtilWorker,
+    ImageWorkerRequest,
+    loadImageDataElement,
+} from "../../lib/imageutil";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { getUpscaleLevel } from "../../lib/upscale";
 import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
@@ -29,6 +35,9 @@ import ModelSelector from "../../components/ModelSelector";
 import { PencilTool } from "./pencil-tool";
 import { MaskEditor } from "./mask-editor-controls";
 import { ResetToDefaultIcon } from "../../components/ResetToDefaultIcon";
+import { LoraModal, SelectedLora } from "../../components/LoraSelector";
+import { LoraTriggers } from "../../components/LoraTriggers";
+import { SelectedLoraTag } from "../../components/SelectedLora";
 
 const anonymousClient = axios.create();
 
@@ -58,6 +67,7 @@ export class EnhanceTool extends BaseTool implements Tool {
     private model: string = "Epic Diffusion";
     private count: number = 4;
     private variationStrength: number = 0.35;
+    private loras: LoraConfig[] = [];
     private _dirty = false;
     private worker: ImageUtilWorker;
     private idCounter = 0;
@@ -345,6 +355,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.model = args.model || "Epic Diffusion";
         this.count = args.count || 4;
         this.variationStrength = args.variationStrength || 0.75;
+        this.loras = args.loras || [];
         console.log("updateArgs", args);
     }
 
@@ -404,7 +415,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             width: this.renderer.getWidth(),
             pixels: imageData.data,
             selectionOverlay,
-        }
+        };
         if (maskData) {
             req.alphaMode = "mask";
             req.alphaPixels = maskData.data;
@@ -478,7 +489,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         let encodedMask: string | undefined;
         let maskData: ImageData | undefined;
         if (this.renderer.isMasked()) {
-            encodedMask = this.renderer.getEncodedMask(selectionOverlay!, "mask");
+            encodedMask = this.renderer.getEncodedMask(
+                selectionOverlay!,
+                "mask"
+            );
             maskData = this.renderer.getImageData(selectionOverlay!, "mask");
         }
 
@@ -511,15 +525,21 @@ export class EnhanceTool extends BaseTool implements Tool {
         if (encodedMask) {
             const tmpMaskImage = await api.createTemporaryImage("png");
             const binaryMaskData = Buffer.from(encodedMask, "base64");
-            await anonymousClient.put(tmpMaskImage.data.upload_url, binaryMaskData, {
-                headers: {
-                    "Content-Type": "image/png",
-                },
-                onUploadProgress: (progressEvent: any) => {
-                    let percentCompleted = 0.5 + progressEvent.loaded / progressEvent.total / 2;
-                    this.updateProgress(percentCompleted);
-                },
-            });
+            await anonymousClient.put(
+                tmpMaskImage.data.upload_url,
+                binaryMaskData,
+                {
+                    headers: {
+                        "Content-Type": "image/png",
+                    },
+                    onUploadProgress: (progressEvent: any) => {
+                        let percentCompleted =
+                            0.5 +
+                            progressEvent.loaded / progressEvent.total / 2;
+                        this.updateProgress(percentCompleted);
+                    },
+                }
+            );
             input.tmp_mask_id = tmpMaskImage.data.id;
         }
 
@@ -538,7 +558,9 @@ export class EnhanceTool extends BaseTool implements Tool {
         // round width and height up to the nearest multiple of 64
         input.params.width = Math.ceil(input.params.width / 64) * 64;
         input.params.height = Math.ceil(input.params.height / 64) * 64;
+        input.params.loras = this.loras;
         input.temporary = true;
+
 
         let resp: ImageList | null = null;
 
@@ -782,11 +804,35 @@ export const EnhanceControls: FC<ControlsProps> = ({
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
+    const [selectingLora, setSelectingLora] = useState<boolean>(false);
+    const [selectedLoras, setSelectedLoras] = useState<SelectedLora[]>([]);
+
     tool.onChangeState(setState);
     tool.onChangeMask(setIsMasked);
     tool.onProgress(setProgress);
     tool.onError(setError);
     tool.onDirty(setDirty);
+
+    const onAddLora = (lora: SelectedLora) => {
+        setSelectedLoras([...selectedLoras, lora]);
+        setSelectingLora(false);
+    };
+
+    const onRemoveLora = (lora: SelectedLora) => {
+        const updated = selectedLoras.filter(
+            (selectedLora) => selectedLora.config.name !== lora.config.name
+        )
+        setSelectedLoras(updated);
+    };
+
+    const onAddTrigger = (trigger: string) => {
+        const parts = [prompt];
+        if (prompt.length > 0 && !prompt.endsWith(",")) {
+            parts.push(", ");
+        }
+        parts.push(trigger);
+        setPrompt(parts.join(""));
+    };
 
     const selectionOverlay: Rect =
         tool.selectionTool.getArgs().selectionOverlay;
@@ -858,10 +904,14 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     <div className="form-group">
                         <label htmlFor="prompt">
                             Prompt&nbsp;
-                            <ResetToDefaultIcon onClick={() => setPrompt(image.params.prompt || "")} />
+                            <ResetToDefaultIcon
+                                onClick={() =>
+                                    setPrompt(image.params.prompt || "")
+                                }
+                            />
                         </label>
                         {/* refresh icon */}
-                        
+
                         <input
                             type="text"
                             className="form-control"
@@ -871,16 +921,29 @@ export const EnhanceControls: FC<ControlsProps> = ({
                                 setPrompt(e.target.value);
                             }}
                         />
-                        
+
                         <small className="form-text text-muted">
                             Customize the text prompt here
                         </small>
                     </div>
+                    {selectedLoras.length > 0 && (
+                        <LoraTriggers
+                            prompt={prompt}
+                            selectedLoras={selectedLoras}
+                            onAddTrigger={onAddTrigger}
+                        />
+                    )}
                     {/* negative prompt */}
                     <div className="form-group">
                         <label htmlFor="negative-prompt">
                             Negative Prompt&nbsp;
-                            <ResetToDefaultIcon onClick={() => setNegativePrompt(image.params.negative_prompt || "")} />
+                            <ResetToDefaultIcon
+                                onClick={() =>
+                                    setNegativePrompt(
+                                        image.params.negative_prompt || ""
+                                    )
+                                }
+                            />
                         </label>
                         <input
                             type="text"
@@ -938,18 +1001,6 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     </div>
                     <div className="form-group">
                         <label htmlFor="model">Model</label>
-                        {/* <select
-                            className="form-control"
-                            id="model"
-                            value={model}
-                            onChange={(e) => setModel(e.target.value)}
-                        >
-                            {supportedModels.map((model) => (
-                                <option value={model} key={`model-${model}`}>
-                                    {model}
-                                </option>
-                            ))}
-                        </select> */}
                         <div>
                             <button
                                 type="button"
@@ -963,6 +1014,31 @@ export const EnhanceControls: FC<ControlsProps> = ({
                         <small className="form-text text-muted">
                             Select the model to use
                         </small>
+                    </div>
+                    <div className="form-group">
+                        {/* loras */}
+                        <label htmlFor="loras">Loras</label>
+                        <div>
+                            {selectedLoras.map((lora) => (
+                                <SelectedLoraTag
+                                    key={lora.lora.name}
+                                    lora={lora}
+                                    onRemove={(lora) => onRemoveLora(lora)}
+                                />
+                            ))}
+                            {/* add lora button */}
+                            {selectedLoras.length < 5 && (
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary light-button"
+                                    style={{ marginLeft: "8px" }}
+                                    onClick={() => setSelectingLora(true)}
+                                >
+                                    <i className="fas fa-plus"></i>&nbsp;Add
+                                    Lora
+                                </button>
+                            )}
+                        </div>
                     </div>
                     <div className="form-group">
                         <CostIndicator imagesCost={cost} />
@@ -1045,6 +1121,9 @@ export const EnhanceControls: FC<ControlsProps> = ({
                                     prompt,
                                     negativePrompt,
                                     model,
+                                    loras: selectedLoras.map(
+                                        (lora) => lora.config
+                                    ),
                                 });
                                 tool.submit(api, apisocket, image);
                             }}
@@ -1085,6 +1164,12 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     }}
                     initialSelectedModel={model}
                     inpainting={false}
+                />
+            )}
+            {selectingLora && (
+                <LoraModal
+                    onCancel={() => setSelectingLora(false)}
+                    onConfirm={(lora) => onAddLora(lora)}
                 />
             )}
         </div>
