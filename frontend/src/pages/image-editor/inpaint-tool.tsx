@@ -13,6 +13,7 @@ import {
     CreateImageInput,
     Image as APIImage,
     ImageList,
+    LoraConfig,
     StatusEnum,
 } from "../../client";
 import { ZoomHelper } from "./zoomHelper";
@@ -31,6 +32,9 @@ import { calculateImagesCost } from "../../lib/credits";
 import { CostIndicator } from "../../components/CostIndicator";
 import ModelSelector from "../../components/ModelSelector";
 import { ResetToDefaultIcon } from "../../components/ResetToDefaultIcon";
+import { LoraModal, SelectedLora } from "../../components/LoraSelector";
+import { LoraTriggers } from "../../components/LoraTriggers";
+import { SelectedLoraTag } from "../../components/SelectedLora";
 
 const anonymousClient = axios.create();
 
@@ -53,6 +57,7 @@ export class InpaintTool extends BaseTool implements Tool {
     private negativePrompt: string = "";
     private count: number = 4;
     private brushSize: number = 10;
+    private loras: LoraConfig[] = [];
     private _dirty = false;
     private worker: ImageUtilWorker;
     private idCounter = 0;
@@ -262,6 +267,7 @@ export class InpaintTool extends BaseTool implements Tool {
         this.negativePrompt = args.negativePrompt || "";
         this.count = args.count || 4;
         this.brushSize = args.brushSize || 10;
+        this.loras = args.loras || [];
 
         this.updateCursor(
             this.renderer.getWidth() / 2,
@@ -444,6 +450,7 @@ export class InpaintTool extends BaseTool implements Tool {
         );
         input.params.width = closestAspectRatio.width;
         input.params.height = closestAspectRatio.height;
+        input.params.loras = this.loras;
         input.temporary = true;
 
         let resp: ImageList | null = null;
@@ -694,6 +701,9 @@ export const InpaintControls: FC<ControlsProps> = ({
     const [model, setModel] = useState("Deliberate Inpainting");
     const [selectingModel, setSelectingModel] = useState(false);
 
+    const [selectingLora, setSelectingLora] = useState<boolean>(false);
+    const [selectedLoras, setSelectedLoras] = useState<SelectedLora[]>([]);
+
     useEffect(() => {
         tool.updateArgs({
             brushSize,
@@ -704,6 +714,27 @@ export const InpaintControls: FC<ControlsProps> = ({
     tool.onProgress(setProgress);
     tool.onError(setError);
     tool.onDirty(setDirty);
+
+    const onAddLora = (lora: SelectedLora) => {
+        setSelectedLoras([...selectedLoras, lora]);
+        setSelectingLora(false);
+    };
+
+    const onRemoveLora = (lora: SelectedLora) => {
+        const updated = selectedLoras.filter(
+            (selectedLora) => selectedLora.config.name !== lora.config.name
+        )
+        setSelectedLoras(updated);
+    };
+
+    const onAddTrigger = (trigger: string) => {
+        const parts = [prompt];
+        if (prompt.length > 0 && !prompt.endsWith(",")) {
+            parts.push(", ");
+        }
+        parts.push(trigger);
+        setPrompt(parts.join(""));
+    };
 
     const onSelectModel = (model: string) => {
         setModel(model);
@@ -833,6 +864,13 @@ export const InpaintControls: FC<ControlsProps> = ({
                             Customize the text prompt here
                         </small>
                     </div>
+                    {selectedLoras.length > 0 && (
+                        <LoraTriggers
+                            prompt={prompt}
+                            selectedLoras={selectedLoras}
+                            onAddTrigger={onAddTrigger}
+                        />
+                    )}
                     {/* negative prompt */}
                     <div className="form-group">
                         <label htmlFor="negativeprompt">
@@ -886,6 +924,31 @@ export const InpaintControls: FC<ControlsProps> = ({
                         <small className="form-text text-muted">
                             Select the inpaint model
                         </small>
+                    </div>
+                    <div className="form-group">
+                        {/* loras */}
+                        <label htmlFor="loras">Loras</label>
+                        <div>
+                            {selectedLoras.map((lora) => (
+                                <SelectedLoraTag
+                                    key={lora.lora.name}
+                                    lora={lora}
+                                    onRemove={(lora) => onRemoveLora(lora)}
+                                />
+                            ))}
+                            {/* add lora button */}
+                            {selectedLoras.length < 5 && (
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary light-button"
+                                    style={{ marginLeft: "8px" }}
+                                    onClick={() => setSelectingLora(true)}
+                                >
+                                    <i className="fas fa-plus"></i>&nbsp;Add
+                                    Lora
+                                </button>
+                            )}
+                        </div>
                     </div>
                     <div className="form-group">
                         <CostIndicator imagesCost={count} />
@@ -981,6 +1044,12 @@ export const InpaintControls: FC<ControlsProps> = ({
                     onSelectModel={onSelectModel}
                     initialSelectedModel={model}
                     inpainting={true}
+                />
+            )}
+            {selectingLora && (
+                <LoraModal
+                    onCancel={() => setSelectingLora(false)}
+                    onConfirm={(lora) => onAddLora(lora)}
                 />
             )}
         </div>
