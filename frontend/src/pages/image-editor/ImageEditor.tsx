@@ -318,13 +318,15 @@ export const ImageEditor: React.FC<Props> = ({
                     height = window.innerHeight * 0.85;
                 }
                 renderer.updateCanvasSize(width, height);
-                renderer.resetView();
+                // renderer.resetView();
             };
             window.addEventListener("resize", listener);
             listener();
+            renderer.resetView();
             return () => {
                 window.removeEventListener("resize", listener);
             };
+            
         }
     }, [renderer]);
 

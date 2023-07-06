@@ -82,9 +82,12 @@ function App() {
                 setIsAdmin(!!isAdmin.data.is_admin);
                 apiSocket.updateToken(result.data.accessToken!);
                 apiSocket.connect();
-            } catch (e) {
+            } catch (e: any) {
                 console.log(e);
-                localStorage.removeItem("credentials");
+                // if this is a 401, then the refresh token is expired
+                if (e.response && e.response.status === 401) {
+                    localStorage.removeItem("credentials");
+                }
             }
         }
     };
