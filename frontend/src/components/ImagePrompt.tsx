@@ -18,9 +18,11 @@ import { calculateImagesCost } from "../lib/credits";
 import { CostIndicator } from "./CostIndicator";
 import { recentPrompts, recentNegativePrompts } from "../lib/recentList";
 import TextInputWithHistory from "./TextInputWithHistory";
-import { LoraModal, SelectedLora } from "./LoraSelector";
+import { LoraModal, SelectedLora, selectedLorasFromConfigs } from "./LoraSelector";
 import { SelectedLoraTag } from "./SelectedLora";
 import { LoraTriggers } from "./LoraTriggers";
+import { recentLoras } from "../lib/recentLoras";
+import { Item } from "../lib/civit_loras";
 
 interface Props {
     api: AIBrushApi;
@@ -269,6 +271,13 @@ export const ImagePrompt: FC<Props> = ({
                 parent.model
             );
             setCfgScale(parent.params.cfg_scale || 7.5);
+            if (parent.params.loras && parent.params.loras.length > 0) {
+                selectedLorasFromConfigs(parent.params.loras).then(loras => {
+                    setSelectedLoras(loras);
+                });
+            } else if (selectedLoras.length > 0) {
+                setSelectedLoras([]);
+            }
         } else {
             resetState();
         }

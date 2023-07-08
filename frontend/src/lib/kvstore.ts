@@ -97,4 +97,22 @@ export class KVStore<T> {
             };
         });
     }
+
+    async getAllItems(): Promise<T[]> {
+        const db = await this.getDB();
+
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(this.dbConfig.storeName);
+            const store = transaction.objectStore(this.dbConfig.storeName);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                resolve(request.result);
+            };
+
+            request.onerror = () => {
+                resolve([]);
+            };
+        });
+    }
 }

@@ -35,7 +35,7 @@ import ModelSelector from "../../components/ModelSelector";
 import { PencilTool } from "./pencil-tool";
 import { MaskEditor } from "./mask-editor-controls";
 import { ResetToDefaultIcon } from "../../components/ResetToDefaultIcon";
-import { LoraModal, SelectedLora } from "../../components/LoraSelector";
+import { LoraModal, SelectedLora, selectedLorasFromConfigs } from "../../components/LoraSelector";
 import { LoraTriggers } from "../../components/LoraTriggers";
 import { SelectedLoraTag } from "../../components/SelectedLora";
 
@@ -812,6 +812,16 @@ export const EnhanceControls: FC<ControlsProps> = ({
     tool.onProgress(setProgress);
     tool.onError(setError);
     tool.onDirty(setDirty);
+
+    useEffect(() => {
+        if (image.params.loras && image.params.loras.length > 0) {
+            selectedLorasFromConfigs(image.params.loras).then((selected) => {
+                setSelectedLoras(selected);
+            });
+        } else {
+            setSelectedLoras([]);
+        }
+    }, [image]);
 
     const onAddLora = (lora: SelectedLora) => {
         setSelectedLoras([...selectedLoras, lora]);

@@ -10,6 +10,34 @@ export class RecentLoras {
             dbName: "saved-loras",
             storeName: "loras",
         });
+        this.migrateToIDs();
+    }
+
+    async migrateToIDs(): Promise<void> {
+        console.log("migrateToIDs");
+        const recentLoras = recentList.getItems();
+        let migrateRequired = false;
+        for (let id of recentLoras) {
+            console.log("id", id);
+            // is id formatted as an integer?
+            if (!id.match(/^\d+$/)) {
+                migrateRequired = true;
+                break;
+            }
+        }
+        if (migrateRequired) {
+            console.log("one-time migration of recent loras to int keys");
+            recentList.clear();
+            recentLoras.reverse();
+            for (const name of recentLoras) {
+                const lora = await this.kvstore.getItem(name);
+                if (lora) {
+                    recentList.addItem(lora.id.toString());
+                    await this.kvstore.deleteItem(name);
+                    await this.kvstore.setItem(lora.id.toString(), lora);
+                }
+            }
+        }
     }
 
     async listRecentLoras(): Promise<Item[]> {
@@ -25,11 +53,12 @@ export class RecentLoras {
     }
 
     async getLora(loraID: string): Promise<Item | null> {
+        console.log("getLora", loraID);
         return await this.kvstore.getItem(loraID);
     }
 
     async addLora(lora: Item): Promise<void> {
-        const loraId = lora.name;
+        const loraId = lora.id.toString();
         await this.kvstore.setItem(loraId, lora);
         const removed = recentList.addItem(loraId);
         if (removed) {

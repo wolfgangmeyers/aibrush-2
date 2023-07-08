@@ -5,6 +5,7 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Alert from "react-bootstrap/Alert";
 import DOMPurify from "dompurify";
+import ReactInfiniteScroll from "react-infinite-scroll-component";
 
 import { Item } from "../lib/civit_loras";
 import { Col, ListGroup, Row } from "react-bootstrap";
@@ -21,6 +22,21 @@ export interface SelectedLora {
 interface LoraModalProps {
     onConfirm: (lora: SelectedLora) => void;
     onCancel: () => void;
+}
+
+export async function selectedLorasFromConfigs(configs: LoraConfig[]): Promise<SelectedLora[]> {
+    const loras = await Promise.all(configs.map(config => recentLoras.getLora(config.name)));
+    const selectedLoras: SelectedLora[] = [];
+    for (let i = 0; i < loras.length; i++) {
+        if (loras[i]) {
+            const config = configs[i];
+            selectedLoras.push({
+                config,
+                lora: loras[i]!
+            });
+        }
+    }
+    return selectedLoras;
 }
 
 export const LoraModal: FC<LoraModalProps> = ({ onConfirm, onCancel }) => {
@@ -151,6 +167,10 @@ export const LoraModal: FC<LoraModalProps> = ({ onConfirm, onCancel }) => {
         return null;
     };
 
+    const filteredItems = recentItems.filter((recentItem) =>
+        recentItem.name.toLowerCase().includes(inputValue.toLowerCase()) || recentItem.id.toString() === inputValue
+    );
+
     return (
         <Modal show onHide={onCancel} size="xl">
             <Modal.Header closeButton>
@@ -186,8 +206,8 @@ export const LoraModal: FC<LoraModalProps> = ({ onConfirm, onCancel }) => {
                             </Form.Group>
                         </Form>
                         <h5 className="mt-3">Recently Used Loras:</h5>
-                        <ListGroup>
-                            {recentItems.map((recentItem, index) => (
+                        <ListGroup style={{maxHeight: "500px", overflowY: "auto"}}>
+                            {filteredItems.map((recentItem, index) => (
                                 <ListGroup.Item key={index} action onClick={() => setItem(recentItem)}>
                                     {recentItem.name}
                                 </ListGroup.Item>

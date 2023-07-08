@@ -32,7 +32,7 @@ import { calculateImagesCost } from "../../lib/credits";
 import { CostIndicator } from "../../components/CostIndicator";
 import ModelSelector from "../../components/ModelSelector";
 import { ResetToDefaultIcon } from "../../components/ResetToDefaultIcon";
-import { LoraModal, SelectedLora } from "../../components/LoraSelector";
+import { LoraModal, SelectedLora, selectedLorasFromConfigs } from "../../components/LoraSelector";
 import { LoraTriggers } from "../../components/LoraTriggers";
 import { SelectedLoraTag } from "../../components/SelectedLora";
 
@@ -709,6 +709,16 @@ export const InpaintControls: FC<ControlsProps> = ({
             brushSize,
         });
     }, [brushSize]);
+
+    useEffect(() => {
+        if (image.params.loras && image.params.loras.length > 0) {
+            selectedLorasFromConfigs(image.params.loras).then((selected) => {
+                setSelectedLoras(selected);
+            });
+        } else {
+            setSelectedLoras([]);
+        }
+    }, [image]);
 
     tool.onChangeState(setState);
     tool.onProgress(setProgress);

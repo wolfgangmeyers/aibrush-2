@@ -1,4 +1,5 @@
 export class RecentList {
+
     private key: string;
     private listSize: number;
 
@@ -38,9 +39,13 @@ export class RecentList {
     getItems(): string[] {
         return this.getRecentItems();
     }
+
+    clear() {
+        this.saveRecentItems([]);
+    }
 }
 
 export const recentModels = new RecentList("recent-models", 20);
 export const recentNegativePrompts = new RecentList("recent-negative-prompts", 20);
 export const recentPrompts = new RecentList("recent-positive-prompts", 20);
-export const recentLoras = new RecentList("recent-loras", 20);
+export const recentLoras = new RecentList("recent-loras", 200);
