@@ -1,2 +1,0 @@
-@reboot screen -m -d -S worker $HOME/aibrush-2/worker/images_worker.sh
-*/5 * * * * $HOME/aibrush-2/worker/watcher.sh
