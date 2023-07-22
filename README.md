@@ -1,35 +1,46 @@
-# aibrush
-AiBrush is a web-based tool for AI-based
-creation of artwork.
-You can try it out for free at https://www.aibrush.art
+# Getting Started with Create React App
 
-This is the second iteration of AiBrush (you can also check out the non-functional [first iteration](https://github.com/wolfgangmeyers/aibrush) based on [Big Sleep](https://github.com/lucidrains/big-sleep)).
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Gallery
+## Available Scripts
 
-Some examples of what can be created with AiBrush:
+In the project directory, you can run:
 
-![cyberpunk cat](https://user-images.githubusercontent.com/1783800/209032611-bf2d23f4-a2cf-4b24-8c20-50025df77cef.png)
+### `yarn start`
 
-![artificial habitat](https://user-images.githubusercontent.com/1783800/209032677-8068ce46-5ea2-43da-a052-cb63b688920d.png)
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-![fantasy stoat](https://user-images.githubusercontent.com/1783800/209032751-41748b98-5e72-42ad-961a-f3377a74e0c5.png)
+The page will reload if you make edits.\
+You will also see any lint errors in the console.
 
-## Features:
+### `yarn test`
 
-* Multi-user system with passwordless login
-* Create a new image from phrases
-* Multiple aspect ratios
-* Upload the initial state of an image before processing
-* Create one or more child images from a parent
-* Image Editor: Inpainting, Outpainting and more
+Launches the test runner in the interactive watch mode.\
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-## Interface
+### `yarn build`
 
-See below for screenshots of the web interface.
+Builds the app for production to the `build` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
-![image](https://user-images.githubusercontent.com/1783800/209033130-fda55aa5-acb4-4271-b86c-5fef3e64e64b.png)
+The build is minified and the filenames include the hashes.\
+Your app is ready to be deployed!
 
-![image](https://user-images.githubusercontent.com/1783800/209033172-fd25dfa0-ab92-46c7-9b03-ff59d710a3f5.png)
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-![image](https://user-images.githubusercontent.com/1783800/209033231-33ea0213-4783-45cf-b961-961c0c95b20a.png)
+### `yarn eject`
+
+**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+
+If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+
+You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+
+## Learn More
+
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+
+To learn React, check out the [React documentation](https://reactjs.org/).
