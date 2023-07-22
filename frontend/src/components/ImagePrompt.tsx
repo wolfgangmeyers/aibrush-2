@@ -35,10 +35,8 @@ import { recentLoras } from "../lib/recentLoras";
 import { Item } from "../lib/civit_loras";
 
 interface Props {
-    api: AIBrushApi;
     parent: LocalImage | null;
     creating: boolean;
-    assetsUrl: string;
     onSubmit: (input: CreateImageInput) => void;
     // go straight to editor without variations
     onEdit: (input: CreateImageInput) => void;
@@ -71,10 +69,8 @@ function defaultNegativePrompt(): string {
 }
 
 export const ImagePrompt: FC<Props> = ({
-    api,
     parent,
     creating,
-    assetsUrl,
     onSubmit,
     onCancel,
     onEdit,

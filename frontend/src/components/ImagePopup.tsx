@@ -7,7 +7,6 @@ import CopyToClipboardIcon from "./CopyToClipboardIcon";
 import { Swipe } from "./Swipe";
 
 interface ImagePopupProps {
-    assetsUrl: string;
     image: LocalImage;
     censorNSFW: boolean;
     onClose: () => void;
@@ -20,7 +19,6 @@ interface ImagePopupProps {
 }
 
 export const ImagePopup: FC<ImagePopupProps> = ({
-    assetsUrl,
     image,
     censorNSFW,
     onClose,
@@ -32,7 +30,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     onSwipe,
 }) => {
     const img = useRef<HTMLImageElement>(null);
-    let src = `${assetsUrl}/${image.id}.image.png?updated_at=${image.updated_at}`;
+    let src = `https://aibrush2-filestore.s3.amazonaws.com/${image.id}.image.png?updated_at=${image.updated_at}`;
     if (image.imageData) {
         src = image.imageData;
     }

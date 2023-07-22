@@ -91,7 +91,6 @@ export const LocalDeletedImages: FC<Props> = ({ localImages }) => {
                     >
                         <div className="col-sm-2 offset-sm-2">
                             <ImageThumbnail
-                                assetsUrl={""}
                                 image={image}
                                 censorNSFW={true}
                             />

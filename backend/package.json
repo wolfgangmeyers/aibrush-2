@@ -33,7 +33,8 @@
         "test_ec2": "ts-node ./src/test_ec2_engine.ts",
         "test_runpod": "ts-node ./src/test_runpod.ts",
         "build_frontend": "rm -rf ./public && cd ../frontend && yarn build && cp -r build ../backend/public",
-        "shell": "ts-node"
+        "shell": "ts-node",
+        "user_migration": "ts-node ./src/user_migration.ts"
     },
     "dependencies": {
         "@bugsnag/js": "^7.18.0",

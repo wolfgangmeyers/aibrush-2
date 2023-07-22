@@ -4,28 +4,14 @@ import { Image, StatusEnum } from "../client/api";
 import { LocalImage } from "../lib/models";
 
 interface Props {
-    assetsUrl: string;
     image: LocalImage;
     censorNSFW: boolean;
     bulkDelete?: boolean;
     onClick?: (image: LocalImage) => void;
 }
 
-export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, censorNSFW, bulkDelete, onClick }) => {
-    const src = `${assetsUrl}/${image.id}.thumbnail.png?updated_at=${image.updated_at}`;
-    const [retry, setRetry] = useState("");
-
-    useEffect(() => {
-        // This is to help deal with eventual consistency from S3.
-        // if image.updated_at (unix timestamp in milliseconds) is less than a minute ago, try to reload the image
-        if (moment().diff(moment(image.updated_at), "minutes") < 1) {
-            setRetry("");
-            const t = setTimeout(() => {
-                setRetry("&retry")
-            }, 3000);
-            return () => clearTimeout(t);
-        }
-    }, [image.id, image.updated_at])
+export const ImageThumbnail: FC<Props> = ({ image, censorNSFW, bulkDelete, onClick }) => {
+    const src = `https://aibrush2-filestore.s3.amazonaws.com/${image.id}.thumbnail.png?updated_at=${image.updated_at}`;
 
     let label = image.label || "";
     if (image.label === "") {
@@ -40,7 +26,7 @@ export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, censorNSFW, bulkDe
         className += " bulk-delete";
     }
 
-    let backgroundImage = `url(${src}${retry}), url(/images/default.png)`;
+    let backgroundImage = `url(${src}), url(/images/default.png)`;
     if (image.imageData) {
         backgroundImage = `url(${image.imageData}), url(/images/default.png)`;
     }

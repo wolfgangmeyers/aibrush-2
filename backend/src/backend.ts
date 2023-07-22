@@ -148,7 +148,7 @@ export class BackendService {
         }
     }
 
-    private async sendMail(message: EmailMessage): Promise<void> {
+    public async sendMail(message: EmailMessage): Promise<void> {
         const transporter = nodemailer.createTransport({
             host: this.config.smtpHost,
             port: this.config.smtpPort,
@@ -159,7 +159,7 @@ export class BackendService {
             },
         });
         const mailOptions = {
-            from: this.config.smtpFrom,
+            from: message.from || this.config.smtpFrom,
             to: message.to,
             subject: message.subject,
             text: message.text,
@@ -389,6 +389,19 @@ export class BackendService {
             return {
                 images: result.rows.map((i: any) => this.hydrateImage(i)),
             };
+        } finally {
+            client.release();
+        }
+    }
+
+    async countImagesForUser(userId: string): Promise<number> {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(
+                `SELECT COUNT(*) FROM images WHERE created_by=$1 AND temporary=false`,
+                [userId]
+            );
+            return parseInt(result.rows[0].count);
         } finally {
             client.release();
         }
@@ -639,7 +652,7 @@ export class BackendService {
 
     private async createImage(
         createdBy: string,
-        body: CreateImageInput,
+        body: CreateImageInput
     ): Promise<Image> {
         body = this.upgradeLegacyRequest(body);
         body.params.seed =
@@ -671,7 +684,12 @@ export class BackendService {
             );
             const image = result.rows[0] as Image;
             let encoded_image = body.encoded_image;
-            if (!encoded_image && !body.tmp_jpg_id && !body.tmp_image_id && body.parent) {
+            if (
+                !encoded_image &&
+                !body.tmp_jpg_id &&
+                !body.tmp_image_id &&
+                body.parent
+            ) {
                 try {
                     // const parentImageData = await this.filestore.readBinaryFile(
                     //     `${body.parent}.image.png`
@@ -851,15 +869,12 @@ export class BackendService {
         const promises: Array<Promise<Image>> = [];
         for (let i = 0; i < count; i++) {
             promises.push(
-                this.createImage(
-                    createdBy,
-                    {
-                        ...body,
-                        params: {
-                            ...body.params,
-                        },
+                this.createImage(createdBy, {
+                    ...body,
+                    params: {
+                        ...body.params,
                     },
-                )
+                })
             );
         }
         const images = await Promise.all(promises);
@@ -1214,13 +1229,36 @@ export class BackendService {
         }
     }
 
+    async listAllUsers(): Promise<User[]> {
+        const client = await this.pool.connect();
+        try {
+            const result = await client.query(`SELECT * FROM users`);
+            return result.rows;
+        } finally {
+            client.release();
+        }
+    }
+
+    async setUserManifestId(userId: string, manifestId: string): Promise<void> {
+        userId = hash(userId);
+        const client = await this.pool.connect();
+        try {
+            await client.query(`UPDATE users SET manifest_id=$1 WHERE id=$2`, [
+                manifestId,
+                userId,
+            ]);
+        } finally {
+            client.release();
+        }
+    }
+
     async saveCustomerId(userId: string, customerId: string): Promise<void> {
         const client = await this.pool.connect();
         try {
-            await client.query(
-                `UPDATE users SET customer_id=$1 WHERE id=$2`,
-                [customerId, userId]
-            );
+            await client.query(`UPDATE users SET customer_id=$1 WHERE id=$2`, [
+                customerId,
+                userId,
+            ]);
         } finally {
             client.release();
         }

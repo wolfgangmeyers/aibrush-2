@@ -559,7 +559,6 @@ export class InpaintTool extends BaseTool implements Tool {
 }
 
 interface ControlsProps {
-    api: AIBrushApi;
     generator: HordeGenerator;
     image: LocalImage;
     renderer: Renderer;

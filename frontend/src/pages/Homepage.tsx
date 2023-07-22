@@ -33,23 +33,21 @@ import { ProgressBar } from "../components/ProgressBar";
 import OutOfCreditsModal from "../components/OutOfCreditsModal";
 import PaymentStatusModal from "../components/PaymentStatusModal";
 import { HordeGenerator } from "../lib/hordegenerator";
+import { ImageClient } from "../lib/savedimages";
 
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
 
 interface Props {
-    api: AIBrushApi;
-    apiSocket: ApiSocket;
     generator: HordeGenerator;
-    assetsUrl: string;
+    imageClient: ImageClient;
     localImages: LocalImagesStore;
     paymentStatus?: "success" | "canceled";
 }
 
 export const Homepage: FC<Props> = ({
-    api,
     generator,
-    assetsUrl,
+    imageClient,
     localImages,
     paymentStatus,
 }) => {
@@ -300,15 +298,17 @@ export const Homepage: FC<Props> = ({
             if (search.parent) {
                 setLoadingParent(true);
                 try {
-                    const parentImage = await api.getImage(
-                        search.parent as string
-                    );
-                    if (parentImage.data) {
-                        const downloadUrls = await api.getImageDownloadUrls(
-                            parentImage.data.id
-                        );
+                    // const parentImage = await api.getImage(
+                    //     search.parent as string
+                    // );
+                    const parentImage = await imageClient.loadImage(search.parent as string);
+                    if (parentImage) {
+                        // const downloadUrls = await api.getImageDownloadUrls(
+                        //     parentImage.data.id
+                        // );
+                        const imageUrl = `https://aibrush2-filestore.s3.amazonaws.com/${parentImage.id}.image.png`
                         const resp = await anonymousClient.get(
-                            downloadUrls.data.image_url!,
+                            imageUrl,
                             {
                                 responseType: "arraybuffer",
                             }
@@ -321,7 +321,7 @@ export const Homepage: FC<Props> = ({
                             binaryImageData.toString("base64");
                         const src = `data:image/png;base64,${base64ImageData}`;
                         setParentImage({
-                            ...parentImage.data,
+                            ...parentImage,
                             imageData: src,
                         });
                         history.push("/");
@@ -567,8 +567,6 @@ export const Homepage: FC<Props> = ({
             <ErrorNotification message={err} timestamp={errTime} />
 
             <ImagePrompt
-                api={api}
-                assetsUrl={assetsUrl}
                 creating={creating}
                 onSubmit={onSubmit}
                 onEdit={onEditNewImage}
@@ -696,7 +694,6 @@ export const Homepage: FC<Props> = ({
                         <ImageThumbnail
                             key={image.id}
                             image={image}
-                            assetsUrl={assetsUrl}
                             onClick={onThumbnailClicked}
                             bulkDelete={
                                 bulkDeleteSelecting && bulkDeleteIds[image.id]
@@ -709,7 +706,6 @@ export const Homepage: FC<Props> = ({
 
             {selectedImage && (
                 <ImagePopup
-                    assetsUrl={assetsUrl}
                     image={selectedImage}
                     onClose={() => history.push("/")}
                     onDelete={(image) => {

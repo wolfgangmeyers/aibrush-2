@@ -1,6 +1,7 @@
 
-import { AIBrushApi, Image } from "../client";
 import { KVStore } from "./kvstore";
+import { ImageClient } from "./savedimages";
+import { Image } from "./models";
 
 export class ImagesCache {
 
@@ -13,35 +14,21 @@ export class ImagesCache {
         });
     }
 
-    async listImages(api: AIBrushApi, cursor: number, search: string, limit: number, order: "asc" | "desc"): Promise<Image[] | undefined> {
-        const resp = await api.listImages(cursor, search, limit, order, "id,updated_at,deleted_at");
-        if (!resp.data.images) {
-            return undefined;
-        }
+    async listImages(imageClient: ImageClient, cursor: string | undefined, search: string, limit: number): Promise<Image[] | undefined> {
+        const resp = await imageClient.listImages({
+            cursor,
+            limit,
+            filter: search,
+        });
 
         const result: Image[] = [];
         const batchGetIds: string[] = [];
-        for (const image of resp.data.images) {
-            if (image.deleted_at) {
-                await this.kvstore.deleteItem(image.id);
+        for (const image of resp.images) {
+            const savedImage = await this.kvstore.getItem(image.id);
+            if (savedImage && savedImage.updated_at === image.updated_at) {
+                result.push(savedImage);
             } else {
-                const savedImage = await this.kvstore.getItem(image.id);
-                if (savedImage && savedImage.updated_at === image.updated_at) {
-                    result.push(savedImage);
-                } else {
-                    batchGetIds.push(image.id);
-                }
-            }
-        }
-        if (batchGetIds.length > 0) {
-            const batchResult = await api.batchGetImages(undefined, {
-                ids: batchGetIds,
-            });
-            if (batchResult.data.images) {
-                for (const image of batchResult.data.images) {
-                    await this.kvstore.setItem(image.id, image);
-                    result.push(image);
-                }
+                await this.kvstore.setItem(image.id, image);
             }
         }
         return result;

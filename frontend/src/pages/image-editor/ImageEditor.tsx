@@ -26,16 +26,16 @@ import { LocalImagesStore } from "../../lib/localImagesStore";
 import { LocalImage } from "../../lib/models";
 import { render } from "@testing-library/react";
 import { HordeGenerator } from "../../lib/hordegenerator";
+import { ImageClient } from "../../lib/savedimages";
 
 interface CanPreventDefault {
     preventDefault: () => void;
 }
 
 interface Props {
-    api: AIBrushApi;
     generator: HordeGenerator;
-    assetsUrl: string;
     localImages: LocalImagesStore;
+    imageClient: ImageClient;
 }
 
 interface ToolConfig {
@@ -50,9 +50,9 @@ export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
 
 export const ImageEditor: React.FC<Props> = ({
-    api,
     generator,
     localImages,
+    imageClient
 }) => {
     const [showSelectionControls, setShowSelectionControls] = useState(false);
     const tools: Array<ToolConfig> = [
@@ -67,7 +67,6 @@ export const ImageEditor: React.FC<Props> = ({
                     <InpaintControls
                         tool={t as InpaintTool}
                         renderer={renderer}
-                        api={api}
                         generator={generator}
                         image={image!}
                     />
@@ -233,13 +232,14 @@ export const ImageEditor: React.FC<Props> = ({
                 setImage(localImage);
                 imageSrc = localImage.imageData!;
             } else {
-                const image = (await api.getImage(id)).data;
+                const image = await imageClient.loadImage(id)
                 setImage(image);
-                const download_urls = await api.getImageDownloadUrls(id);
+                // https://aibrush2-filestore.s3.us-west-2.amazonaws.com/0e3a48ec-052e-4da9-b86a-d73f9b048256.image.png
+                const imageUrl = `https://aibrush2-filestore.s3.us-west-2.amazonaws.com/${id}.image.png`;
                 // Loading up data as binary, base64 encoding into image url
                 // bypasses browser security nonsense about cross-domain images
                 const resp = await anonymousClient.get(
-                    download_urls.data.image_url!,
+                    imageUrl,
                     {
                         responseType: "arraybuffer",
                     }

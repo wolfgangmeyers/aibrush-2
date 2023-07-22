@@ -887,6 +887,11 @@ components:
           type: boolean
         customer_id:
           type: string
+        manifest_id:
+          type: string
+      required:
+        - id
+        - active
     InviteCode:
       type: object
       properties:
