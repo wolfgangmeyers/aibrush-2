@@ -1,25 +1,26 @@
 import React, {FC, useEffect, useState} from "react";
 import { Modal } from "react-bootstrap";
-import { Image } from "../client/api";
+import { GenerationJob } from "../lib/models";
 
+// TODO: refactor to generation job
 interface Props {
-    images: Image[];
-    onDeleteImage: (image: Image) => void;
+    jobs: GenerationJob[];
+    onDeleteJob: (job: GenerationJob) => void;
     onCancel: () => void;
     show: boolean;
 }
 
-export const PendingImages: FC<Props> = ({
-    images,
-    onDeleteImage,
+export const PendingJobs: FC<Props> = ({
+    jobs,
+    onDeleteJob,
     onCancel,
     show,
 }) => {
 
-    function imageIcon(image: Image) {
-        if (image.status === "pending") {
+    function imageIcon(job: GenerationJob) {
+        if (job.status === "pending") {
             return <i className="fa fa-hourglass-half"></i>;
-        } else if (image.status === "processing") {
+        } else if (job.status === "processing") {
             return <i className="fa fa-cog fa-spin"></i>;
         }
     }
@@ -38,26 +39,32 @@ export const PendingImages: FC<Props> = ({
                 <div style={{display: "inline-block", width: "100px"}}>
                     Status
                 </div>
-                <div style={{display: "inline-block", width: "250px"}}>
-                    Phrases
+                <div style={{display: "inline-block", width: "200px"}}>
+                    Prompt
+                </div>
+                <div style={{display: "inline-block", width: "50px"}}>
+                    Count
                 </div>
                 <div style={{display: "inline-block", width: "100px"}}>
                     Action
                 </div>
             </div>
-            {images.map((image) => (
-                <div key={image.id} style={{marginBottom: "8px"}}>
+            {jobs.map((job) => (
+                <div key={job.id} style={{marginBottom: "8px"}}>
                     <div style={{display: "inline-block", width: "100px"}}>
-                        {imageIcon(image)}&nbsp;{image.status}
+                        {imageIcon(job)}&nbsp;{job.status}
                     </div>
-                    <div style={{display: "inline-block", width: "250px"}}>
+                    <div style={{display: "inline-block", width: "200px"}}>
                         {/* if more than 30 chars, truncate with ellipsis*/}
-                        {truncate(image.params.prompt || "")}
+                        {truncate(job.params.prompt || "")}
+                    </div>
+                    <div style={{display: "inline-block", width: "50px"}}>
+                        {job.count}
                     </div>
                     <div style={{display: "inline-block", width: "100px"}}>
                         <button
                             className="btn btn-danger btn-sm image-popup-delete-button"
-                            onClick={() => onDeleteImage(image)}
+                            onClick={() => onDeleteJob(job)}
                         >
                             <i className="fa fa-trash"></i>&nbsp;Delete
                         </button>
@@ -70,7 +77,7 @@ export const PendingImages: FC<Props> = ({
     return (
         <Modal show={show} onHide={onCancel}>
             <Modal.Header closeButton>
-                <Modal.Title>Pending Images</Modal.Title>
+                <Modal.Title>Pending Jobs</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 {pendingDiv}

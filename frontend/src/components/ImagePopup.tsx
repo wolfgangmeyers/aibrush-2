@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useRef, useState } from "react";
 import { Modal } from "react-bootstrap";
 import { CreateImageInput, Image, StatusEnum } from "../client/api";
-import { LocalImage } from "../lib/localImagesStore";
+import { LocalImage } from "../lib/models";
 import CopyToClipboard from "react-copy-to-clipboard";
 import CopyToClipboardIcon from "./CopyToClipboardIcon";
 import { Swipe } from "./Swipe";
@@ -36,9 +36,9 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     if (image.imageData) {
         src = image.imageData;
     }
-    let score = image.score;
+    let score = image.score || 0;
     if (image.params.negative_prompt && image.negative_score != 0) {
-        score -= image.negative_score;
+        score -= image.negative_score || 0;
     }
     const [showNSFW, setShowNSFW] = useState(false);
 

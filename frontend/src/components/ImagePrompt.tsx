@@ -1,5 +1,11 @@
 import React, { FC, useEffect, useState } from "react";
-import { CreateImageInput, StatusEnum, Image, AIBrushApi, LoraConfig } from "../client";
+import {
+    CreateImageInput,
+    StatusEnum,
+    Image,
+    AIBrushApi,
+    LoraConfig,
+} from "../client";
 import {
     aspectRatios,
     DEFAULT_ASPECT_RATIO,
@@ -10,7 +16,7 @@ import loadImage from "blueimp-load-image";
 import { AspectRatioSelector } from "./AspectRatioSelector";
 import { getUpscaleLevel } from "../lib/upscale";
 import { resizeEncodedImage } from "../lib/imageutil";
-import { LocalImage } from "../lib/localImagesStore";
+import { LocalImage } from "../lib/models";
 import { controlnetTypes } from "../lib/supportedModels";
 import { SeedInput } from "./SeedInput";
 import ModelSelector from "./ModelSelector";
@@ -18,7 +24,11 @@ import { calculateImagesCost } from "../lib/credits";
 import { CostIndicator } from "./CostIndicator";
 import { recentPrompts, recentNegativePrompts } from "../lib/recentList";
 import TextInputWithHistory from "./TextInputWithHistory";
-import { LoraModal, SelectedLora, selectedLorasFromConfigs } from "./LoraSelector";
+import {
+    LoraModal,
+    SelectedLora,
+    selectedLorasFromConfigs,
+} from "./LoraSelector";
 import { SelectedLoraTag } from "./SelectedLora";
 import { LoraTriggers } from "./LoraTriggers";
 import { recentLoras } from "../lib/recentLoras";
@@ -139,7 +149,7 @@ export const ImagePrompt: FC<Props> = ({
         args.params.controlnet_type = controlnetType as any;
         args.params.cfg_scale = cfgScale;
         args.params.seed = seed || undefined;
-        args.params.loras = selectedLoras.map(l => l.config);
+        args.params.loras = selectedLoras.map((l) => l.config);
         if (parent) {
             const bestMatch = getClosestAspectRatio(
                 parent.params.width!,
@@ -267,12 +277,10 @@ export const ImagePrompt: FC<Props> = ({
             setParentId(parent.id);
             setAdvancedView(true);
             setVariationStrength(parent.params.denoising_strength || 0.75);
-            setModel(
-                parent.model
-            );
+            setModel(parent.model);
             setCfgScale(parent.params.cfg_scale || 7.5);
             if (parent.params.loras && parent.params.loras.length > 0) {
-                selectedLorasFromConfigs(parent.params.loras).then(loras => {
+                selectedLorasFromConfigs(parent.params.loras).then((loras) => {
                     setSelectedLoras(loras);
                 });
             } else if (selectedLoras.length > 0) {
@@ -304,7 +312,9 @@ export const ImagePrompt: FC<Props> = ({
 
     const onRemoveLora = (lora: SelectedLora) => {
         setSelectedLoras(
-            selectedLoras.filter((selectedLora) => selectedLora.config.name !== lora.config.name)
+            selectedLoras.filter(
+                (selectedLora) => selectedLora.config.name !== lora.config.name
+            )
         );
     };
 
@@ -315,7 +325,7 @@ export const ImagePrompt: FC<Props> = ({
         }
         parts.push(trigger);
         setPrompt(parts.join(""));
-    }
+    };
 
     return (
         <>
@@ -330,26 +340,6 @@ export const ImagePrompt: FC<Props> = ({
                         />
 
                         <div className="input-group-append">
-                            <select
-                                className="form-control prompt-count"
-                                style={{ borderTopLeftRadius: "0px" }}
-                                value={seed ? 1 : count}
-                                onChange={(e) =>
-                                    setCount(parseInt(e.target.value))
-                                }
-                                disabled={!!seed}
-                            >
-                                <option value={1}>1</option>
-                                <option>2</option>
-                                <option>3</option>
-                                <option>4</option>
-                                <option>5</option>
-                                <option>6</option>
-                                <option>7</option>
-                                <option>8</option>
-                                <option>9</option>
-                                <option>10</option>
-                            </select>
                             <button
                                 type="submit"
                                 className="btn btn-secondary light-button"
@@ -368,7 +358,31 @@ export const ImagePrompt: FC<Props> = ({
                         </div>
                     </div>
                     {selectedLoras.length > 0 && (
-                        <LoraTriggers prompt={prompt} selectedLoras={selectedLoras} onAddTrigger={onAddTrigger} />
+                        <LoraTriggers
+                            prompt={prompt}
+                            selectedLoras={selectedLoras}
+                            onAddTrigger={onAddTrigger}
+                        />
+                    )}
+                    {!seed && (
+                        <div className="form-group" style={{marginTop: "8px"}}>
+                            <label htmlFor="count">Count: {count}</label>
+                            {/* range slider from 1 to 20 */}
+                            <input
+                                type="range"
+                                className="form-control-range"
+                                id="count"
+                                min="1"
+                                max="20"
+                                value={count}
+                                onChange={(e) =>
+                                    setCount(parseInt(e.target.value))
+                                }
+                            />
+                            <span className="helptext">
+                                This is how many images you want to generate
+                            </span>
+                        </div>
                     )}
                     <CostIndicator imagesCost={imagesCost} />
                     <div
@@ -479,16 +493,29 @@ export const ImagePrompt: FC<Props> = ({
                                 {/* loras */}
                                 <label htmlFor="loras">Loras</label>
                                 <div>
-                                    {selectedLoras.map(lora => <SelectedLoraTag key={lora.lora.name} lora={lora} onRemove={lora => onRemoveLora(lora)} />)}
+                                    {selectedLoras.map((lora) => (
+                                        <SelectedLoraTag
+                                            key={lora.lora.name}
+                                            lora={lora}
+                                            onRemove={(lora) =>
+                                                onRemoveLora(lora)
+                                            }
+                                        />
+                                    ))}
                                     {/* add lora button */}
-                                    {selectedLoras.length < 5 && <button
-                                        type="button"
-                                        className="btn btn-secondary light-button"
-                                        style={{ marginLeft: "8px" }}
-                                        onClick={() => setSelectingLora(true)}
-                                    >
-                                        <i className="fas fa-plus"></i>&nbsp;Add Lora
-                                    </button>}
+                                    {selectedLoras.length < 5 && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary light-button"
+                                            style={{ marginLeft: "8px" }}
+                                            onClick={() =>
+                                                setSelectingLora(true)
+                                            }
+                                        >
+                                            <i className="fas fa-plus"></i>
+                                            &nbsp;Add Lora
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             <div className="form-group">
@@ -516,29 +543,6 @@ export const ImagePrompt: FC<Props> = ({
                                     "distorted"
                                 </span>
                             </div>
-                            {!seed && (
-                                <div className="form-group">
-                                    <label htmlFor="count">
-                                        Count: {count}
-                                    </label>
-                                    {/* range slider from 1 to 20 */}
-                                    <input
-                                        type="range"
-                                        className="form-control-range"
-                                        id="count"
-                                        min="1"
-                                        max="10"
-                                        value={count}
-                                        onChange={(e) =>
-                                            setCount(parseInt(e.target.value))
-                                        }
-                                    />
-                                    <span className="helptext">
-                                        This is how many images you want to
-                                        generate
-                                    </span>
-                                </div>
-                            )}
                             {/* size slider */}
                             <div className="form-group">
                                 <label htmlFor="size">
@@ -699,7 +703,6 @@ export const ImagePrompt: FC<Props> = ({
             </form>
             {selectingModel && (
                 <ModelSelector
-                    api={api}
                     onCancel={() => setSelectingModel(false)}
                     onSelectModel={onSelectModel}
                     initialSelectedModel={model}
@@ -709,7 +712,7 @@ export const ImagePrompt: FC<Props> = ({
             {selectingLora && (
                 <LoraModal
                     onCancel={() => setSelectingLora(false)}
-                    onConfirm={lora => onAddLora(lora)}
+                    onConfirm={(lora) => onAddLora(lora)}
                 />
             )}
         </>

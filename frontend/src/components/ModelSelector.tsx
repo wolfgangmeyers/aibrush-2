@@ -9,7 +9,6 @@ import { recentModels } from "../lib/recentList";
 const httpclient = axios.create();
 
 interface ModelSelectorProps {
-    api: AIBrushApi;
     initialSelectedModel: string;
     onSelectModel: (model: string) => void;
     onCancel: () => void;
@@ -19,7 +18,6 @@ interface ModelSelectorProps {
 
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({
-    api,
     initialSelectedModel,
     onSelectModel,
     onCancel,
@@ -81,14 +79,22 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         };
 
         if (!models || models.length === 0) {
-            api.getModels().then((res) => {
-                console.log(res);
+            // api.getModels().then((res) => {
+            //     console.log(res);
+            //     const selectedModel =
+            //         res.data[initialSelectedModel] ||
+            //         Object.values(res.data)[0];
+            //     console.log("Selected model:", selectedModel);
+            //     setSelectedModel(selectedModel);
+            //     setSortedModels(selectedModel, Object.values(res.data));
+            // });
+            axios.get("https://raw.githubusercontent.com/Haidra-Org/AI-Horde-image-model-reference/main/stable_diffusion.json").then((res) => {
+                const data = res.data as {[key: string]: StableDiffusionModel};
                 const selectedModel =
-                    res.data[initialSelectedModel] ||
-                    Object.values(res.data)[0];
-                console.log("Selected model:", selectedModel);
+                    data[initialSelectedModel] ||
+                    Object.values(data)[0];
                 setSelectedModel(selectedModel);
-                setSortedModels(selectedModel, Object.values(res.data));
+                setSortedModels(selectedModel, Object.values(data));
             });
         } else {
             const selectedModel =
@@ -97,7 +103,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             setSelectedModel(selectedModel);
             setSortedModels(selectedModel, models);
         }
-    }, [api, models]);
+    }, [models]);
 
     useEffect(() => {
         if (initialSelectedModel) {

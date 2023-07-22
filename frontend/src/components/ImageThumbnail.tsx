@@ -1,14 +1,14 @@
 import React, { FC, useEffect, useState } from "react";
 import moment from "moment";
 import { Image, StatusEnum } from "../client/api";
-import { LocalImage } from "../lib/localImagesStore";
+import { LocalImage } from "../lib/models";
 
 interface Props {
     assetsUrl: string;
     image: LocalImage;
     censorNSFW: boolean;
     bulkDelete?: boolean;
-    onClick?: (image: Image) => void;
+    onClick?: (image: LocalImage) => void;
 }
 
 export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, censorNSFW, bulkDelete, onClick }) => {
@@ -27,7 +27,7 @@ export const ImageThumbnail: FC<Props> = ({ assetsUrl, image, censorNSFW, bulkDe
         }
     }, [image.id, image.updated_at])
 
-    let label = image.label;
+    let label = image.label || "";
     if (image.label === "") {
         label = image.params.prompt || "";
     }

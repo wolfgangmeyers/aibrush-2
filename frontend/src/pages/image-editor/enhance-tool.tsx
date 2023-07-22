@@ -35,9 +35,15 @@ import ModelSelector from "../../components/ModelSelector";
 import { PencilTool } from "./pencil-tool";
 import { MaskEditor } from "./mask-editor-controls";
 import { ResetToDefaultIcon } from "../../components/ResetToDefaultIcon";
-import { LoraModal, SelectedLora, selectedLorasFromConfigs } from "../../components/LoraSelector";
+import {
+    LoraModal,
+    SelectedLora,
+    selectedLorasFromConfigs,
+} from "../../components/LoraSelector";
 import { LoraTriggers } from "../../components/LoraTriggers";
 import { SelectedLoraTag } from "../../components/SelectedLora";
+import { GenerationJob, LocalImage } from "../../lib/models";
+import { HordeGenerator } from "../../lib/hordegenerator";
 
 const anonymousClient = axios.create();
 
@@ -54,7 +60,7 @@ type EnhanceToolState =
 // equal to the what is used on enhanced selections
 const eraserWidthModifier = 1.3;
 
-interface ImageWithData extends APIImage {
+interface ImageWithData extends LocalImage {
     data?: ImageData;
 }
 
@@ -380,12 +386,11 @@ export class EnhanceTool extends BaseTool implements Tool {
     }
 
     private async loadImageData(
-        api: AIBrushApi,
-        imageId: string,
+        image: LocalImage,
         maskData: ImageData | undefined,
         selectionOverlay: Rect
     ): Promise<ImageData> {
-        const imageElement = await loadImageDataElement(api, imageId);
+        const imageElement = await loadImageDataElement(image);
         const canvas = document.createElement("canvas");
         canvas.width = selectionOverlay.width;
         canvas.height = selectionOverlay.height;
@@ -476,7 +481,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         }
     }
 
-    async submit(api: AIBrushApi, apisocket: ApiSocket, image: APIImage) {
+    async submit(generator: HordeGenerator, image: LocalImage) {
         this.dirty = true;
         this.notifyError(null);
         const selectionOverlay = this.renderer.getSelectionOverlay();
@@ -497,50 +502,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         }
 
         const input: CreateImageInput = defaultArgs();
-
-        const tmpInitImage = await api.createTemporaryImage("jpg");
-        // convert base64 to binary
-        const binaryImageData = Buffer.from(encodedImage, "base64");
-        this.state = "uploading";
-        this.updateProgress(0);
-        await anonymousClient.put(
-            tmpInitImage.data.upload_url,
-            binaryImageData,
-            {
-                headers: {
-                    "Content-Type": "image/jpeg",
-                },
-                onUploadProgress: (progressEvent: any) => {
-                    let percentCompleted =
-                        progressEvent.loaded / progressEvent.total;
-                    if (encodedMask) {
-                        percentCompleted /= 2;
-                    }
-                    this.updateProgress(percentCompleted);
-                },
-            }
-        );
-        input.tmp_jpg_id = tmpInitImage.data.id;
+        input.encoded_image = encodedImage;
 
         if (encodedMask) {
-            const tmpMaskImage = await api.createTemporaryImage("png");
-            const binaryMaskData = Buffer.from(encodedMask, "base64");
-            await anonymousClient.put(
-                tmpMaskImage.data.upload_url,
-                binaryMaskData,
-                {
-                    headers: {
-                        "Content-Type": "image/png",
-                    },
-                    onUploadProgress: (progressEvent: any) => {
-                        let percentCompleted =
-                            0.5 +
-                            progressEvent.loaded / progressEvent.total / 2;
-                        this.updateProgress(percentCompleted);
-                    },
-                }
-            );
-            input.tmp_mask_id = tmpMaskImage.data.id;
+            input.encoded_mask = encodedMask;
         }
 
         input.label = "";
@@ -561,11 +526,13 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.params.loras = this.loras;
         input.temporary = true;
 
-
-        let resp: ImageList | null = null;
+        let job: GenerationJob | undefined;
+        this.state = "uploading";
 
         try {
-            resp = (await api.createImage(input)).data;
+            job = await generator.generateImages(input, (progress) => {
+                this.updateProgress(progress.loaded / progress.total);
+            });
         } catch (err) {
             console.error("Error creating images", err);
             this.notifyError("Failed to create image");
@@ -573,126 +540,42 @@ export class EnhanceTool extends BaseTool implements Tool {
             return;
         }
         this.state = "processing";
-        let newImages: Array<ImageWithData> | undefined = resp.images;
-        if (!newImages || newImages.length === 0) {
-            this.state = "default";
-            throw new Error("No images returned");
-        }
+        this.updateProgress(0);
         let completed = false;
 
-        let lastUpdate = moment();
+        let startTime = moment();
+        let newImages: Array<ImageWithData> = [];
 
-        const onMessage = async (msg: string) => {
-            const img = JSON.parse(msg) as any;
-            if (
-                img.type === NOTIFICATION_IMAGE_UPDATED &&
-                img.status === StatusEnum.Completed
-            ) {
-                lastUpdate = moment();
-                for (let i = 0; i < newImages!.length; i++) {
-                    if (newImages![i].id === img.id) {
+        while (!completed) {
+            await sleep(2000);
+            // poll for completion
+            job = await generator.checkGenerationJob(job);
+            this.updateProgress(job.progress);
+            if (job.status === "completed") {
+                completed = true;
+                newImages = job.images!.filter(
+                    (img) => img.status === "completed"
+                );
+                await Promise.all(
+                    newImages.map(async (img) => {
                         const imageData = await this.loadImageData(
-                            api,
-                            newImages![i].id,
+                            img,
                             maskData,
                             selectionOverlay!
                         );
-                        newImages![i].data = imageData;
-                        newImages![i].status = StatusEnum.Completed;
-                    }
-                }
-            } else if (img.status == StatusEnum.Error) {
-                for (let i = 0; i < newImages!.length; i++) {
-                    if (newImages![i].id === img.id) {
-                        newImages![i].status = StatusEnum.Error;
-                    }
-                }
+                        img.data = imageData;
+                    })
+                );
             }
-        };
-        apisocket.addMessageListener(onMessage);
-        try {
-            let startTime = moment();
-            let lastCheck = moment();
-
-            while (!completed) {
-                let completeCount = 0;
-                await sleep(1000);
-                // poll for completion
-                for (let i = 0; i < newImages!.length; i++) {
-                    if (
-                        newImages![i].status === StatusEnum.Completed ||
-                        newImages![i].status === StatusEnum.Error
-                    ) {
-                        completeCount++;
-                        continue;
-                    }
-                }
-                this.updateProgress(completeCount / newImages!.length);
-                if (completeCount === newImages!.length) {
-                    completed = true;
-                }
-
-                // fallback if sockets don't catch one
-                if (moment().diff(lastCheck, "seconds") > 10) {
-                    // get list of ids that aren't completed and batch get them.
-                    const pendingIds = newImages
-                        .filter(
-                            (img) =>
-                                img.status === StatusEnum.Pending ||
-                                img.status === StatusEnum.Processing
-                        )
-                        .map((img) => img.id);
-                    console.log("Checking pending images", pendingIds);
-                    const updatedImagesResult = await api.batchGetImages(
-                        undefined,
-                        {
-                            ids: pendingIds,
-                        }
-                    );
-                    const updatedImages = updatedImagesResult.data.images;
-                    const byId = updatedImages!.reduce((acc, img) => {
-                        acc[img.id] = img;
-                        return acc;
-                    }, {} as Record<string, APIImage>);
-                    for (let i = 0; i < newImages!.length; i++) {
-                        if (
-                            newImages![i].status === StatusEnum.Pending ||
-                            newImages![i].status === StatusEnum.Processing
-                        ) {
-                            const updated = byId[newImages![i].id];
-                            if (updated) {
-                                newImages![i].status = updated.status;
-                                if (updated.status === StatusEnum.Completed) {
-                                    lastUpdate = moment();
-                                    const imageData = await this.loadImageData(
-                                        api,
-                                        newImages![i].id,
-                                        maskData,
-                                        selectionOverlay!
-                                    );
-                                    newImages![i].data = imageData;
-                                }
-                            }
-                        }
-                    }
-                    lastCheck = moment();
-                }
-                // timeout of 2 minutes
-                if (
-                    (lastUpdate.isAfter(startTime) &&
-                        moment().diff(lastUpdate, "seconds") > 30) ||
-                    moment().diff(startTime, "minutes") > 2
-                ) {
-                    completed = true;
-                }
+            // timeout of 2 minutes
+            if (moment().diff(startTime, "minutes") > 2) {
+                completed = true;
+                await generator.client.deleteImageRequest(job.id);
             }
-        } finally {
-            apisocket.removeMessageListener(onMessage);
         }
 
-        // sort images by score descending
         newImages!.sort((a, b) => {
-            return b.score - a.score;
+            return a.created_at - b.created_at;
         });
         newImages = newImages!.filter((img) => {
             return img.status === StatusEnum.Completed;
@@ -772,16 +655,14 @@ export class EnhanceTool extends BaseTool implements Tool {
 }
 
 interface ControlsProps {
-    api: AIBrushApi;
-    apisocket: ApiSocket;
-    image: APIImage;
+    generator: HordeGenerator;
+    image: LocalImage;
     renderer: Renderer;
     tool: EnhanceTool;
 }
 
 export const EnhanceControls: FC<ControlsProps> = ({
-    api,
-    apisocket,
+    generator,
     image,
     renderer,
     tool,
@@ -831,7 +712,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
     const onRemoveLora = (lora: SelectedLora) => {
         const updated = selectedLoras.filter(
             (selectedLora) => selectedLora.config.name !== lora.config.name
-        )
+        );
         setSelectedLoras(updated);
     };
 
@@ -1135,7 +1016,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                                         (lora) => lora.config
                                     ),
                                 });
-                                tool.submit(api, apisocket, image);
+                                tool.submit(generator, image);
                             }}
                             style={{ marginRight: "8px" }}
                         >
@@ -1166,7 +1047,6 @@ export const EnhanceControls: FC<ControlsProps> = ({
             />
             {selectingModel && (
                 <ModelSelector
-                    api={api}
                     onCancel={() => setSelectingModel(false)}
                     onSelectModel={(model) => {
                         setModel(model);

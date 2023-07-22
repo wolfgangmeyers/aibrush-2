@@ -32,9 +32,15 @@ import { calculateImagesCost } from "../../lib/credits";
 import { CostIndicator } from "../../components/CostIndicator";
 import ModelSelector from "../../components/ModelSelector";
 import { ResetToDefaultIcon } from "../../components/ResetToDefaultIcon";
-import { LoraModal, SelectedLora, selectedLorasFromConfigs } from "../../components/LoraSelector";
+import {
+    LoraModal,
+    SelectedLora,
+    selectedLorasFromConfigs,
+} from "../../components/LoraSelector";
 import { LoraTriggers } from "../../components/LoraTriggers";
 import { SelectedLoraTag } from "../../components/SelectedLora";
+import { GenerationJob, LocalImage } from "../../lib/models";
+import { HordeGenerator } from "../../lib/hordegenerator";
 
 const anonymousClient = axios.create();
 
@@ -47,7 +53,7 @@ type InpaintToolState =
     | "confirm"
     | undefined;
 
-interface ImageWithData extends APIImage {
+interface ImageWithData extends LocalImage {
     data?: ImageData;
 }
 
@@ -291,12 +297,11 @@ export class InpaintTool extends BaseTool implements Tool {
     }
 
     private async loadImageData(
-        api: AIBrushApi,
-        imageId: string,
+        image: LocalImage,
         alphaMask: ImageData,
         selectionOverlay: Rect
     ): Promise<ImageData> {
-        const imageElement = await loadImageDataElement(api, imageId);
+        const imageElement = await loadImageDataElement(image);
         const canvas = document.createElement("canvas");
         canvas.width = selectionOverlay.width;
         canvas.height = selectionOverlay.height;
@@ -360,12 +365,7 @@ export class InpaintTool extends BaseTool implements Tool {
         }
     }
 
-    async submit(
-        api: AIBrushApi,
-        apisocket: ApiSocket,
-        image: APIImage,
-        model: string
-    ) {
+    async submit(generator: HordeGenerator, image: LocalImage, model: string) {
         this.notifyError(null);
         let selectionOverlay = this.renderer.getSelectionOverlay();
         if (!selectionOverlay) {
@@ -401,41 +401,12 @@ export class InpaintTool extends BaseTool implements Tool {
 
         const encodedImage = this.renderer.getEncodedImage(selectionOverlay);
 
-        // upload temporary images in parallel
-        const tmpImagePromises = [
-            api.createTemporaryImage("png"),
-            api.createTemporaryImage("png"),
-        ];
-        const tmpImages = await Promise.all(tmpImagePromises);
-        const binaryImages = [
-            Buffer.from(encodedImage!, "base64"),
-            Buffer.from(encodedMask!, "base64"),
-        ];
-        const progress = [0, 0];
-        const uploadPromises: Array<Promise<any>> = [];
-        for (let i = 0; i < tmpImages.length; i++) {
-            const tmpImage = tmpImages[i].data;
-            const binaryImage = binaryImages[i];
-            uploadPromises.push(
-                anonymousClient.put(tmpImage.upload_url, binaryImage, {
-                    headers: {
-                        "Content-Type": "image/png",
-                    },
-                    onUploadProgress: (e) => {
-                        progress[i] = e.loaded / e.total;
-                        this.updateProgress((progress[0] + progress[1]) / 2);
-                    },
-                })
-            );
-        }
-        await Promise.all(uploadPromises);
-
         const input: CreateImageInput = defaultArgs();
         input.label = "";
         // input.encoded_image = encodedImage;
         // input.encoded_mask = encodedMask;
-        input.tmp_image_id = tmpImages[0].data.id;
-        input.tmp_mask_id = tmpImages[1].data.id;
+        input.encoded_image = encodedImage;
+        input.encoded_mask = encodedMask;
         input.parent = image.id;
         input.params.prompt = this.prompt || image.params.prompt;
         input.params.negative_prompt =
@@ -453,10 +424,12 @@ export class InpaintTool extends BaseTool implements Tool {
         input.params.loras = this.loras;
         input.temporary = true;
 
-        let resp: ImageList | null = null;
+        let job: GenerationJob | undefined;
 
         try {
-            resp = (await api.createImage(input)).data;
+            job = await generator.generateImages(input, (progress) => {
+                this.updateProgress(progress.loaded / progress.total);
+            });
         } catch (err) {
             console.error("Error creating images", err);
             this.notifyError("Failed to create image");
@@ -465,126 +438,41 @@ export class InpaintTool extends BaseTool implements Tool {
         }
         this.state = "processing";
         this.updateProgress(0);
-        let newImages: Array<ImageWithData> | undefined = resp.images;
-        if (!newImages || newImages.length === 0) {
-            this.state = "select";
-            throw new Error("No images returned");
-        }
+        let newImages: Array<ImageWithData> = [];
+        
         let completed = false;
-        let lastUpdate = moment();
-
-        const onMessage = async (msg: string) => {
-            console.log("inpaint onMessage", msg);
-            const img = JSON.parse(msg) as any;
-            if (
-                img.type === NOTIFICATION_IMAGE_UPDATED &&
-                img.status === StatusEnum.Completed
-            ) {
-                lastUpdate = moment();
-                for (let i = 0; i < newImages!.length; i++) {
-                    if (newImages![i].id === img.id) {
+        let startTime = moment();
+        while (!completed) {
+            await sleep(2000);
+            // poll for completion
+            // poll for completion
+            job = await generator.checkGenerationJob(job);
+            this.updateProgress(job.progress);
+            if (job.status === "completed") {
+                completed = true;
+                newImages = job.images!.filter(
+                    (img) => img.status === "completed"
+                );
+                await Promise.all(
+                    newImages.map(async (img) => {
                         const imageData = await this.loadImageData(
-                            api,
-                            newImages![i].id,
+                            img,
                             maskData!,
                             selectionOverlay!
                         );
-                        newImages![i].data = imageData;
-                        newImages![i].status = StatusEnum.Completed;
-                    }
-                }
-            } else if (img.status === StatusEnum.Error) {
-                for (let i = 0; i < newImages!.length; i++) {
-                    if (newImages![i].id === img.id) {
-                        newImages![i].status = StatusEnum.Error;
-                    }
-                }
+                        img.data = imageData;
+                    })
+                );
             }
-        };
-        apisocket.addMessageListener(onMessage);
-        try {
-            let startTime = moment();
-            let lastCheck = moment();
-            while (!completed) {
-                let completeCount = 0;
-                await sleep(100);
-                // poll for completion
-                for (let i = 0; i < newImages!.length; i++) {
-                    if (
-                        newImages![i].status === StatusEnum.Completed ||
-                        newImages![i].status === StatusEnum.Error
-                    ) {
-                        completeCount++;
-                        continue;
-                    }
-                }
-                this.updateProgress(completeCount / newImages!.length);
-                if (completeCount === newImages!.length) {
-                    completed = true;
-                    continue;
-                }
 
-                // fallback if sockets don't catch one
-                if (moment().diff(lastCheck, "seconds") > 10) {
-                    // get list of ids that aren't completed and batch get them.
-                    const pendingIds = newImages
-                        .filter(
-                            (img) =>
-                                img.status === StatusEnum.Pending ||
-                                img.status === StatusEnum.Processing
-                        )
-                        .map((img) => img.id);
-                    console.log("Checking pending images", pendingIds);
-                    const updatedImagesResult = await api.batchGetImages(
-                        undefined,
-                        {
-                            ids: pendingIds,
-                        }
-                    );
-                    const updatedImages = updatedImagesResult.data.images;
-                    const byId = updatedImages!.reduce((acc, img) => {
-                        acc[img.id] = img;
-                        return acc;
-                    }, {} as Record<string, APIImage>);
-                    for (let i = 0; i < newImages!.length; i++) {
-                        if (
-                            newImages![i].status === StatusEnum.Pending ||
-                            newImages![i].status === StatusEnum.Processing
-                        ) {
-                            const updated = byId[newImages![i].id];
-                            if (updated) {
-                                newImages![i].status = updated.status;
-                                if (updated.status === StatusEnum.Completed) {
-                                    lastUpdate = moment();
-                                    const imageData = await this.loadImageData(
-                                        api,
-                                        newImages![i].id,
-                                        maskData!,
-                                        selectionOverlay!
-                                    );
-                                    newImages![i].data = imageData;
-                                }
-                            }
-                        }
-                    }
-                    lastCheck = moment();
-                }
-                // timeout of 2 minutes
-                if (
-                    (lastUpdate.isAfter(startTime) &&
-                        moment().diff(lastUpdate, "seconds") > 30) ||
-                    moment().diff(startTime, "minutes") > 2
-                ) {
-                    completed = true;
-                }
+            if (moment().diff(startTime, "minutes") > 2) {
+                completed = true;
+                await generator.client.deleteImageRequest(job.id);
             }
-        } finally {
-            apisocket.removeMessageListener(onMessage);
         }
 
-        // sort images by score descending
         newImages!.sort((a, b) => {
-            return b.score - a.score;
+            return a.created_at - b.created_at;
         });
         newImages = newImages!.filter((img) => {
             return img.status === StatusEnum.Completed;
@@ -672,15 +560,15 @@ export class InpaintTool extends BaseTool implements Tool {
 
 interface ControlsProps {
     api: AIBrushApi;
-    apisocket: ApiSocket;
-    image: APIImage;
+    generator: HordeGenerator;
+    image: LocalImage;
     renderer: Renderer;
     tool: InpaintTool;
 }
 
 export const InpaintControls: FC<ControlsProps> = ({
-    api,
-    apisocket,
+    // TODO: alternative source of horde model reference
+    generator,
     image,
     renderer,
     tool,
@@ -733,7 +621,7 @@ export const InpaintControls: FC<ControlsProps> = ({
     const onRemoveLora = (lora: SelectedLora) => {
         const updated = selectedLoras.filter(
             (selectedLora) => selectedLora.config.name !== lora.config.name
-        )
+        );
         setSelectedLoras(updated);
     };
 
@@ -859,7 +747,11 @@ export const InpaintControls: FC<ControlsProps> = ({
                     <div className="form-group">
                         <label htmlFor="prompt">
                             Prompt&nbsp;
-                            <ResetToDefaultIcon onClick={() => setPrompt(image.params.prompt || "")} />
+                            <ResetToDefaultIcon
+                                onClick={() =>
+                                    setPrompt(image.params.prompt || "")
+                                }
+                            />
                         </label>
                         <input
                             type="text"
@@ -885,7 +777,13 @@ export const InpaintControls: FC<ControlsProps> = ({
                     <div className="form-group">
                         <label htmlFor="negativeprompt">
                             Negative prompt&nbsp;
-                            <ResetToDefaultIcon onClick={() => setNegativePrompt(image.params.negative_prompt || "")} />
+                            <ResetToDefaultIcon
+                                onClick={() =>
+                                    setNegativePrompt(
+                                        image.params.negative_prompt || ""
+                                    )
+                                }
+                            />
                         </label>
                         <input
                             type="text"
@@ -1035,7 +933,7 @@ export const InpaintControls: FC<ControlsProps> = ({
                                 prompt,
                                 negativePrompt,
                             });
-                            tool.submit(api, apisocket, image, model);
+                            tool.submit(generator, image, model);
                         }}
                     >
                         {/* paint icon */}
@@ -1049,7 +947,6 @@ export const InpaintControls: FC<ControlsProps> = ({
             />
             {selectingModel && (
                 <ModelSelector
-                    api={api}
                     onCancel={() => setSelectingModel(false)}
                     onSelectModel={onSelectModel}
                     initialSelectedModel={model}

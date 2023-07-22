@@ -58,23 +58,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImageList"
     # create image
-    post:
-      description: Create a new image
-      operationId: createImage
-      tags:
-        - AIBrush
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateImageInput"
-      responses:
-        "201":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ImageList"
+    # post:
+    #   description: Create a new image
+    #   operationId: createImage
+    #   tags:
+    #     - AIBrush
+    #   requestBody:
+    #     content:
+    #       application/json:
+    #         schema:
+    #           $ref: "#/components/schemas/CreateImageInput"
+    #   responses:
+    #     "201":
+    #       description: Success
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/ImageList"
   /api/images/{id}:
     get:
       description: Get a saved image by id
@@ -94,30 +94,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Image"
-    # update image
-    patch:
-      description: Update a saved image
-      operationId: updateImage
-      tags:
-        - AIBrush
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateImageInput"
-      responses:
-        "200":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Image"
+    # # update image
+    # patch:
+    #   description: Update a saved image
+    #   operationId: updateImage
+    #   tags:
+    #     - AIBrush
+    #   parameters:
+    #     - name: id
+    #       in: path
+    #       required: true
+    #       schema:
+    #         type: string
+    #   requestBody:
+    #     content:
+    #       application/json:
+    #         schema:
+    #           $ref: "#/components/schemas/UpdateImageInput"
+    #   responses:
+    #     "200":
+    #       description: Success
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: "#/components/schemas/Image"
     delete:
       description: Delete a saved image
       operationId: deleteImage
@@ -197,121 +197,121 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ImageList"
-  /api/images/{id}.image.png:
-    get:
-      description: Get the binary image data
-      operationId: getImageData
-      tags:
-        - AIBrush
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Success
-          content:
-            image/png:
-              schema:
-                type: string
-                format: binary
-    put:
-      description: Upload the binary image data
-      operationId: uploadImageData
-      tags:
-        - AIBrush
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          image/png:
-            schema:
-              type: string
-              format: binary
-      responses:
-        "200":
-          description: Success
+  # /api/images/{id}.image.png:
+  #   get:
+  #     description: Get the binary image data
+  #     operationId: getImageData
+  #     tags:
+  #       - AIBrush
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       "200":
+  #         description: Success
+  #         content:
+  #           image/png:
+  #             schema:
+  #               type: string
+  #               format: binary
+  #   put:
+  #     description: Upload the binary image data
+  #     operationId: uploadImageData
+  #     tags:
+  #       - AIBrush
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       content:
+  #         image/png:
+  #           schema:
+  #             type: string
+  #             format: binary
+  #     responses:
+  #       "200":
+  #         description: Success
   # get image mask.png
-  /api/images/{id}.mask.png:
-    get:
-      description: Get the binary mask data
-      operationId: getMaskData
-      tags:
-        - AIBrush
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Success
-          content:
-            image/png:
-              schema:
-                type: string
-                format: binary
-  /api/images/{id}.thumbnail.png:
-    get:
-      description: Get the binary thumbnail data
-      operationId: getThumbnailData
-      tags:
-        - AIBrush
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Success
-          content:
-            image/png:
-              schema:
-                type: string
-                format: binary
-    put:
-      description: Upload the binary thumbnail data
-      operationId: uploadThumbnailData
-      tags:
-        - AIBrush
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          image/png:
-            schema:
-              type: string
-              format: binary
-      responses:
-        "200":
-          description: Success
+  # /api/images/{id}.mask.png:
+  #   get:
+  #     description: Get the binary mask data
+  #     operationId: getMaskData
+  #     tags:
+  #       - AIBrush
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       "200":
+  #         description: Success
+  #         content:
+  #           image/png:
+  #             schema:
+  #               type: string
+  #               format: binary
+  # /api/images/{id}.thumbnail.png:
+  #   get:
+  #     description: Get the binary thumbnail data
+  #     operationId: getThumbnailData
+  #     tags:
+  #       - AIBrush
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       "200":
+  #         description: Success
+  #         content:
+  #           image/png:
+  #             schema:
+  #               type: string
+  #               format: binary
+  #   put:
+  #     description: Upload the binary thumbnail data
+  #     operationId: uploadThumbnailData
+  #     tags:
+  #       - AIBrush
+  #     parameters:
+  #       - name: id
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     requestBody:
+  #       content:
+  #         image/png:
+  #           schema:
+  #             type: string
+  #             format: binary
+  #     responses:
+  #       "200":
+  #         description: Success
 
-  /api/invite-codes:
-    post:
-      description: Create a new invite code
-      operationId: createInviteCode
-      tags:
-        - AIBrush
-      responses:
-        "201":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InviteCode"
+  # /api/invite-codes:
+  #   post:
+  #     description: Create a new invite code
+  #     operationId: createInviteCode
+  #     tags:
+  #       - AIBrush
+  #     responses:
+  #       "201":
+  #         description: Success
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: "#/components/schemas/InviteCode"
   /api/is-admin:
     get:
       description: Check if the user is admin
@@ -511,25 +511,25 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: '#/components/schemas/StableDiffusionModel'
-  /api/temporary-images:
-    post:
-      description: Create a new temporary image
-      operationId: createTemporaryImage
-      tags:
-        - AIBrush
-      parameters:
-        - name: format
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        "201":
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TemporaryImage"
+  # /api/temporary-images:
+  #   post:
+  #     description: Create a new temporary image
+  #     operationId: createTemporaryImage
+  #     tags:
+  #       - AIBrush
+  #     parameters:
+  #       - name: format
+  #         in: query
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       "201":
+  #         description: Success
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: "#/components/schemas/TemporaryImage"
   /api/credits:
     get:
       description: Get the user's credit balance

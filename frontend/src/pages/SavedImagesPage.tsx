@@ -18,8 +18,8 @@ import {
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ImagePopup } from "../components/ImagePopup";
 import { BusyModal } from "../components/BusyModal";
-import { PendingImagesThumbnail } from "../components/PendingImagesThumbnail";
-import { PendingImages } from "../components/PendingImages";
+import { PendingJobsThumbnail } from "../components/PendingJobsThumbnail";
+import { PendingJobs } from "../components/PendingJobs";
 import {
     ApiSocket,
     NOTIFICATION_IMAGE_DELETED,
@@ -83,73 +83,6 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
             setSelectedImage(null);
         }
     }, [id]);
-
-    const onSubmit = async (input: CreateImageInput) => {
-        setCreating(true);
-        setParentImage(null);
-        setErr(null);
-        window.scrollTo(0, 0);
-        try {
-            await api.createImage(input);
-        } catch (e: any) {
-            console.error(e);
-            setErr("Error creating image");
-        } finally {
-            setCreating(false);
-        }
-    };
-
-    const onEditNewImage = async (input: CreateImageInput) => {
-        setCreating(true);
-        setParentImage(null);
-        setErr(null);
-        window.scrollTo(0, 0);
-        try {
-            const encodedImage = input.encoded_image!;
-            const encodedThumbnail = await createEncodedThumbnail(encodedImage);
-            const newImages = await api.createImage({
-                ...input,
-                encoded_image: undefined,
-            });
-            if (newImages.data.images) {
-                const image = newImages.data.images![0];
-                const uploadUrls = await api.getImageUploadUrls(image.id);
-                // convert base64 encoded image to binary to upload as image/png with axios
-                const blob = encodedImageToBlob(encodedImage);
-                const thumbnailBlob = encodedImageToBlob(encodedThumbnail);
-                const imagePromise = uploadBlob(
-                    uploadUrls.data.image_url!,
-                    blob
-                );
-                const thumbnailPromise = uploadBlob(
-                    uploadUrls.data.thumbnail_url!,
-                    thumbnailBlob
-                );
-                await Promise.all([imagePromise, thumbnailPromise]);
-
-                history.push(`/image-editor/${image.id}`);
-            }
-        } catch (e: any) {
-            console.error(e);
-            setErr("Error creating image");
-        } finally {
-            setCreating(false);
-        }
-    };
-
-    const onNSFW = (image: Image, nsfw: boolean) => {
-        api.updateImage(image.id, { nsfw }).then((res) => {
-            setImages((images) => {
-                return images.map((i) => {
-                    if (i.id === image.id) {
-                        return res.data;
-                    }
-                    return i;
-                });
-            });
-            setSelectedImage(res.data);
-        });
-    };
 
     useEffect(() => {
         if (!api) {
@@ -606,7 +539,7 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                     }
                 >
                     {pendingOrProcessingImages.length > 0 && (
-                        <PendingImagesThumbnail
+                        <PendingJobsThumbnail
                             pendingCount={pendingImages.length}
                             processingCount={processingImages.length}
                             onClick={() => {
@@ -619,7 +552,7 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                             key={image.id}
                             image={image}
                             assetsUrl={assetsUrl}
-                            onClick={onThumbnailClicked}
+                            onClick={img => onThumbnailClicked(img as Image)}
                             bulkDelete={
                                 bulkDeleteSelecting && bulkDeleteIds[image.id]
                             }
@@ -634,20 +567,10 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
                     assetsUrl={assetsUrl}
                     image={selectedImage}
                     onClose={() => history.push("/saved")}
-                    onDelete={(image) => {
-                        onDelete(image);
-                        setImages(images.filter((i) => i.id !== image.id));
-                        history.push("/saved");
-                    }}
                     onFork={(image) => {
-                        onFork(image);
+                        onFork(image as Image);
                     }}
-                    onEdit={(image) => {
-                        onEdit(image);
-                    }}
-                    onNSFW={onNSFW}
                     censorNSFW={censorNSFW}
-                    onSwipe={onSwipe}
                 />
             )}
             <ScrollToTop />
@@ -657,15 +580,6 @@ export const SavedImagesPage: FC<Props> = ({ api, apiSocket, assetsUrl }) => {
             <BusyModal show={bulkDeleting} title="Deleting images">
                 <p>Please wait while we delete your images.</p>
             </BusyModal>
-            <PendingImages
-                images={pendingOrProcessingImages}
-                onCancel={() => setShowPendingImages(false)}
-                show={showPendingImages}
-                onDeleteImage={(image) => {
-                    onDelete(image);
-                    setImages(images.filter((i) => i.id !== image.id));
-                }}
-            />
         </>
     );
 };

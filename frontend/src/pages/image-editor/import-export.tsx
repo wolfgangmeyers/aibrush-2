@@ -9,7 +9,6 @@ import { BaseTool, Tool } from "./tool";
 interface Props {
     renderer: Renderer;
     tool: BaseTool;
-    api: AIBrushApi;
 }
 
 export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {

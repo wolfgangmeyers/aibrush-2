@@ -1,10 +1,4 @@
 
-
-// const imagesCache = new KVStore({
-//     dbName: "saved-images",
-//     storeName: "images",
-// })
-
 import { AIBrushApi, Image } from "../client";
 import { KVStore } from "./kvstore";
 

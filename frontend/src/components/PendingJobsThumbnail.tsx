@@ -6,7 +6,7 @@ interface Props {
     onClick?: () => void;
 }
 
-export const PendingImagesThumbnail: FC<Props> = ({
+export const PendingJobsThumbnail: FC<Props> = ({
     pendingCount,
     processingCount,
     onClick,

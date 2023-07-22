@@ -1,10 +1,6 @@
 import moment from "moment";
 
-import { Image } from "../client";
-
-export interface LocalImage extends Image {
-    imageData?: string;
-}
+import { LocalImage } from "./models";
 
 /**
  * This class uses indexedDB to store images locally.

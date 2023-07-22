@@ -9,9 +9,7 @@ import { getConfig } from "./config";
 import { Login } from "./pages/Login";
 import { TokenRefresher } from "./components/TokenRefresher";
 import { Healthchecker } from "./components/Healthchecker";
-import { Admin } from "./pages/admin/Admin";
 import { ImageEditor } from "./pages/image-editor/ImageEditor";
-import { DeletedImages } from "./pages/DeletedImages";
 
 // V2 UI
 import { Homepage } from "./pages/Homepage";
@@ -21,6 +19,9 @@ import { LocalDeletedImages } from "./pages/LocalDeletedImages";
 import { SavedImagesPage } from "./pages/SavedImagesPage";
 import { TestPage } from "./pages/TestPage";
 import { CreditsBalance } from "./components/CreditsBalance";
+import { HordeGenerator } from "./lib/hordegenerator";
+import { HordeClient } from "./lib/hordeclient";
+import HordeUser from "./components/HordeUser";
 
 const config = getConfig();
 const httpClient = axios.default.create();
@@ -31,6 +32,8 @@ const client = new AIBrushApi(
 );
 const apiSocket: ApiSocket = new ApiSocket();
 const localImages = new LocalImagesStore();
+const hordeClient = new HordeClient("0000000000");
+const generator = new HordeGenerator(hordeClient);
 
 function updateHttpClient(loginResult: LoginResult) {
     if (loginResult.accessToken) {
@@ -43,7 +46,6 @@ function updateHttpClient(loginResult: LoginResult) {
 function App() {
     const [credentials, setCredentials] = useState<LoginResult | null>(null);
     const [assetsUrl, setAssetsUrl] = useState<string>("/api/images");
-    const [isAdmin, setIsAdmin] = useState<boolean>(false);
     const [features, setFeatures] = useState<FeatureList | null>(null);
 
     const onLogout = () => {
@@ -78,8 +80,6 @@ function App() {
                     JSON.stringify(result.data)
                 );
                 updateHttpClient(result.data);
-                const isAdmin = await client.isAdmin();
-                setIsAdmin(!!isAdmin.data.is_admin);
                 apiSocket.updateToken(result.data.accessToken!);
                 apiSocket.connect();
             } catch (e: any) {
@@ -182,6 +182,7 @@ function App() {
                                             {/* font awesome github icon */}
                                             <i className="fab fa-github"></i>
                                         </a>
+                                        <HordeUser client={hordeClient} />
                                     </>
                                 )}
                             </div>
@@ -206,24 +207,7 @@ function App() {
                                     apiSocket={apiSocket}
                                     assetsUrl={assetsUrl}
                                     localImages={localImages}
-                                />
-                            </Route>
-                            <Route path="/stripe-success">
-                                <Homepage
-                                    api={client}
-                                    apiSocket={apiSocket}
-                                    assetsUrl={assetsUrl}
-                                    localImages={localImages}
-                                    paymentStatus="success"
-                                />
-                            </Route>
-                            <Route path="/stripe-cancel">
-                                <Homepage
-                                    api={client}
-                                    apiSocket={apiSocket}
-                                    assetsUrl={assetsUrl}
-                                    localImages={localImages}
-                                    paymentStatus="canceled"
+                                    generator={generator}
                                 />
                             </Route>
                             <Route path="/images/:id">
@@ -232,6 +216,7 @@ function App() {
                                     apiSocket={apiSocket}
                                     assetsUrl={assetsUrl}
                                     localImages={localImages}
+                                    generator={generator}
                                 />
                             </Route>
                             <Route path="/saved" exact={true}>
@@ -253,15 +238,9 @@ function App() {
                             <Route path="/image-editor/:id">
                                 <ImageEditor
                                     api={client}
-                                    apisocket={apiSocket}
+                                    generator={generator}
                                     assetsUrl={assetsUrl}
                                     localImages={localImages}
-                                />
-                            </Route>
-                            <Route path="/deleted-images">
-                                <DeletedImages
-                                    api={client}
-                                    assetsUrl={assetsUrl}
                                 />
                             </Route>
                             <Route path="/local-deleted-images">
@@ -270,13 +249,6 @@ function App() {
                             <Route path="/testpage">
                                 <TestPage />
                             </Route>
-                            {isAdmin && (
-                                <>
-                                    <Route path="/admin">
-                                        <Admin api={client} />
-                                    </Route>
-                                </>
-                            )}
                         </Switch>
                         <div
                             // style={{ marginTop: "100px", padding: "50px" }}

@@ -21,14 +21,11 @@ import { InpaintControls, InpaintTool } from "./inpaint-tool";
 import { AugmentControls } from "./augment-tool";
 import { defaultArgs } from "../../components/ImagePrompt";
 import { ApiSocket } from "../../lib/apisocket";
-import {
-    createEncodedThumbnail,
-    encodedImageToBlob,
-    uploadBlob,
-} from "../../lib/imageutil";
 import { BusyModal } from "../../components/BusyModal";
-import { LocalImage, LocalImagesStore } from "../../lib/localImagesStore";
+import { LocalImagesStore } from "../../lib/localImagesStore";
+import { LocalImage } from "../../lib/models";
 import { render } from "@testing-library/react";
+import { HordeGenerator } from "../../lib/hordegenerator";
 
 interface CanPreventDefault {
     preventDefault: () => void;
@@ -36,7 +33,7 @@ interface CanPreventDefault {
 
 interface Props {
     api: AIBrushApi;
-    apisocket: ApiSocket;
+    generator: HordeGenerator;
     assetsUrl: string;
     localImages: LocalImagesStore;
 }
@@ -54,7 +51,7 @@ delete anonymousClient.defaults.headers.common["Authorization"];
 
 export const ImageEditor: React.FC<Props> = ({
     api,
-    apisocket,
+    generator,
     localImages,
 }) => {
     const [showSelectionControls, setShowSelectionControls] = useState(false);
@@ -71,7 +68,7 @@ export const ImageEditor: React.FC<Props> = ({
                         tool={t as InpaintTool}
                         renderer={renderer}
                         api={api}
-                        apisocket={apisocket}
+                        generator={generator}
                         image={image!}
                     />
                 );
@@ -90,9 +87,8 @@ export const ImageEditor: React.FC<Props> = ({
                     <EnhanceControls
                         tool={t as EnhanceTool}
                         renderer={renderer}
-                        api={api}
-                        apisocket={apisocket}
                         image={image!}
+                        generator={generator}
                     />
                 );
             },
@@ -137,7 +133,6 @@ export const ImageEditor: React.FC<Props> = ({
                     <ImportExportControls
                         renderer={renderer}
                         tool={t as BaseTool}
-                        api={api}
                     />
                 );
             },
@@ -152,7 +147,7 @@ export const ImageEditor: React.FC<Props> = ({
                     <AugmentControls
                         renderer={renderer}
                         tool={t as BaseTool}
-                        api={api}
+                        generator={generator}
                         image={image!}
                     />
                 );
@@ -231,6 +226,7 @@ export const ImageEditor: React.FC<Props> = ({
         }
 
         async function loadImage() {
+            // TODO: replace with google drive / legacy load
             const localImage = await localImages.getImage(id);
             let imageSrc = "";
             if (localImage) {

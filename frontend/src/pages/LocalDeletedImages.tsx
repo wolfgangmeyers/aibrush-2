@@ -1,9 +1,9 @@
 import React, { FC, useEffect, useState } from "react";
-import { AIBrushApi, Image } from "../client";
 import moment from "moment";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { useHistory } from "react-router-dom";
 import { LocalImagesStore } from "../lib/localImagesStore";
+import { LocalImage } from "../lib/models";
 import { BusyModal } from "../components/BusyModal";
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const LocalDeletedImages: FC<Props> = ({ localImages }) => {
-    const [images, setImages] = useState<Image[]>([]);
+    const [images, setImages] = useState<LocalImage[]>([]);
     const [deleting, setDeleting] = useState(false);
 
     const history = useHistory();
@@ -21,7 +21,7 @@ export const LocalDeletedImages: FC<Props> = ({ localImages }) => {
         setImages(deletedImages);
     };
 
-    const onDeleteImage = async (image: Image) => {
+    const onDeleteImage = async (image: LocalImage) => {
         setImages(images.filter((i) => i.id !== image.id));
         await localImages.deleteImage(image.id);
         if (images.length <= 5) {
@@ -39,7 +39,7 @@ export const LocalDeletedImages: FC<Props> = ({ localImages }) => {
         }
     };
 
-    const onRestoreImage = async (image: Image) => {
+    const onRestoreImage = async (image: LocalImage) => {
         setImages(images.filter((i) => i.id !== image.id));
         await localImages.saveImage({
             ...image,

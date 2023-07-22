@@ -7,40 +7,33 @@ import * as uuid from "uuid";
 import { sleep } from "../../lib/sleep";
 
 import {
-    AIBrushApi,
-    CreateImageInput,
-    ImageParamsAugmentationEnum,
-    Image as APIImage,
     StatusEnum,
 } from "../../client";
 import { Renderer } from "./renderer";
 import { BaseTool, Tool } from "./tool";
 import {
-    splitImage,
-    mergeTiles,
     ImageUtilWorker,
     imageDataToCanvas,
     fixImageSize,
     decodeImage,
-    binaryImageToDataBase64,
-    SplitResult,
 } from "../../lib/imageutil";
-import { defaultArgs } from "../../components/ImagePrompt";
 import { ErrorNotification } from "../../components/Alerts";
 import moment from "moment";
 import { calculateImagesCost } from "../../lib/credits";
 import { CostIndicator } from "../../components/CostIndicator";
+import { LocalImage } from "../../lib/models";
+import { HordeGenerator } from "../../lib/hordegenerator";
 
 export const anonymousClient = axios.create();
 
 interface Props {
     renderer: Renderer;
     tool: BaseTool;
-    api: AIBrushApi;
-    image: APIImage;
+    generator: HordeGenerator;
+    image: LocalImage;
 }
 
-export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
+export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image }) => {
     const [backupImage, setBackupImage] = useState<string | undefined>();
     const [activeAugmentation, setActiveAugmentation] = useState<
         "upscale" | "face_restore" | null
@@ -69,58 +62,27 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, api, image }) => {
         let c = imageDataToCanvas(imageData);
         let encodedImage = c.toDataURL("image/png").split(",")[1];
         c.remove();
-        const input: CreateImageInput = defaultArgs();
-        input.label = "";
-        // input.encoded_image = encodedImage;
 
-        const tmpInitImage = await api.createTemporaryImage("png");
-        const binaryImageData = Buffer.from(encodedImage, "base64");
-        await anonymousClient.put(
-            tmpInitImage.data.upload_url!,
-            binaryImageData,
-            {
-                headers: {
-                    "Content-Type": "image/png",
-                },
+        // TODO: use progress indicator
+        const start = moment().valueOf();
+        let processingImage = await generator.augmentImage({
+            augmentation: augmentation,
+            image: {
+                imageData: encodedImage,
             }
-        );
-
-        input.tmp_image_id = tmpInitImage.data.id;
-        input.params.prompt = image.params.prompt;
-        input.params.negative_prompt = image.params.negative_prompt;
-        input.params.denoising_strength = 0.05;
-        input.count = 1;
-        input.model = "stable_diffusion";
-        input.nsfw = true;
-        input.temporary = true;
-        input.params.width = imageData.width;
-        input.params.height = imageData.height;
-        input.params.augmentation =
-            augmentation === "upscale"
-                ? ImageParamsAugmentationEnum.Upscale
-                : ImageParamsAugmentationEnum.FaceRestore;
-
-        const createResp = await api.createImage(input);
-        let processingImage = createResp.data.images![0];
+        });
         while (processingImage.status !== StatusEnum.Completed) {
             await sleep(2000);
-            const checkResp = await api.getImage(processingImage.id);
-            processingImage = checkResp.data;
+            processingImage = await generator.checkAugmentation(processingImage);
             if (processingImage.status === StatusEnum.Error) {
                 throw new Error("Augmentation failed");
             }
-        }
-        const downloadUrls = await api.getImageDownloadUrls(processingImage.id);
-
-        // download image data, convert to canvas and resize to 2x original,
-        // convert back to image data and return.
-        const imageDataResp = await anonymousClient.get(
-            downloadUrls.data.image_url!,
-            {
-                responseType: "arraybuffer",
+            if (moment().valueOf() - start > 60000) {
+                await generator.client.deleteInterrogationRequest(processingImage.id);
+                throw new Error("Augmentation timed out");
             }
-        );
-        encodedImage = binaryImageToDataBase64(imageDataResp.data);
+        }
+        encodedImage = processingImage.imageData!;
         const img = await decodeImage(encodedImage);
         c = document.createElement("canvas");
         const upscaleFactor = augmentation === "upscale" ? 2 : 1;

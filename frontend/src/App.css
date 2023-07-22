@@ -98,18 +98,6 @@ hr {
   border-radius: 20px !important;
 }
 
-.form-control.prompt {
-  border-top-right-radius: 0px !important;
-  border-bottom-right-radius: 0px !important;
-}
-
-.form-control.prompt-count {
-  border-top-left-radius: 0px !important;
-  border-bottom-left-radius: 0px !important;
-  padding-right: 0px;
-  padding-left: 4px;
-}
-
 .btn {
   border-radius: 20px !important;
 }

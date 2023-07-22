@@ -22,15 +22,17 @@ import {
 import InfiniteScroll from "react-infinite-scroll-component";
 import { ImagePopup } from "../components/ImagePopup";
 import { BusyModal } from "../components/BusyModal";
-import { PendingImagesThumbnail } from "../components/PendingImagesThumbnail";
-import { PendingImages } from "../components/PendingImages";
+import { PendingJobsThumbnail } from "../components/PendingJobsThumbnail";
+import { PendingJobs } from "../components/PendingJobs";
 import { ApiSocket } from "../lib/apisocket";
-import { LocalImagesStore, LocalImage } from "../lib/localImagesStore";
+import { LocalImagesStore } from "../lib/localImagesStore";
+import { GenerationJob, LocalImage } from "../lib/models";
 import { ErrorNotification, SuccessNotification } from "../components/Alerts";
 import { sleep } from "../lib/sleep";
 import { ProgressBar } from "../components/ProgressBar";
 import OutOfCreditsModal from "../components/OutOfCreditsModal";
 import PaymentStatusModal from "../components/PaymentStatusModal";
+import { HordeGenerator } from "../lib/hordegenerator";
 
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
@@ -38,6 +40,7 @@ delete anonymousClient.defaults.headers.common["Authorization"];
 interface Props {
     api: AIBrushApi;
     apiSocket: ApiSocket;
+    generator: HordeGenerator;
     assetsUrl: string;
     localImages: LocalImagesStore;
     paymentStatus?: "success" | "canceled";
@@ -45,7 +48,7 @@ interface Props {
 
 export const Homepage: FC<Props> = ({
     api,
-    apiSocket,
+    generator,
     assetsUrl,
     localImages,
     paymentStatus,
@@ -60,10 +63,10 @@ export const Homepage: FC<Props> = ({
     const [showPendingImages, setShowPendingImages] = useState(false);
 
     const [images, setImages] = useState<Array<LocalImage>>([]);
+    const [jobs, setJobs] = useState<Array<GenerationJob>>([]);
+
     const [err, setErr] = useState<string | null>(null);
     const [errTime, setErrTime] = useState<number>(0);
-    const [success, setSuccess] = useState<string | null>(null);
-    const [successTime, setSuccessTime] = useState<number>(0);
 
     const [hasMore, setHasMore] = useState<boolean>(true);
     const [search, setSearch] = useState<string>("");
@@ -123,45 +126,16 @@ export const Homepage: FC<Props> = ({
         setUploadingProgress(0);
         try {
             if (input.encoded_image) {
-                const encodedJpg = await convertPNGToJPG(input.encoded_image);
-                const tmpInitImage = await api.createTemporaryImage("jpg");
-                // convert base64 to binary
-                const binaryImageData = Buffer.from(
-                    encodedJpg,
-                    "base64"
+                input.encoded_image = await convertPNGToJPG(
+                    input.encoded_image
                 );
-                await anonymousClient.put(
-                    tmpInitImage.data.upload_url,
-                    binaryImageData,
-                    {
-                        headers: {
-                            "Content-Type": "image/jpeg",
-                        },
-                        onUploadProgress: (progressEvent: any) => {
-                            const percentCompleted =
-                                progressEvent.loaded / progressEvent.total;
-                            setUploadingProgress(percentCompleted);
-                        },
-                    }
-                );
-                input.encoded_image = undefined;
-                input.tmp_jpg_id = tmpInitImage.data.id;
             }
-
-            const newImages = await api.createImage(input);
-            if (newImages.data.images) {
-                for (let image of newImages.data.images || []) {
-                    localImages.saveImage(image);
-                }
-                setImages((images) => {
-                    return [...newImages.data.images!, ...images].sort(
-                        sortImages
-                    );
-                });
-            } else {
-                onError("Could not create images");
-            }
+            const job = await generator.generateImages(input, (progress) => {
+                setUploadingProgress(progress.loaded / progress.total);
+            });
+            setJobs((jobs) => [...jobs, job]);
         } catch (e: any) {
+            // TODO: deal with insufficient kudos
             console.error(e);
             if (e.response?.data?.message?.includes("credits")) {
                 setOutOfCredits(true);
@@ -184,8 +158,8 @@ export const Homepage: FC<Props> = ({
                 encodedImage = createBlankImage(
                     "#ffffff",
                     input.params.width!,
-                    input.params.height!,
-                )
+                    input.params.height!
+                );
             }
             const newImage: LocalImage = {
                 created_at: moment().valueOf(),
@@ -267,9 +241,6 @@ export const Homepage: FC<Props> = ({
     }, [search]);
 
     useEffect(() => {
-        if (!api) {
-            return;
-        }
         let lock = false;
 
         const pollImages = async (images: Array<LocalImage>) => {
@@ -278,90 +249,31 @@ export const Homepage: FC<Props> = ({
             }
             lock = true;
 
-            const pendingOrProcessingImages = images.filter((image) => {
-                return (
-                    image.status === "pending" || image.status === "processing"
-                );
-            });
-            if (pendingOrProcessingImages.length === 0) {
-                return;
-            }
-
-            const pendingById = pendingOrProcessingImages.reduce(
-                (acc, image) => {
-                    acc[image.id] = image;
-                    return acc;
-                },
-                {} as Record<string, LocalImage>
-            );
-
             try {
-                const resp = await api.batchGetImages("id,status,nsfw,error", {
-                    ids: pendingOrProcessingImages.map((image) => image.id),
-                });
-
-                if (resp.data.images) {
-                    const updatedImages: Array<LocalImage> =
-                        resp.data.images || [];
-                    let statusChange = false;
-                    for (let i = 0; i < updatedImages.length; i++) {
-                        let img = updatedImages[i];
-                        if (pendingById[img.id].status !== img.status) {
-                            statusChange = true;
+                const updatedJobs = await generator.checkGenerationJobs(jobs);
+                let pendingJobs: GenerationJob[] = [];
+                let newImages: LocalImage[] = [];
+                for (let job of updatedJobs) {
+                    if (job.status === "pending" || job.status == "processing") {
+                        pendingJobs.push(job);
+                    } else if (job.status === "completed" && job.images) {
+                        for (let img of job.images) {
+                            if (img.status == StatusEnum.Error) {
+                                onError(
+                                    img.error ||
+                                        "Some images failed to generate, please make sure your prompt doesn't violate our terms of service"
+                                );
+                                continue;
+                            }
+                            newImages.push(img);
+                            localImages.saveImage(img);
                         }
-                        img = {
-                            ...pendingById[img.id],
-                            ...img,
-                        };
-                        updatedImages[i] = img;
-
-                        if (img.status == StatusEnum.Error) {
-                            onError(
-                                img.error ||
-                                    "Some images failed to generate, please make sure your prompt doesn't violate our terms of service"
-                            );
-                            await api.deleteImage(img.id);
-                            await localImages.deleteImage(img.id);
-                            continue;
-                        }
-
-                        if (img.status === StatusEnum.Completed) {
-                            const downloadUrls = await api.getImageDownloadUrls(
-                                img.id
-                            );
-                            const resp = await anonymousClient.get(
-                                downloadUrls.data.image_url!,
-                                {
-                                    responseType: "arraybuffer",
-                                }
-                            );
-                            const binaryImageData = Buffer.from(
-                                resp.data,
-                                "binary"
-                            );
-                            const base64ImageData =
-                                binaryImageData.toString("base64");
-                            const src = `data:image/png;base64,${base64ImageData}`;
-                            img.imageData = src;
-                        }
-                        await localImages.saveImage(img);
-                    }
-                    if (statusChange) {
-                        setImages((images) => {
-                            return [
-                                ...images.map((image) => {
-                                    const updatedImage = updatedImages.find(
-                                        (i) => i.id === image.id
-                                    );
-                                    if (updatedImage) {
-                                        return updatedImage;
-                                    }
-                                    return image;
-                                }),
-                            ].sort(sortImages);
-                        });
                     }
                 }
+                if (newImages.length > 0) {
+                    setImages((images) => [...newImages, ...images]);
+                }
+                setJobs(pendingJobs);
             } catch (err) {
                 onError("Could not load images");
                 console.error(err);
@@ -376,9 +288,10 @@ export const Homepage: FC<Props> = ({
         return () => {
             clearInterval(timerHandle);
         };
-    }, [api, images, search]);
+    }, [generator, jobs, images, search]);
 
     // load parent image from saved images if an id is on the query string
+    // TODO: restore this once google drive integration is in place
     useEffect(() => {
         const loadParent = async () => {
             const search = qs.parse(location.search, {
@@ -435,30 +348,6 @@ export const Homepage: FC<Props> = ({
         } else if (!isPendingOrProcessing(a) && isPendingOrProcessing(b)) {
             return 1;
         }
-        // if the parent is the same, sort by score descending
-        // otherwise, sort by updated_at
-        if (
-            a.parent === b.parent &&
-            a.params.prompt == b.params.prompt &&
-            a.status !== StatusEnum.Pending &&
-            b.status !== StatusEnum.Pending
-        ) {
-            // if the score is the same, sort by updated_at
-            let aScore = a.score;
-            let bScore = b.score;
-            // working around a bug where negative score was assigned
-            // for an empty negative prompt.
-            if (a.params.prompt!.trim() !== "") {
-                aScore = aScore - a.negative_score;
-            }
-            if (b.params.prompt!.trim() !== "") {
-                bScore = bScore - b.negative_score;
-            }
-            if (aScore == bScore) {
-                return b.updated_at - a.updated_at;
-            }
-            return bScore - aScore;
-        }
 
         return b.updated_at - a.updated_at;
     };
@@ -507,7 +396,6 @@ export const Homepage: FC<Props> = ({
                 } else if (index === 0 && images.length > 1) {
                     nextImage = images[1];
                 }
-
             }
             await localImages.deleteImage(image.id);
             setImages((images) => {
@@ -524,6 +412,11 @@ export const Homepage: FC<Props> = ({
         }
     };
 
+    const onDeleteJob = async (job: GenerationJob) => {
+        await generator.client.deleteImageRequest(job.id);
+        setJobs((jobs) => jobs.filter((j) => j.id !== job.id));
+    }
+
     const onFork = async (image: LocalImage) => {
         setParentImage(image);
         // setSelectedImage(null);
@@ -531,72 +424,73 @@ export const Homepage: FC<Props> = ({
         window.scrollTo(0, 0);
     };
 
-    const onSave = async (image: LocalImage) => {
-        setSavingImage(true);
-        try {
-            history.push("/");
-            const createInput: CreateImageInput = {
-                count: 1,
-                params: image.params,
-                status: StatusEnum.Saved,
-                temporary: false,
-                label: "",
-                model: image.model,
-                nsfw: image.nsfw,
-            };
+    // TODO: refactor to use google drive
+    // const onSave = async (image: LocalImage) => {
+    //     setSavingImage(true);
+    //     try {
+    //         history.push("/");
+    //         const createInput: CreateImageInput = {
+    //             count: 1,
+    //             params: image.params,
+    //             status: StatusEnum.Saved,
+    //             temporary: false,
+    //             label: "",
+    //             model: image.model,
+    //             nsfw: image.nsfw,
+    //         };
 
-            const encodedImage = image.imageData!.split(",")[1];
+    //         const encodedImage = image.imageData!.split(",")[1];
 
-            // convert base64 to binary
-            const binaryImageData = Buffer.from(encodedImage, "base64");
-            const encodedThumbnail = await createEncodedThumbnail(encodedImage);
-            const binaryThumbnailData = Buffer.from(encodedThumbnail, "base64");
+    //         // convert base64 to binary
+    //         const binaryImageData = Buffer.from(encodedImage, "base64");
+    //         const encodedThumbnail = await createEncodedThumbnail(encodedImage);
+    //         const binaryThumbnailData = Buffer.from(encodedThumbnail, "base64");
 
-            const createResp = await api.createImage(createInput);
-            const imageId = createResp.data.images![0].id;
-            const uploadUrls = await api.getImageUploadUrls(imageId);
-            await anonymousClient.put(
-                uploadUrls.data.thumbnail_url!,
-                binaryThumbnailData,
-                {
-                    headers: {
-                        "Content-Type": "image/png",
-                    },
-                    onUploadProgress: (progressEvent: any) => {
-                        const percentCompleted =
-                            progressEvent.loaded / progressEvent.total;
-                        setUploadingProgress(percentCompleted / 2);
-                    },
-                }
-            );
-            await anonymousClient.put(
-                uploadUrls.data.image_url!,
-                binaryImageData,
-                {
-                    headers: {
-                        "Content-Type": "image/png",
-                    },
-                    onUploadProgress: (progressEvent: any) => {
-                        const percentCompleted =
-                            progressEvent.loaded / progressEvent.total;
-                        setUploadingProgress(percentCompleted / 2 + 0.5);
-                    },
-                }
-            );
+    //         const createResp = await api.createImage(createInput);
+    //         const imageId = createResp.data.images![0].id;
+    //         const uploadUrls = await api.getImageUploadUrls(imageId);
+    //         await anonymousClient.put(
+    //             uploadUrls.data.thumbnail_url!,
+    //             binaryThumbnailData,
+    //             {
+    //                 headers: {
+    //                     "Content-Type": "image/png",
+    //                 },
+    //                 onUploadProgress: (progressEvent: any) => {
+    //                     const percentCompleted =
+    //                         progressEvent.loaded / progressEvent.total;
+    //                     setUploadingProgress(percentCompleted / 2);
+    //                 },
+    //             }
+    //         );
+    //         await anonymousClient.put(
+    //             uploadUrls.data.image_url!,
+    //             binaryImageData,
+    //             {
+    //                 headers: {
+    //                     "Content-Type": "image/png",
+    //                 },
+    //                 onUploadProgress: (progressEvent: any) => {
+    //                     const percentCompleted =
+    //                         progressEvent.loaded / progressEvent.total;
+    //                     setUploadingProgress(percentCompleted / 2 + 0.5);
+    //                 },
+    //             }
+    //         );
 
-            await localImages.hardDeleteImage(image.id);
-            setImages((images) => {
-                return images.filter((i) => i.id !== image.id);
-            });
-            setSuccess("Image saved");
-            setSuccessTime(moment().valueOf());
-        } catch (e) {
-            console.error(e);
-            onError("Error saving image");
-        } finally {
-            setSavingImage(false);
-        }
-    };
+    //         await localImages.hardDeleteImage(image.id);
+    //         setImages((images) => {
+    //             return images.filter((i) => i.id !== image.id);
+    //         });
+    //         setSuccess("Image saved");
+    //         setSuccessTime(moment().valueOf());
+    //     } catch (e) {
+    //         console.error(e);
+    //         onError("Error saving image");
+    //     } finally {
+    //         setSavingImage(false);
+    //     }
+    // };
 
     const onEdit = async (image: LocalImage) => {
         history.push(`/image-editor/${image.id}`);
@@ -647,21 +541,6 @@ export const Homepage: FC<Props> = ({
         );
     });
 
-    const pendingOrProcessingImages = images.filter(
-        (image) =>
-            !image.deleted_at &&
-            (image.status === StatusEnum.Pending ||
-                image.status === StatusEnum.Processing)
-    );
-
-    const pendingImages = pendingOrProcessingImages.filter(
-        (image) => image.status === StatusEnum.Pending
-    );
-
-    const processingImages = pendingOrProcessingImages.filter(
-        (image) => image.status === StatusEnum.Processing
-    );
-
     const onSwipe = (image: LocalImage, direction: number) => {
         // select the previous or next image from the currently selected one
         const index = images.findIndex((i) => i.id === image.id);
@@ -674,7 +553,10 @@ export const Homepage: FC<Props> = ({
         }
         const newImage = images[newIndex];
         onThumbnailClicked(newImage);
-    }
+    };
+
+    const pendingJobs = jobs.filter((job) => job.status === "pending");
+    const processingJobs = jobs.filter((job) => job.status === "processing");
 
     return (
         <>
@@ -683,7 +565,6 @@ export const Homepage: FC<Props> = ({
             </h1>
 
             <ErrorNotification message={err} timestamp={errTime} />
-            <SuccessNotification message={success} timestamp={successTime} />
 
             <ImagePrompt
                 api={api}
@@ -802,10 +683,10 @@ export const Homepage: FC<Props> = ({
                         </>
                     }
                 >
-                    {pendingOrProcessingImages.length > 0 && (
-                        <PendingImagesThumbnail
-                            pendingCount={pendingImages.length}
-                            processingCount={processingImages.length}
+                    {jobs.length > 0 && (
+                        <PendingJobsThumbnail
+                            pendingCount={pendingJobs.length}
+                            processingCount={processingJobs.length}
                             onClick={() => {
                                 setShowPendingImages(true);
                             }}
@@ -843,9 +724,9 @@ export const Homepage: FC<Props> = ({
                     onEdit={(image) => {
                         onEdit(image);
                     }}
-                    onSave={(image) => {
-                        onSave(image);
-                    }}
+                    // onSave={(image) => {
+                    //     onSave(image);
+                    // }}
                     onNSFW={onNSFW}
                     censorNSFW={censorNSFW}
                     onSwipe={onSwipe}
@@ -866,13 +747,12 @@ export const Homepage: FC<Props> = ({
                 {/* bootstrap progress bar for uploadProgress (0-1 value) */}
                 <ProgressBar progress={uploadProgress} />
             </BusyModal>
-            <PendingImages
-                images={pendingOrProcessingImages}
+            <PendingJobs
+                jobs={jobs}
                 onCancel={() => setShowPendingImages(false)}
                 show={showPendingImages}
-                onDeleteImage={(image) => {
-                    onDelete(image);
-                    setImages(images.filter((i) => i.id !== image.id));
+                onDeleteJob={(job) => {
+                    onDeleteJob(job);
                 }}
             />
             <OutOfCreditsModal

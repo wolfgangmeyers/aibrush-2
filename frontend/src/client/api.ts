@@ -1315,68 +1315,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Create a new image
-         * @param {CreateImageInput} [createImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createImage: async (createImageInput?: CreateImageInput, options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/images`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createImageInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Create a new invite code
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createInviteCode: async (options: any = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/invite-codes`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Create a new Stripe session
          * @param {CreateStripeSessionInput} [createStripeSessionInput] 
          * @param {*} [options] Override http request option.
@@ -1403,42 +1341,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(createStripeSessionInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Create a new temporary image
-         * @param {string} format 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createTemporaryImage: async (format: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'format' is not null or undefined
-            assertParamExists('createTemporaryImage', 'format', format)
-            const localVarPath = `/api/temporary-images`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-            if (format !== undefined) {
-                localVarQueryParameter['format'] = format;
-            }
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1665,39 +1567,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Get the binary image data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getImageData: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('getImageData', 'id', id)
-            const localVarPath = `/api/images/{id}.image.png`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Get download urls for image assets
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1764,39 +1633,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Get the binary mask data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getMaskData: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('getMaskData', 'id', id)
-            const localVarPath = `/api/images/{id}.mask.png`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * 
          * @summary Get available models
          * @param {*} [options] Override http request option.
@@ -1804,39 +1640,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
          */
         getModels: async (options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/stable-diffusion-models`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Get the binary thumbnail data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getThumbnailData: async (id: string, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('getThumbnailData', 'id', id)
-            const localVarPath = `/api/images/{id}.thumbnail.png`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2108,117 +1911,6 @@ export const AIBrushApiAxiosParamCreator = function (configuration?: Configurati
             };
         },
         /**
-         * Update a saved image
-         * @param {string} id 
-         * @param {UpdateImageInput} [updateImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateImage: async (id: string, updateImageInput?: UpdateImageInput, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('updateImage', 'id', id)
-            const localVarPath = `/api/images/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PATCH', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(updateImageInput, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Upload the binary image data
-         * @param {string} id 
-         * @param {any} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        uploadImageData: async (id: string, body?: any, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('uploadImageData', 'id', id)
-            const localVarPath = `/api/images/{id}.image.png`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'image/png';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
-         * Upload the binary thumbnail data
-         * @param {string} id 
-         * @param {any} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        uploadThumbnailData: async (id: string, body?: any, options: any = {}): Promise<RequestArgs> => {
-            // verify required parameter 'id' is not null or undefined
-            assertParamExists('uploadThumbnailData', 'id', id)
-            const localVarPath = `/api/images/{id}.thumbnail.png`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
-
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-
-
-    
-            localVarHeaderParameter['Content-Type'] = 'image/png';
-
-            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(body, localVarRequestOptions, configuration)
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
-        /**
          * Verify Login code
          * @param {VerifyLoginInput} [verifyLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2293,25 +1985,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Create a new image
-         * @param {CreateImageInput} [createImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createImage(createImageInput?: CreateImageInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<ImageList>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createImage(createImageInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Create a new invite code
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createInviteCode(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InviteCode>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createInviteCode(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Create a new Stripe session
          * @param {CreateStripeSessionInput} [createStripeSessionInput] 
          * @param {*} [options] Override http request option.
@@ -2319,16 +1992,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async createStripeSession(createStripeSessionInput?: CreateStripeSessionInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<StripeSession>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.createStripeSession(createStripeSessionInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Create a new temporary image
-         * @param {string} format 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async createTemporaryImage(format: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<TemporaryImage>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createTemporaryImage(format, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2399,16 +2062,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Get the binary image data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getImageData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getImageData(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Get download urls for image assets
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2429,16 +2082,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Get the binary mask data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getMaskData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getMaskData(id, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * 
          * @summary Get available models
          * @param {*} [options] Override http request option.
@@ -2446,16 +2089,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
          */
         async getModels(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<{ [key: string]: StableDiffusionModel; }>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getModels(options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Get the binary thumbnail data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async getThumbnailData(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<any>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.getThumbnailData(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -2532,39 +2165,6 @@ export const AIBrushApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
-         * Update a saved image
-         * @param {string} id 
-         * @param {UpdateImageInput} [updateImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async updateImage(id: string, updateImageInput?: UpdateImageInput, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateImage(id, updateImageInput, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Upload the binary image data
-         * @param {string} id 
-         * @param {any} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async uploadImageData(id: string, body?: any, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadImageData(id, body, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
-         * Upload the binary thumbnail data
-         * @param {string} id 
-         * @param {any} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async uploadThumbnailData(id: string, body?: any, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.uploadThumbnailData(id, body, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
-        },
-        /**
          * Verify Login code
          * @param {VerifyLoginInput} [verifyLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2613,23 +2213,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.createDepositCode(createDepositCodeInput, options).then((request) => request(axios, basePath));
         },
         /**
-         * Create a new image
-         * @param {CreateImageInput} [createImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createImage(createImageInput?: CreateImageInput, options?: any): AxiosPromise<ImageList> {
-            return localVarFp.createImage(createImageInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Create a new invite code
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createInviteCode(options?: any): AxiosPromise<InviteCode> {
-            return localVarFp.createInviteCode(options).then((request) => request(axios, basePath));
-        },
-        /**
          * Create a new Stripe session
          * @param {CreateStripeSessionInput} [createStripeSessionInput] 
          * @param {*} [options] Override http request option.
@@ -2637,15 +2220,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         createStripeSession(createStripeSessionInput?: CreateStripeSessionInput, options?: any): AxiosPromise<StripeSession> {
             return localVarFp.createStripeSession(createStripeSessionInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Create a new temporary image
-         * @param {string} format 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        createTemporaryImage(format: string, options?: any): AxiosPromise<TemporaryImage> {
-            return localVarFp.createTemporaryImage(format, options).then((request) => request(axios, basePath));
         },
         /**
          * Delete a saved image
@@ -2708,15 +2282,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getImage(id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get the binary image data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getImageData(id: string, options?: any): AxiosPromise<any> {
-            return localVarFp.getImageData(id, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Get download urls for image assets
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -2735,15 +2300,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.getImageUploadUrls(id, options).then((request) => request(axios, basePath));
         },
         /**
-         * Get the binary mask data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getMaskData(id: string, options?: any): AxiosPromise<any> {
-            return localVarFp.getMaskData(id, options).then((request) => request(axios, basePath));
-        },
-        /**
          * 
          * @summary Get available models
          * @param {*} [options] Override http request option.
@@ -2751,15 +2307,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
          */
         getModels(options?: any): AxiosPromise<{ [key: string]: StableDiffusionModel; }> {
             return localVarFp.getModels(options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Get the binary thumbnail data
-         * @param {string} id 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        getThumbnailData(id: string, options?: any): AxiosPromise<any> {
-            return localVarFp.getThumbnailData(id, options).then((request) => request(axios, basePath));
         },
         /**
          * Healthcheck
@@ -2828,36 +2375,6 @@ export const AIBrushApiFactory = function (configuration?: Configuration, basePa
             return localVarFp.updateGlobalSettings(key, updateGlobalSettingsRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Update a saved image
-         * @param {string} id 
-         * @param {UpdateImageInput} [updateImageInput] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateImage(id: string, updateImageInput?: UpdateImageInput, options?: any): AxiosPromise<Image> {
-            return localVarFp.updateImage(id, updateImageInput, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Upload the binary image data
-         * @param {string} id 
-         * @param {any} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        uploadImageData(id: string, body?: any, options?: any): AxiosPromise<void> {
-            return localVarFp.uploadImageData(id, body, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Upload the binary thumbnail data
-         * @param {string} id 
-         * @param {any} [body] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        uploadThumbnailData(id: string, body?: any, options?: any): AxiosPromise<void> {
-            return localVarFp.uploadThumbnailData(id, body, options).then((request) => request(axios, basePath));
-        },
-        /**
          * Verify Login code
          * @param {VerifyLoginInput} [verifyLoginInput] 
          * @param {*} [options] Override http request option.
@@ -2911,27 +2428,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Create a new image
-     * @param {CreateImageInput} [createImageInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createImage(createImageInput?: CreateImageInput, options?: any) {
-        return AIBrushApiFp(this.configuration).createImage(createImageInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Create a new invite code
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createInviteCode(options?: any) {
-        return AIBrushApiFp(this.configuration).createInviteCode(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Create a new Stripe session
      * @param {CreateStripeSessionInput} [createStripeSessionInput] 
      * @param {*} [options] Override http request option.
@@ -2940,17 +2436,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public createStripeSession(createStripeSessionInput?: CreateStripeSessionInput, options?: any) {
         return AIBrushApiFp(this.configuration).createStripeSession(createStripeSessionInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Create a new temporary image
-     * @param {string} format 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public createTemporaryImage(format: string, options?: any) {
-        return AIBrushApiFp(this.configuration).createTemporaryImage(format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3028,17 +2513,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Get the binary image data
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getImageData(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getImageData(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * Get download urls for image assets
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -3061,17 +2535,6 @@ export class AIBrushApi extends BaseAPI {
     }
 
     /**
-     * Get the binary mask data
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getMaskData(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getMaskData(id, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
      * 
      * @summary Get available models
      * @param {*} [options] Override http request option.
@@ -3080,17 +2543,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public getModels(options?: any) {
         return AIBrushApiFp(this.configuration).getModels(options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Get the binary thumbnail data
-     * @param {string} id 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public getThumbnailData(id: string, options?: any) {
-        return AIBrushApiFp(this.configuration).getThumbnailData(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3171,42 +2623,6 @@ export class AIBrushApi extends BaseAPI {
      */
     public updateGlobalSettings(key: string, updateGlobalSettingsRequest?: UpdateGlobalSettingsRequest, options?: any) {
         return AIBrushApiFp(this.configuration).updateGlobalSettings(key, updateGlobalSettingsRequest, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Update a saved image
-     * @param {string} id 
-     * @param {UpdateImageInput} [updateImageInput] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public updateImage(id: string, updateImageInput?: UpdateImageInput, options?: any) {
-        return AIBrushApiFp(this.configuration).updateImage(id, updateImageInput, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Upload the binary image data
-     * @param {string} id 
-     * @param {any} [body] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public uploadImageData(id: string, body?: any, options?: any) {
-        return AIBrushApiFp(this.configuration).uploadImageData(id, body, options).then((request) => request(this.axios, this.basePath));
-    }
-
-    /**
-     * Upload the binary thumbnail data
-     * @param {string} id 
-     * @param {any} [body] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof AIBrushApi
-     */
-    public uploadThumbnailData(id: string, body?: any, options?: any) {
-        return AIBrushApiFp(this.configuration).uploadThumbnailData(id, body, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

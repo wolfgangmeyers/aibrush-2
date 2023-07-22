@@ -1,6 +1,7 @@
 import axios from "axios";
 import { AIBrushApi } from "../client";
 import { Rect } from "../pages/image-editor/models";
+import { LocalImage } from "./models";
 
 const anonymousClient = axios.create();
 
@@ -37,33 +38,16 @@ export function convertPNGToJPG(encodedImage: string): Promise<string> {
 }
 
 export function loadImageDataElement(
-    api: AIBrushApi,
-    imageId: string
+    image: LocalImage,
 ): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
-        api.getImageDownloadUrls(imageId)
-            .then((urls) => {
-                anonymousClient
-                    .get(urls.data.image_url!, {
-                        responseType: "arraybuffer",
-                    })
-                    .then((resp) => {
-                        const binaryImageData = Buffer.from(
-                            resp.data,
-                            "binary"
-                        );
-                        const base64ImageData =
-                            binaryImageData.toString("base64");
-                        const src = `data:image/png;base64,${base64ImageData}`;
-                        const imageElement = new Image();
-                        imageElement.src = src;
-                        imageElement.onload = () => {
-                            resolve(imageElement);
-                        };
-                    })
-                    .catch((err) => reject(err));
-            })
-            .catch((err) => reject(err));
+        const src = image.imageData!;
+        const imageElement = new Image();
+        imageElement.src = src;
+        imageElement.onload = () => {
+            resolve(imageElement);
+        };
+                    
     });
 }
 
@@ -452,7 +436,10 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
 export function decodeImage(encodedImage: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const image = new Image();
-        image.src = `data:image/png;base64,${encodedImage}`;
+        if (!encodedImage.startsWith("data:image")) {
+            encodedImage = `data:image/png;base64,${encodedImage}`;
+        }
+        image.src = encodedImage;
         image.onload = () => {
             resolve(image);
         };
