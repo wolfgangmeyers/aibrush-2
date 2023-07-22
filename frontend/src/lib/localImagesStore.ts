@@ -9,9 +9,12 @@ export class LocalImagesStore {
     private db: IDBDatabase | null = null;
 
     init(): Promise<void> {
+        console.log("Initializing local images store")
         return new Promise((resolve, reject) => {
+            console.log("Opening indexeddb")
             const request = indexedDB.open("aibrush", 4);
             request.onupgradeneeded = (evt) => {
+                console.log("Upgrading local images store")
                 const db = request.result;
                 // create object store if it doesn't exist
                 // const imagesStore = db.createObjectStore("images", { keyPath: "id" });
