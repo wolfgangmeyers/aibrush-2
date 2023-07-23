@@ -1,5 +1,6 @@
 // V2 page
 import { FC, useState, useEffect } from "react";
+import { Buffer } from "buffer";
 import * as uuid from "uuid";
 import axios from "axios";
 import qs from "qs";
@@ -7,8 +8,6 @@ import Dropdown from "react-bootstrap/Dropdown";
 import { useParams, useHistory, Link, useLocation } from "react-router-dom";
 import moment from "moment";
 import ScrollToTop from "react-scroll-to-top";
-import { AIBrushApi } from "../client";
-import { CreateImageInput, StatusEnum, TemporaryImage } from "../client/api";
 import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import {
@@ -26,7 +25,7 @@ import { PendingJobsThumbnail } from "../components/PendingJobsThumbnail";
 import { PendingJobs } from "../components/PendingJobs";
 import { ApiSocket } from "../lib/apisocket";
 import { LocalImagesStore } from "../lib/localImagesStore";
-import { GenerationJob, LocalImage } from "../lib/models";
+import { GenerateImageInput, GenerationJob, LocalImage } from "../lib/models";
 import { ErrorNotification, SuccessNotification } from "../components/Alerts";
 import { sleep } from "../lib/sleep";
 import { ProgressBar } from "../components/ProgressBar";
@@ -116,7 +115,7 @@ export const Homepage: FC<Props> = ({
         }
     }, [id]);
 
-    const onSubmit = async (input: CreateImageInput) => {
+    const onSubmit = async (input: GenerateImageInput) => {
         setCreating(true);
         setParentImage(null);
         setErr(null);
@@ -145,7 +144,7 @@ export const Homepage: FC<Props> = ({
         }
     };
 
-    const onEditNewImage = async (input: CreateImageInput) => {
+    const onEditNewImage = async (input: GenerateImageInput) => {
         setCreating(true);
         setParentImage(null);
         setErr(null);
@@ -175,10 +174,10 @@ export const Homepage: FC<Props> = ({
                 id: uuid.v4(),
                 model: input.model!,
                 negative_score: 0,
-                nsfw: !!input.nsfw,
+                nsfw: false,
                 parent: input.parent!,
                 score: 0,
-                status: StatusEnum.Completed,
+                status: "completed",
                 temporary: false,
                 imageData: `data:image/png;base64,${encodedImage}`,
             };
@@ -256,7 +255,7 @@ export const Homepage: FC<Props> = ({
                         pendingJobs.push(job);
                     } else if (job.status === "completed" && job.images) {
                         for (let img of job.images) {
-                            if (img.status == StatusEnum.Error) {
+                            if (img.status == "error") {
                                 onError(
                                     img.error ||
                                         "Some images failed to generate, please make sure your prompt doesn't violate our terms of service"
@@ -334,21 +333,7 @@ export const Homepage: FC<Props> = ({
         loadParent();
     }, [location.search]);
 
-    const isPendingOrProcessing = (image: LocalImage) => {
-        return (
-            image.status === StatusEnum.Pending ||
-            image.status === StatusEnum.Processing
-        );
-    };
-
     const sortImages = (a: LocalImage, b: LocalImage) => {
-        // pending and processing images always come first
-        if (isPendingOrProcessing(a) && !isPendingOrProcessing(b)) {
-            return -1;
-        } else if (!isPendingOrProcessing(a) && isPendingOrProcessing(b)) {
-            return 1;
-        }
-
         return b.updated_at - a.updated_at;
     };
 
@@ -536,8 +521,8 @@ export const Homepage: FC<Props> = ({
     const completedOrSavedImages = images.filter((image) => {
         return (
             !image.deleted_at &&
-            (image.status === StatusEnum.Completed ||
-                image.status === StatusEnum.Saved)
+            (image.status === "completed" ||
+                image.status === "saved")
         );
     });
 

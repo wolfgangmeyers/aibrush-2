@@ -3,7 +3,7 @@ import { useParams, useHistory } from "react-router-dom";
 import axios, { AxiosInstance } from "axios";
 import * as uuid from "uuid";
 
-import { AIBrushApi } from "../../client";
+import { Buffer } from "buffer";
 import { getUpscaleLevel } from "../../lib/upscale";
 import "./ImageEditor.css";
 import { createRenderer, Renderer } from "./renderer";

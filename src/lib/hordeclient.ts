@@ -1,5 +1,5 @@
 import axios from "axios";
-import moment from "moment";
+import { Buffer } from "buffer";
 import { CheckResult, GenerationResult, StatusEnum } from "./models";
 
 const baseUrl = "https://stablehorde.net/api";
@@ -82,7 +82,7 @@ export class HordeClient {
 
     async initiateImageGeneration(
         payload: HordeRequestPayload,
-        onUploadProgress?: (progressEvent: any) => void,
+        onUploadProgress?: (progressEvent: any) => void
     ): Promise<string | null> {
         payload.api_key = this.apiKey;
         const submitReq = await axios.post(
@@ -113,7 +113,11 @@ export class HordeClient {
         );
         const chkResults = (await chkReq.data) as RequestStatusCheck;
         console.log(JSON.stringify(chkResults));
-        const total = chkResults.waiting + chkResults.processing + chkResults.restarted + chkResults.finished;
+        const total =
+            chkResults.waiting +
+            chkResults.processing +
+            chkResults.restarted +
+            chkResults.finished;
         let status: string;
         if (chkResults.processing > 0) {
             status = "processing";
@@ -122,7 +126,7 @@ export class HordeClient {
         } else {
             status = "pending";
         }
-        
+
         const progress = chkResults.finished / total;
         return {
             status: status as StatusEnum,

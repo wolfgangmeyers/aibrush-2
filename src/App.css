@@ -179,7 +179,7 @@ hr {
 /* futura font at /webfonts/futur.woff */
 @font-face {
   font-family: Futura;
-  src: url("./fonts/futura\ medium\ bt.woff");
+  src: url("/fonts/futura\ medium\ bt.woff");
 }
 
 

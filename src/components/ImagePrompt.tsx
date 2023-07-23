@@ -1,12 +1,5 @@
 import React, { FC, useEffect, useState } from "react";
 import {
-    CreateImageInput,
-    StatusEnum,
-    Image,
-    AIBrushApi,
-    LoraConfig,
-} from "../client";
-import {
     aspectRatios,
     DEFAULT_ASPECT_RATIO,
     getClosestAspectRatio,
@@ -16,7 +9,7 @@ import loadImage from "blueimp-load-image";
 import { AspectRatioSelector } from "./AspectRatioSelector";
 import { getUpscaleLevel } from "../lib/upscale";
 import { resizeEncodedImage } from "../lib/imageutil";
-import { LocalImage } from "../lib/models";
+import { GenerateImageInput, LocalImage } from "../lib/models";
 import { controlnetTypes } from "../lib/supportedModels";
 import { SeedInput } from "./SeedInput";
 import ModelSelector from "./ModelSelector";
@@ -37,13 +30,13 @@ import { Item } from "../lib/civit_loras";
 interface Props {
     parent: LocalImage | null;
     creating: boolean;
-    onSubmit: (input: CreateImageInput) => void;
+    onSubmit: (input: GenerateImageInput) => void;
     // go straight to editor without variations
-    onEdit: (input: CreateImageInput) => void;
+    onEdit: (input: GenerateImageInput) => void;
     onCancel: () => void;
 }
 
-export function defaultArgs(): CreateImageInput {
+export function defaultArgs(): GenerateImageInput {
     return {
         params: {
             prompt: "",
@@ -53,7 +46,6 @@ export function defaultArgs(): CreateImageInput {
             steps: 20,
             denoising_strength: 0.75,
         },
-        label: "",
         encoded_image: "",
         encoded_mask: "",
         model: "Epic Diffusion",
@@ -139,9 +131,7 @@ export const ImagePrompt: FC<Props> = ({
         args.count = seed ? 1 : count;
         args.parent = parentId || undefined;
         args.params.denoising_strength = variationStrength;
-        args.nsfw = true;
         args.model = model;
-        args.temporary = true;
         args.params.controlnet_type = controlnetType as any;
         args.params.cfg_scale = cfgScale;
         args.params.seed = seed || undefined;
@@ -185,11 +175,9 @@ export const ImagePrompt: FC<Props> = ({
         args.parent = parentId || undefined;
         // args.stable_diffusion_strength = variationStrength;
         args.params.denoising_strength = variationStrength;
-        args.status = StatusEnum.Completed;
         args.params.width = originalWidth;
         args.params.height = originalHeight;
         args.params.cfg_scale = cfgScale;
-        args.nsfw = false;
         args.model = model;
         if (encodedImage) {
             args.encoded_image = encodedImage;

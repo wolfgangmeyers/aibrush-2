@@ -6,9 +6,6 @@ import * as uuid from "uuid";
 
 import { sleep } from "../../lib/sleep";
 
-import {
-    StatusEnum,
-} from "../../client";
 import { Renderer } from "./renderer";
 import { BaseTool, Tool } from "./tool";
 import {
@@ -71,10 +68,10 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image })
                 imageData: encodedImage,
             }
         });
-        while (processingImage.status !== StatusEnum.Completed) {
+        while (processingImage.status !== "completed") {
             await sleep(2000);
             processingImage = await generator.checkAugmentation(processingImage);
-            if (processingImage.status === StatusEnum.Error) {
+            if (processingImage.status === "error") {
                 throw new Error("Augmentation failed");
             }
             if (moment().valueOf() - start > 60000) {

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { AIBrushApi } from "../client";
+import { Buffer } from "buffer";
 import { Rect } from "../pages/image-editor/models";
 import { LocalImage } from "./models";
 
@@ -342,7 +342,7 @@ export class ImageUtilWorker {
     constructor(numWorkers = 3) {
         for (let i = 0; i < numWorkers; i++) {
             this.workers[i] = new Worker(
-                `${process.env.PUBLIC_URL}/workers/imageutil.js`
+                `/workers/imageutil.js`
             );
             this.workers[i].addEventListener(
                 "message",

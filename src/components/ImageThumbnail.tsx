@@ -1,6 +1,5 @@
 import React, { FC, useEffect, useState } from "react";
 import moment from "moment";
-import { Image, StatusEnum } from "../client/api";
 import { LocalImage } from "../lib/models";
 
 interface Props {
@@ -55,11 +54,11 @@ export const ImageThumbnail: FC<Props> = ({ image, censorNSFW, bulkDelete, onCli
                 }} checked readOnly />
             </div>}
 
-            {image.status === StatusEnum.Pending && <div className="image-thumbnail-pending">
+            {image.status === "pending" && <div className="image-thumbnail-pending">
                 <i style={{marginTop: "20px"}} className="fa fa-hourglass-half"></i>
             </div>}
             {
-                image.status === StatusEnum.Processing && <div className="image-thumbnail-pending">
+                image.status === "processing" && <div className="image-thumbnail-pending">
                     <i style={{marginTop: "20px"}} className="fa fa-cog fa-spin"></i>
                 </div>
             }

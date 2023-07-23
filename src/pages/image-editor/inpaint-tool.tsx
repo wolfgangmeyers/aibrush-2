@@ -8,17 +8,7 @@ import { Tool, BaseTool } from "./tool";
 import { Renderer } from "./renderer";
 import { SelectionTool } from "./selection-tool";
 import { Cursor, Rect } from "./models";
-import {
-    AIBrushApi,
-    CreateImageInput,
-    Image as APIImage,
-    ImageList,
-    LoraConfig,
-    StatusEnum,
-} from "../../client";
-import { ZoomHelper } from "./zoomHelper";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
-import { getUpscaleLevel } from "../../lib/upscale";
 import {
     applyAlphaMask,
     featherEdges,
@@ -39,7 +29,7 @@ import {
 } from "../../components/LoraSelector";
 import { LoraTriggers } from "../../components/LoraTriggers";
 import { SelectedLoraTag } from "../../components/SelectedLora";
-import { GenerationJob, LocalImage } from "../../lib/models";
+import { GenerateImageInput, GenerationJob, LocalImage, LoraConfig } from "../../lib/models";
 import { HordeGenerator } from "../../lib/hordegenerator";
 
 const anonymousClient = axios.create();
@@ -401,8 +391,7 @@ export class InpaintTool extends BaseTool implements Tool {
 
         const encodedImage = this.renderer.getEncodedImage(selectionOverlay);
 
-        const input: CreateImageInput = defaultArgs();
-        input.label = "";
+        const input: GenerateImageInput = defaultArgs();
         // input.encoded_image = encodedImage;
         // input.encoded_mask = encodedMask;
         input.encoded_image = encodedImage;
@@ -422,7 +411,6 @@ export class InpaintTool extends BaseTool implements Tool {
         input.params.width = closestAspectRatio.width;
         input.params.height = closestAspectRatio.height;
         input.params.loras = this.loras;
-        input.temporary = true;
 
         let job: GenerationJob | undefined;
 
@@ -475,7 +463,7 @@ export class InpaintTool extends BaseTool implements Tool {
             return a.created_at - b.created_at;
         });
         newImages = newImages!.filter((img) => {
-            return img.status === StatusEnum.Completed;
+            return img.status === "completed";
         });
 
         this.imageData = [];

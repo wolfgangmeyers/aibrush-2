@@ -1,6 +1,5 @@
 import React, { FC, useEffect, useRef, useState } from "react";
 import { Modal } from "react-bootstrap";
-import { CreateImageInput, Image, StatusEnum } from "../client/api";
 import { LocalImage } from "../lib/models";
 import CopyToClipboard from "react-copy-to-clipboard";
 import CopyToClipboardIcon from "./CopyToClipboardIcon";
@@ -44,19 +43,19 @@ export const ImagePopup: FC<ImagePopupProps> = ({
         const displayStatus = status.charAt(0).toUpperCase() + status.slice(1);
         let icon = "fa fa-question-circle";
         switch (status) {
-            case StatusEnum.Pending:
+            case "pending":
                 icon = "fas fa-hourglass-half";
                 break;
-            case StatusEnum.Processing:
+            case "processing":
                 icon = "fas fa-cog fa-spin";
                 break;
-            case StatusEnum.Completed:
+            case "completed":
                 icon = "fas fa-check";
                 break;
-            case StatusEnum.Saved:
+            case "saved":
                 icon = "fas fa-save";
                 break;
-            case StatusEnum.Error:
+            case "error":
                 icon = "fas fa-exclamation-circle";
                 break;
         }
@@ -181,9 +180,8 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                             {statusBadge(image.status)}
                             <div style={{ float: "right" }}>
                                 {onFork &&
-                                    (image.status === StatusEnum.Saved ||
-                                        image.status ===
-                                            StatusEnum.Completed) && (
+                                    (image.status === "saved" ||
+                                        image.status === "completed") && (
                                         <button
                                             className="btn btn-secondary btn-sm image-popup-button"
                                             onClick={() => onFork(image)}

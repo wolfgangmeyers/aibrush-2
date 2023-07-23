@@ -1,23 +1,11 @@
 import React, { FC, useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Prompt } from "react-router";
-import { loadImageAsync } from "../../lib/loadImage";
 
 import { sleep } from "../../lib/sleep";
 import { defaultArgs } from "../../components/ImagePrompt";
 import { Tool, BaseTool } from "./tool";
 import { Renderer } from "./renderer";
-import { Cursor, Rect } from "./models";
-import {
-    AIBrushApi,
-    CreateImageInput,
-    Image as APIImage,
-    ImageList,
-    LoraConfig,
-    StatusEnum,
-} from "../../client";
-import { ZoomHelper } from "./zoomHelper";
-import { getClosestAspectRatio } from "../../lib/aspecRatios";
 import {
     convertPNGToJPG,
     ImageUtilWorker,
@@ -26,7 +14,6 @@ import {
 } from "../../lib/imageutil";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { getUpscaleLevel } from "../../lib/upscale";
-import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 import moment from "moment";
 import { ProgressBar } from "../../components/ProgressBar";
 import { calculateImagesCost } from "../../lib/credits";
@@ -42,8 +29,9 @@ import {
 } from "../../components/LoraSelector";
 import { LoraTriggers } from "../../components/LoraTriggers";
 import { SelectedLoraTag } from "../../components/SelectedLora";
-import { GenerationJob, LocalImage } from "../../lib/models";
+import { GenerateImageInput, GenerationJob, LocalImage, LoraConfig } from "../../lib/models";
 import { HordeGenerator } from "../../lib/hordegenerator";
+import { Rect } from "./models";
 
 const anonymousClient = axios.create();
 
@@ -501,14 +489,13 @@ export class EnhanceTool extends BaseTool implements Tool {
             maskData = this.renderer.getImageData(selectionOverlay!, "mask");
         }
 
-        const input: CreateImageInput = defaultArgs();
+        const input: GenerateImageInput = defaultArgs();
         input.encoded_image = encodedImage;
 
         if (encodedMask) {
             input.encoded_mask = encodedMask;
         }
 
-        input.label = "";
         input.parent = image.id;
         input.params.prompt = this.prompt || image.params.prompt;
         input.params.negative_prompt =
@@ -516,7 +503,6 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.params.denoising_strength = this.variationStrength;
         input.count = this.count;
         input.model = this.model;
-        input.nsfw = image.nsfw;
 
         input.params.width = selectionOverlay!.width;
         input.params.height = selectionOverlay!.height;
@@ -524,7 +510,6 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.params.width = Math.ceil(input.params.width / 64) * 64;
         input.params.height = Math.ceil(input.params.height / 64) * 64;
         input.params.loras = this.loras;
-        input.temporary = true;
 
         let job: GenerationJob | undefined;
         this.state = "uploading";
@@ -578,7 +563,7 @@ export class EnhanceTool extends BaseTool implements Tool {
             return a.created_at - b.created_at;
         });
         newImages = newImages!.filter((img) => {
-            return img.status === StatusEnum.Completed;
+            return img.status === "completed";
         });
 
         this.imageData = [];
