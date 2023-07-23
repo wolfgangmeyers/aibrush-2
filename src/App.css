@@ -423,3 +423,13 @@ hr {
     color: #FFFFFF;
   }
 }
+
+.terms-page {
+  text-align: left;
+  padding-bottom: 100px;
+}
+
+.privacy-page {
+  text-align: left;
+  padding-bottom: 100px;
+}

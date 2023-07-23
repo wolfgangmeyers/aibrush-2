@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import * as axios from "axios";
-import { BrowserRouter, Switch, Route, Link } from "react-router-dom";
+import { BrowserRouter, Switch, Route, Link, NavLink } from "react-router-dom";
 import "./App.css";
 import "./bootstrap.min.css";
 import { LocalImagesStore } from "./lib/localImagesStore";
@@ -18,6 +18,8 @@ import { HordeGenerator } from "./lib/hordegenerator";
 import { HordeClient } from "./lib/hordeclient";
 import HordeUser from "./components/HordeUser";
 import { ImageClient } from "./lib/savedimages";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
 
 const localImages = new LocalImagesStore();
 const hordeClient = new HordeClient(
@@ -162,6 +164,12 @@ function App() {
                             <Route path="/testpage">
                                 <TestPage />
                             </Route>
+                            <Route path="/privacy-policy">
+                                <PrivacyPage />
+                            </Route>
+                            <Route path="/terms-of-service">
+                                <TermsPage />
+                            </Route>
                         </Switch>
                         <div
                             // style={{ marginTop: "100px", padding: "50px" }}
@@ -177,20 +185,12 @@ function App() {
                                 backgroundColor: "#000000",
                             }}
                         >
-                            {/* show external popout pages to terms and privacy policy, if they are present in the features */}
-                            <a
-                                href="https://www.termsfeed.com/live/4f40dfff-6360-40cb-82bd-ac31dcb250e8"
-                                target="_blank"
-                            >
+                            <NavLink to="/privacy-policy" style={{marginRight: "8px"}}>
                                 Privacy Policy
-                            </a>
-                            <a
-                                href="https://www.termsfeed.com/live/03dfa444-2227-4654-954d-98a6dbe297fd"
-                                target="_blank"
-                                style={{ marginLeft: "20px" }}
-                            >
+                            </NavLink>
+                            <NavLink to="/terms-of-service">
                                 Terms of Service
-                            </a>
+                            </NavLink>
                             {/* link to mail to admin@aibrush.art */}
                             <a
                                 href="mailto:admin@aibrush.art"
