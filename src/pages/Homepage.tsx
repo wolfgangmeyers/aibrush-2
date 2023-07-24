@@ -44,6 +44,8 @@ interface Props {
     paymentStatus?: "success" | "canceled";
 }
 
+// TODO: extract common parts with new saved images into ImagesView component
+
 export const Homepage: FC<Props> = ({
     generator,
     imageClient,

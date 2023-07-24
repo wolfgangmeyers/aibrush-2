@@ -4,22 +4,22 @@ import { BrowserRouter, Switch, Route, Link, NavLink } from "react-router-dom";
 import "./App.css";
 import "./bootstrap.min.css";
 import { LocalImagesStore } from "./lib/localImagesStore";
-import { getConfig } from "./config";
 import { ImageEditor } from "./pages/image-editor/ImageEditor";
 
 // V2 UI
 import { Homepage } from "./pages/Homepage";
-import { DiscordLogin } from "./pages/DiscordLogin";
 import { LocalDeletedImages } from "./pages/LocalDeletedImages";
-import { SavedImagesPage } from "./pages/SavedImagesPage";
+import { SavedImagesPage } from "./pages/LegacySavedImagesPage";
 import { TestPage } from "./pages/TestPage";
-import { CreditsBalance } from "./components/CreditsBalance";
 import { HordeGenerator } from "./lib/hordegenerator";
 import { HordeClient } from "./lib/hordeclient";
 import HordeUser from "./components/HordeUser";
 import { ImageClient } from "./lib/savedimages";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
+import DropboxRedirectPage from "./pages/DropboxRedirectPage";
+import { Dropbox } from "dropbox";
+import DropboxHelper from "./lib/dropbox";
 
 const localImages = new LocalImagesStore();
 const hordeClient = new HordeClient(
@@ -47,6 +47,7 @@ const imageClient = new ImageClient(
     "https://aibrush2-filestore.s3.amazonaws.com",
     manifestId
 );
+const dropboxHelper = new DropboxHelper();
 
 function App() {
     const [initialized, setInitialized] = useState(false);
@@ -57,9 +58,19 @@ function App() {
         setInitialized(true);
     };
 
+    const testDrive = async () => {
+        dropboxHelper.initiateAuth();
+    }
+
     useEffect(() => {
         init();
     }, []);
+
+    async function handleDropboxAuth(dropbox: Dropbox): Promise<void> {
+        console.log("Dropbox auth worked!")
+        const files = await dropbox.filesListFolder({path: ""});
+        console.log("files", files);
+    }
 
     return (
         <div className="App">
@@ -110,6 +121,10 @@ function App() {
                                         {/* font awesome github icon */}
                                         <i className="fab fa-github"></i>
                                     </a>
+                                    <button className="btn btn-primary top-button" onClick={testDrive}>
+                                        {/* google drive */}
+                                        <i className="fab fa-google-drive"></i>
+                                    </button>
                                     <HordeUser client={hordeClient} />
                                 </>
                             </div>
@@ -169,6 +184,11 @@ function App() {
                             </Route>
                             <Route path="/terms-of-service">
                                 <TermsPage />
+                            </Route>
+                            <Route path="/dropbox">
+                                <DropboxRedirectPage 
+                                    onDropboxReady={handleDropboxAuth}
+                                />
                             </Route>
                         </Switch>
                         <div
