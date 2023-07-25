@@ -253,7 +253,10 @@ export const Homepage: FC<Props> = ({
                 let pendingJobs: GenerationJob[] = [];
                 let newImages: LocalImage[] = [];
                 for (let job of updatedJobs) {
-                    if (job.status === "pending" || job.status == "processing") {
+                    if (
+                        job.status === "pending" ||
+                        job.status == "processing"
+                    ) {
                         pendingJobs.push(job);
                     } else if (job.status === "completed" && job.images) {
                         for (let img of job.images) {
@@ -302,18 +305,17 @@ export const Homepage: FC<Props> = ({
                     // const parentImage = await api.getImage(
                     //     search.parent as string
                     // );
-                    const parentImage = await imageClient.loadImage(search.parent as string);
+                    const parentImage = await imageClient.loadImage(
+                        search.parent as string
+                    );
                     if (parentImage) {
                         // const downloadUrls = await api.getImageDownloadUrls(
                         //     parentImage.data.id
                         // );
-                        const imageUrl = `https://aibrush2-filestore.s3.amazonaws.com/${parentImage.id}.image.png`
-                        const resp = await anonymousClient.get(
-                            imageUrl,
-                            {
-                                responseType: "arraybuffer",
-                            }
-                        );
+                        const imageUrl = `https://aibrush2-filestore.s3.amazonaws.com/${parentImage.id}.image.png`;
+                        const resp = await anonymousClient.get(imageUrl, {
+                            responseType: "arraybuffer",
+                        });
                         const binaryImageData = Buffer.from(
                             resp.data,
                             "binary"
@@ -402,7 +404,7 @@ export const Homepage: FC<Props> = ({
     const onDeleteJob = async (job: GenerationJob) => {
         await generator.client.deleteImageRequest(job.id);
         setJobs((jobs) => jobs.filter((j) => j.id !== job.id));
-    }
+    };
 
     const onFork = async (image: LocalImage) => {
         setParentImage(image);
@@ -523,8 +525,7 @@ export const Homepage: FC<Props> = ({
     const completedOrSavedImages = images.filter((image) => {
         return (
             !image.deleted_at &&
-            (image.status === "completed" ||
-                image.status === "saved")
+            (image.status === "completed" || image.status === "saved")
         );
     });
 
