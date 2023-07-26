@@ -22,7 +22,7 @@ interface Props {
     onForkImage: (image: LocalImage) => void;
     onEditImage: (image: LocalImage) => void;
     onUpdateImage?: (image: LocalImage) => void;
-    onDeleteJob: (job: GenerationJob) => void;
+    onDeleteJob?: (job: GenerationJob) => void;
 }
 
 export const ImagesView: FC<Props> = ({
@@ -209,7 +209,7 @@ export const ImagesView: FC<Props> = ({
         return () => {
             clearInterval(handle);
         };
-    }, [store, search]);
+    }, [store, search, images]);
 
     useEffect(() => {
         let handle = setTimeout(() => {
@@ -382,7 +382,7 @@ export const ImagesView: FC<Props> = ({
                     onSwipe={onSwipe}
                 />
             )}
-            {jobs && (
+            {jobs && onDeleteJob && (
                 <PendingJobs
                     jobs={jobs}
                     onCancel={() => {

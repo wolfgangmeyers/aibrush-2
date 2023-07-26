@@ -9,12 +9,12 @@ import { ImageEditor } from "./pages/image-editor/ImageEditor";
 // V2 UI
 import { Homepage } from "./pages/Homepage";
 import { LocalDeletedImages } from "./pages/LocalDeletedImages";
-import { SavedImagesPage } from "./pages/LegacySavedImagesPage";
+import { SavedImagesPage } from "./pages/SavedImagesPage";
 import { TestPage } from "./pages/TestPage";
 import { HordeGenerator } from "./lib/hordegenerator";
 import { HordeClient } from "./lib/hordeclient";
 import HordeUser from "./components/HordeUser";
-import { ImageClient } from "./lib/savedimages";
+import { ImageClient, getManifestId } from "./lib/savedimages";
 import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import DropboxRedirectPage from "./pages/DropboxRedirectPage";
@@ -22,26 +22,12 @@ import { Dropbox } from "dropbox";
 import DropboxHelper from "./lib/dropbox";
 
 const localImages = new LocalImagesStore();
+const savedImagesStore = new LocalImagesStore("saved-images");
+
 const hordeClient = new HordeClient(
     localStorage.getItem("apiKey") || "0000000000"
 );
 const generator = new HordeGenerator(hordeClient);
-
-// get manifest_id from query string params
-function getManifestId(): string | undefined {
-    let manifestId: string | undefined =
-        localStorage.getItem("manifest_id") || undefined;
-    if (manifestId) {
-        return manifestId;
-    }
-    const urlParams = new URLSearchParams(window.location.search);
-    manifestId = urlParams.get("manifest_id") || undefined;
-    if (manifestId) {
-        localStorage.setItem("manifest_id", manifestId);
-    }
-    return manifestId;
-}
-
 const manifestId = getManifestId();
 const imageClient = new ImageClient(
     "https://aibrush2-filestore.s3.amazonaws.com",
@@ -54,8 +40,10 @@ function App() {
     const init = async () => {
         console.log("App.init");
         await localImages.init();
-        console.log("App.init: localImages.init");
+        await savedImagesStore.init();
+        await imageClient.init();
         setInitialized(true);
+        console.log("App initialized")
     };
 
     const testDrive = async () => {
@@ -160,11 +148,11 @@ function App() {
                             </Route>
                             <Route path="/saved" exact={true}>
                                 {/* <MainMenu isAdmin={isAdmin} /> */}
-                                <SavedImagesPage imageClient={imageClient} />
+                                <SavedImagesPage localImages={savedImagesStore} imageClient={imageClient} />
                             </Route>
                             <Route path="/saved/:id" exact={true}>
                                 {/* <MainMenu isAdmin={isAdmin} /> */}
-                                <SavedImagesPage imageClient={imageClient} />
+                                <SavedImagesPage localImages={savedImagesStore} imageClient={imageClient} />
                             </Route>
                             <Route path="/image-editor/:id">
                                 <ImageEditor

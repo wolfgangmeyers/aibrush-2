@@ -18,8 +18,6 @@ import { LocalImagesStore } from "../lib/localImagesStore";
 import { GenerateImageInput, GenerationJob, LocalImage } from "../lib/models";
 import { ErrorNotification, SuccessNotification } from "../components/Alerts";
 import { ProgressBar } from "../components/ProgressBar";
-import OutOfCreditsModal from "../components/OutOfCreditsModal";
-import PaymentStatusModal from "../components/PaymentStatusModal";
 import { HordeGenerator } from "../lib/hordegenerator";
 import { ImageClient } from "../lib/savedimages";
 import { ImagesView } from "../components/ImagesView";
@@ -31,7 +29,6 @@ interface Props {
     generator: HordeGenerator;
     imageClient: ImageClient;
     localImages: LocalImagesStore;
-    paymentStatus?: "success" | "canceled";
 }
 
 // TODO: extract common parts with new saved images into ImagesView component
@@ -40,7 +37,6 @@ export const Homepage: FC<Props> = ({
     generator,
     imageClient,
     localImages,
-    paymentStatus,
 }) => {
     const [creating, setCreating] = useState(false);
     const [selectedImage, setSelectedImage] = useState<LocalImage | null>(null);
@@ -55,14 +51,6 @@ export const Homepage: FC<Props> = ({
 
     const [err, setErr] = useState<string | null>(null);
     const [errTime, setErrTime] = useState<number>(0);
-
-    const [search, setSearch] = useState<string>("");
-
-    const [bulkDeleteSelecting, setBulkDeleteSelecting] = useState(false);
-    const [bulkDeleting, setBulkDeleting] = useState(false);
-    const [bulkDeleteIds, setBulkDeleteIds] = useState<{
-        [key: string]: boolean;
-    }>({});
 
     const [outOfCredits, setOutOfCredits] = useState(false);
 
@@ -214,7 +202,7 @@ export const Homepage: FC<Props> = ({
         return () => {
             clearInterval(timerHandle);
         };
-    }, [generator, jobs, search]);
+    }, [generator, jobs]);
 
     // load parent image from saved images if an id is on the query string
     // TODO: restore this once google drive integration is in place
@@ -359,14 +347,7 @@ export const Homepage: FC<Props> = ({
 
     const onSelectImage = (image: LocalImage | null) => {
         if (image) {
-            if (bulkDeleteSelecting) {
-                setBulkDeleteIds({
-                    ...bulkDeleteIds,
-                    [image.id]: !bulkDeleteIds[image.id],
-                });
-            } else {
-                history.push(`/images/${image.id}`);
-            }
+            history.push(`/images/${image.id}`);
         } else {
             history.push("/");
         }
@@ -411,9 +392,9 @@ export const Homepage: FC<Props> = ({
                 <p>Please wait while we create your image.</p>
                 <ProgressBar progress={uploadProgress} />
             </BusyModal>
-            <BusyModal show={bulkDeleting} title="Deleting images">
+            {/* <BusyModal show={bulkDeleting} title="Deleting images">
                 <p>Please wait while we delete your images.</p>
-            </BusyModal>
+            </BusyModal> */}
             <BusyModal show={loadingParent} title="Loading parent image">
                 <p>Please wait while we load the parent image.</p>
             </BusyModal>
@@ -428,11 +409,6 @@ export const Homepage: FC<Props> = ({
                     onDeleteJob(job);
                 }}
             />
-            <OutOfCreditsModal
-                show={outOfCredits}
-                onHide={() => setOutOfCredits(false)}
-            />
-            <PaymentStatusModal paymentStatus={paymentStatus} />
         </>
     );
 };

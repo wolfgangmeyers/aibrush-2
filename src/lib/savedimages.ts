@@ -1,5 +1,23 @@
-import axios from 'axios';
+import axios from "axios";
 import { Image } from "./models";
+
+export function getManifestId(): string | undefined {
+    let manifestId: string | undefined =
+        localStorage.getItem("manifest_id") || undefined;
+    if (manifestId) {
+        return manifestId;
+    }
+    const urlParams = new URLSearchParams(window.location.search);
+    manifestId = urlParams.get("manifest_id") || undefined;
+    if (manifestId) {
+        localStorage.setItem("manifest_id", manifestId);
+    }
+    return manifestId;
+}
+
+export function deleteManifestId(): void {
+    localStorage.removeItem("manifest_id");
+}
 
 export interface ImageList {
     images: Image[];
@@ -16,12 +34,16 @@ export class ImageClient {
         this.manifestId = manifestId;
     }
 
-    async loadManifest(): Promise<void> {
+    async init(): Promise<void> {
         if (!this.manifest && this.manifestId) {
-            const response = await axios.get(`${this.baseUrl}/${this.manifestId}.json`);
-            this.manifest = response.data as { imageIds: string[] };
-            // reverse imageIds in manifest
-            this.manifest.imageIds = this.manifest.imageIds.reverse();
+            try {
+                const response = await axios.get(
+                    `${this.baseUrl}/${this.manifestId}.json`
+                );
+                this.manifest = response.data as { imageIds: string[] };
+            } catch (e) {
+                console.error(e);
+            }
         }
     }
 
@@ -30,15 +52,13 @@ export class ImageClient {
         limit?: number;
         filter?: string;
     }): Promise<ImageList> {
-        await this.loadManifest();
-
         if (!this.manifest) {
             return {
                 images: [],
-            }
+            };
         }
 
-        const { cursor = '', limit = 10, filter = '' } = query;
+        const { cursor = "", limit = 10, filter = "" } = query;
         const imageIds = this.manifest.imageIds;
         let startIndex = cursor ? imageIds.indexOf(cursor) + 1 : 0;
 
@@ -49,16 +69,21 @@ export class ImageClient {
         let images: Image[] = [];
         let nextCursor: string | undefined = undefined;
 
-        while(images.length < limit && startIndex < imageIds.length) {
+        while (images.length < limit && startIndex < imageIds.length) {
             let endIndex = startIndex + (limit - images.length);
             let selectedImageIds = imageIds.slice(startIndex, endIndex);
 
             // Load the images from S3
-            let fetchedImages = await Promise.all(selectedImageIds.map(id => this.loadImage(id)));
+            let fetchedImages = await Promise.all(
+                selectedImageIds.map((id) => this.loadImage(id))
+            );
 
             // Filter images
-            let filteredImages = fetchedImages.filter(image => 
-                (image.params.prompt || "").toLowerCase().includes(filter.toLowerCase()));
+            let filteredImages = fetchedImages.filter((image) =>
+                (image.params.prompt || "")
+                    .toLowerCase()
+                    .includes(filter.toLowerCase())
+            );
 
             images = [...images, ...filteredImages];
             startIndex = endIndex;
@@ -67,10 +92,9 @@ export class ImageClient {
 
         return {
             images,
-            nextCursor
+            nextCursor,
         };
     }
-
 
     async loadImage(imageId: string): Promise<Image> {
         const response = await axios.get(`${this.baseUrl}/${imageId}.json`);

@@ -8,11 +8,14 @@ import { LocalImage } from "./models";
 export class LocalImagesStore {
     private db: IDBDatabase | null = null;
 
+    constructor(private dbName="aibrush") {
+    }
+
     init(): Promise<void> {
         console.log("Initializing local images store")
         return new Promise((resolve, reject) => {
             console.log("Opening indexeddb")
-            const request = indexedDB.open("aibrush", 4);
+            const request = indexedDB.open(this.dbName, 4);
             request.onupgradeneeded = (evt) => {
                 console.log("Upgrading local images store")
                 const db = request.result;
@@ -43,6 +46,10 @@ export class LocalImagesStore {
             };
             request.onerror = (evt) => {
                 console.error("error opening indexeddb", evt);
+                reject(evt);
+            };
+            request.onblocked = (evt) => {
+                console.error("indexeddb blocked", evt);
                 reject(evt);
             };
         });
