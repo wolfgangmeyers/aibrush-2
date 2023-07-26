@@ -2,6 +2,7 @@ import axios from "axios";
 import { Buffer } from "buffer";
 import { Rect } from "../pages/image-editor/models";
 import { LocalImage } from "./models";
+import saveAs from "file-saver";
 
 const anonymousClient = axios.create();
 
@@ -14,7 +15,12 @@ export interface SplitResult {
     tiles: ImageData[][]; // [x][y]
 }
 
-export function convertPNGToJPG(encodedImage: string): Promise<string> {
+export function convertImageFormat(
+    encodedImage: string,
+    srcFormat: string,
+    destFormat: string
+): Promise<string> {
+    const isDataUrl = encodedImage.startsWith("data:image");
     return new Promise((resolve, reject) => {
         const image = new Image();
         image.onload = () => {
@@ -27,18 +33,44 @@ export function convertPNGToJPG(encodedImage: string): Promise<string> {
                     throw new Error("Could not get canvas context");
                 }
                 ctx.drawImage(image, 0, 0);
-                const dataUrl = canvas.toDataURL("image/jpeg");
-                resolve(dataUrl.split(",")[1]);
+                const dataUrl = canvas.toDataURL(`image/${destFormat}`);
+                if (isDataUrl) {
+                    resolve(dataUrl);
+                } else {
+                    resolve(dataUrl.split(",")[1]);
+                }
             } finally {
                 canvas.remove();
             }
         };
-        image.src = `data:image/png;base64,${encodedImage}`;
+        if (isDataUrl) {
+            image.src = encodedImage;
+        } else {
+            image.src = `data:image/${srcFormat};base64,${encodedImage}`;
+        }
     });
 }
 
+export async function downloadImage(baseName: string, dataUrl: string, format: string) {
+    const srcFormat = getImageFormat(dataUrl);
+    if (srcFormat != format) {
+        dataUrl = await convertImageFormat(dataUrl, srcFormat, format);
+    }
+    const encodedImage = dataUrl.split(",")[1];
+    // base64 decode
+    const byteString = atob(encodedImage);
+    // save as file
+    const buffer = new ArrayBuffer(byteString.length);
+    const intArray = new Uint8Array(buffer);
+    for (let i = 0; i < byteString.length; i++) {
+        intArray[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([intArray], { type: `image/${format}` });
+    saveAs(blob, `${baseName}.${format}`);
+}
+
 export function loadImageDataElement(
-    image: LocalImage,
+    image: LocalImage
 ): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const src = image.imageData!;
@@ -47,7 +79,6 @@ export function loadImageDataElement(
         imageElement.onload = () => {
             resolve(imageElement);
         };
-                    
     });
 }
 
@@ -341,9 +372,7 @@ export class ImageUtilWorker {
 
     constructor(numWorkers = 3) {
         for (let i = 0; i < numWorkers; i++) {
-            this.workers[i] = new Worker(
-                `/workers/imageutil.js`
-            );
+            this.workers[i] = new Worker(`/workers/imageutil.js`);
             this.workers[i].addEventListener(
                 "message",
                 this.onMessage.bind(this)
@@ -378,6 +407,10 @@ export class ImageUtilWorker {
     }
 }
 
+export function getImageFormat(imageUrl: string): string {
+    return imageUrl.split(";")[0].split("/")[1];
+}
+
 export function createEncodedThumbnail(encodedImage: string): Promise<string> {
     return new Promise((resolve, reject) => {
         // use html5 canvas
@@ -388,7 +421,13 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
         canvas.height = thumbSize;
 
         const image = new Image();
-        image.src = `data:image/png;base64,${encodedImage}`;
+        let dataUrl = false;
+        if (encodedImage.startsWith("data:image")) {
+            dataUrl = true;
+            image.src = encodedImage;
+        } else {
+            image.src = `data:image/webp;base64,${encodedImage}`;
+        }
         image.onload = () => {
             const context = canvas.getContext("2d");
             if (!context) {
@@ -409,21 +448,25 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
 
             // Draw the image onto the canvas
             context.drawImage(
-                image,           // Source image
-                cropX,           // Source x
-                cropY,           // Source y
-                cropDimension,   // Source width
-                cropDimension,   // Source height
-                0,               // Destination x
-                0,               // Destination y
-                thumbSize,       // Destination width
-                thumbSize        // Destination height
+                image, // Source image
+                cropX, // Source x
+                cropY, // Source y
+                cropDimension, // Source width
+                cropDimension, // Source height
+                0, // Destination x
+                0, // Destination y
+                thumbSize, // Destination width
+                thumbSize // Destination height
             );
 
             // Save to png
-            const imageUrl = canvas.toDataURL("image/png");
-            const base64 = imageUrl.split(",")[1];
-            resolve(base64);
+            const imageUrl = canvas.toDataURL("image/webp");
+            if (dataUrl) {
+                resolve(imageUrl);
+            } else {
+                const base64 = imageUrl.split(",")[1];
+                resolve(base64);
+            }
         };
 
         image.onerror = (error) => {
@@ -431,7 +474,6 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
         };
     });
 }
-
 
 export function decodeImage(encodedImage: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
@@ -455,7 +497,7 @@ export function resizeEncodedImage(
     encodedImage: string,
     width: number,
     height: number,
-    format: "png" | "jpeg"
+    format: "png" | "jpeg" | "webp"
 ): Promise<string> {
     return new Promise((resolve, reject) => {
         // use html5 canvas

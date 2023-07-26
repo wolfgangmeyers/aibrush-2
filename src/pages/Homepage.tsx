@@ -7,10 +7,7 @@ import qs from "qs";
 import { useParams, useHistory, Link, useLocation } from "react-router-dom";
 import moment from "moment";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
-import {
-    convertPNGToJPG,
-    createBlankImage,
-} from "../lib/imageutil";
+import { convertImageFormat, createBlankImage } from "../lib/imageutil";
 
 import { BusyModal } from "../components/BusyModal";
 import { PendingJobs } from "../components/PendingJobs";
@@ -27,16 +24,14 @@ delete anonymousClient.defaults.headers.common["Authorization"];
 
 interface Props {
     generator: HordeGenerator;
-    imageClient: ImageClient;
     localImages: LocalImagesStore;
+    savedImages: LocalImagesStore;
 }
-
-// TODO: extract common parts with new saved images into ImagesView component
 
 export const Homepage: FC<Props> = ({
     generator,
-    imageClient,
     localImages,
+    savedImages,
 }) => {
     const [creating, setCreating] = useState(false);
     const [selectedImage, setSelectedImage] = useState<LocalImage | null>(null);
@@ -85,8 +80,10 @@ export const Homepage: FC<Props> = ({
         setUploadingProgress(0);
         try {
             if (input.encoded_image) {
-                input.encoded_image = await convertPNGToJPG(
-                    input.encoded_image
+                input.encoded_image = await convertImageFormat(
+                    input.encoded_image,
+                    "webp",
+                    "jpeg",
                 );
             }
             const job = await generator.generateImages(input, (progress) => {
@@ -141,7 +138,7 @@ export const Homepage: FC<Props> = ({
                 score: 0,
                 status: "completed",
                 temporary: false,
-                imageData: `data:image/png;base64,${encodedImage}`,
+                imageData: `data:image/webp;base64,${encodedImage}`,
             };
             await localImages.saveImage(newImage);
 
@@ -205,7 +202,7 @@ export const Homepage: FC<Props> = ({
     }, [generator, jobs]);
 
     // load parent image from saved images if an id is on the query string
-    // TODO: restore this once google drive integration is in place
+    // TODO: load this from saved images store
     useEffect(() => {
         const loadParent = async () => {
             const search = qs.parse(location.search, {
@@ -217,28 +214,29 @@ export const Homepage: FC<Props> = ({
                     // const parentImage = await api.getImage(
                     //     search.parent as string
                     // );
-                    const parentImage = await imageClient.loadImage(
+                    const parentImage = await savedImages.getImage(
                         search.parent as string
                     );
                     if (parentImage) {
-                        // const downloadUrls = await api.getImageDownloadUrls(
-                        //     parentImage.data.id
+                        // // const downloadUrls = await api.getImageDownloadUrls(
+                        // //     parentImage.data.id
+                        // // );
+                        // const imageUrl = `https://aibrush2-filestore.s3.amazonaws.com/${parentImage.id}.image.png`;
+                        // const resp = await anonymousClient.get(imageUrl, {
+                        //     responseType: "arraybuffer",
+                        // });
+                        // const binaryImageData = Buffer.from(
+                        //     resp.data,
+                        //     "binary"
                         // );
-                        const imageUrl = `https://aibrush2-filestore.s3.amazonaws.com/${parentImage.id}.image.png`;
-                        const resp = await anonymousClient.get(imageUrl, {
-                            responseType: "arraybuffer",
-                        });
-                        const binaryImageData = Buffer.from(
-                            resp.data,
-                            "binary"
-                        );
-                        const base64ImageData =
-                            binaryImageData.toString("base64");
-                        const src = `data:image/png;base64,${base64ImageData}`;
-                        setParentImage({
-                            ...parentImage,
-                            imageData: src,
-                        });
+                        // const base64ImageData =
+                        //     binaryImageData.toString("base64");
+                        // const src = `data:image/png;base64,${base64ImageData}`;
+                        // setParentImage({
+                        //     ...parentImage,
+                        //     imageData: src,
+                        // });
+                        setParentImage(parentImage);
                         history.push("/");
                     }
                 } finally {
@@ -387,7 +385,6 @@ export const Homepage: FC<Props> = ({
                 store={localImages}
             />
 
-            
             <BusyModal show={creating} title="Creating images">
                 <p>Please wait while we create your image.</p>
                 <ProgressBar progress={uploadProgress} />

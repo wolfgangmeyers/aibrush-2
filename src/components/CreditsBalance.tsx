@@ -1,10 +1,7 @@
 import {FC, useEffect, useState} from "react";
-import { AIBrushApi } from "../client";
 import { ApiSocket, NOTIFICATION_CREDITS_UPDATED } from "../lib/apisocket";
 
 interface Props {
-    api: AIBrushApi;
-    apisocket: ApiSocket;
 }
 
 // TODO: restore when refactoring to kudos
@@ -12,7 +9,7 @@ interface Props {
 // it should also subscribe to the apisocket to receive updates to the credits balance (NOTIFICATION_CREDITS_UPDATED).
 // display paid credits above, free credits below.
 
-export const CreditsBalance: FC<Props> = ({api, apisocket}) => {
+export const CreditsBalance: FC<Props> = () => {
     // const [credits, setCredits] = useState({free_credits: 0, paid_credits: 0});
 
     // useEffect(() => {

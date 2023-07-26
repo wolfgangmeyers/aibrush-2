@@ -2,7 +2,6 @@ import React, { FC, useState, useEffect } from "react";
 import loadImage from "blueimp-load-image";
 import saveAs from "file-saver";
 
-import { AIBrushApi } from "../../client";
 import { Renderer } from "./renderer";
 import { BaseTool, Tool } from "./tool";
 
@@ -41,8 +40,8 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
             for (let i = 0; i < byteString.length; i++) {
                 intArray[i] = byteString.charCodeAt(i);
             }
-            const blob = new Blob([intArray], { type: "image/png" });
-            saveAs(blob, "image.png");
+            const blob = new Blob([intArray], { type: "image/webp" });
+            saveAs(blob, "image.webp");
         }
     };
 
@@ -55,7 +54,7 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
                         setBackupImage(undefined);
                         const img = new Image();
                         // set src as data uri
-                        const src = "data:image/png;base64," + backupImage;
+                        const src = "data:image/webp;base64," + backupImage;
                         img.src = src;
                         img.onload = () => {
                             renderer.setBaseImage(img);

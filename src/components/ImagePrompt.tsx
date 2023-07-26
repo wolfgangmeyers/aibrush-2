@@ -8,7 +8,7 @@ import {
 import loadImage from "blueimp-load-image";
 import { AspectRatioSelector } from "./AspectRatioSelector";
 import { getUpscaleLevel } from "../lib/upscale";
-import { resizeEncodedImage } from "../lib/imageutil";
+import { convertImageFormat, resizeEncodedImage } from "../lib/imageutil";
 import { GenerateImageInput, LocalImage } from "../lib/models";
 import { controlnetTypes } from "../lib/supportedModels";
 import { SeedInput } from "./SeedInput";
@@ -156,7 +156,7 @@ export const ImagePrompt: FC<Props> = ({
                 encodedImage,
                 args.params.width,
                 args.params.height,
-                "png"
+                "webp",
             );
         }
 
@@ -226,7 +226,7 @@ export const ImagePrompt: FC<Props> = ({
 
                 // convert image to base64
                 // const canvas = img as HTMLCanvasElement
-                const dataUrl = canvas.toDataURL("image/png");
+                const dataUrl = canvas.toDataURL("image/webp");
                 const base64 = dataUrl.split(",")[1];
                 setEncodedImage(base64);
                 // get the index of the best match
@@ -250,8 +250,16 @@ export const ImagePrompt: FC<Props> = ({
     useEffect(() => {
         if (parent) {
             const imageData = parent.imageData;
+            // if it's png, convert to webp
             if (imageData) {
-                setEncodedImage(imageData.split(",")[1]);
+                let encodedImage = imageData.split(",")[1];
+                if (imageData.startsWith("data:image/png")) {
+                    convertImageFormat(encodedImage, "png", "webp").then(encodedImage => {
+                        setEncodedImage(encodedImage);
+                    })
+                } else {
+                    setEncodedImage(encodedImage);
+                }
             }
             setPrompt(parent.params.prompt || "");
             setNegativePrompt(
@@ -403,7 +411,7 @@ export const ImagePrompt: FC<Props> = ({
                                             marginRight: "auto",
                                             maxWidth: "100%",
                                         }}
-                                        src={`data:image/png;base64,${encodedImage}`}
+                                        src={`data:image/webp;base64,${encodedImage}`}
                                     />
                                 </div>
                             )}

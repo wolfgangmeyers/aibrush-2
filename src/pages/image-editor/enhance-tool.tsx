@@ -7,7 +7,7 @@ import { defaultArgs } from "../../components/ImagePrompt";
 import { Tool, BaseTool } from "./tool";
 import { Renderer } from "./renderer";
 import {
-    convertPNGToJPG,
+    convertImageFormat,
     ImageUtilWorker,
     ImageWorkerRequest,
     loadImageDataElement,
@@ -478,7 +478,6 @@ export class EnhanceTool extends BaseTool implements Tool {
             console.error("No selection");
             return;
         }
-        encodedImage = await convertPNGToJPG(encodedImage);
         let encodedMask: string | undefined;
         let maskData: ImageData | undefined;
         if (this.renderer.isMasked()) {

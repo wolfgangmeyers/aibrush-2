@@ -1,28 +1,17 @@
 // V2 page
 import { FC, useState, useEffect } from "react";
 import { Buffer } from "buffer";
-import * as uuid from "uuid";
 import axios from "axios";
-import qs from "qs";
 import { useParams, useHistory, Link, useLocation } from "react-router-dom";
 import moment from "moment";
-import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
-import {
-    convertPNGToJPG,
-    createBlankImage,
-} from "../lib/imageutil";
 
-import { BusyModal } from "../components/BusyModal";
-import { PendingJobs } from "../components/PendingJobs";
 import { LocalImagesStore } from "../lib/localImagesStore";
-import { GenerateImageInput, GenerationJob, LocalImage } from "../lib/models";
+import { LocalImage } from "../lib/models";
 import { ErrorNotification, SuccessNotification } from "../components/Alerts";
 import { ProgressBar } from "../components/ProgressBar";
-import OutOfCreditsModal from "../components/OutOfCreditsModal";
-import PaymentStatusModal from "../components/PaymentStatusModal";
-import { HordeGenerator } from "../lib/hordegenerator";
 import { ImageClient, deleteManifestId } from "../lib/savedimages";
 import { ImagesView } from "../components/ImagesView";
+import { BusyModal } from "../components/BusyModal";
 
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
@@ -32,15 +21,12 @@ interface Props {
     localImages: LocalImagesStore;
 }
 
-// TODO: extract common parts with new saved images into ImagesView component
-
-export const SavedImagesPage: FC<Props> = ({
-    imageClient,
-    localImages,
-}) => {
+export const SavedImagesPage: FC<Props> = ({ imageClient, localImages }) => {
     const [selectedImage, setSelectedImage] = useState<LocalImage | null>(null);
     const [err, setErr] = useState<string | null>(null);
     const [errTime, setErrTime] = useState<number>(0);
+    const [importingImages, setImportingImages] = useState<boolean>(false);
+    const [importProgress, setImportProgress] = useState<number>(0);
 
     const { id } = useParams<{ id?: string }>();
     const history = useHistory();
@@ -68,7 +54,7 @@ export const SavedImagesPage: FC<Props> = ({
     useEffect(() => {
         const loadLegacyImages = async () => {
             if (imageClient.manifest) {
-                console.log("importing legacy images")
+                console.log("importing legacy images");
                 const missingImageIds: string[] = [];
                 for (let imageId of imageClient.manifest.imageIds) {
                     if (!(await localImages.getImage(imageId))) {
@@ -76,12 +62,50 @@ export const SavedImagesPage: FC<Props> = ({
                     }
                 }
                 if (missingImageIds.length > 0) {
-                    for (let imageId of missingImageIds) {
-                        console.log("importing legacy image", imageId);
-                        const image = await imageClient.loadImage(imageId);
-                        if (image && image.status !== "error") {
-                            localImages.saveImage(image);
+                    setImportingImages(true);
+                    setImportProgress(0);
+                    let progress = 0;
+                    try {
+                        const batchSize = 20;
+                        const numBatches = Math.ceil(missingImageIds.length / batchSize);
+                        for (let i = 0; i < numBatches; i++) {
+                            const batch = missingImageIds.slice(i * batchSize, (i + 1) * batchSize);
+                            const batchImages = await Promise.all(batch.map(async (imageId) => {
+                                console.log("importing legacy image", imageId);
+                                const image = await imageClient.loadImage(imageId);
+                                if (image && image.status !== "error") {
+                                    const imageUrl = `https://aibrush2-filestore.s3.amazonaws.com/${image.id}.image.png`;
+                                    const resp = await anonymousClient.get(
+                                        imageUrl,
+                                        {
+                                            responseType: "arraybuffer",
+                                        }
+                                    );
+                                    const binaryImageData = Buffer.from(
+                                        resp.data,
+                                        "binary"
+                                    );
+                                    const base64ImageData =
+                                        binaryImageData.toString("base64");
+                                    return {
+                                        ...image,
+                                        imageData: `data:image/png;base64,${base64ImageData}`,
+                                    };
+                                }
+                                return null;
+                            }));
+                            const filteredBatchImages = batchImages.filter((image) => image !== null) as LocalImage[];
+                            for (let image of filteredBatchImages) {
+                                await localImages.saveImage(image);
+                            }
+                            progress += filteredBatchImages.length;
+                            setImportProgress(progress / missingImageIds.length);
                         }
+                    } catch (e) {
+                        onError("Error importing images");
+                        console.error(e);
+                    } finally {
+                        setImportingImages(false);
                     }
                 }
                 deleteManifestId();
@@ -141,6 +165,10 @@ export const SavedImagesPage: FC<Props> = ({
                 selectedImage={selectedImage}
                 store={localImages}
             />
+
+            <BusyModal title="Importing images" show={importingImages}>
+                <ProgressBar progress={importProgress} />
+            </BusyModal>
         </>
     );
 };

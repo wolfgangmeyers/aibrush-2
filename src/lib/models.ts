@@ -14,6 +14,7 @@ export interface Image {
     temporary?: boolean;
     deleted_at?: number;
     error?: string;
+    format?: "png" | "webp";
 }
 
 export interface GenerationJob {
@@ -78,4 +79,21 @@ export type StatusEnum = "pending" | "processing" | "completed" | "saved" | "err
 
 export interface LocalImage extends Image {
     imageData?: string;
+    thumbnailData?: string;
+}
+
+export interface StableDiffusionModel {
+    'name': string;
+    'baseline': string;
+    'type': string;
+    'description': string;
+    'tags': Array<string>;
+    'showcases': Array<string>;
+    'version': string;
+    'style': string;
+    'nsfw': boolean;
+    'download_all': boolean;
+    'config': object;
+    'available': boolean;
+    'inpainting': boolean;
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button, Modal, Form, ListGroup, Row, Col } from "react-bootstrap";
 import axios from "axios";
-import { AIBrushApi, StableDiffusionModel } from "../client";
+import { StableDiffusionModel } from "../lib/models";
 import { ModelList } from "./ModelList";
 import { useCache } from "../lib/localcache";
 import { recentModels } from "../lib/recentList";

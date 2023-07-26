@@ -1,9 +1,10 @@
 import React, { FC, useEffect, useRef, useState } from "react";
-import { Modal } from "react-bootstrap";
+import { Dropdown, Modal } from "react-bootstrap";
 import { LocalImage } from "../lib/models";
 import CopyToClipboard from "react-copy-to-clipboard";
 import CopyToClipboardIcon from "./CopyToClipboardIcon";
 import { Swipe } from "./Swipe";
+import { downloadImage } from "../lib/imageutil";
 
 interface ImagePopupProps {
     image: LocalImage;
@@ -29,10 +30,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     onSwipe,
 }) => {
     const img = useRef<HTMLImageElement>(null);
-    let src = `https://aibrush2-filestore.s3.amazonaws.com/${image.id}.image.png?updated_at=${image.updated_at}`;
-    if (image.imageData) {
-        src = image.imageData;
-    }
+    const src = image.imageData;
     let score = image.score || 0;
     if (image.params.negative_prompt && image.negative_score != 0) {
         score -= image.negative_score || 0;
@@ -74,6 +72,10 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                 </span>
             </>
         );
+    };
+
+    const onDownloadImage = (format: string) => {
+        downloadImage(image.id, image.imageData!, format);
     };
 
     useEffect(() => {
@@ -223,6 +225,38 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         &nbsp;SAVE
                                     </button>
                                 )}
+                                <Dropdown style={{ display: "inline" }}>
+                                    <Dropdown.Toggle
+                                        variant="primary"
+                                        className="btn-sm image-popup-button"
+                                    >
+                                        <i className="fas fa-download"></i>
+                                        &nbsp;DOWNLOAD
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item
+                                            onClick={() =>
+                                                onDownloadImage("png")
+                                            }
+                                        >
+                                            AS PNG
+                                        </Dropdown.Item>
+                                        <Dropdown.Item
+                                            onClick={() =>
+                                                onDownloadImage("webp")
+                                            }
+                                        >
+                                            AS WEBP
+                                        </Dropdown.Item>
+                                        <Dropdown.Item
+                                            onClick={() =>
+                                                onDownloadImage("jpeg")
+                                            }
+                                        >
+                                            AS JPEG
+                                        </Dropdown.Item>
+                                    </Dropdown.Menu>
+                                </Dropdown>
                                 {image.nsfw && censorNSFW && (
                                     <button
                                         className="btn btn-primary btn-sm image-popup-button"

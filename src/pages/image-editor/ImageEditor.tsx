@@ -35,7 +35,7 @@ interface CanPreventDefault {
 interface Props {
     generator: HordeGenerator;
     localImages: LocalImagesStore;
-    imageClient: ImageClient;
+    savedImages: LocalImagesStore;
 }
 
 interface ToolConfig {
@@ -52,7 +52,7 @@ delete anonymousClient.defaults.headers.common["Authorization"];
 export const ImageEditor: React.FC<Props> = ({
     generator,
     localImages,
-    imageClient
+    savedImages,
 }) => {
     const [showSelectionControls, setShowSelectionControls] = useState(false);
     const tools: Array<ToolConfig> = [
@@ -207,7 +207,7 @@ export const ImageEditor: React.FC<Props> = ({
                     height: renderer!.getHeight() as any,
                 },
                 id: uuid.v4(),
-                imageData: `data:image/png;base64,${encodedImage}`,
+                imageData: `data:image/webp;base64,${encodedImage}`,
             };
             await localImages.saveImage(newImage);
 
@@ -232,21 +232,20 @@ export const ImageEditor: React.FC<Props> = ({
                 setImage(localImage);
                 imageSrc = localImage.imageData!;
             } else {
-                const image = await imageClient.loadImage(id)
-                setImage(image);
-                // https://aibrush2-filestore.s3.us-west-2.amazonaws.com/0e3a48ec-052e-4da9-b86a-d73f9b048256.image.png
-                const imageUrl = `https://aibrush2-filestore.s3.us-west-2.amazonaws.com/${id}.image.png`;
-                // Loading up data as binary, base64 encoding into image url
-                // bypasses browser security nonsense about cross-domain images
-                const resp = await anonymousClient.get(
-                    imageUrl,
-                    {
-                        responseType: "arraybuffer",
-                    }
-                );
-                const binaryImageData = Buffer.from(resp.data, "binary");
-                const base64ImageData = binaryImageData.toString("base64");
-                imageSrc = `data:image/png;base64,${base64ImageData}`;
+                const image = await savedImages.getImage(id);
+                if (image) {
+                    setImage(image);
+                    // const imageUrl = `https://aibrush2-filestore.s3.us-west-2.amazonaws.com/${id}.image.png`;
+                    // // Loading up data as binary, base64 encoding into image url
+                    // // bypasses browser security nonsense about cross-domain images
+                    // const resp = await anonymousClient.get(imageUrl, {
+                    //     responseType: "arraybuffer",
+                    // });
+                    // const binaryImageData = Buffer.from(resp.data, "binary");
+                    // const base64ImageData = binaryImageData.toString("base64");
+                    // imageSrc = `data:image/png;base64,${base64ImageData}`;
+                    imageSrc = image.imageData!;
+                }
             }
 
             const imageElement = new Image();
@@ -322,7 +321,6 @@ export const ImageEditor: React.FC<Props> = ({
             return () => {
                 window.removeEventListener("resize", listener);
             };
-            
         }
     }, [renderer]);
 
@@ -382,11 +380,13 @@ export const ImageEditor: React.FC<Props> = ({
                 >
                     {renderer && (
                         <>
-                            <div style={{marginBottom: "16px"}}>{tools.map((t) => renderTool(t))}</div>
+                            <div style={{ marginBottom: "16px" }}>
+                                {tools.map((t) => renderTool(t))}
+                            </div>
                             {tool && toolConfig && (
                                 <>
                                     {/* capitalize tool name */}
-                                    <h4 style={{marginLeft: "16px"}}>
+                                    <h4 style={{ marginLeft: "16px" }}>
                                         {tool.name.charAt(0).toUpperCase() +
                                             tool.name.slice(1)}
                                     </h4>

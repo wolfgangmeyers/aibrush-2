@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from "react";
 import { ListGroup } from "react-bootstrap";
-import { StableDiffusionModel } from "../client";
+import { StableDiffusionModel } from "../lib/models";
 
 interface Props {
     models: StableDiffusionModel[];

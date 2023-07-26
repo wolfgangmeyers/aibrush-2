@@ -135,15 +135,15 @@ function App() {
                                 {/* <MainMenu isAdmin={isAdmin} /> */}
                                 <Homepage
                                     localImages={localImages}
+                                    savedImages={savedImagesStore}
                                     generator={generator}
-                                    imageClient={imageClient}
                                 />
                             </Route>
                             <Route path="/images/:id">
                                 <Homepage
                                     localImages={localImages}
+                                    savedImages={savedImagesStore}
                                     generator={generator}
-                                    imageClient={imageClient}
                                 />
                             </Route>
                             <Route path="/saved" exact={true}>
@@ -158,7 +158,7 @@ function App() {
                                 <ImageEditor
                                     generator={generator}
                                     localImages={localImages}
-                                    imageClient={imageClient}
+                                    savedImages={savedImagesStore}
                                 />
                             </Route>
                             <Route path="/local-deleted-images">

@@ -26,7 +26,9 @@ export const ImageThumbnail: FC<Props> = ({ image, censorNSFW, bulkDelete, onCli
     }
 
     let backgroundImage = `url(${src}), url(/images/default.png)`;
-    if (image.imageData) {
+    if (image.thumbnailData) {
+        backgroundImage = `url(${image.thumbnailData}), url(/images/default.png)`;
+    } else if (image.imageData) {
         backgroundImage = `url(${image.imageData}), url(/images/default.png)`;
     }
 

@@ -1,6 +1,7 @@
 import moment from "moment";
 
 import { LocalImage } from "./models";
+import { convertImageFormat, createEncodedThumbnail, getImageFormat } from "./imageutil";
 
 /**
  * This class uses indexedDB to store images locally.
@@ -71,6 +72,13 @@ export class LocalImagesStore {
                 steps: legacyImage.iterations,
             }
         }
+        if (!image.format) {
+            if (image.imageData) {
+                image.format = image.imageData.startsWith("data:image/webp") ? "webp" : "png";
+            } else {
+                image.format = "png";
+            }
+        }
         return image;
     }
 
@@ -95,6 +103,14 @@ export class LocalImagesStore {
     async saveImage(image: LocalImage): Promise<void> {
         if (!this.db) {
             throw new Error("not initialized");
+        }
+        // make sure to save as webp
+        if (image.imageData && getImageFormat(image.imageData) !== "webp") {
+            image.imageData = await convertImageFormat(image.imageData, getImageFormat(image.imageData), "webp");
+        }
+        // create thumbnail if needed
+        if (image.imageData && !image.thumbnailData) {
+            image.thumbnailData = await createEncodedThumbnail(image.imageData);
         }
         await this.cleanupDeletedImages();
         const transaction = this.db.transaction(["images"], "readwrite");
@@ -193,6 +209,9 @@ export class LocalImagesStore {
                         !image.deleted_at &&
                         (!search || prompt.includes(search.toLowerCase()))
                     ) {
+                        if (image.thumbnailData) {
+                            delete image.imageData;
+                        }
                         images.push(image);
                     }
                     if (images.length < count) {

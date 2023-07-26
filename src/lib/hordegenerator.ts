@@ -209,6 +209,7 @@ export class HordeGenerator {
                     status: result.censored ? "error" : "completed",
                     error: result.censored ? "Image was censored" : undefined,
                     imageData: `data:image/webp;base64,${result.imageData.toString("base64")}`,
+                    format: "webp",
                     nsfw: false, // TODO: nsfw check
                     model: job.model,
                     params: {

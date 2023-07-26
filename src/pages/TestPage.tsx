@@ -61,7 +61,7 @@ export const TestPage: FC = () => {
                 files[0],
                 async (img) => {
                     const c = img as HTMLCanvasElement;
-                    const originalImage = c.toDataURL("image/png");
+                    const originalImage = c.toDataURL("image/webp");
                     setOriginalImage(originalImage);
 
                     const ctx = c.getContext("2d");
@@ -132,7 +132,7 @@ export const TestPage: FC = () => {
                         const upscaledCanvas =
                             imageDataToCanvas(upscaledImageData);
                         const upscaledImage =
-                            upscaledCanvas.toDataURL("image/png");
+                            upscaledCanvas.toDataURL("image/webp");
                         setUpscaledImage(upscaledImage);
                     }
                 },

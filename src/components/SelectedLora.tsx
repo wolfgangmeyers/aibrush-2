@@ -1,5 +1,4 @@
 import { FC } from "react";
-import { LoraConfig } from "../client";
 import { SelectedLora } from "./LoraSelector";
 
 interface Props {

@@ -9,7 +9,7 @@ import ReactInfiniteScroll from "react-infinite-scroll-component";
 
 import { Item } from "../lib/civit_loras";
 import { Col, ListGroup, Row } from "react-bootstrap";
-import { LoraConfig } from "../client";
+import { LoraConfig } from "../lib/models";
 import { recentLoras } from "../lib/recentLoras";
 
 // https://chat.openai.com/share/34a593c7-a8e5-4490-9cc7-8a1d019b8b82

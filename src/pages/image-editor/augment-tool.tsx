@@ -57,7 +57,7 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image })
             throw new Error("Image worker not initialized");
         }
         let c = imageDataToCanvas(imageData);
-        let encodedImage = c.toDataURL("image/png").split(",")[1];
+        let encodedImage = c.toDataURL("image/webp").split(",")[1];
         c.remove();
 
         // TODO: use progress indicator
@@ -146,7 +146,7 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image })
                         setBackupImage(undefined);
                         const img = new Image();
                         // set src as data uri
-                        const src = "data:image/png;base64," + backupImage;
+                        const src = "data:image/webp;base64," + backupImage;
                         img.src = src;
                         img.onload = () => {
                             renderer.setBaseImage(img);
