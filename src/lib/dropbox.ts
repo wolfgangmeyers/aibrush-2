@@ -1,5 +1,4 @@
 import { Dropbox, DropboxAuth } from 'dropbox';
-import CryptoJS from 'crypto-js';
 import { Buffer } from "buffer";
 
 const CLIENT_ID = "hcm3qw3zetwsrzg";

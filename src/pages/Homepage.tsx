@@ -4,35 +4,25 @@ import { Buffer } from "buffer";
 import * as uuid from "uuid";
 import axios from "axios";
 import qs from "qs";
-import Dropdown from "react-bootstrap/Dropdown";
 import { useParams, useHistory, Link, useLocation } from "react-router-dom";
 import moment from "moment";
-import ScrollToTop from "react-scroll-to-top";
-import { ImageThumbnail } from "../components/ImageThumbnail";
 import { ImagePrompt, defaultArgs } from "../components/ImagePrompt";
 import {
     convertPNGToJPG,
     createBlankImage,
-    createEncodedThumbnail,
-    encodedImageToBlob,
-    uploadBlob,
 } from "../lib/imageutil";
 
-import InfiniteScroll from "react-infinite-scroll-component";
-import { ImagePopup } from "../components/ImagePopup";
 import { BusyModal } from "../components/BusyModal";
-import { PendingJobsThumbnail } from "../components/PendingJobsThumbnail";
 import { PendingJobs } from "../components/PendingJobs";
-import { ApiSocket } from "../lib/apisocket";
 import { LocalImagesStore } from "../lib/localImagesStore";
 import { GenerateImageInput, GenerationJob, LocalImage } from "../lib/models";
 import { ErrorNotification, SuccessNotification } from "../components/Alerts";
-import { sleep } from "../lib/sleep";
 import { ProgressBar } from "../components/ProgressBar";
 import OutOfCreditsModal from "../components/OutOfCreditsModal";
 import PaymentStatusModal from "../components/PaymentStatusModal";
 import { HordeGenerator } from "../lib/hordegenerator";
 import { ImageClient } from "../lib/savedimages";
+import { ImagesView } from "../components/ImagesView";
 
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
@@ -56,20 +46,17 @@ export const Homepage: FC<Props> = ({
     const [selectedImage, setSelectedImage] = useState<LocalImage | null>(null);
     const [parentImage, setParentImage] = useState<LocalImage | null>(null);
     const [loadingParent, setLoadingParent] = useState(false);
-    const [savingImage, setSavingImage] = useState(false);
+    // const [savingImage, setSavingImage] = useState(false);
     const [uploadProgress, setUploadingProgress] = useState(0);
 
     const [showPendingImages, setShowPendingImages] = useState(false);
 
-    const [images, setImages] = useState<Array<LocalImage>>([]);
     const [jobs, setJobs] = useState<Array<GenerationJob>>([]);
 
     const [err, setErr] = useState<string | null>(null);
     const [errTime, setErrTime] = useState<number>(0);
 
-    const [hasMore, setHasMore] = useState<boolean>(true);
     const [search, setSearch] = useState<string>("");
-    const [searchDebounce, setSearchDebounce] = useState<string>("");
 
     const [bulkDeleteSelecting, setBulkDeleteSelecting] = useState(false);
     const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -77,7 +64,6 @@ export const Homepage: FC<Props> = ({
         [key: string]: boolean;
     }>({});
 
-    const [censorNSFW, setCensorNSFW] = useState(true);
     const [outOfCredits, setOutOfCredits] = useState(false);
 
     const { id } = useParams<{ id?: string }>();
@@ -90,21 +76,7 @@ export const Homepage: FC<Props> = ({
     };
 
     useEffect(() => {
-        let handle = setTimeout(() => {
-            setSearch(searchDebounce);
-        }, 500);
-        return () => {
-            clearTimeout(handle);
-        };
-    }, [searchDebounce]);
-
-    useEffect(() => {
         if (id) {
-            // check if the image is already loaded
-            const image = images.find((image) => image.id === id);
-            if (image) {
-                setSelectedImage(image);
-            }
             // refresh
             localImages.getImage(id).then((image) => {
                 setSelectedImage(image);
@@ -194,55 +166,10 @@ export const Homepage: FC<Props> = ({
         }
     };
 
-    const onNSFW = async (updatedImage: LocalImage, nsfw: boolean) => {
-        updatedImage = {
-            ...updatedImage,
-            nsfw,
-        };
-        await localImages.saveImage(updatedImage);
-        setImages((images) => {
-            return images.map((image) => {
-                if (updatedImage.id === image.id) {
-                    return {
-                        ...image,
-                        nsfw,
-                    };
-                }
-                return image;
-            });
-        });
-        setSelectedImage(updatedImage);
-    };
-
-    const loadImages = async (search: string) => {
-        console.log("Initial load images");
-        // clear error
-        setErr(null);
-        setHasMore(true);
-        try {
-            const cursor = moment().add(1, "minutes").valueOf();
-            const resp = await localImages.listImages(
-                cursor,
-                "prev",
-                100,
-                search
-            );
-            setImages(resp.sort(sortImages));
-            return;
-        } catch (err) {
-            onError("Could not load images");
-            console.error(err);
-        }
-    };
-
-    useEffect(() => {
-        loadImages(search);
-    }, [search]);
-
     useEffect(() => {
         let lock = false;
 
-        const pollImages = async (images: Array<LocalImage>) => {
+        const pollImages = async () => {
             if (lock) {
                 return;
             }
@@ -272,9 +199,6 @@ export const Homepage: FC<Props> = ({
                         }
                     }
                 }
-                if (newImages.length > 0) {
-                    setImages((images) => [...newImages, ...images]);
-                }
                 setJobs(pendingJobs);
             } catch (err) {
                 onError("Could not load images");
@@ -285,12 +209,12 @@ export const Homepage: FC<Props> = ({
         };
 
         const timerHandle = setInterval(() => {
-            pollImages(images);
+            pollImages();
         }, 2 * 1000);
         return () => {
             clearInterval(timerHandle);
         };
-    }, [generator, jobs, images, search]);
+    }, [generator, jobs, search]);
 
     // load parent image from saved images if an id is on the query string
     // TODO: restore this once google drive integration is in place
@@ -337,64 +261,12 @@ export const Homepage: FC<Props> = ({
         loadParent();
     }, [location.search]);
 
-    const sortImages = (a: LocalImage, b: LocalImage) => {
-        return b.updated_at - a.updated_at;
-    };
-
-    const onLoadMore = async () => {
-        // get the minimum updated_at from images
-        let minUpdatedAt = moment().valueOf();
-        images.forEach((image) => {
-            minUpdatedAt = Math.min(minUpdatedAt, image.updated_at);
-        });
-        // load images in descending order from updated_at
-        let resp = await localImages.listImages(
-            minUpdatedAt - 1,
-            "prev",
-            100,
-            search
-        );
-        if (resp.length > 0) {
-            // combine images with new images and sort by updated_at descending
-            setImages((images) => {
-                // filtering is required due to a race condition
-                const imagesById = images.reduce((acc, image) => {
-                    acc[image.id] = image;
-                    return acc;
-                }, {} as { [key: string]: LocalImage });
-                resp = resp.filter((image) => !imagesById[image.id]);
-                return [...images, ...resp]
-                    .filter((image) => !image.deleted_at)
-                    .sort(sortImages);
-            });
-        } else {
-            setHasMore(false);
-        }
-    };
-
     const onDelete = async (image: LocalImage) => {
         try {
-            // await api.deleteImage(image.id);
-            let nextImage = null;
             if (selectedImage) {
-                const index = images.findIndex(
-                    (i) => i.id === selectedImage.id
-                );
-                if (index > 0) {
-                    nextImage = images[index - 1];
-                } else if (index === 0 && images.length > 1) {
-                    nextImage = images[1];
-                }
+                setSelectedImage(null);
             }
-            await localImages.deleteImage(image.id);
-            setImages((images) => {
-                return images.filter((i) => i.id !== image.id);
-            });
-            if (nextImage) {
-                history.push(`/images/${nextImage.id}`);
-            } else {
-                history.push("/");
-            }
+            history.push("/");
         } catch (e) {
             console.error(e);
             onError("Error deleting image");
@@ -485,15 +357,18 @@ export const Homepage: FC<Props> = ({
         history.push(`/image-editor/${image.id}`);
     };
 
-    const onThumbnailClicked = (image: LocalImage) => {
-        // setSelectedImage(image);
-        if (bulkDeleteSelecting) {
-            setBulkDeleteIds({
-                ...bulkDeleteIds,
-                [image.id]: !bulkDeleteIds[image.id],
-            });
+    const onSelectImage = (image: LocalImage | null) => {
+        if (image) {
+            if (bulkDeleteSelecting) {
+                setBulkDeleteIds({
+                    ...bulkDeleteIds,
+                    [image.id]: !bulkDeleteIds[image.id],
+                });
+            } else {
+                history.push(`/images/${image.id}`);
+            }
         } else {
-            history.push(`/images/${image.id}`);
+            history.push("/");
         }
     };
 
@@ -501,50 +376,6 @@ export const Homepage: FC<Props> = ({
         setParentImage(null);
         window.scrollTo(0, 0);
     };
-
-    const onConfirmBulkDelete = async () => {
-        try {
-            setBulkDeleting(true);
-            const promises = Object.keys(bulkDeleteIds).map((id) => {
-                return localImages.deleteImage(id);
-            });
-            await Promise.all(promises);
-            setImages((images) => {
-                return images.filter((image) => !bulkDeleteIds[image.id]);
-            });
-            setBulkDeleteIds({});
-            setBulkDeleteSelecting(false);
-        } catch (e) {
-            console.error(e);
-            onError("Error deleting images");
-        } finally {
-            setBulkDeleting(false);
-        }
-    };
-
-    const completedOrSavedImages = images.filter((image) => {
-        return (
-            !image.deleted_at &&
-            (image.status === "completed" || image.status === "saved")
-        );
-    });
-
-    const onSwipe = (image: LocalImage, direction: number) => {
-        // select the previous or next image from the currently selected one
-        const index = images.findIndex((i) => i.id === image.id);
-        if (index === -1) {
-            return;
-        }
-        const newIndex = index + direction;
-        if (newIndex < 0 || newIndex >= images.length) {
-            return;
-        }
-        const newImage = images[newIndex];
-        onThumbnailClicked(newImage);
-    };
-
-    const pendingJobs = jobs.filter((job) => job.status === "pending");
-    const processingJobs = jobs.filter((job) => job.status === "processing");
 
     return (
         <>
@@ -563,160 +394,19 @@ export const Homepage: FC<Props> = ({
             />
             <hr />
 
-            <div
-                className="homepage-images"
-                style={{ marginTop: "48px", paddingBottom: "48px" }}
-            >
-                <div style={{ textAlign: "left" }}>
-                    <div
-                        className="input-group"
-                        style={{ marginBottom: "16px" }}
-                    >
-                        <input
-                            style={{}}
-                            value={searchDebounce}
-                            type="search"
-                            className="form-control image-search"
-                            placeholder="Search..."
-                            onChange={(e) => setSearchDebounce(e.target.value)}
-                        />
+            <ImagesView
+                jobs={jobs}
+                onDeleteJob={onDeleteJob}
+                onEditImage={onEdit}
+                onError={onError}
+                onForkImage={onFork}
+                onSelectImage={onSelectImage}
+                onDeleteImage={onDelete}
+                selectedImage={selectedImage}
+                store={localImages}
+            />
 
-                        <div
-                            style={{
-                                float: "right",
-                            }}
-                        >
-                            {!bulkDeleteSelecting && (
-                                <>
-                                    <button
-                                        style={{ display: "inline" }}
-                                        className="btn btn-primary image-popup-button"
-                                        onClick={() =>
-                                            setCensorNSFW(!censorNSFW)
-                                        }
-                                    >
-                                        {!censorNSFW && (
-                                            <i className="fas fa-eye"></i>
-                                        )}
-                                        {censorNSFW && (
-                                            <i className="fas fa-eye-slash"></i>
-                                        )}
-                                    </button>
-                                    <Dropdown
-                                        style={{
-                                            display: "inline",
-                                            marginLeft: "8px",
-                                        }}
-                                    >
-                                        <Dropdown.Toggle variant="danger">
-                                            <i className="fas fa-trash"></i>
-                                        </Dropdown.Toggle>
-
-                                        <Dropdown.Menu>
-                                            <Dropdown.Item
-                                                onClick={() =>
-                                                    setBulkDeleteSelecting(true)
-                                                }
-                                            >
-                                                Bulk Delete
-                                            </Dropdown.Item>
-                                            <Dropdown.Item
-                                                onClick={() =>
-                                                    history.push(
-                                                        "/local-deleted-images"
-                                                    )
-                                                }
-                                            >
-                                                View Deleted Images
-                                            </Dropdown.Item>
-                                        </Dropdown.Menu>
-                                    </Dropdown>
-                                </>
-                            )}
-                            {bulkDeleteSelecting && (
-                                <>
-                                    <button
-                                        className="btn btn-primary image-popup-button"
-                                        onClick={() => {
-                                            setBulkDeleteSelecting(false);
-                                            setBulkDeleteIds({});
-                                        }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        style={{ marginLeft: "8px" }}
-                                        className="btn image-popup-delete-button"
-                                        onClick={() => {
-                                            onConfirmBulkDelete();
-                                        }}
-                                    >
-                                        Delete
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-                <InfiniteScroll
-                    dataLength={images.length}
-                    next={onLoadMore}
-                    hasMore={hasMore}
-                    loader={
-                        <>
-                            <hr />
-                            <h4>Loading...</h4>
-                        </>
-                    }
-                >
-                    {jobs.length > 0 && (
-                        <PendingJobsThumbnail
-                            pendingCount={pendingJobs.length}
-                            processingCount={processingJobs.length}
-                            onClick={() => {
-                                setShowPendingImages(true);
-                            }}
-                        />
-                    )}
-                    {completedOrSavedImages.map((image) => (
-                        <ImageThumbnail
-                            key={image.id}
-                            image={image}
-                            onClick={onThumbnailClicked}
-                            bulkDelete={
-                                bulkDeleteSelecting && bulkDeleteIds[image.id]
-                            }
-                            censorNSFW={censorNSFW}
-                        />
-                    ))}
-                </InfiniteScroll>
-            </div>
-
-            {selectedImage && (
-                <ImagePopup
-                    image={selectedImage}
-                    onClose={() => history.push("/")}
-                    onDelete={(image) => {
-                        onDelete(image);
-                        setImages(images.filter((i) => i.id !== image.id));
-                        history.push("/");
-                    }}
-                    onFork={(image) => {
-                        onFork(image);
-                        history.push("/");
-                    }}
-                    onEdit={(image) => {
-                        onEdit(image);
-                    }}
-                    // onSave={(image) => {
-                    //     onSave(image);
-                    // }}
-                    onNSFW={onNSFW}
-                    censorNSFW={censorNSFW}
-                    onSwipe={onSwipe}
-                />
-            )}
-            <ScrollToTop />
+            
             <BusyModal show={creating} title="Creating images">
                 <p>Please wait while we create your image.</p>
                 <ProgressBar progress={uploadProgress} />
@@ -727,10 +417,9 @@ export const Homepage: FC<Props> = ({
             <BusyModal show={loadingParent} title="Loading parent image">
                 <p>Please wait while we load the parent image.</p>
             </BusyModal>
-            <BusyModal show={savingImage} title="Saving image">
-                {/* bootstrap progress bar for uploadProgress (0-1 value) */}
+            {/* <BusyModal show={savingImage} title="Saving image">
                 <ProgressBar progress={uploadProgress} />
-            </BusyModal>
+            </BusyModal> */}
             <PendingJobs
                 jobs={jobs}
                 onCancel={() => setShowPendingImages(false)}

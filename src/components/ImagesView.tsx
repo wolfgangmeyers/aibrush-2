@@ -7,18 +7,22 @@ import InfiniteScroll from "react-infinite-scroll-component";
 import moment from "moment";
 import { PendingJobsThumbnail } from "./PendingJobsThumbnail";
 import { ImageThumbnail } from "./ImageThumbnail";
+import { PendingJobs } from "./PendingJobs";
+import ScrollToTop from "react-scroll-to-top";
 
 interface Props {
     store: LocalImagesStore;
-    jobs: Array<GenerationJob>;
+    jobs?: Array<GenerationJob>;
     onError: (err: string) => void;
-    onBulkDelete: (ids: Array<string>) => void;
+    onBulkDelete?: (ids: Array<string>) => void;
     selectedImage: LocalImage | null;
     onSelectImage: (image: LocalImage | null) => void;
     onDeleteImage: (image: LocalImage) => void;
+    onDeleteRemoteImage?: (image: LocalImage) => void;
     onForkImage: (image: LocalImage) => void;
     onEditImage: (image: LocalImage) => void;
-    onUpdateImage: (image: LocalImage) => void;
+    onUpdateImage?: (image: LocalImage) => void;
+    onDeleteJob: (job: GenerationJob) => void;
 }
 
 export const ImagesView: FC<Props> = ({
@@ -32,12 +36,12 @@ export const ImagesView: FC<Props> = ({
     onForkImage,
     onEditImage,
     onUpdateImage,
+    onDeleteJob,
 }) => {
     const [searchDebounce, setSearchDebounce] = useState<string>("");
     const [search, setSearch] = useState<string>("");
     const [bulkDeleteSelecting, setBulkDeleteSelecting] = useState(false);
     const [censorNSFW, setCensorNSFW] = useState(true);
-    const [bulkDeleting, setBulkDeleting] = useState(false);
     const [bulkDeleteIds, setBulkDeleteIds] = useState<{
         [key: string]: boolean;
     }>({});
@@ -47,7 +51,6 @@ export const ImagesView: FC<Props> = ({
 
     const onConfirmBulkDelete = async () => {
         try {
-            setBulkDeleting(true);
             const promises = Object.keys(bulkDeleteIds).map((id) => {
                 return store.deleteImage(id);
             });
@@ -57,12 +60,12 @@ export const ImagesView: FC<Props> = ({
             });
             setBulkDeleteIds({});
             setBulkDeleteSelecting(false);
-            onBulkDelete(Object.keys(bulkDeleteIds));
+            if (onBulkDelete) {
+                onBulkDelete(Object.keys(bulkDeleteIds));
+            }
         } catch (e) {
             console.error(e);
             onError("Error deleting images");
-        } finally {
-            setBulkDeleting(false);
         }
     };
 
@@ -119,7 +122,10 @@ export const ImagesView: FC<Props> = ({
             setImages((images) => {
                 return images.filter((i) => i.id !== image.id);
             });
-            onDeleteImage(image);
+            // TODO: delete just locally or also remotely?
+            if (onDeleteImage) {
+                onDeleteImage(image);
+            }
         } catch (e) {
             console.error(e);
             onError("Error deleting image");
@@ -139,6 +145,87 @@ export const ImagesView: FC<Props> = ({
         const newImage = images[newIndex];
         onThumbnailClicked(newImage);
     };
+
+    const onNSFW = async (image: LocalImage) => {
+        try {
+            const updatedImage = {
+                ...image,
+                nsfw: !image.nsfw,
+            };
+            await store.saveImage(updatedImage);
+            if (onUpdateImage) {
+                onUpdateImage(updatedImage);
+            }
+        } catch (e) {
+            console.error(e);
+            onError("Error updating image");
+        }
+    };
+
+    const loadImages = async (search: string) => {
+        console.log("Initial load images");
+        // clear error
+        setHasMore(true);
+        try {
+            const cursor = moment().add(1, "minutes").valueOf();
+            const resp = await store.listImages(cursor, "prev", 100, search);
+            setImages(resp.sort(sortImages));
+            return;
+        } catch (err) {
+            onError("Could not load images");
+            console.error(err);
+        }
+    };
+
+    useEffect(() => {
+        loadImages(search);
+    }, [search]);
+
+    // poll for updates. Images may be added as jobs complete.
+    useEffect(() => {
+        const handle = setInterval(async () => {
+            const maxUpdatedAt = images.reduce((acc, image) => {
+                return Math.max(acc, image.updated_at);
+            }, 0);
+            const resp = await store.listImages(
+                maxUpdatedAt,
+                "next",
+                100,
+                search
+            );
+            if (resp.length > 0) {
+                setImages((images) => {
+                    const imagesById = images.reduce((acc, image) => {
+                        acc[image.id] = image;
+                        return acc;
+                    }, {} as { [key: string]: LocalImage });
+                    const newImages = resp.filter(
+                        (image) => !imagesById[image.id]
+                    );
+                    return [...images, ...newImages].sort(sortImages);
+                });
+            }
+        }, 1000);
+        return () => {
+            clearInterval(handle);
+        };
+    }, [store, search]);
+
+    useEffect(() => {
+        let handle = setTimeout(() => {
+            setSearch(searchDebounce);
+        }, 500);
+        return () => {
+            clearTimeout(handle);
+        };
+    }, [searchDebounce]);
+
+    const pendingJobs = jobs
+        ? jobs.filter((job) => job.status === "pending")
+        : [];
+    const processingJobs = jobs
+        ? jobs.filter((job) => job.status === "processing")
+        : [];
 
     return (
         <>
@@ -249,10 +336,10 @@ export const ImagesView: FC<Props> = ({
                         </>
                     }
                 >
-                    {jobs.length > 0 && (
+                    {pendingJobs.length + processingJobs.length > 0 && (
                         <PendingJobsThumbnail
-                            pendingCount={jobs.length}
-                            processingCount={jobs.length}
+                            pendingCount={pendingJobs.length}
+                            processingCount={processingJobs.length}
                             onClick={() => {
                                 setShowPendingImages(true);
                             }}
@@ -289,15 +376,23 @@ export const ImagesView: FC<Props> = ({
                     //     onSave(image);
                     // }}
                     onNSFW={(image) => {
-                        onUpdateImage({
-                            ...image,
-                            nsfw: !image.nsfw,
-                        });
+                        onNSFW(image);
                     }}
                     censorNSFW={censorNSFW}
                     onSwipe={onSwipe}
                 />
             )}
+            {jobs && (
+                <PendingJobs
+                    jobs={jobs}
+                    onCancel={() => {
+                        setShowPendingImages(false);
+                    }}
+                    onDeleteJob={onDeleteJob}
+                    show={showPendingImages}
+                />
+            )}
+            <ScrollToTop />
         </>
     );
 };
