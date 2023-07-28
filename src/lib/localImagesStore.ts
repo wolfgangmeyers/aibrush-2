@@ -120,7 +120,7 @@ export class LocalImagesStore {
         const store = transaction.objectStore("images");
         const request = store.put({
             ...image,
-            updated_at: moment().valueOf(),
+            updated_at: image.updated_at || moment().valueOf(),
         });
         return new Promise((resolve, reject) => {
             request.onsuccess = (evt) => {
