@@ -35,10 +35,16 @@ export class LocalImagesStore {
                         "images"
                     ) as IDBObjectStore;
                     if (!imagesStore.keyPath) {
-                        db.deleteObjectStore("images");
-                        imagesStore = db.createObjectStore("images", {
-                            keyPath: "id",
-                        });
+                        try {
+                            db.deleteObjectStore("images");
+                            imagesStore = db.createObjectStore("images", {
+                                keyPath: "id",
+                            });
+                        } catch (e: any) {
+                            alert("Error deleting object store: " + e.message);
+                            throw e;
+                        }
+                        
                     }
                 }
                 imagesStore.createIndex("updated_at", "updated_at", {
