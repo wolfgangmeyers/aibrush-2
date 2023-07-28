@@ -16,7 +16,7 @@ class DropboxHelper {
 
     async init() {
         try {
-            const resp = await axios.get("/api/refresh");
+            const resp = await axios.post("/api/refresh");
             const accessToken = (resp.data as any).accessToken;
             if (accessToken) {
                 this.dropbox = new Dropbox({
@@ -81,7 +81,7 @@ class DropboxHelper {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get("code");
         if (code) {
-            const resp = await axios.get("/api/auth?code=" + code + "&apikey=" + this.apiKey);
+            const resp = await axios.post("/api/auth?code=" + code + "&apikey=" + this.apiKey);
             const accessToken = (resp.data as any).accessToken;
             this.dropbox = new Dropbox({
                 clientId: CLIENT_ID,
@@ -91,7 +91,7 @@ class DropboxHelper {
     }
 
     async disconnect() {
-        await axios.get("/api/unauth");
+        await axios.post("/api/unauth");
         this.dropbox = undefined;
         localStorage.removeItem("dropbox.access_token");
     }
