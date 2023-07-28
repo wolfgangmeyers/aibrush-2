@@ -256,6 +256,7 @@ export const Homepage: FC<Props> = ({
 
     const onSave = async (image: LocalImage) => {
         if (!dropboxHelper || !dropboxHelper.isAuthorized()) {
+            alert("Go to your saved images page and connect to Dropbox first!")
             return;
         }
         setSavingImage(true);
@@ -319,6 +320,7 @@ export const Homepage: FC<Props> = ({
 
             <ImagesView
                 jobs={jobs}
+                connected={false}
                 onDeleteJob={onDeleteJob}
                 onEditImage={onEdit}
                 onError={onError}

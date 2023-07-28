@@ -15,11 +15,11 @@ export const RemoteImagesWidget: FC<Props> = ({
 }) => {
     const [connected, setConnected] = useState<boolean>(false);
 
-    const handleDisconnect = () => {
+    const handleDisconnect = async () => {
         if (!dropboxHelper) {
             return;
         }
-        dropboxHelper.disconnect();
+        await dropboxHelper.disconnect();
         setConnected(false);
     };
 

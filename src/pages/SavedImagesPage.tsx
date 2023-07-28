@@ -34,6 +34,7 @@ export const SavedImagesPage: FC<Props> = ({
     const [errTime, setErrTime] = useState<number>(0);
     const [importingImages, setImportingImages] = useState<boolean>(false);
     const [exportingImages, setExportingImages] = useState<boolean>(false);
+    const [deletingImages, setDeletingImages] = useState<boolean>(false);
     const [progress, setProgress] = useState<number>(0);
 
     const { id } = useParams<{ id?: string }>();
@@ -137,10 +138,20 @@ export const SavedImagesPage: FC<Props> = ({
         loadLegacyImages();
     }, []);
 
-    const onDelete = async (image: LocalImage) => {
+    const onDelete = async (image: LocalImage, remote: boolean) => {
         try {
             if (selectedImage) {
                 setSelectedImage(null);
+            }
+            if (remote) {
+                if (dropboxHelper) {
+                    try {
+                        await dropboxHelper.deleteImage(image.id);
+                    } catch (e) {
+                        console.error(e);
+                        onError("Error deleting image");
+                    }
+                }
             }
             history.push("/saved");
         } catch (e) {
@@ -149,15 +160,29 @@ export const SavedImagesPage: FC<Props> = ({
         }
     };
 
-    const onDeleteRemote = async (image: LocalImage) => {
-        if (!dropboxHelper) {
-            return;
-        }
+    const onBulkDelete = async (imageIds: string[]) => {
+        setDeletingImages(true);
+        setProgress(0);
+        let progress = 0;
         try {
-            await dropboxHelper.deleteImage(image.id);
+            for (const id of imageIds) {
+                await localImages.deleteImage(id);
+                if (dropboxHelper) {
+                    try {
+                        await dropboxHelper.deleteImage(id);
+                    } catch (e) {
+                        console.error(e);
+                        onError("Error deleting image");
+                    }
+                }
+                progress++;
+                setProgress(progress / imageIds.length);
+            }
         } catch (e) {
             console.error(e);
             onError("Error deleting image");
+        } finally {
+            setDeletingImages(false);
         }
     };
 
@@ -234,7 +259,10 @@ export const SavedImagesPage: FC<Props> = ({
             try {
                 for (const imageId of imagesToDownload) {
                     const image = await dropboxHelper.downloadImage(imageId);
-                    await localImages.saveImage(image);
+                    await localImages.saveImage({
+                        ...image,
+                        updated_at: moment().valueOf(),
+                    });
                     progress++;
                     setProgress(progress / imagesToDownload.length);
                 }
@@ -270,12 +298,13 @@ export const SavedImagesPage: FC<Props> = ({
                 />
             </div>
             <ImagesView
+                connected={dropboxHelper?.isAuthorized() ?? false}
                 onEditImage={onEdit}
                 onError={onError}
                 onForkImage={onFork}
                 onSelectImage={onSelectImage}
                 onDeleteImage={onDelete}
-                onDeleteRemoteImage={onDeleteRemote}
+                onBulkDelete={onBulkDelete}
                 selectedImage={selectedImage}
                 store={localImages}
             />
@@ -284,6 +313,10 @@ export const SavedImagesPage: FC<Props> = ({
                 <ProgressBar progress={progress} />
             </BusyModal>
             <BusyModal title="Exporting images" show={exportingImages}>
+                <ProgressBar progress={progress} />
+            </BusyModal>
+            {/* deleting images */}
+            <BusyModal title="Deleting images" show={deletingImages}>
                 <ProgressBar progress={progress} />
             </BusyModal>
         </>

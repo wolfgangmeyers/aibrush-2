@@ -189,7 +189,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         <button
                                             className="btn btn-secondary btn-sm image-popup-button"
                                             onClick={() => onFork(image)}
-                                            style={{ marginRight: "5px" }}
+                                            style={{ marginRight: "5px", marginTop: "8px" }}
                                         >
                                             <i className="fas fa-code-branch"></i>
                                             &nbsp;VARIATIONS
@@ -201,7 +201,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         onClick={() =>
                                             onDelete && onDelete(image)
                                         }
-                                        style={{ marginRight: "5px" }}
+                                        style={{ marginRight: "5px", marginTop: "8px" }}
                                     >
                                         <i className="fas fa-trash-alt"></i>
                                         &nbsp;DELETE
@@ -212,6 +212,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         <Dropdown.Toggle
                                             variant="danger"
                                             className="btn-sm image-popup-delete-button"
+                                            style={{marginTop: "8px"}}
                                         >
                                             <i className="fas fa-trash-alt"></i>
                                             &nbsp;DELETE
@@ -240,7 +241,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                     <button
                                         className="btn btn-primary btn-sm image-popup-button edit-button"
                                         onClick={() => onEdit && onEdit(image)}
-                                        style={{ marginRight: "5px" }}
+                                        style={{ marginRight: "5px", marginTop: "8px" }}
                                     >
                                         <i className="fas fa-edit"></i>
                                         &nbsp;EDIT
@@ -250,7 +251,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                     <button
                                         className="btn btn-primary btn-sm image-popup-button"
                                         onClick={() => onSave && onSave(image)}
-                                        style={{ marginRight: "5px" }}
+                                        style={{ marginRight: "5px", marginTop: "8px" }}
                                     >
                                         <i className="fas fa-save"></i>
                                         &nbsp;SAVE
@@ -260,6 +261,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                     <Dropdown.Toggle
                                         variant="primary"
                                         className="btn-sm image-popup-button"
+                                        style={{ marginTop: "8px" }}
                                     >
                                         <i className="fas fa-download"></i>
                                         &nbsp;DOWNLOAD

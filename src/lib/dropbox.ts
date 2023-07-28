@@ -90,7 +90,8 @@ class DropboxHelper {
         }
     }
 
-    disconnect() {
+    async disconnect() {
+        await axios.get("/api/unauth");
         this.dropbox = undefined;
         localStorage.removeItem("dropbox.access_token");
     }

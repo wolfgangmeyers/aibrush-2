@@ -14,12 +14,12 @@ import { DeletedImagesModal } from "./DeletedImagesModal";
 interface Props {
     store: LocalImagesStore;
     jobs?: Array<GenerationJob>;
+    connected: boolean;
     onError: (err: string) => void;
     onBulkDelete?: (ids: Array<string>) => void;
     selectedImage: LocalImage | null;
     onSelectImage: (image: LocalImage | null) => void;
-    onDeleteImage: (image: LocalImage) => void;
-    onDeleteRemoteImage?: (image: LocalImage) => void;
+    onDeleteImage: (image: LocalImage, remote: boolean) => void;
     onForkImage: (image: LocalImage) => void;
     onEditImage: (image: LocalImage) => void;
     onUpdateImage?: (image: LocalImage) => void;
@@ -30,12 +30,12 @@ interface Props {
 export const ImagesView: FC<Props> = ({
     store,
     jobs,
+    connected,
     onError,
     onBulkDelete,
     selectedImage,
     onSelectImage,
     onDeleteImage,
-    onDeleteRemoteImage,
     onForkImage,
     onEditImage,
     onUpdateImage,
@@ -54,7 +54,7 @@ export const ImagesView: FC<Props> = ({
     const [showPendingImages, setShowPendingImages] = useState(false);
     const [showDeletedImages, setShowDeletedImages] = useState(false);
 
-    const onConfirmBulkDelete = async () => {
+    const onConfirmBulkDelete = async (remote: boolean) => {
         try {
             const promises = Object.keys(bulkDeleteIds).map((id) => {
                 return store.deleteImage(id);
@@ -65,7 +65,7 @@ export const ImagesView: FC<Props> = ({
             });
             setBulkDeleteIds({});
             setBulkDeleteSelecting(false);
-            if (onBulkDelete) {
+            if (onBulkDelete && remote) {
                 onBulkDelete(Object.keys(bulkDeleteIds));
             }
         } catch (e) {
@@ -127,12 +127,8 @@ export const ImagesView: FC<Props> = ({
             setImages((images) => {
                 return images.filter((i) => i.id !== image.id);
             });
-            // TODO: delete just locally or also remotely?
             if (onDeleteImage) {
-                onDeleteImage(image);
-            }
-            if (remote && onDeleteRemoteImage) {
-                onDeleteRemoteImage(image);
+                onDeleteImage(image, remote);
             }
         } catch (e) {
             console.error(e);
@@ -316,15 +312,43 @@ export const ImagesView: FC<Props> = ({
                                     >
                                         Cancel
                                     </button>
-                                    <button
-                                        style={{ marginLeft: "8px" }}
-                                        className="btn image-popup-delete-button"
-                                        onClick={() => {
-                                            onConfirmBulkDelete();
-                                        }}
-                                    >
-                                        Delete
-                                    </button>
+                                    {connected ? (
+                                        <Dropdown style={{display: "inline", marginLeft: "8px"}}>
+                                            <Dropdown.Toggle variant="danger" className="image-popup-delete-button">
+                                                Delete
+                                            </Dropdown.Toggle>
+                                            <Dropdown.Menu>
+                                                <Dropdown.Item
+                                                    onClick={() => {
+                                                        onConfirmBulkDelete(
+                                                            false
+                                                        );
+                                                    }}
+                                                >
+                                                    Locally
+                                                </Dropdown.Item>
+                                                <Dropdown.Item
+                                                    onClick={() => {
+                                                        onConfirmBulkDelete(
+                                                            true
+                                                        );
+                                                    }}
+                                                >
+                                                    Remotely
+                                                </Dropdown.Item>
+                                            </Dropdown.Menu>
+                                        </Dropdown>
+                                    ) : (
+                                        <button
+                                            style={{ marginLeft: "8px" }}
+                                            className="btn image-popup-delete-button"
+                                            onClick={() => {
+                                                onConfirmBulkDelete(false);
+                                            }}
+                                        >
+                                            Delete
+                                        </button>
+                                    )}
                                 </>
                             )}
                         </div>
@@ -372,7 +396,7 @@ export const ImagesView: FC<Props> = ({
                         onDelete(image, false);
                     }}
                     onDeleteRemote={
-                        onDeleteRemoteImage
+                        connected
                             ? (image) => {
                                   onDelete(image, true);
                               }
