@@ -259,10 +259,7 @@ export const SavedImagesPage: FC<Props> = ({
             try {
                 for (const imageId of imagesToDownload) {
                     const image = await dropboxHelper.downloadImage(imageId);
-                    await localImages.saveImage({
-                        ...image,
-                        updated_at: moment().valueOf(),
-                    });
+                    await localImages.saveImage(image);
                     progress++;
                     setProgress(progress / imagesToDownload.length);
                 }
@@ -271,6 +268,7 @@ export const SavedImagesPage: FC<Props> = ({
                 console.error(e);
             } finally {
                 setImportingImages(false);
+                window.location.reload();
             }
         }
     };
