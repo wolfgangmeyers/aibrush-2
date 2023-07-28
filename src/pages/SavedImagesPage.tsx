@@ -120,6 +120,7 @@ export const SavedImagesPage: FC<Props> = ({
                                 (image) => image !== null
                             ) as LocalImage[];
                             for (let image of filteredBatchImages) {
+                                alert(JSON.stringify(image, null, 2))
                                 await localImages.saveImage(image);
                             }
                             progress += filteredBatchImages.length;
