@@ -30,7 +30,6 @@ export class ImageClient {
     manifest: { imageIds: string[] } | null = null;
 
     constructor(baseUrl: string, manifestId: string | undefined) {
-        alert("image client manifest id: " + manifestId);
         this.baseUrl = baseUrl;
         this.manifestId = manifestId;
     }
@@ -38,14 +37,11 @@ export class ImageClient {
     async init(): Promise<void> {
         if (!this.manifest && this.manifestId) {
             try {
-                alert("Getting manifest from " + `${this.baseUrl}/${this.manifestId}.json`);
                 const response = await axios.get(
                     `${this.baseUrl}/${this.manifestId}.json`
                 );
                 this.manifest = response.data as { imageIds: string[] };
-                alert("Manifest length: " + this.manifest.imageIds.length)
             } catch (e: any) {
-                alert("Error getting manifest: " + e.message)
                 console.error(e);
             }
         }

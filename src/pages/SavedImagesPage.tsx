@@ -120,7 +120,6 @@ export const SavedImagesPage: FC<Props> = ({
                                 (image) => image !== null
                             ) as LocalImage[];
                             for (let image of filteredBatchImages) {
-                                alert(JSON.stringify(image, null, 2))
                                 await localImages.saveImage(image);
                             }
                             progress += filteredBatchImages.length;
@@ -129,7 +128,6 @@ export const SavedImagesPage: FC<Props> = ({
                     } catch (e: any) {
                         onError("Error importing images");
                         console.error(e);
-                        alert(e.message);
                     } finally {
                         setImportingImages(false);
                     }

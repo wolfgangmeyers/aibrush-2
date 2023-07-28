@@ -1,7 +1,11 @@
 import moment from "moment";
 
 import { LocalImage } from "./models";
-import { convertImageFormat, createEncodedThumbnail, getImageFormat } from "./imageutil";
+import {
+    convertImageFormat,
+    createEncodedThumbnail,
+    getImageFormat,
+} from "./imageutil";
 
 /**
  * This class uses indexedDB to store images locally.
@@ -9,19 +13,18 @@ import { convertImageFormat, createEncodedThumbnail, getImageFormat } from "./im
 export class LocalImagesStore {
     private db: IDBDatabase | null = null;
 
-    constructor(private dbName="aibrush") {
-    }
+    constructor(private dbName = "aibrush") {}
 
     init(): Promise<void> {
-        console.log("Initializing local images store")
+        console.log("Initializing local images store");
         return new Promise((resolve, reject) => {
-            console.log("Opening indexeddb")
+            console.log("Opening indexeddb");
 
             // TODO: separate full images into a separate object store,
             // create thumbnails. Save everything as webp.
             const request = indexedDB.open(this.dbName, 5);
             request.onupgradeneeded = (evt) => {
-                console.log("Upgrading local images store")
+                console.log("Upgrading local images store");
                 const db = request.result;
                 // create object store if it doesn't exist
                 // const imagesStore = db.createObjectStore("images", { keyPath: "id" });
@@ -34,25 +37,17 @@ export class LocalImagesStore {
                     imagesStore = request.transaction?.objectStore(
                         "images"
                     ) as IDBObjectStore;
-                    if (!imagesStore.keyPath) {
-                        try {
-                            db.deleteObjectStore("images");
-                            imagesStore = db.createObjectStore("images", {
-                                keyPath: "id",
-                            });
-                        } catch (e: any) {
-                            alert("Error deleting object store: " + e.message);
-                            throw e;
-                        }
-                        
-                    }
                 }
-                imagesStore.createIndex("updated_at", "updated_at", {
-                    unique: false,
-                });
-                imagesStore.createIndex("deleted_at", "deleted_at", {
-                    unique: false,
-                });
+                if (!imagesStore.indexNames.contains("updated_at")) {
+                    imagesStore.createIndex("updated_at", "updated_at", {
+                        unique: false,
+                    });
+                }
+                if (!imagesStore.indexNames.contains("deleted_at")) {
+                    imagesStore.createIndex("deleted_at", "deleted_at", {
+                        unique: false,
+                    });
+                }
                 console.log("Local images store updated");
             };
             request.onsuccess = (_) => {
@@ -85,11 +80,13 @@ export class LocalImagesStore {
                 height: legacyImage.height,
                 denoising_strength: legacyImage.stable_diffusion_strength,
                 steps: legacyImage.iterations,
-            }
+            };
         }
         if (!image.format) {
             if (image.imageData) {
-                image.format = image.imageData.startsWith("data:image/webp") ? "webp" : "png";
+                image.format = image.imageData.startsWith("data:image/webp")
+                    ? "webp"
+                    : "png";
             } else {
                 image.format = "png";
             }
@@ -121,7 +118,11 @@ export class LocalImagesStore {
         }
         // make sure to save as webp
         if (image.imageData && getImageFormat(image.imageData) !== "webp") {
-            image.imageData = await convertImageFormat(image.imageData, getImageFormat(image.imageData), "webp");
+            image.imageData = await convertImageFormat(
+                image.imageData,
+                getImageFormat(image.imageData),
+                "webp"
+            );
         }
         // create thumbnail if needed
         if (image.imageData && !image.thumbnailData) {
@@ -221,9 +222,7 @@ export class LocalImagesStore {
                 if (cursor) {
                     const image: LocalImage = this.hydrateImage(cursor.value);
                     const prompt = (image.params.prompt || "").toLowerCase();
-                    if (
-                        (!search || prompt.includes(search.toLowerCase()))
-                    ) {
+                    if (!search || prompt.includes(search.toLowerCase())) {
                         if (image.thumbnailData) {
                             delete image.imageData;
                         }

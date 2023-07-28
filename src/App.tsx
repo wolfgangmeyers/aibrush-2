@@ -29,7 +29,7 @@ import { Dropbox } from "dropbox";
 import DropboxHelper from "./lib/dropbox";
 
 const localImages = new LocalImagesStore();
-const savedImagesStore = new LocalImagesStore("saved-images");
+const savedImagesStore = new LocalImagesStore("saved_images");
 
 const hordeClient = new HordeClient(
     localStorage.getItem("apiKey") || "0000000000"
@@ -47,6 +47,13 @@ function App() {
 
     const init = async () => {
         console.log("App.init");
+        // remove legacy saved images kvstore
+        const databases = await indexedDB.databases();
+        const savedImagesDb = databases.find((db) => db.name === "saved-images");
+        if (savedImagesDb) {
+            indexedDB.deleteDatabase("saved-images");
+        }
+
         await localImages.init();
         await savedImagesStore.init();
         await imageClient.init();
@@ -59,7 +66,6 @@ function App() {
         const dropboxHelper = new DropboxHelper(apiKey);
         await dropboxHelper.init();
         setDropboxHelper(dropboxHelper);
-        
     };
 
     useEffect(() => {
