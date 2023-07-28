@@ -125,9 +125,10 @@ export const SavedImagesPage: FC<Props> = ({
                             progress += filteredBatchImages.length;
                             setProgress(progress / missingImageIds.length);
                         }
-                    } catch (e) {
+                    } catch (e: any) {
                         onError("Error importing images");
                         console.error(e);
+                        alert(e.message);
                     } finally {
                         setImportingImages(false);
                     }
