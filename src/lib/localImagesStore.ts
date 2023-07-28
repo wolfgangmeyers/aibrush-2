@@ -34,6 +34,12 @@ export class LocalImagesStore {
                     imagesStore = request.transaction?.objectStore(
                         "images"
                     ) as IDBObjectStore;
+                    if (!imagesStore.keyPath) {
+                        db.deleteObjectStore("images");
+                        imagesStore = db.createObjectStore("images", {
+                            keyPath: "id",
+                        });
+                    }
                 }
                 imagesStore.createIndex("updated_at", "updated_at", {
                     unique: false,
