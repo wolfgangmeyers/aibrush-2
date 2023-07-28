@@ -66,7 +66,8 @@ export const SavedImagesPage: FC<Props> = ({
                 console.log("importing legacy images");
                 const missingImageIds: string[] = [];
                 for (let imageId of imageClient.manifest.imageIds) {
-                    if (!(await localImages.getImage(imageId))) {
+                    const localImage = await localImages.getImage(imageId);
+                    if (!localImage || !localImage.imageData) {
                         missingImageIds.push(imageId);
                     }
                 }
@@ -248,7 +249,7 @@ export const SavedImagesPage: FC<Props> = ({
         const imagesToDownload: string[] = [];
         for (const imageId of imageIds) {
             const image = await localImages.getImage(imageId);
-            if (!image) {
+            if (!image || !image.imageData) {
                 imagesToDownload.push(imageId);
             }
         }
