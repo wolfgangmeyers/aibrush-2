@@ -16,6 +16,9 @@ export class LocalImagesStore {
         console.log("Initializing local images store")
         return new Promise((resolve, reject) => {
             console.log("Opening indexeddb")
+
+            // TODO: separate full images into a separate object store,
+            // create thumbnails. Save everything as webp.
             const request = indexedDB.open(this.dbName, 4);
             request.onupgradeneeded = (evt) => {
                 console.log("Upgrading local images store")
@@ -168,6 +171,7 @@ export class LocalImagesStore {
         const request = store.put({
             ...image,
             deleted_at: moment().valueOf(),
+            updated_at: moment().valueOf(),
         });
         return new Promise((resolve, reject) => {
             request.onsuccess = (evt) => {
@@ -206,7 +210,6 @@ export class LocalImagesStore {
                     const image: LocalImage = this.hydrateImage(cursor.value);
                     const prompt = (image.params.prompt || "").toLowerCase();
                     if (
-                        !image.deleted_at &&
                         (!search || prompt.includes(search.toLowerCase()))
                     ) {
                         if (image.thumbnailData) {
@@ -222,6 +225,24 @@ export class LocalImagesStore {
                 } else {
                     resolve(images);
                 }
+            };
+            request.onerror = (evt) => {
+                console.error("error listing images", evt);
+                reject(evt);
+            };
+        });
+    }
+
+    async listAllImageIds(): Promise<string[]> {
+        if (!this.db) {
+            throw new Error("not initialized");
+        }
+        const transaction = this.db.transaction(["images"]);
+        const store = transaction.objectStore("images");
+        const request = store.getAllKeys();
+        return new Promise((resolve, reject) => {
+            request.onsuccess = (evt) => {
+                resolve(request.result.map((id) => id.toString()));
             };
             request.onerror = (evt) => {
                 console.error("error listing images", evt);
@@ -272,7 +293,11 @@ export class LocalImagesStore {
                 if (cursor) {
                     const image: LocalImage = cursor.value;
                     if (images.length < 50 && image.deleted_at) {
-                        images.push(cursor.value);
+                        const image = this.hydrateImage(cursor.value);
+                        if (image.thumbnailData) {
+                            delete image.imageData;
+                        }
+                        images.push(image);
                     }
                     cursor.continue();
                 } else {

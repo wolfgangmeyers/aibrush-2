@@ -5,6 +5,7 @@ import { HordeClient } from "../lib/hordeclient";
 
 interface Props {
   client: HordeClient;
+  onApiKeyChange: (apiKey: string) => void;
 }
 
 interface User {
@@ -12,7 +13,7 @@ interface User {
     id: number;
 }
 
-const HordeUser = ({client}: Props) => {
+const HordeUser = ({client, onApiKeyChange}: Props) => {
     const [user, setUser] = useState<User | null>(null);
     const [_, setApiKey] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
@@ -28,6 +29,7 @@ const HordeUser = ({client}: Props) => {
             setApiKey(storedApiKey);
             setApiKeyInput(storedApiKey);
             client.updateApiKey(storedApiKey);
+            onApiKeyChange(storedApiKey);
         }
     };
 
@@ -56,6 +58,7 @@ const HordeUser = ({client}: Props) => {
             client.updateApiKey(apiKeyInput);
             setShowModal(false);
             setError(null);
+            onApiKeyChange(apiKeyInput);
         } catch (err) {
             setError("Invalid API key");
         }

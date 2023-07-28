@@ -11,6 +11,7 @@ interface ImagePopupProps {
     censorNSFW: boolean;
     onClose: () => void;
     onDelete?: (image: LocalImage) => void;
+    onDeleteRemote?: (image: LocalImage) => void;
     onFork?: (image: LocalImage) => void;
     onEdit?: (image: LocalImage) => void;
     onNSFW?: (image: LocalImage, nsfw: boolean) => void;
@@ -23,6 +24,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
     censorNSFW,
     onClose,
     onDelete,
+    onDeleteRemote,
     onFork,
     onEdit,
     onNSFW,
@@ -193,7 +195,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                             &nbsp;VARIATIONS
                                         </button>
                                     )}
-                                {onDelete && (
+                                {onDelete && !onDeleteRemote && (
                                     <button
                                         className="btn btn-danger btn-sm image-popup-delete-button"
                                         onClick={() =>
@@ -204,6 +206,35 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         <i className="fas fa-trash-alt"></i>
                                         &nbsp;DELETE
                                     </button>
+                                )}
+                                {onDelete && onDeleteRemote && (
+                                    <Dropdown style={{display: "inline", marginRight: "5px"}}>
+                                        <Dropdown.Toggle
+                                            variant="danger"
+                                            className="btn-sm image-popup-delete-button"
+                                        >
+                                            <i className="fas fa-trash-alt"></i>
+                                            &nbsp;DELETE
+                                        </Dropdown.Toggle>
+                                        <Dropdown.Menu>
+                                            <Dropdown.Item
+                                                onClick={() =>
+                                                    onDelete &&
+                                                    onDelete(image)
+                                                }
+                                            >
+                                                Locally
+                                            </Dropdown.Item>
+                                            <Dropdown.Item
+                                                onClick={() =>
+                                                    onDeleteRemote &&
+                                                    onDeleteRemote(image)
+                                                }
+                                            >
+                                                Remotely
+                                            </Dropdown.Item>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
                                 )}
                                 {onEdit && (
                                     <button

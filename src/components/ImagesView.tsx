@@ -9,6 +9,7 @@ import { PendingJobsThumbnail } from "./PendingJobsThumbnail";
 import { ImageThumbnail } from "./ImageThumbnail";
 import { PendingJobs } from "./PendingJobs";
 import ScrollToTop from "react-scroll-to-top";
+import { DeletedImagesModal } from "./DeletedImagesModal";
 
 interface Props {
     store: LocalImagesStore;
@@ -22,6 +23,7 @@ interface Props {
     onForkImage: (image: LocalImage) => void;
     onEditImage: (image: LocalImage) => void;
     onUpdateImage?: (image: LocalImage) => void;
+    onSaveImage?: (image: LocalImage) => void;
     onDeleteJob?: (job: GenerationJob) => void;
 }
 
@@ -33,9 +35,11 @@ export const ImagesView: FC<Props> = ({
     selectedImage,
     onSelectImage,
     onDeleteImage,
+    onDeleteRemoteImage,
     onForkImage,
     onEditImage,
     onUpdateImage,
+    onSaveImage,
     onDeleteJob,
 }) => {
     const [searchDebounce, setSearchDebounce] = useState<string>("");
@@ -48,6 +52,7 @@ export const ImagesView: FC<Props> = ({
     const [images, setImages] = useState<Array<LocalImage>>([]);
     const [hasMore, setHasMore] = useState<boolean>(true);
     const [showPendingImages, setShowPendingImages] = useState(false);
+    const [showDeletedImages, setShowDeletedImages] = useState(false);
 
     const onConfirmBulkDelete = async () => {
         try {
@@ -116,7 +121,7 @@ export const ImagesView: FC<Props> = ({
         }
     };
 
-    const onDelete = async (image: LocalImage) => {
+    const onDelete = async (image: LocalImage, remote: boolean) => {
         try {
             await store.deleteImage(image.id);
             setImages((images) => {
@@ -125,6 +130,9 @@ export const ImagesView: FC<Props> = ({
             // TODO: delete just locally or also remotely?
             if (onDeleteImage) {
                 onDeleteImage(image);
+            }
+            if (remote && onDeleteRemoteImage) {
+                onDeleteRemoteImage(image);
             }
         } catch (e) {
             console.error(e);
@@ -195,14 +203,12 @@ export const ImagesView: FC<Props> = ({
             );
             if (resp.length > 0) {
                 setImages((images) => {
-                    const imagesById = images.reduce((acc, image) => {
+                    const imagesById = resp.reduce((acc, image) => {
                         acc[image.id] = image;
                         return acc;
                     }, {} as { [key: string]: LocalImage });
-                    const newImages = resp.filter(
-                        (image) => !imagesById[image.id]
-                    );
-                    return [...images, ...newImages].sort(sortImages);
+                    images = images.filter((image) => !imagesById[image.id]);
+                    return [...images, ...resp].sort(sortImages);
                 });
             }
         }, 1000);
@@ -226,6 +232,8 @@ export const ImagesView: FC<Props> = ({
     const processingJobs = jobs
         ? jobs.filter((job) => job.status === "processing")
         : [];
+
+    const filteredImages = images.filter((image) => !image.deleted_at);
 
     return (
         <>
@@ -286,16 +294,13 @@ export const ImagesView: FC<Props> = ({
                                             >
                                                 Bulk Delete
                                             </Dropdown.Item>
-                                            {/* TODO: make this a popup */}
-                                            {/* <Dropdown.Item
+                                            <Dropdown.Item
                                                 onClick={() =>
-                                                    history.push(
-                                                        "/local-deleted-images"
-                                                    )
+                                                    setShowDeletedImages(true)
                                                 }
                                             >
                                                 View Deleted Images
-                                            </Dropdown.Item> */}
+                                            </Dropdown.Item>
                                         </Dropdown.Menu>
                                     </Dropdown>
                                 </>
@@ -326,7 +331,7 @@ export const ImagesView: FC<Props> = ({
                     </div>
                 </div>
                 <InfiniteScroll
-                    dataLength={images.length}
+                    dataLength={filteredImages.length}
                     next={onLoadMore}
                     hasMore={hasMore}
                     loader={
@@ -345,7 +350,7 @@ export const ImagesView: FC<Props> = ({
                             }}
                         />
                     )}
-                    {images.map((image) => (
+                    {filteredImages.map((image) => (
                         <ImageThumbnail
                             key={image.id}
                             image={image}
@@ -364,17 +369,22 @@ export const ImagesView: FC<Props> = ({
                     image={selectedImage}
                     onClose={() => onSelectImage(null)}
                     onDelete={(image) => {
-                        onDelete(image);
+                        onDelete(image, false);
                     }}
+                    onDeleteRemote={
+                        onDeleteRemoteImage
+                            ? (image) => {
+                                  onDelete(image, true);
+                              }
+                            : undefined
+                    }
                     onFork={(image) => {
                         onForkImage(image);
                     }}
                     onEdit={(image) => {
                         onEditImage(image);
                     }}
-                    // onSave={(image) => {
-                    //     onSave(image);
-                    // }}
+                    onSave={onSaveImage}
                     onNSFW={(image) => {
                         onNSFW(image);
                     }}
@@ -393,6 +403,12 @@ export const ImagesView: FC<Props> = ({
                 />
             )}
             <ScrollToTop />
+            {showDeletedImages && (
+                <DeletedImagesModal
+                    localImages={store}
+                    onHide={() => setShowDeletedImages(false)}
+                />
+            )}
         </>
     );
 };

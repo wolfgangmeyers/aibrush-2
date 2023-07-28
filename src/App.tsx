@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import * as axios from "axios";
-import { BrowserRouter, Switch, Route, Link, NavLink } from "react-router-dom";
+import {
+    BrowserRouter,
+    Switch,
+    Route,
+    Link,
+    NavLink,
+    useHistory,
+} from "react-router-dom";
 import "./App.css";
 import "./bootstrap.min.css";
 import { LocalImagesStore } from "./lib/localImagesStore";
@@ -33,31 +40,38 @@ const imageClient = new ImageClient(
     "https://aibrush2-filestore.s3.amazonaws.com",
     manifestId
 );
-const dropboxHelper = new DropboxHelper();
 
 function App() {
     const [initialized, setInitialized] = useState(false);
+    const [dropboxHelper, setDropboxHelper] = useState<DropboxHelper | undefined>();
+
     const init = async () => {
         console.log("App.init");
         await localImages.init();
         await savedImagesStore.init();
         await imageClient.init();
+        // await dropboxHelper.init();
         setInitialized(true);
-        console.log("App initialized")
+        console.log("App initialized");
     };
 
-    const testDrive = async () => {
-        dropboxHelper.initiateAuth();
-    }
+    const onApiKeyChange = async (apiKey: string) => {
+        const dropboxHelper = new DropboxHelper(apiKey);
+        await dropboxHelper.init();
+        setDropboxHelper(dropboxHelper);
+    };
 
     useEffect(() => {
         init();
+        return () => {
+            if (dropboxHelper) {
+                dropboxHelper.destroy();
+            }
+        }
     }, []);
 
-    async function handleDropboxAuth(dropbox: Dropbox): Promise<void> {
-        console.log("Dropbox auth worked!")
-        const files = await dropbox.filesListFolder({path: ""});
-        console.log("files", files);
+    function handleDropboxAuth() {
+        window.location.href = "/saved";
     }
 
     return (
@@ -109,11 +123,7 @@ function App() {
                                         {/* font awesome github icon */}
                                         <i className="fab fa-github"></i>
                                     </a>
-                                    <button className="btn btn-primary top-button" onClick={testDrive}>
-                                        {/* google drive */}
-                                        <i className="fab fa-google-drive"></i>
-                                    </button>
-                                    <HordeUser client={hordeClient} />
+                                    <HordeUser client={hordeClient} onApiKeyChange={onApiKeyChange} />
                                 </>
                             </div>
                             <div
@@ -137,6 +147,7 @@ function App() {
                                     localImages={localImages}
                                     savedImages={savedImagesStore}
                                     generator={generator}
+                                    dropboxHelper={dropboxHelper}
                                 />
                             </Route>
                             <Route path="/images/:id">
@@ -144,15 +155,24 @@ function App() {
                                     localImages={localImages}
                                     savedImages={savedImagesStore}
                                     generator={generator}
+                                    dropboxHelper={dropboxHelper}
                                 />
                             </Route>
                             <Route path="/saved" exact={true}>
                                 {/* <MainMenu isAdmin={isAdmin} /> */}
-                                <SavedImagesPage localImages={savedImagesStore} imageClient={imageClient} />
+                                <SavedImagesPage
+                                    localImages={savedImagesStore}
+                                    imageClient={imageClient}
+                                    dropboxHelper={dropboxHelper}
+                                />
                             </Route>
                             <Route path="/saved/:id" exact={true}>
                                 {/* <MainMenu isAdmin={isAdmin} /> */}
-                                <SavedImagesPage localImages={savedImagesStore} imageClient={imageClient} />
+                                <SavedImagesPage
+                                    localImages={savedImagesStore}
+                                    imageClient={imageClient}
+                                    dropboxHelper={dropboxHelper}
+                                />
                             </Route>
                             <Route path="/image-editor/:id">
                                 <ImageEditor
@@ -174,7 +194,7 @@ function App() {
                                 <TermsPage />
                             </Route>
                             <Route path="/dropbox">
-                                <DropboxRedirectPage 
+                                <DropboxRedirectPage
                                     onDropboxReady={handleDropboxAuth}
                                 />
                             </Route>
@@ -193,7 +213,10 @@ function App() {
                                 backgroundColor: "#000000",
                             }}
                         >
-                            <NavLink to="/privacy-policy" style={{marginRight: "8px"}}>
+                            <NavLink
+                                to="/privacy-policy"
+                                style={{ marginRight: "8px" }}
+                            >
                                 Privacy Policy
                             </NavLink>
                             <NavLink to="/terms-of-service">

@@ -3,20 +3,17 @@ import DropboxHelper from '../lib/dropbox';  // adjust the path as needed
 import { Dropbox } from 'dropbox';
 
 interface DropboxRedirectPageProps {
-  onDropboxReady: (dropbox: Dropbox) => void;
+  onDropboxReady: () => void;
 }
 
 const DropboxRedirectPage: React.FC<DropboxRedirectPageProps> = ({ onDropboxReady }) => {
   useEffect(() => {
-    const dropboxHelper = new DropboxHelper();
+    const storedApiKey = localStorage.getItem("apiKey");
+    const dropboxHelper = new DropboxHelper(storedApiKey!);
     dropboxHelper.handleRedirect()
-      .then(dropbox => {
-        if (dropbox) {
-          onDropboxReady(dropbox);
-        }
-      })
+      .then(() => onDropboxReady())
       .catch(error => console.error(error));
-  }, [onDropboxReady]);
+  }, []);
 
   return (
     <div>

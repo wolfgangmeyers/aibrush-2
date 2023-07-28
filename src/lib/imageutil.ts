@@ -51,7 +51,11 @@ export function convertImageFormat(
     });
 }
 
-export async function downloadImage(baseName: string, dataUrl: string, format: string) {
+export async function downloadImage(
+    baseName: string,
+    dataUrl: string,
+    format: string
+) {
     const srcFormat = getImageFormat(dataUrl);
     if (srcFormat != format) {
         dataUrl = await convertImageFormat(dataUrl, srcFormat, format);
@@ -413,12 +417,10 @@ export function getImageFormat(imageUrl: string): string {
 
 export function createEncodedThumbnail(encodedImage: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        // use html5 canvas
-        // crop to square aspect ratio on 128x128 canvas
         const canvas = document.createElement("canvas");
         const thumbSize = 128;
-        canvas.width = thumbSize;
-        canvas.height = thumbSize;
+        let thumbWidth = thumbSize;
+        let thumbHeight = thumbSize;
 
         const image = new Image();
         let dataUrl = false;
@@ -428,6 +430,7 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
         } else {
             image.src = `data:image/webp;base64,${encodedImage}`;
         }
+
         image.onload = () => {
             const context = canvas.getContext("2d");
             if (!context) {
@@ -435,31 +438,31 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
                 return;
             }
 
-            let cropX, cropY, cropDimension;
-            if (image.width > image.height) {
-                cropDimension = image.height;
-                cropX = (image.width - image.height) / 2;
-                cropY = 0;
+            let aspectRatio = image.width / image.height;
+            if (aspectRatio > 1) {
+                thumbHeight = thumbSize / aspectRatio;
             } else {
-                cropDimension = image.width;
-                cropX = 0;
-                cropY = (image.height - image.width) / 2;
+                thumbWidth = thumbSize * aspectRatio;
             }
 
-            // Draw the image onto the canvas
+            canvas.width = thumbWidth;
+            canvas.height = thumbHeight;
+
+            context.imageSmoothingEnabled = true;
+            context.imageSmoothingQuality = "high";
+
             context.drawImage(
                 image, // Source image
-                cropX, // Source x
-                cropY, // Source y
-                cropDimension, // Source width
-                cropDimension, // Source height
+                0, // Source x
+                0, // Source y
+                image.width, // Source width
+                image.height, // Source height
                 0, // Destination x
                 0, // Destination y
-                thumbSize, // Destination width
-                thumbSize // Destination height
+                thumbWidth, // Destination width
+                thumbHeight // Destination height
             );
 
-            // Save to png
             const imageUrl = canvas.toDataURL("image/webp");
             if (dataUrl) {
                 resolve(imageUrl);
@@ -474,6 +477,7 @@ export function createEncodedThumbnail(encodedImage: string): Promise<string> {
         };
     });
 }
+
 
 export function decodeImage(encodedImage: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {

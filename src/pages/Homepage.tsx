@@ -18,6 +18,7 @@ import { ProgressBar } from "../components/ProgressBar";
 import { HordeGenerator } from "../lib/hordegenerator";
 import { ImageClient } from "../lib/savedimages";
 import { ImagesView } from "../components/ImagesView";
+import DropboxHelper from "../lib/dropbox";
 
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
@@ -26,18 +27,20 @@ interface Props {
     generator: HordeGenerator;
     localImages: LocalImagesStore;
     savedImages: LocalImagesStore;
+    dropboxHelper?: DropboxHelper;
 }
 
 export const Homepage: FC<Props> = ({
     generator,
     localImages,
     savedImages,
+    dropboxHelper,
 }) => {
     const [creating, setCreating] = useState(false);
     const [selectedImage, setSelectedImage] = useState<LocalImage | null>(null);
     const [parentImage, setParentImage] = useState<LocalImage | null>(null);
     const [loadingParent, setLoadingParent] = useState(false);
-    // const [savingImage, setSavingImage] = useState(false);
+    const [savingImage, setSavingImage] = useState(false);
     const [uploadProgress, setUploadingProgress] = useState(0);
 
     const [showPendingImages, setShowPendingImages] = useState(false);
@@ -46,6 +49,8 @@ export const Homepage: FC<Props> = ({
 
     const [err, setErr] = useState<string | null>(null);
     const [errTime, setErrTime] = useState<number>(0);
+    const [success, setSuccess] = useState<string | null>(null);
+    const [successTime, setSuccessTime] = useState<number>(0);
 
     const [outOfCredits, setOutOfCredits] = useState(false);
 
@@ -202,7 +207,6 @@ export const Homepage: FC<Props> = ({
     }, [generator, jobs]);
 
     // load parent image from saved images if an id is on the query string
-    // TODO: load this from saved images store
     useEffect(() => {
         const loadParent = async () => {
             const search = qs.parse(location.search, {
@@ -211,31 +215,10 @@ export const Homepage: FC<Props> = ({
             if (search.parent) {
                 setLoadingParent(true);
                 try {
-                    // const parentImage = await api.getImage(
-                    //     search.parent as string
-                    // );
                     const parentImage = await savedImages.getImage(
                         search.parent as string
                     );
                     if (parentImage) {
-                        // // const downloadUrls = await api.getImageDownloadUrls(
-                        // //     parentImage.data.id
-                        // // );
-                        // const imageUrl = `https://aibrush2-filestore.s3.amazonaws.com/${parentImage.id}.image.png`;
-                        // const resp = await anonymousClient.get(imageUrl, {
-                        //     responseType: "arraybuffer",
-                        // });
-                        // const binaryImageData = Buffer.from(
-                        //     resp.data,
-                        //     "binary"
-                        // );
-                        // const base64ImageData =
-                        //     binaryImageData.toString("base64");
-                        // const src = `data:image/png;base64,${base64ImageData}`;
-                        // setParentImage({
-                        //     ...parentImage,
-                        //     imageData: src,
-                        // });
                         setParentImage(parentImage);
                         history.push("/");
                     }
@@ -271,73 +254,32 @@ export const Homepage: FC<Props> = ({
         window.scrollTo(0, 0);
     };
 
-    // TODO: refactor to use google drive
-    // const onSave = async (image: LocalImage) => {
-    //     setSavingImage(true);
-    //     try {
-    //         history.push("/");
-    //         const createInput: CreateImageInput = {
-    //             count: 1,
-    //             params: image.params,
-    //             status: StatusEnum.Saved,
-    //             temporary: false,
-    //             label: "",
-    //             model: image.model,
-    //             nsfw: image.nsfw,
-    //         };
+    const onSave = async (image: LocalImage) => {
+        if (!dropboxHelper || !dropboxHelper.isAuthorized()) {
+            return;
+        }
+        setSavingImage(true);
+        try {
+            history.push("/");
+            await dropboxHelper.uploadImage(image);
+            await savedImages.saveImage(image);
 
-    //         const encodedImage = image.imageData!.split(",")[1];
+            // soft delete image to get the UI to update
+            await localImages.deleteImage(image.id);
+            // hard delete afterwards
+            setTimeout(async () => {
+                await localImages.deleteImage(image.id);
+            }, 5000);
 
-    //         // convert base64 to binary
-    //         const binaryImageData = Buffer.from(encodedImage, "base64");
-    //         const encodedThumbnail = await createEncodedThumbnail(encodedImage);
-    //         const binaryThumbnailData = Buffer.from(encodedThumbnail, "base64");
-
-    //         const createResp = await api.createImage(createInput);
-    //         const imageId = createResp.data.images![0].id;
-    //         const uploadUrls = await api.getImageUploadUrls(imageId);
-    //         await anonymousClient.put(
-    //             uploadUrls.data.thumbnail_url!,
-    //             binaryThumbnailData,
-    //             {
-    //                 headers: {
-    //                     "Content-Type": "image/png",
-    //                 },
-    //                 onUploadProgress: (progressEvent: any) => {
-    //                     const percentCompleted =
-    //                         progressEvent.loaded / progressEvent.total;
-    //                     setUploadingProgress(percentCompleted / 2);
-    //                 },
-    //             }
-    //         );
-    //         await anonymousClient.put(
-    //             uploadUrls.data.image_url!,
-    //             binaryImageData,
-    //             {
-    //                 headers: {
-    //                     "Content-Type": "image/png",
-    //                 },
-    //                 onUploadProgress: (progressEvent: any) => {
-    //                     const percentCompleted =
-    //                         progressEvent.loaded / progressEvent.total;
-    //                     setUploadingProgress(percentCompleted / 2 + 0.5);
-    //                 },
-    //             }
-    //         );
-
-    //         await localImages.hardDeleteImage(image.id);
-    //         setImages((images) => {
-    //             return images.filter((i) => i.id !== image.id);
-    //         });
-    //         setSuccess("Image saved");
-    //         setSuccessTime(moment().valueOf());
-    //     } catch (e) {
-    //         console.error(e);
-    //         onError("Error saving image");
-    //     } finally {
-    //         setSavingImage(false);
-    //     }
-    // };
+            setSuccess("Image saved");
+            setSuccessTime(moment().valueOf());
+        } catch (e) {
+            console.error(e);
+            onError("Error saving image");
+        } finally {
+            setSavingImage(false);
+        }
+    };
 
     const onEdit = async (image: LocalImage) => {
         history.push(`/image-editor/${image.id}`);
@@ -363,6 +305,8 @@ export const Homepage: FC<Props> = ({
             </h1>
 
             <ErrorNotification message={err} timestamp={errTime} />
+            <SuccessNotification message={success} timestamp={successTime} />
+            {/* TODO: success alert */}
 
             <ImagePrompt
                 creating={creating}
@@ -381,6 +325,7 @@ export const Homepage: FC<Props> = ({
                 onForkImage={onFork}
                 onSelectImage={onSelectImage}
                 onDeleteImage={onDelete}
+                onSaveImage={onSave}
                 selectedImage={selectedImage}
                 store={localImages}
             />
@@ -395,9 +340,9 @@ export const Homepage: FC<Props> = ({
             <BusyModal show={loadingParent} title="Loading parent image">
                 <p>Please wait while we load the parent image.</p>
             </BusyModal>
-            {/* <BusyModal show={savingImage} title="Saving image">
-                <ProgressBar progress={uploadProgress} />
-            </BusyModal> */}
+            <BusyModal show={savingImage} title="Saving image">
+                <p>Please wait while we save your image.</p>
+            </BusyModal>
             <PendingJobs
                 jobs={jobs}
                 onCancel={() => setShowPendingImages(false)}
