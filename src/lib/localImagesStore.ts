@@ -19,7 +19,7 @@ export class LocalImagesStore {
 
             // TODO: separate full images into a separate object store,
             // create thumbnails. Save everything as webp.
-            const request = indexedDB.open(this.dbName, 4);
+            const request = indexedDB.open(this.dbName, 5);
             request.onupgradeneeded = (evt) => {
                 console.log("Upgrading local images store")
                 const db = request.result;
