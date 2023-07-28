@@ -45,13 +45,25 @@ function App() {
     const [initialized, setInitialized] = useState(false);
     const [dropboxHelper, setDropboxHelper] = useState<DropboxHelper | undefined>();
 
+    const deleteSavedImagesDb = () => {
+        return new Promise<void>((resolve, reject) => {
+            const request = indexedDB.deleteDatabase("saved-images");
+            request.onsuccess = () => {
+                resolve();
+            };
+            request.onerror = () => {
+                reject(new Error("Failed to delete saved-images database"));
+            };
+        });
+    };
+
     const init = async () => {
         console.log("App.init");
         // remove legacy saved images kvstore
         const databases = await indexedDB.databases();
         const savedImagesDb = databases.find((db) => db.name === "saved-images");
         if (savedImagesDb) {
-            indexedDB.deleteDatabase("saved-images");
+            await deleteSavedImagesDb();
         }
 
         await localImages.init();
