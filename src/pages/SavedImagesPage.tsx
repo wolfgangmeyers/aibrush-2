@@ -263,17 +263,11 @@ export const SavedImagesPage: FC<Props> = ({
                     paddingRight: "185px",
                 }}
             >
-                {dropboxHelper ? (
-                    <RemoteImagesWidget
-                        dropboxHelper={dropboxHelper}
-                        onUploadImages={onUploadImages}
-                        onDownloadImages={onDownloadImages}
-                    />
-                ) : (
-                    <span>
-                        <i className="fa fa-exclamation-triangle"></i> Enter your api key before connecting to Dropbox
-                    </span>
-                )}
+                <RemoteImagesWidget
+                    dropboxHelper={dropboxHelper}
+                    onUploadImages={onUploadImages}
+                    onDownloadImages={onDownloadImages}
+                />
             </div>
             <ImagesView
                 onEditImage={onEdit}

@@ -86,13 +86,11 @@ export default async function handler(
         });
         return;
     }
-    console.log("refresh: sessionData", JSON.stringify(sessionData, null, 2))
     const username = sessionData.username;
     const encryptedAccessToken = sessionData.accessToken;
     const encryptedRefreshToken = sessionData.refreshToken;
 
     const encryptionKey = generateEncryptionKey(secretKey, username);
-    console.log("refresh: encryptionKey", encryptionKey)
 
     let accessToken = decryptString(encryptedAccessToken, encryptionKey);
     let refreshToken = decryptString(encryptedRefreshToken, encryptionKey);
@@ -113,18 +111,15 @@ export default async function handler(
     accessToken = auth.getAccessToken();
     refreshToken = auth.getRefreshToken();
 
+    sessionData = {
+        username: username,
+        accessToken: encryptString(accessToken, encryptionKey),
+        refreshToken: encryptString(refreshToken, encryptionKey),
+    }
     // set http-only cookie with username, encrypted access token and encrypted refresh token
     response.setHeader(
         "Set-Cookie",
-        `username=${username}; Max-Age=31536000; HttpOnly; Path=/; SameSite=Strict`
-    );
-    response.setHeader(
-        "Set-Cookie",
-        `access_token=${encryptString(accessToken, encryptionKey)}; Max-Age=31536000; HttpOnly; Path=/; SameSite=Strict`
-    );
-    response.setHeader(
-        "Set-Cookie",
-        `refresh_token=${encryptString(refreshToken, encryptionKey)}; Max-Age=31536000; HttpOnly; Path=/; SameSite=Strict`
+        `session=${JSON.stringify(sessionData)}; Max-Age=31536000; HttpOnly; Path=/; SameSite=Strict`
     );
 
     return response.status(200).json({

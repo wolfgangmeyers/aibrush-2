@@ -9,7 +9,6 @@ export default async function handler(
     request: VercelRequest,
     response: VercelResponse
 ) {
-    console.log("auth.handler")
     try {
         const redirectUri = process.env.DROPBOX_REDIRECT_URI;
         if (!redirectUri) {
@@ -33,19 +32,16 @@ export default async function handler(
         const auth = new DropboxAuth(config);
     
         const resp = await auth.getAccessTokenFromCode(redirectUri, code);
-        console.log("getAccessTokenFromCode resp", JSON.stringify(resp, null, 2));
     
         const accessToken = (resp.result as any).access_token;
         const refreshToken = (resp.result as any).refresh_token;
         const encryptionKey = generateEncryptionKey(secretKey, user.username);
-        console.log("auth: encryptionKey", encryptionKey)
     
         const sessionData = {
             username: user.username,
             accessToken: encryptString(accessToken, encryptionKey),
             refreshToken: encryptString(refreshToken, encryptionKey),
         }
-        console.log("auth: sessionData", JSON.stringify(sessionData, null, 2))
         // set http-only cookie with username, encrypted access token and encrypted refresh token
         response.setHeader(
             "Set-Cookie",
@@ -61,5 +57,4 @@ export default async function handler(
             error: "Internal Server Error",
         });
     }
-    console.log("auth.handler done")
 }

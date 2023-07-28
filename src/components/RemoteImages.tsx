@@ -3,7 +3,7 @@ import { Button, Dropdown } from "react-bootstrap";
 import DropboxHelper from "../lib/dropbox";
 
 interface Props {
-    dropboxHelper: DropboxHelper;
+    dropboxHelper?: DropboxHelper;
     onUploadImages: () => void;
     onDownloadImages: () => void;
 }
@@ -16,19 +16,32 @@ export const RemoteImagesWidget: FC<Props> = ({
     const [connected, setConnected] = useState<boolean>(false);
 
     const handleDisconnect = () => {
+        if (!dropboxHelper) {
+            return;
+        }
         dropboxHelper.disconnect();
         setConnected(false);
     };
 
     useEffect(() => {
-        setConnected(dropboxHelper.isAuthorized());
+        if (dropboxHelper) {
+            setConnected(dropboxHelper.isAuthorized());
+        }
     }, [dropboxHelper]);
+
+    const handleClick = () => {
+        if (!dropboxHelper) {
+            alert("Make sure to set your api key first!");
+            return;
+        }
+        dropboxHelper.initiateAuth();
+    };
 
     if (!connected) {
         return (
             <Button
                 variant="success"
-                onClick={() => dropboxHelper.initiateAuth()}
+                onClick={() => handleClick()}
             >
                 <i className="fa fa-cloud"></i>&nbsp;Connect
             </Button>

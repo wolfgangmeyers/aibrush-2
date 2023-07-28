@@ -59,6 +59,7 @@ function App() {
         const dropboxHelper = new DropboxHelper(apiKey);
         await dropboxHelper.init();
         setDropboxHelper(dropboxHelper);
+        
     };
 
     useEffect(() => {
