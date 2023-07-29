@@ -7,10 +7,12 @@ interface Props {
 }
 
 export const KudosBalance: FC<Props> = ({ user }) => {
+    // format with commas
+    const kudosBalance = user.kudos.toLocaleString();
     return (
         <div style={{ color: "#00f0f0", marginTop: "16px" }}>
             <span>Kudos: </span>
-            <span>{user.kudos}</span>
+            <span>{kudosBalance}</span>
         </div>
     );
     return <></>;
