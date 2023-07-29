@@ -5,6 +5,7 @@ import CopyToClipboard from "react-copy-to-clipboard";
 import CopyToClipboardIcon from "./CopyToClipboardIcon";
 import { Swipe } from "./Swipe";
 import { downloadImage } from "../lib/imageutil";
+import moment from "moment";
 
 interface ImagePopupProps {
     image: LocalImage;
@@ -380,6 +381,10 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                 <CopyToClipboardIcon
                                     text={image.params.negative_prompt!}
                                 />
+                            </div>
+                            {/* updated at */}
+                            <div style={{ marginTop: "8px" }}>
+                                Last Updated: {moment(image.updated_at).format("YYYY-MM-DD HH:mm:ss")}
                             </div>
                         </div>
                     </div>
