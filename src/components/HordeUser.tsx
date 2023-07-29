@@ -12,7 +12,7 @@ interface Props {
 
 const HordeUser = ({client, onHordeConnected: onApiKeyChange, onHordeUserUpdated}: Props) => {
     const [user, setUser] = useState<User | null>(null);
-    const [_, setApiKey] = useState<string | null>(null);
+    const [apiKey, setApiKey] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [apiKeyInput, setApiKeyInput] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -48,17 +48,23 @@ const HordeUser = ({client, onHordeConnected: onApiKeyChange, onHordeUserUpdated
     };
 
     useEffect(() => {
-        loadUserFromStorage();
-        const reloadUser = async () => {
-            const user = await loadUserFromHorde(apiKeyInput);
-            setUser(user);
-            onHordeUserUpdated(user);
-        };
-        const handle = setInterval(reloadUser, 60000);
-        return () => {
-            clearInterval(handle);
+        if (apiKey) {
+            const reloadUser = async () => {
+                const user = await loadUserFromHorde(apiKey);
+                setUser(user);
+                localStorage.setItem("user", JSON.stringify(user));
+                onHordeUserUpdated(user);
+            };
+            const handle = setInterval(reloadUser, 60000);
+            reloadUser();
+            return () => {
+                clearInterval(handle);
+            }
+        } else {
+            loadUserFromStorage();
         }
-    }, []);
+        
+    }, [apiKey]);
 
     const validateApiKey = async () => {
         try {
