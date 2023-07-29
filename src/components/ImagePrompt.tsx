@@ -224,8 +224,7 @@ export const ImagePrompt: FC<Props> = ({
                 }
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                // convert image to base64
-                // const canvas = img as HTMLCanvasElement
+                // convert image to webp base64
                 const dataUrl = canvas.toDataURL("image/webp");
                 const base64 = dataUrl.split(",")[1];
                 setEncodedImage(base64);

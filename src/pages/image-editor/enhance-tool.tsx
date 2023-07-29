@@ -473,7 +473,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.dirty = true;
         this.notifyError(null);
         const selectionOverlay = this.renderer.getSelectionOverlay();
-        let encodedImage = this.renderer.getEncodedImage(selectionOverlay!);
+        let encodedImage = this.renderer.getEncodedImage(selectionOverlay!, "webp");
         if (!encodedImage) {
             console.error("No selection");
             return;
@@ -617,13 +617,9 @@ export class EnhanceTool extends BaseTool implements Tool {
             this.state = "default";
         }
         this.imageData = [];
-        const encodedImage = this.renderer.getEncodedImage(null);
+        const encodedImage = this.renderer.getEncodedImage(null, "png");
         if (encodedImage && this.saveListener) {
-            this.saveListener(encodedImage, {
-                phrases: [this.prompt],
-                negative_phrases: [this.negativePrompt],
-                model: this.model,
-            });
+            this.saveListener(encodedImage, "png");
         }
         this.dirty = false;
     }

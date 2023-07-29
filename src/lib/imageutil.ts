@@ -411,8 +411,8 @@ export class ImageUtilWorker {
     }
 }
 
-export function getImageFormat(imageUrl: string): string {
-    return imageUrl.split(";")[0].split("/")[1];
+export function getImageFormat(imageUrl: string): "png" | "webp" | "jpeg" {
+    return imageUrl.split(";")[0].split("/")[1] as any;
 }
 
 export function createEncodedThumbnail(encodedImage: string): Promise<string> {

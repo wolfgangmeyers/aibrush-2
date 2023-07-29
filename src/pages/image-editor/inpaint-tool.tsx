@@ -389,7 +389,7 @@ export class InpaintTool extends BaseTool implements Tool {
         this.renderer.undo();
         this.renderer.clearRedoStack();
 
-        const encodedImage = this.renderer.getEncodedImage(selectionOverlay);
+        const encodedImage = this.renderer.getEncodedImage(selectionOverlay, "webp");
 
         const input: GenerateImageInput = defaultArgs();
         // input.encoded_image = encodedImage;
@@ -517,13 +517,9 @@ export class InpaintTool extends BaseTool implements Tool {
         this.renderer.commitSelection();
 
         this.imageData = [];
-        const encodedImage = this.renderer.getEncodedImage(null);
+        const encodedImage = this.renderer.getEncodedImage(null, "png");
         if (encodedImage && this.saveListener) {
-            this.saveListener(encodedImage, {
-                phrases: [this.prompt],
-                negative_phrases: [this.negativePrompt],
-                selection_overlay: this.renderer.getSelectionOverlay(),
-            });
+            this.saveListener(encodedImage, "png");
         }
         this.dirty = false;
         if (this.selectSupported()) {

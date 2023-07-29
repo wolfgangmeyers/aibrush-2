@@ -164,9 +164,9 @@ export class PencilTool extends BaseTool implements Tool {
 
     confirm() {
         this.renderer.commitSelection();
-        const encodedImage = this.renderer.getEncodedImage(null);
+        const encodedImage = this.renderer.getEncodedImage(null, "png");
         if (encodedImage && this.saveListener) {
-            this.saveListener(encodedImage);
+            this.saveListener(encodedImage, "png");
         }
         this.dirty = false;
     }

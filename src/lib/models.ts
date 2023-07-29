@@ -14,7 +14,7 @@ export interface Image {
     temporary?: boolean;
     deleted_at?: number;
     error?: string;
-    format?: "png" | "webp";
+    format?: "png" | "webp" | "jpeg";
 }
 
 export interface GenerationJob {

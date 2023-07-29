@@ -532,7 +532,7 @@ export class Renderer {
         return this.height;
     }
 
-    private imageDataToEncodedImage(imageData: ImageData): string | undefined {
+    private imageDataToEncodedImage(imageData: ImageData, format: "png" | "webp" | "jpeg"): string | undefined {
         // create a canvas and draw the image data on it
         const canvas = document.createElement("canvas");
         canvas.width = imageData.width;
@@ -541,7 +541,7 @@ export class Renderer {
         if (context) {
             context.putImageData(imageData, 0, 0);
             // return the data url of the canvas
-            const result = canvas.toDataURL("image/webp");
+            const result = canvas.toDataURL(`image/${format}`);
             // cleanup the canvas
             canvas.remove();
             // extract base64 data from data url
@@ -549,10 +549,10 @@ export class Renderer {
         }
     }
 
-    getEncodedImage(selection: Rect | null): string | undefined {
+    getEncodedImage(selection: Rect | null, format: "png" | "webp" | "jpeg"): string | undefined {
         const imageData = this.getImageData(selection);
         if (imageData) {
-            return this.imageDataToEncodedImage(imageData);
+            return this.imageDataToEncodedImage(imageData, format);
         }
     }
 
@@ -586,9 +586,9 @@ export class Renderer {
         }
         if (layer === "base") {
             const mask = this.convertErasureToMask(imageData);
-            return this.imageDataToEncodedImage(mask);
+            return this.imageDataToEncodedImage(mask, "webp");
         } else {
-            return this.imageDataToEncodedImage(imageData);
+            return this.imageDataToEncodedImage(imageData, "webp");
         }
     }
 

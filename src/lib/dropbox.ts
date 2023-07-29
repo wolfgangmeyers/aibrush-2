@@ -163,18 +163,20 @@ class DropboxHelper {
             path: `/${imageMetaFileName}`,
         })).result;
         
-        // fileBlob field is not in the typescript definition for some reason
-        const imageBlob = (imageResult as any).fileBlob;
-        const imageBuffer = await new Response(imageBlob).arrayBuffer();
-        const imageDataUrl = `data:image/webp;base64,${Buffer.from(
-            imageBuffer
-        ).toString("base64")}`;
-
         const jsonBlob = (jsonResult as any).fileBlob;
         const jsonBuffer = await new Response(jsonBlob).arrayBuffer();
         const image = JSON.parse(
             Buffer.from(jsonBuffer).toString()
         ) as LocalImage;
+
+        // fileBlob field is not in the typescript definition for some reason
+        const imageBlob = (imageResult as any).fileBlob;
+        const imageBuffer = await new Response(imageBlob).arrayBuffer();
+        const imageDataUrl = `data:image/${image.format || "webp"};base64,${Buffer.from(
+            imageBuffer
+        ).toString("base64")}`;
+
+        
         image.imageData = imageDataUrl;
         return image;
     }

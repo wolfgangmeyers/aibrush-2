@@ -96,7 +96,7 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image })
         setActiveAugmentation(augmentation);
         setError(null);
         try {
-            const backupImage = renderer.getEncodedImage(null);
+            const backupImage = renderer.getEncodedImage(null, "png");
             setBackupImage(backupImage);
             let imageData = renderer.getImageData(null);
             if (!imageData) {
@@ -146,7 +146,7 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image })
                         setBackupImage(undefined);
                         const img = new Image();
                         // set src as data uri
-                        const src = "data:image/webp;base64," + backupImage;
+                        const src = "data:image/png;base64," + backupImage;
                         img.src = src;
                         img.onload = () => {
                             renderer.setBaseImage(img);
@@ -161,9 +161,9 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image })
                     onClick={() => {
                         setBackupImage(undefined);
                         if (tool.saveListener) {
-                            const encodedImage = renderer.getEncodedImage(null);
+                            const encodedImage = renderer.getEncodedImage(null, "png");
                             if (encodedImage) {
-                                tool.saveListener(encodedImage);
+                                tool.saveListener(encodedImage, "png");
                             }
                         }
                     }}

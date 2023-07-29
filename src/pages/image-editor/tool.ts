@@ -25,7 +25,7 @@ export interface Tool {
 }
 
 export class BaseTool implements Tool {
-    saveListener?: (encodedImage: string, args?: any) => void = () => {};
+    saveListener?: (encodedImage: string, format: "png" | "webp") => void = () => {};
 
     private touchHandle: number | undefined;
 

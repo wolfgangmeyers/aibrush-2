@@ -179,9 +179,9 @@ export const ImageEditor: React.FC<Props> = ({
             const newTool = toolconfig.constructor(renderer);
             setTool(newTool);
             setToolConfig(toolconfig);
-            newTool.onSaveImage((encodedImage, args = {}) => {
+            newTool.onSaveImage((encodedImage) => {
                 console.log("Saving image...");
-                saveNewImage(encodedImage, args);
+                saveNewImage(encodedImage);
             });
         }
     };
@@ -192,7 +192,7 @@ export const ImageEditor: React.FC<Props> = ({
      * @param encodedImage base64 encoded image
      * @param newArgs may contain new phrases and negative phrases
      */
-    const saveNewImage = async (encodedImage: string, newArgs: any) => {
+    const saveNewImage = async (encodedImage: string) => {
         if (!image || !encodedImage) {
             throw new Error("Cannot save new image without existing image");
         }
@@ -200,6 +200,8 @@ export const ImageEditor: React.FC<Props> = ({
             throw new Error("Cannot save new image without renderer");
         }
         setBusyMessage("Saving image...");
+        // make sure to make this png so the thumbnail doesn't try to convert to webp
+        encodedImage = `data:image/png;base64,${encodedImage}`
         const encodedThumbanil = await createEncodedThumbnail(encodedImage);
         try {
             const newImage: LocalImage = {
@@ -210,8 +212,8 @@ export const ImageEditor: React.FC<Props> = ({
                     height: renderer!.getHeight() as any,
                 },
                 id: uuid.v4(),
-                imageData: `data:image/webp;base64,${encodedImage}`,
-                thumbnailData: `data:image/webp;base64,${encodedThumbanil}`,
+                imageData: encodedImage,
+                thumbnailData: encodedThumbanil,
                 created_at: moment().valueOf(),
                 updated_at: moment().valueOf(),
                 status: "completed",

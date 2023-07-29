@@ -145,6 +145,7 @@ export const Homepage: FC<Props> = ({
                 status: "completed",
                 temporary: false,
                 imageData: `data:image/webp;base64,${encodedImage}`,
+                format: "webp",
             };
             await localImages.saveImage(newImage);
 

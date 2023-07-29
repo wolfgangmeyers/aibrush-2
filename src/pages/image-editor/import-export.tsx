@@ -4,6 +4,7 @@ import saveAs from "file-saver";
 
 import { Renderer } from "./renderer";
 import { BaseTool, Tool } from "./tool";
+import { Dropdown } from "react-bootstrap";
 
 interface Props {
     renderer: Renderer;
@@ -20,7 +21,7 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
             loadImage(
                 files[0],
                 (img) => {
-                    const backupImage = renderer.getEncodedImage(null);
+                    const backupImage = renderer.getEncodedImage(null, "png");
                     setBackupImage(backupImage);
                     renderer.setBaseImage(img as HTMLImageElement);
                 },
@@ -29,8 +30,8 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
         }
     };
 
-    const onExport = () => {
-        const encodedImage = renderer.getEncodedImage(null);
+    const onExport = (format: "png" | "webp" | "jpeg") => {
+        const encodedImage = renderer.getEncodedImage(null, format);
         if (encodedImage) {
             // base64 decode
             const byteString = atob(encodedImage);
@@ -40,7 +41,7 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
             for (let i = 0; i < byteString.length; i++) {
                 intArray[i] = byteString.charCodeAt(i);
             }
-            const blob = new Blob([intArray], { type: "image/webp" });
+            const blob = new Blob([intArray], { type: `image/${format}` });
             saveAs(blob, "image.webp");
         }
     };
@@ -54,7 +55,7 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
                         setBackupImage(undefined);
                         const img = new Image();
                         // set src as data uri
-                        const src = "data:image/webp;base64," + backupImage;
+                        const src = "data:image/png;base64," + backupImage;
                         img.src = src;
                         img.onload = () => {
                             renderer.setBaseImage(img);
@@ -70,9 +71,9 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
                     onClick={() => {
                         setBackupImage(undefined);
                         if (tool.saveListener) {
-                            const encodedImage = renderer.getEncodedImage(null);
+                            const encodedImage = renderer.getEncodedImage(null, "png");
                             if (encodedImage) {
-                                tool.saveListener(encodedImage);
+                                tool.saveListener(encodedImage, "png");
                             }
                         }
                     }}
@@ -106,15 +107,16 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
                 </label>
             </div>
             <div className="form-group">
-                <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                        onExport();
-                    }}
-                    style={{ marginLeft: "8px"}}
-                >
-                    <i className="fas fa-download"></i>&nbsp; Export Image
-                </button>
+                <Dropdown>
+                    <Dropdown.Toggle variant="primary" id="dropdown-basic">
+                        <i className="fas fa-download"></i>&nbsp; Export Image
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                        <Dropdown.Item onClick={() => onExport("png")}>PNG</Dropdown.Item>
+                        <Dropdown.Item onClick={() => onExport("webp")}>WEBP</Dropdown.Item>
+                        <Dropdown.Item onClick={() => onExport("jpeg")}>JPEG</Dropdown.Item>
+                    </Dropdown.Menu>
+                </Dropdown>
             </div>
         </>
     );

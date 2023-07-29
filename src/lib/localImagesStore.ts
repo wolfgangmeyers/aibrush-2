@@ -116,13 +116,8 @@ export class LocalImagesStore {
         if (!this.db) {
             throw new Error("not initialized");
         }
-        // make sure to save as webp
-        if (image.imageData && getImageFormat(image.imageData) !== "webp") {
-            image.imageData = await convertImageFormat(
-                image.imageData,
-                getImageFormat(image.imageData),
-                "webp"
-            );
+        if (image.imageData) {
+            image.format = getImageFormat(image.imageData);
         }
         // create thumbnail if needed
         if (image.imageData && !image.thumbnailData) {
