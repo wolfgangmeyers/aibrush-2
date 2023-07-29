@@ -97,3 +97,9 @@ export interface StableDiffusionModel {
     'available': boolean;
     'inpainting': boolean;
 }
+
+export interface User {
+    username: string;
+    id: number;
+    kudos: number;
+}

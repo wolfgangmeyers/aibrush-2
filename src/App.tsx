@@ -27,6 +27,8 @@ import TermsPage from "./pages/TermsPage";
 import DropboxRedirectPage from "./pages/DropboxRedirectPage";
 import { Dropbox } from "dropbox";
 import DropboxHelper from "./lib/dropbox";
+import { User } from "./lib/models";
+import { KudosBalance } from "./components/KudosBalance";
 
 const localImages = new LocalImagesStore();
 const savedImagesStore = new LocalImagesStore("saved_images");
@@ -44,6 +46,7 @@ const imageClient = new ImageClient(
 function App() {
     const [initialized, setInitialized] = useState(false);
     const [dropboxHelper, setDropboxHelper] = useState<DropboxHelper | undefined>();
+    const [user, setUser] = useState<User | undefined>();
 
     const deleteSavedImagesDb = () => {
         return new Promise<void>((resolve, reject) => {
@@ -74,10 +77,11 @@ function App() {
         console.log("App initialized");
     };
 
-    const onApiKeyChange = async (apiKey: string) => {
+    const onHordeConnected = async (apiKey: string, user: User) => {
         const dropboxHelper = new DropboxHelper(apiKey);
         await dropboxHelper.init();
         setDropboxHelper(dropboxHelper);
+        setUser(user);
     };
 
     useEffect(() => {
@@ -142,7 +146,7 @@ function App() {
                                         {/* font awesome github icon */}
                                         <i className="fab fa-github"></i>
                                     </a>
-                                    <HordeUser client={hordeClient} onApiKeyChange={onApiKeyChange} />
+                                    <HordeUser client={hordeClient} onHordeConnected={onHordeConnected} onHordeUserUpdated={setUser} />
                                 </>
                             </div>
                             <div
@@ -150,10 +154,7 @@ function App() {
                                 style={{ textAlign: "right" }}
                             >
                                 {/* TODO: replace with KudosBalance */}
-                                {/* <CreditsBalance
-                                api={client}
-                                apisocket={apiSocket}
-                            /> */}
+                                {user && <KudosBalance user={user} />}
                             </div>
                         </div>
 

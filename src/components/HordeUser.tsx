@@ -2,55 +2,67 @@ import React, { useEffect, useState } from "react";
 import { Navbar, Modal, Form, Button } from "react-bootstrap";
 import axios from "axios";
 import { HordeClient } from "../lib/hordeclient";
+import { User } from "../lib/models";
 
 interface Props {
   client: HordeClient;
-  onApiKeyChange: (apiKey: string) => void;
+  onHordeConnected: (apiKey: string, user: User) => void;
+  onHordeUserUpdated: (user: User) => void;
 }
 
-interface User {
-    username: string;
-    id: number;
-}
-
-const HordeUser = ({client, onApiKeyChange}: Props) => {
+const HordeUser = ({client, onHordeConnected: onApiKeyChange, onHordeUserUpdated}: Props) => {
     const [user, setUser] = useState<User | null>(null);
     const [_, setApiKey] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [apiKeyInput, setApiKeyInput] = useState("");
     const [error, setError] = useState<string | null>(null);
 
-    const loadUserFromStorage = () => {
+    const loadUserFromHorde = async (apiKey: string) => {
+        const response = await axios.get(
+            "https://stablehorde.net/api/v2/find_user",
+            {
+                headers: {
+                    accept: "application/json",
+                    "Client-Agent": "unknown:0:unknown",
+                    apikey: apiKeyInput,
+                },
+            }
+        );
+
+        const user: User = response.data;
+        return user;
+    };
+
+    const loadUserFromStorage = async () => {
         const storedUser = localStorage.getItem("user");
         const storedApiKey = localStorage.getItem("apiKey");
 
         if (storedUser && storedApiKey) {
-            setUser(JSON.parse(storedUser));
+            let user = JSON.parse(storedUser) as User;
+            setUser(user);
             setApiKey(storedApiKey);
             setApiKeyInput(storedApiKey);
             client.updateApiKey(storedApiKey);
-            onApiKeyChange(storedApiKey);
+            onApiKeyChange(storedApiKey, user);
         }
     };
 
     useEffect(() => {
         loadUserFromStorage();
+        const reloadUser = async () => {
+            const user = await loadUserFromHorde(apiKeyInput);
+            setUser(user);
+            onHordeUserUpdated(user);
+        };
+        const handle = setInterval(reloadUser, 60000);
+        return () => {
+            clearInterval(handle);
+        }
     }, []);
 
     const validateApiKey = async () => {
         try {
-            const response = await axios.get(
-                "https://stablehorde.net/api/v2/find_user",
-                {
-                    headers: {
-                        accept: "application/json",
-                        "Client-Agent": "unknown:0:unknown",
-                        apikey: apiKeyInput,
-                    },
-                }
-            );
-
-            const user: User = response.data;
+            const user = await loadUserFromHorde(apiKeyInput);
             setUser(user);
             setApiKey(apiKeyInput);
             localStorage.setItem("user", JSON.stringify(user));
@@ -58,7 +70,7 @@ const HordeUser = ({client, onApiKeyChange}: Props) => {
             client.updateApiKey(apiKeyInput);
             setShowModal(false);
             setError(null);
-            onApiKeyChange(apiKeyInput);
+            onApiKeyChange(apiKeyInput, user);
         } catch (err) {
             setError("Invalid API key");
         }
