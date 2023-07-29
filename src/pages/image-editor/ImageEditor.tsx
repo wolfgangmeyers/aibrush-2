@@ -27,6 +27,7 @@ import { LocalImage } from "../../lib/models";
 import { render } from "@testing-library/react";
 import { HordeGenerator } from "../../lib/hordegenerator";
 import { ImageClient } from "../../lib/savedimages";
+import moment from "moment";
 
 interface CanPreventDefault {
     preventDefault: () => void;
@@ -208,6 +209,8 @@ export const ImageEditor: React.FC<Props> = ({
                 },
                 id: uuid.v4(),
                 imageData: `data:image/webp;base64,${encodedImage}`,
+                created_at: moment().valueOf(),
+                updated_at: moment().valueOf(),
             };
             await localImages.saveImage(newImage);
 

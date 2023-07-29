@@ -19,6 +19,7 @@ import { HordeGenerator } from "../lib/hordegenerator";
 import { ImageClient } from "../lib/savedimages";
 import { ImagesView } from "../components/ImagesView";
 import DropboxHelper from "../lib/dropbox";
+import { sleep } from "../lib/sleep";
 
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
@@ -168,7 +169,6 @@ export const Homepage: FC<Props> = ({
             try {
                 const updatedJobs = await generator.checkGenerationJobs(jobs);
                 let pendingJobs: GenerationJob[] = [];
-                let newImages: LocalImage[] = [];
                 for (let job of updatedJobs) {
                     if (
                         job.status === "pending" ||
@@ -184,8 +184,9 @@ export const Homepage: FC<Props> = ({
                                 );
                                 continue;
                             }
-                            newImages.push(img);
                             localImages.saveImage(img);
+                            // small pause so that updated_at timestamps are different
+                            await sleep(100);
                         }
                     }
                 }
