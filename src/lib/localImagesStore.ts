@@ -176,7 +176,7 @@ export class LocalImagesStore {
             console.error("image not found", id);
             return;
         }
-        if (image.deleted_at || image.status !== "completed") {
+        if (image.deleted_at) {
             return this.hardDeleteImage(id);
         }
         const transaction = this.db.transaction(["images"], "readwrite");

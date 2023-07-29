@@ -211,6 +211,7 @@ export const ImageEditor: React.FC<Props> = ({
                 imageData: `data:image/webp;base64,${encodedImage}`,
                 created_at: moment().valueOf(),
                 updated_at: moment().valueOf(),
+                status: "completed",
             };
             await localImages.saveImage(newImage);
 
