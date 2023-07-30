@@ -130,7 +130,7 @@ class DropboxHelper {
         const imageData = imageDataUrl.split(",")[1];
         const imageBuffer = Buffer.from(imageData, "base64");
         const imageId = image.id;
-        const imageFileName = `${imageId}.webp`;
+        const imageFileName = `${imageId}.${image.format || "webp"}`;
         const imageMetaFileName = `${imageId}.json`;
 
         await this.dropbox.filesUpload({
@@ -153,22 +153,20 @@ class DropboxHelper {
         if (!this.dropbox) {
             throw new Error("Not authorized");
         }
-        const imageFileName = `${imageId}.webp`;
         const imageMetaFileName = `${imageId}.json`;
-
-        const imageResult = (await this.dropbox.filesDownload({
-            path: `/${imageFileName}`,
-        })).result;
         const jsonResult = (await this.dropbox.filesDownload({
             path: `/${imageMetaFileName}`,
         })).result;
-        
         const jsonBlob = (jsonResult as any).fileBlob;
         const jsonBuffer = await new Response(jsonBlob).arrayBuffer();
         const image = JSON.parse(
             Buffer.from(jsonBuffer).toString()
         ) as LocalImage;
 
+        const imageFileName = `${imageId}.${image.format || "webp"}}`;
+        const imageResult = (await this.dropbox.filesDownload({
+            path: `/${imageFileName}`,
+        })).result;
         // fileBlob field is not in the typescript definition for some reason
         const imageBlob = (imageResult as any).fileBlob;
         const imageBuffer = await new Response(imageBlob).arrayBuffer();
@@ -176,17 +174,16 @@ class DropboxHelper {
             imageBuffer
         ).toString("base64")}`;
 
-        
         image.imageData = imageDataUrl;
         return image;
     }
 
-    async deleteImage(imageId: string) {
+    async deleteImage(image: LocalImage) {
         if (!this.dropbox) {
             throw new Error("Not authorized");
         }
-        const imageFileName = `${imageId}.webp`;
-        const imageMetaFileName = `${imageId}.json`;
+        const imageFileName = `${image.id}.${image.format || "webp"}`;
+        const imageMetaFileName = `${image.id}.json`;
 
         await this.dropbox.filesDeleteV2({
             path: `/${imageFileName}`,
