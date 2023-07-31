@@ -142,11 +142,18 @@ export const ImagesView: FC<Props> = ({
         if (index === -1) {
             return;
         }
-        const newIndex = index + direction;
+        let newIndex = index + direction;
         if (newIndex < 0 || newIndex >= images.length) {
             return;
         }
-        const newImage = images[newIndex];
+        let newImage = images[newIndex];
+        while (newImage.deleted_at && newIndex >= 0 && newIndex < images.length) {
+            newIndex += direction;
+            newImage = images[newIndex];
+        }
+        if (newImage.deleted_at) {
+            return;
+        }
         onThumbnailClicked(newImage);
     };
 
