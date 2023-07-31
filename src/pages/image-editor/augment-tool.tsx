@@ -118,7 +118,9 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image })
             renderer.setBaseImage(newCanvas);
             newCanvas.remove();
         } catch (err: any) {
-            setError(err.message || "Augmentation failed");
+            // check for err.response.data.message
+            const errMessage = err.response?.data?.message || err.message || "Augmentation failed";
+            setError(errMessage);
             setLastError(moment().valueOf());
         } finally {
             setActiveAugmentation(null);

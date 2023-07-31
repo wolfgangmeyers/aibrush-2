@@ -29,7 +29,12 @@ import {
 } from "../../components/LoraSelector";
 import { LoraTriggers } from "../../components/LoraTriggers";
 import { SelectedLoraTag } from "../../components/SelectedLora";
-import { GenerateImageInput, GenerationJob, LocalImage, LoraConfig } from "../../lib/models";
+import {
+    GenerateImageInput,
+    GenerationJob,
+    LocalImage,
+    LoraConfig,
+} from "../../lib/models";
 import { HordeGenerator } from "../../lib/hordegenerator";
 
 const anonymousClient = axios.create();
@@ -389,7 +394,10 @@ export class InpaintTool extends BaseTool implements Tool {
         this.renderer.undo();
         this.renderer.clearRedoStack();
 
-        const encodedImage = this.renderer.getEncodedImage(selectionOverlay, "webp");
+        const encodedImage = this.renderer.getEncodedImage(
+            selectionOverlay,
+            "webp"
+        );
 
         const input: GenerateImageInput = defaultArgs();
         // input.encoded_image = encodedImage;
@@ -418,16 +426,20 @@ export class InpaintTool extends BaseTool implements Tool {
             job = await generator.generateImages(input, (progress) => {
                 this.updateProgress(progress.loaded / progress.total);
             });
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error creating images", err);
-            this.notifyError("Failed to create image");
+            const errMessage =
+                err.response?.data?.message ||
+                err.message ||
+                "Failed to create image";
+            this.notifyError(errMessage);
             this.state = "select";
             return;
         }
         this.state = "processing";
         this.updateProgress(0);
         let newImages: Array<ImageWithData> = [];
-        
+
         let completed = false;
         let startTime = moment();
         while (!completed) {

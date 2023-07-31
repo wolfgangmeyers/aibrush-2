@@ -53,8 +53,6 @@ export const Homepage: FC<Props> = ({
     const [success, setSuccess] = useState<string | null>(null);
     const [successTime, setSuccessTime] = useState<number>(0);
 
-    const [outOfCredits, setOutOfCredits] = useState(false);
-
     const { id } = useParams<{ id?: string }>();
     const history = useHistory();
     const location = useLocation();
@@ -99,11 +97,8 @@ export const Homepage: FC<Props> = ({
         } catch (e: any) {
             // TODO: deal with insufficient kudos
             console.error(e);
-            if (e.response?.data?.message?.includes("credits")) {
-                setOutOfCredits(true);
-                return;
-            }
-            onError("Error creating images");
+            const errMessage = e.response?.data?.message || "Error creating images";
+            onError(errMessage);
         } finally {
             setCreating(false);
         }
@@ -152,7 +147,8 @@ export const Homepage: FC<Props> = ({
             history.push(`/image-editor/${newImage.id}`);
         } catch (e: any) {
             console.error(e);
-            onError("Error creating image");
+            const errMessage = e.response?.data?.message || "Error creating image";
+            onError(errMessage);
         } finally {
             setCreating(false);
         }

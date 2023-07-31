@@ -29,7 +29,12 @@ import {
 } from "../../components/LoraSelector";
 import { LoraTriggers } from "../../components/LoraTriggers";
 import { SelectedLoraTag } from "../../components/SelectedLora";
-import { GenerateImageInput, GenerationJob, LocalImage, LoraConfig } from "../../lib/models";
+import {
+    GenerateImageInput,
+    GenerationJob,
+    LocalImage,
+    LoraConfig,
+} from "../../lib/models";
 import { HordeGenerator } from "../../lib/hordegenerator";
 import { Rect } from "./models";
 
@@ -473,7 +478,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.dirty = true;
         this.notifyError(null);
         const selectionOverlay = this.renderer.getSelectionOverlay();
-        let encodedImage = this.renderer.getEncodedImage(selectionOverlay!, "webp");
+        let encodedImage = this.renderer.getEncodedImage(
+            selectionOverlay!,
+            "webp"
+        );
         if (!encodedImage) {
             console.error("No selection");
             return;
@@ -517,9 +525,13 @@ export class EnhanceTool extends BaseTool implements Tool {
             job = await generator.generateImages(input, (progress) => {
                 this.updateProgress(progress.loaded / progress.total);
             });
-        } catch (err) {
+        } catch (err: any) {
             console.error("Error creating images", err);
-            this.notifyError("Failed to create image");
+            const errMessage =
+                err.response?.data?.message ||
+                err.message ||
+                "Failed to create image";
+            this.notifyError(errMessage);
             this.state = "default";
             return;
         }
