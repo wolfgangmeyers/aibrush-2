@@ -15,9 +15,6 @@ import { BusyModal } from "../components/BusyModal";
 import { RemoteImagesWidget } from "../components/RemoteImages";
 import DropboxHelper from "../lib/dropbox";
 
-export const anonymousClient = axios.create();
-delete anonymousClient.defaults.headers.common["Authorization"];
-
 interface Props {
     imageClient: ImageClient;
     localImages: LocalImagesStore;
@@ -96,7 +93,7 @@ export const SavedImagesPage: FC<Props> = ({
                                     );
                                     if (image && image.status !== "error") {
                                         const imageUrl = `https://aibrush2-filestore.s3.amazonaws.com/${image.id}.image.png`;
-                                        const resp = await anonymousClient.get(
+                                        const resp = await axios.get(
                                             imageUrl,
                                             {
                                                 responseType: "arraybuffer",
@@ -147,7 +144,7 @@ export const SavedImagesPage: FC<Props> = ({
             if (remote) {
                 if (dropboxHelper) {
                     try {
-                        await dropboxHelper.deleteImage(image.id);
+                        await dropboxHelper.deleteImage(image);
                     } catch (e) {
                         console.error(e);
                         onError("Error deleting image");
@@ -167,15 +164,19 @@ export const SavedImagesPage: FC<Props> = ({
         let progress = 0;
         try {
             for (const id of imageIds) {
-                await localImages.deleteImage(id);
-                if (dropboxHelper) {
-                    try {
-                        await dropboxHelper.deleteImage(id);
-                    } catch (e) {
-                        console.error(e);
-                        onError("Error deleting image");
+                const image = await localImages.getImage(id);
+                if (image) {
+                    await localImages.deleteImage(id);
+                    if (dropboxHelper) {
+                        try {
+                            await dropboxHelper.deleteImage(image);
+                        } catch (e) {
+                            console.error(e);
+                            onError("Error deleting image");
+                        }
                     }
                 }
+
                 progress++;
                 setProgress(progress / imageIds.length);
             }
@@ -257,19 +258,27 @@ export const SavedImagesPage: FC<Props> = ({
             setImportingImages(true);
             setProgress(0);
             let progress = 0;
+            let errors = false;
             try {
                 for (const imageId of imagesToDownload) {
-                    const image = await dropboxHelper.downloadImage(imageId);
-                    await localImages.saveImage(image);
+                    try {
+                        const image = await dropboxHelper.downloadImage(
+                            imageId
+                        );
+                        await localImages.saveImage(image);
+                    } catch (e) {
+                        console.error(e);
+                        onError("Some images failed to download");
+                        errors = true;
+                    }
                     progress++;
                     setProgress(progress / imagesToDownload.length);
                 }
-            } catch (e) {
-                onError("Error downloading images");
-                console.error(e);
             } finally {
                 setImportingImages(false);
-                window.location.reload();
+                if (!errors) {
+                    window.location.reload();
+                }
             }
         }
     };

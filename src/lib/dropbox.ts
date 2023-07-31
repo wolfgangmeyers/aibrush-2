@@ -130,7 +130,8 @@ class DropboxHelper {
         const imageData = imageDataUrl.split(",")[1];
         const imageBuffer = Buffer.from(imageData, "base64");
         const imageId = image.id;
-        const imageFileName = `${imageId}.${image.format || "webp"}`;
+        // const imageFileName = `${imageId}.${image.format || "webp"}`;
+        const imageFileName = `${imageId}_${image.format || "webp"}`;
         const imageMetaFileName = `${imageId}.json`;
 
         await this.dropbox.filesUpload({
@@ -149,6 +150,29 @@ class DropboxHelper {
         });
     }
 
+    // temporarily work around a strange dropbox issue
+    async imageNameHack(image: LocalImage): Promise<void> {
+        if (!this.dropbox) {
+            throw new Error("Not authorized");
+        }
+        const oldImagePath = `${image.id}.${image.format || "webp"}`;
+        const newImagePath = `${image.id}_${image.format || "webp"}`;
+
+        // if the old path exists, rename it to the new path
+        try {
+            // does it exist?
+            await this.dropbox.filesGetMetadata({
+                path: `/${oldImagePath}`,
+            });
+            await this.dropbox.filesMoveV2({
+                from_path: `/${oldImagePath}`,
+                to_path: `/${newImagePath}`,
+            });
+        } catch (e) {
+            // if the old path doesn't exist, do nothing
+        }
+    }
+
     async downloadImage(imageId: string): Promise<LocalImage> {
         if (!this.dropbox) {
             throw new Error("Not authorized");
@@ -163,7 +187,10 @@ class DropboxHelper {
             Buffer.from(jsonBuffer).toString()
         ) as LocalImage;
 
-        const imageFileName = `${imageId}.${image.format || "webp"}}`;
+        // work around strange dropbox issue
+        // const imageFileName = `${imageId}.${image.format || "webp"}}`;
+        await this.imageNameHack(image);
+        const imageFileName = `${imageId}_${image.format || "webp"}`;
         const imageResult = (await this.dropbox.filesDownload({
             path: `/${imageFileName}`,
         })).result;
@@ -182,7 +209,9 @@ class DropboxHelper {
         if (!this.dropbox) {
             throw new Error("Not authorized");
         }
-        const imageFileName = `${image.id}.${image.format || "webp"}`;
+        // const imageFileName = `${image.id}.${image.format || "webp"}`;
+        await this.imageNameHack(image);
+        const imageFileName = `${image.id}_${image.format || "webp"}`;
         const imageMetaFileName = `${image.id}.json`;
 
         await this.dropbox.filesDeleteV2({
