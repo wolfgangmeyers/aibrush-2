@@ -445,25 +445,34 @@ export class InpaintTool extends BaseTool implements Tool {
         while (!completed) {
             await sleep(2000);
             // poll for completion
-            // poll for completion
-            job = await generator.checkGenerationJob(job);
-            this.updateProgress(job.progress);
-            if (job.status === "completed") {
-                completed = true;
-                newImages = job.images!.filter(
-                    (img) => img.status === "completed"
-                );
-                await Promise.all(
-                    newImages.map(async (img) => {
-                        const imageData = await this.loadImageData(
-                            img,
-                            maskData!,
-                            selectionOverlay!
-                        );
-                        img.data = imageData;
-                    })
-                );
+            try {
+                job = await generator.checkGenerationJob(job);
+                this.updateProgress(job.progress);
+                if (job.status === "completed") {
+                    completed = true;
+                    newImages = job.images!.filter(
+                        (img) => img.status === "completed"
+                    );
+                    await Promise.all(
+                        newImages.map(async (img) => {
+                            const imageData = await this.loadImageData(
+                                img,
+                                maskData!,
+                                selectionOverlay!
+                            );
+                            img.data = imageData;
+                        })
+                    );
+                }
+            } catch (err: any) {
+                console.error("Error checking job", err);
+                const errMessage =
+                    err.response?.data?.message ||
+                    err.message ||
+                    "Failed to check job";
+                this.notifyError(errMessage);
             }
+            
 
             if (moment().diff(startTime, "minutes") > 2) {
                 completed = true;
