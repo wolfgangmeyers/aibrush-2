@@ -130,8 +130,8 @@ class DropboxHelper {
         const imageData = imageDataUrl.split(",")[1];
         const imageBuffer = Buffer.from(imageData, "base64");
         const imageId = image.id;
-        // const imageFileName = `${imageId}.${image.format || "webp"}`;
-        const imageFileName = `${imageId}_${image.format || "webp"}`;
+        const imageFileName = `${imageId}.${image.format || "webp"}`;
+        // const imageFileName = `${imageId}_${image.format || "webp"}`;
         const imageMetaFileName = `${imageId}.json`;
 
         await this.dropbox.filesUpload({
@@ -155,8 +155,8 @@ class DropboxHelper {
         if (!this.dropbox) {
             throw new Error("Not authorized");
         }
-        const oldImagePath = `${image.id}.${image.format || "webp"}`;
-        const newImagePath = `${image.id}_${image.format || "webp"}`;
+        const oldImagePath = `${image.id}_${image.format || "webp"}`;
+        const newImagePath = `${image.id}.${image.format || "webp"}`;
 
         // if the old path exists, rename it to the new path
         try {
@@ -187,10 +187,9 @@ class DropboxHelper {
             Buffer.from(jsonBuffer).toString()
         ) as LocalImage;
 
-        // work around strange dropbox issue
-        // const imageFileName = `${imageId}.${image.format || "webp"}}`;
+        // restore original image names if necessary.
         await this.imageNameHack(image);
-        const imageFileName = `${imageId}_${image.format || "webp"}`;
+        const imageFileName = `${imageId}.${image.format || "webp"}`;
         const imageResult = (await this.dropbox.filesDownload({
             path: `/${imageFileName}`,
         })).result;
@@ -209,9 +208,8 @@ class DropboxHelper {
         if (!this.dropbox) {
             throw new Error("Not authorized");
         }
-        // const imageFileName = `${image.id}.${image.format || "webp"}`;
         await this.imageNameHack(image);
-        const imageFileName = `${image.id}_${image.format || "webp"}`;
+        const imageFileName = `${image.id}.${image.format || "webp"}`;
         const imageMetaFileName = `${image.id}.json`;
 
         await this.dropbox.filesDeleteV2({
