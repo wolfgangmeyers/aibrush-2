@@ -3,7 +3,7 @@ import moment from "moment";
 import {
     AlchemistPayload,
     HordeClient,
-    HordeRequestPayload,
+    GenerateRequestPayload,
 } from "./hordeclient";
 import { GenerationJob, LocalImage } from "./models";
 import { AugmentImageInput, GenerateImageInput } from "./models";
@@ -134,7 +134,7 @@ export class HordeGenerator {
         negativePrompt = negativePrompt.trim();
         prompt = combinePrompts(prompt, negativePrompt);
         const promises: Promise<LocalImage | null>[] = [];
-        const payload: HordeRequestPayload = {
+        const payload: GenerateRequestPayload = {
             params: {
                 n: input.count,
                 width: input.params.width || 512,
@@ -144,7 +144,7 @@ export class HordeGenerator {
                 sampler_name: "k_euler",
                 cfg_scale: input.params.cfg_scale || 7.5,
                 denoising_strength: input.params.denoising_strength || 0.75,
-                hires_fix: false,
+                hires_fix: input.hires_fix,
                 post_processing: [],
                 control_type: input.params.controlnet_type || undefined,
                 seed:

@@ -18,7 +18,7 @@ export interface RequestStatusCheck {
     is_possible: boolean;
 }
 
-export interface HordeRequestPayload {
+export interface GenerateRequestPayload {
     params: {
         n: number;
         width: number;
@@ -66,6 +66,14 @@ export interface AlchemistPayload {
     trusted_workers: boolean;
 }
 
+export interface ActiveModel {
+    name: string;
+    count: number;
+    queued: number;
+    jobs: number;
+    eta: number;
+}
+
 export class HordeClient {
     constructor(private apiKey: string) {}
 
@@ -81,7 +89,7 @@ export class HordeClient {
     // },
 
     async initiateImageGeneration(
-        payload: HordeRequestPayload,
+        payload: GenerateRequestPayload,
         onUploadProgress?: (progressEvent: any) => void
     ): Promise<string | null> {
         payload.api_key = this.apiKey;
@@ -240,5 +248,20 @@ export class HordeClient {
             },
         });
         console.log(`Request with ID: ${reqId} has been deleted.`);
+    }
+
+    // TODO: use and cache this info and display in model selector
+    async fetchActiveModels(): Promise<ActiveModel[]> {
+        const retrieveReq = await axios.get(
+            `${baseUrl}/v2/status/models?type=image`,
+            {
+                headers: {
+                    apiKey: this.apiKey,
+                },
+            }
+        );
+        const resultsJson = await retrieveReq.data;
+        // console.log(JSON.stringify(resultsJson));
+        return resultsJson;
     }
 }

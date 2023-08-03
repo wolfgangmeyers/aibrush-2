@@ -66,6 +66,7 @@ export interface GenerateImageInput {
     model: string;
     params: ImageParams;
     count: number;
+    hires_fix: boolean;
 }
 
 export interface AugmentImageInput {

@@ -1,12 +1,18 @@
 import { FC, useState, FormEvent } from "react";
-import { Form, FormGroup, FormControl, FormText, FormCheck } from "react-bootstrap";
+import {
+    Form,
+    FormGroup,
+    FormControl,
+    FormText,
+    FormCheck,
+} from "react-bootstrap";
 
 interface Props {
     seed: string;
     setSeed: (seed: string) => void;
 }
 
-export const SeedInput: FC<Props> = ({seed, setSeed}) => {
+export const SeedInput: FC<Props> = ({ seed, setSeed }) => {
     const [useCustomSeed, setUseCustomSeed] = useState(false);
 
     const onChangeCustomSeed = () => {
@@ -22,12 +28,19 @@ export const SeedInput: FC<Props> = ({seed, setSeed}) => {
     return (
         <Form>
             <FormGroup>
-                <FormCheck 
+                <FormCheck
                     type="checkbox"
                     label="Use Custom Seed"
                     checked={useCustomSeed}
                     onChange={(e) => onChangeCustomSeed()}
                 />
+                <br />
+                {!useCustomSeed && (
+                    <span className="helptext">
+                        Setting a custom seed leads to deterministic image
+                        generation.
+                    </span>
+                )}
             </FormGroup>
 
             {useCustomSeed && (
@@ -40,7 +53,11 @@ export const SeedInput: FC<Props> = ({seed, setSeed}) => {
                         value={seed}
                         onChange={(e: any) => setSeed(e.target.value)}
                     />
-                </FormGroup> 
+                    <span className="helptext">
+                        Setting a custom seed leads to deterministic image
+                        generation.
+                    </span>
+                </FormGroup>
             )}
         </Form>
     );

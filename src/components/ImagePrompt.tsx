@@ -50,6 +50,7 @@ export function defaultArgs(): GenerateImageInput {
         encoded_mask: "",
         model: "Epic Diffusion",
         count: 4,
+        hires_fix: false,
     };
 }
 
@@ -86,6 +87,7 @@ export const ImagePrompt: FC<Props> = ({
     const [cfgScale, setCfgScale] = useState<number>(7.5);
     const [seed, setSeed] = useState<string>("");
     const [size, setSize] = useState<number>(1);
+    const [hiresFix, setHiresFix] = useState<boolean>(false);
 
     const [selectingLora, setSelectingLora] = useState<boolean>(false);
     const [selectedLoras, setSelectedLoras] = useState<SelectedLora[]>([]);
@@ -136,6 +138,7 @@ export const ImagePrompt: FC<Props> = ({
         args.params.cfg_scale = cfgScale;
         args.params.seed = seed || undefined;
         args.params.loras = selectedLoras.map((l) => l.config);
+        args.hires_fix = hiresFix;
         if (parent) {
             const bestMatch = getClosestAspectRatio(
                 parent.params.width!,
@@ -643,6 +646,31 @@ export const ImagePrompt: FC<Props> = ({
                                 </span>
                             </div>
                             <SeedInput seed={seed} setSeed={setSeed} />
+                            {/* hires fix checkbox */}
+                            <div className="form-group">
+                                <div className="form-check">
+                                    <input
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        id="hiresFix"
+                                        checked={hiresFix}
+                                        onChange={(e) =>
+                                            setHiresFix(e.target.checked)
+                                        }
+                                    />
+                                    <label
+                                        className="form-check-label"
+                                        htmlFor="hiresFix"
+                                    >
+                                        Hi-Res Fix
+                                    </label>
+                                </div>
+                                <br/>
+                                <span className="helptext">
+                                    Helps with proportions in high resolution images.
+                                </span>
+                            </div>
+
 
                             <div
                                 className="form-group"
