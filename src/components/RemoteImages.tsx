@@ -6,12 +6,14 @@ interface Props {
     dropboxHelper?: DropboxHelper;
     onUploadImages: () => void;
     onDownloadImages: () => void;
+    listingImages: boolean;
 }
 
 export const RemoteImagesWidget: FC<Props> = ({
     dropboxHelper,
     onUploadImages,
     onDownloadImages,
+    listingImages,
 }) => {
     const [connected, setConnected] = useState<boolean>(false);
 
@@ -39,32 +41,38 @@ export const RemoteImagesWidget: FC<Props> = ({
 
     if (!connected) {
         return (
-            <Button
-                variant="success"
-                onClick={() => handleClick()}
-            >
+            <Button variant="success" onClick={() => handleClick()}>
                 <i className="fa fa-cloud"></i>&nbsp;Connect
             </Button>
         );
     }
 
     return (
-        <Dropdown>
-            <Dropdown.Toggle variant="success" id="dropdown-basic">
-                <i className="fa fa-cloud"></i>&nbsp;Remote Images
-            </Dropdown.Toggle>
-            {/* options: upload unsaved images, download images */}
-            <Dropdown.Menu>
-                <Dropdown.Item onClick={onUploadImages}>
-                    Upload Unsaved Images
-                </Dropdown.Item>
-                <Dropdown.Item onClick={onDownloadImages}>
-                    Download Images
-                </Dropdown.Item>
-                <Dropdown.Item onClick={() => handleDisconnect()}>
-                    Disconnect
-                </Dropdown.Item>
-            </Dropdown.Menu>
-        </Dropdown>
+        <>
+            {!listingImages && (
+                <Dropdown>
+                    <Dropdown.Toggle variant="success" id="dropdown-basic">
+                        <i className="fa fa-cloud"></i>&nbsp;Remote Images
+                    </Dropdown.Toggle>
+                    {/* options: upload unsaved images, download images */}
+                    <Dropdown.Menu>
+                        <Dropdown.Item onClick={onUploadImages}>
+                            Upload Unsaved Images
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={onDownloadImages}>
+                            Download Images
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleDisconnect()}>
+                            Disconnect
+                        </Dropdown.Item>
+                    </Dropdown.Menu>
+                </Dropdown>
+            )}
+            {listingImages && (
+                <Button variant="success" disabled>
+                    <i className="fa fa-spin fa-spinner"></i>&nbsp;Please Wait...
+                </Button>
+            )}
+        </>
     );
 };

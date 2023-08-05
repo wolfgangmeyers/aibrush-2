@@ -33,6 +33,7 @@ export const SavedImagesPage: FC<Props> = ({
     const [exportingImages, setExportingImages] = useState<boolean>(false);
     const [deletingImages, setDeletingImages] = useState<boolean>(false);
     const [progress, setProgress] = useState<number>(0);
+    const [listingImages, setListingImages] = useState<boolean>(false);
 
     const { id } = useParams<{ id?: string }>();
     const history = useHistory();
@@ -211,6 +212,7 @@ export const SavedImagesPage: FC<Props> = ({
         if (!dropboxHelper) {
             return;
         }
+        setListingImages(true);
         const imageIds = await dropboxHelper.listRemoteImages();
         const byId = imageIds.reduce((acc, id) => {
             acc[id] = true;
@@ -218,6 +220,7 @@ export const SavedImagesPage: FC<Props> = ({
         }, {} as { [id: string]: boolean });
         const allImageIds = await localImages.listAllImageIds();
         const imagesToUpload = allImageIds.filter((id) => !byId[id]);
+        setListingImages(false);
         if (imagesToUpload.length > 0) {
             setExportingImages(true);
             setProgress(0);
@@ -244,7 +247,9 @@ export const SavedImagesPage: FC<Props> = ({
         if (!dropboxHelper) {
             return;
         }
+        setListingImages(true);
         const imageIds = await dropboxHelper.listRemoteImages();
+        
         console.log("remote image ids", imageIds);
         // TODO: popup where user can select which images to download
         const imagesToDownload: string[] = [];
@@ -254,6 +259,7 @@ export const SavedImagesPage: FC<Props> = ({
                 imagesToDownload.push(imageId);
             }
         }
+        setListingImages(false);
         if (imagesToDownload.length > 0) {
             setImportingImages(true);
             setProgress(0);
@@ -303,6 +309,7 @@ export const SavedImagesPage: FC<Props> = ({
                     dropboxHelper={dropboxHelper}
                     onUploadImages={onUploadImages}
                     onDownloadImages={onDownloadImages}
+                    listingImages={listingImages}
                 />
             </div>
             <ImagesView
