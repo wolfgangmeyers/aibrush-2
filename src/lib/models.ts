@@ -1,3 +1,5 @@
+import { ActiveModel } from "./hordeclient";
+
 export interface Image {
     id: string;
     created_at: number;
@@ -97,6 +99,7 @@ export interface StableDiffusionModel {
     'config': object;
     'available': boolean;
     'inpainting': boolean;
+    activeModel: ActiveModel;
 }
 
 export interface User {

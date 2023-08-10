@@ -26,6 +26,7 @@ import { SelectedLoraTag } from "./SelectedLora";
 import { LoraTriggers } from "./LoraTriggers";
 import { recentLoras } from "../lib/recentLoras";
 import { Item } from "../lib/civit_loras";
+import { HordeClient } from "../lib/hordeclient";
 
 interface Props {
     parent: LocalImage | null;
@@ -34,6 +35,7 @@ interface Props {
     // go straight to editor without variations
     onEdit: (input: GenerateImageInput) => void;
     onCancel: () => void;
+    hordeClient: HordeClient;
 }
 
 export function defaultArgs(): GenerateImageInput {
@@ -67,6 +69,7 @@ export const ImagePrompt: FC<Props> = ({
     onSubmit,
     onCancel,
     onEdit,
+    hordeClient,
 }) => {
     const [prompt, setPrompt] = useState<string>("");
     const [negativePrompt, setNegativePrompt] = useState<string>(
@@ -726,6 +729,7 @@ export const ImagePrompt: FC<Props> = ({
                     onSelectModel={onSelectModel}
                     initialSelectedModel={model}
                     inpainting={false}
+                    hordeClient={hordeClient}
                 />
             )}
             {selectingLora && (

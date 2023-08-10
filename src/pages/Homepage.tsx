@@ -87,7 +87,7 @@ export const Homepage: FC<Props> = ({
                 input.encoded_image = await convertImageFormat(
                     input.encoded_image,
                     "webp",
-                    "jpeg",
+                    "jpeg"
                 );
             }
             const job = await generator.generateImages(input, (progress) => {
@@ -97,7 +97,8 @@ export const Homepage: FC<Props> = ({
         } catch (e: any) {
             // TODO: deal with insufficient kudos
             console.error(e);
-            const errMessage = e.response?.data?.message || "Error creating images";
+            const errMessage =
+                e.response?.data?.message || "Error creating images";
             onError(errMessage);
         } finally {
             setCreating(false);
@@ -147,7 +148,8 @@ export const Homepage: FC<Props> = ({
             history.push(`/image-editor/${newImage.id}`);
         } catch (e: any) {
             console.error(e);
-            const errMessage = e.response?.data?.message || "Error creating image";
+            const errMessage =
+                e.response?.data?.message || "Error creating image";
             onError(errMessage);
         } finally {
             setCreating(false);
@@ -254,7 +256,7 @@ export const Homepage: FC<Props> = ({
 
     const onSave = async (image: LocalImage) => {
         if (!dropboxHelper || !dropboxHelper.isAuthorized()) {
-            alert("Go to your saved images page and connect to Dropbox first!")
+            alert("Go to your saved images page and connect to Dropbox first!");
             return;
         }
         setSavingImage(true);
@@ -313,6 +315,7 @@ export const Homepage: FC<Props> = ({
                 onEdit={onEditNewImage}
                 parent={parentImage}
                 onCancel={() => handleCancelFork()}
+                hordeClient={generator.client}
             />
             <hr />
 
