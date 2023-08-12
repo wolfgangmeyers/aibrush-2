@@ -130,6 +130,7 @@ export const Homepage: FC<Props> = ({
                     prompt: input.params.prompt,
                     negative_prompt: input.params.negative_prompt,
                     denoising_strength: input.params.denoising_strength,
+                    loras: input.params.loras,
                 },
                 label: "",
                 id: uuid.v4(),

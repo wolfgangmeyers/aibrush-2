@@ -179,11 +179,11 @@ export const ImagePrompt: FC<Props> = ({
         args.params.negative_prompt = negativePrompt || "";
         args.count = 1;
         args.parent = parentId || undefined;
-        // args.stable_diffusion_strength = variationStrength;
         args.params.denoising_strength = variationStrength;
         args.params.width = originalWidth;
         args.params.height = originalHeight;
         args.params.cfg_scale = cfgScale;
+        args.params.loras = selectedLoras.map((l) => l.config);
         args.model = model;
         if (encodedImage) {
             args.encoded_image = encodedImage;
