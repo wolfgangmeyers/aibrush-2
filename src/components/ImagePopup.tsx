@@ -1,11 +1,13 @@
 import React, { FC, useEffect, useRef, useState } from "react";
 import { Dropdown, Modal } from "react-bootstrap";
-import { LocalImage } from "../lib/models";
+import { LocalImage, LoraConfig } from "../lib/models";
 import CopyToClipboard from "react-copy-to-clipboard";
 import CopyToClipboardIcon from "./CopyToClipboardIcon";
 import { Swipe } from "./Swipe";
 import { downloadImage } from "../lib/imageutil";
 import moment from "moment";
+import { recentLoras } from "../lib/recentLoras";
+import { SelectedLora } from "./LoraSelector";
 
 interface ImagePopupProps {
     image: LocalImage;
@@ -18,6 +20,10 @@ interface ImagePopupProps {
     onNSFW?: (image: LocalImage, nsfw: boolean) => void;
     onSave?: (image: LocalImage) => void;
     onSwipe?: (image: LocalImage, direction: number) => void;
+}
+
+function civitLink(id: number): string {
+    return `https://civitai.com/models/${id}`;
 }
 
 export const ImagePopup: FC<ImagePopupProps> = ({
@@ -39,6 +45,44 @@ export const ImagePopup: FC<ImagePopupProps> = ({
         score -= image.negative_score || 0;
     }
     const [showNSFW, setShowNSFW] = useState(false);
+    const [loras, setLoras] = useState<SelectedLora[]>([]);
+
+    useEffect(() => {
+        const updateLoras = async () => {
+            const selectedLoras = await Promise.all((image.params.loras || []).map(async (lora): Promise<SelectedLora> => {
+                let item = await recentLoras.getLora(lora.name);
+                if (!item) {
+                    item = {
+                        name: lora.name,
+                        id: parseInt(lora.name),
+                    } as any;
+                }
+                return {
+                    config: lora,
+                    lora: item as any,
+                };
+            }));
+            setLoras(selectedLoras);
+        };
+        updateLoras();
+    }, [image])
+
+    const renderLoras = () => {
+        return <>
+            {loras.map(lora => (
+                <div key={lora.lora.id} style={{
+                    marginRight: "8px",
+                    marginLeft: "8px"
+                }}>
+                    <a href={civitLink(lora.lora.id)} target="_blank">
+                        {/* this is an item in a list. Display a good icon for it */}
+                        <i className="fas fa-palette"></i>&nbsp;
+                        {lora.lora.name}
+                    </a>
+                </div>
+            ))}
+        </>
+    };
 
     const statusBadge = (status: string) => {
         const displayStatus = status.charAt(0).toUpperCase() + status.slice(1);
@@ -190,7 +234,10 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         <button
                                             className="btn btn-secondary btn-sm image-popup-button"
                                             onClick={() => onFork(image)}
-                                            style={{ marginRight: "5px", marginTop: "8px" }}
+                                            style={{
+                                                marginRight: "5px",
+                                                marginTop: "8px",
+                                            }}
                                         >
                                             <i className="fas fa-code-branch"></i>
                                             &nbsp;VARIATIONS
@@ -202,18 +249,26 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         onClick={() =>
                                             onDelete && onDelete(image)
                                         }
-                                        style={{ marginRight: "5px", marginTop: "8px" }}
+                                        style={{
+                                            marginRight: "5px",
+                                            marginTop: "8px",
+                                        }}
                                     >
                                         <i className="fas fa-trash-alt"></i>
                                         &nbsp;DELETE
                                     </button>
                                 )}
                                 {onDelete && onDeleteRemote && (
-                                    <Dropdown style={{display: "inline", marginRight: "5px"}}>
+                                    <Dropdown
+                                        style={{
+                                            display: "inline",
+                                            marginRight: "5px",
+                                        }}
+                                    >
                                         <Dropdown.Toggle
                                             variant="danger"
                                             className="btn-sm image-popup-delete-button"
-                                            style={{marginTop: "8px"}}
+                                            style={{ marginTop: "8px" }}
                                         >
                                             <i className="fas fa-trash-alt"></i>
                                             &nbsp;DELETE
@@ -221,8 +276,7 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                         <Dropdown.Menu>
                                             <Dropdown.Item
                                                 onClick={() =>
-                                                    onDelete &&
-                                                    onDelete(image)
+                                                    onDelete && onDelete(image)
                                                 }
                                             >
                                                 Locally
@@ -242,7 +296,10 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                     <button
                                         className="btn btn-primary btn-sm image-popup-button edit-button"
                                         onClick={() => onEdit && onEdit(image)}
-                                        style={{ marginRight: "5px", marginTop: "8px" }}
+                                        style={{
+                                            marginRight: "5px",
+                                            marginTop: "8px",
+                                        }}
                                     >
                                         <i className="fas fa-edit"></i>
                                         &nbsp;EDIT
@@ -252,7 +309,10 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                                     <button
                                         className="btn btn-primary btn-sm image-popup-button"
                                         onClick={() => onSave && onSave(image)}
-                                        style={{ marginRight: "5px", marginTop: "8px" }}
+                                        style={{
+                                            marginRight: "5px",
+                                            marginTop: "8px",
+                                        }}
                                     >
                                         <i className="fas fa-save"></i>
                                         &nbsp;SAVE
@@ -384,8 +444,16 @@ export const ImagePopup: FC<ImagePopupProps> = ({
                             </div>
                             {/* updated at */}
                             <div style={{ marginTop: "8px" }}>
-                                Last Updated: {moment(image.updated_at).format("YYYY-MM-DD HH:mm:ss")}
+                                Last Updated:{" "}
+                                {moment(image.updated_at).format(
+                                    "YYYY-MM-DD HH:mm:ss"
+                                )}
                             </div>
+                            {loras.length > 0 && <div style={{ marginTop: "8px" }}>
+                                Loras:{" "}
+                                { renderLoras() }
+                            </div>}
+                            
                         </div>
                     </div>
                 </div>
