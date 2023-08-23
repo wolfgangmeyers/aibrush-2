@@ -290,8 +290,18 @@ export const Homepage: FC<Props> = ({
     const onSelectImage = (image: LocalImage | null) => {
         if (image) {
             history.push(`/images/${image.id}`);
+            setSelectedImage(image);
         } else {
             history.push("/");
+        }
+    };
+
+    const onUpdateImage = async (image: LocalImage) => {
+        try {
+            await localImages.saveImage(image);
+        } catch (e) {
+            console.error(e);
+            onError("Error updating image");
         }
     };
 
@@ -332,6 +342,7 @@ export const Homepage: FC<Props> = ({
                 onSaveImage={onSave}
                 selectedImage={selectedImage}
                 store={localImages}
+                onUpdateImage={onUpdateImage}
             />
 
             <BusyModal show={creating} title="Creating images">

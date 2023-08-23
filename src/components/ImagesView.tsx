@@ -2,7 +2,7 @@ import { FC, useEffect, useState } from "react";
 import { LocalImagesStore } from "../lib/localImagesStore";
 import { Dropdown } from "react-bootstrap";
 import { ImagePopup } from "./ImagePopup";
-import { GenerationJob, LocalImage } from "../lib/models";
+import { FilterConfig, GenerationJob, LocalImage } from "../lib/models";
 import InfiniteScroll from "react-infinite-scroll-component";
 import moment from "moment";
 import { PendingJobsThumbnail } from "./PendingJobsThumbnail";
@@ -10,6 +10,7 @@ import { ImageThumbnail } from "./ImageThumbnail";
 import { PendingJobs } from "./PendingJobs";
 import ScrollToTop from "react-scroll-to-top";
 import { DeletedImagesModal } from "./DeletedImagesModal";
+import FilterModal from "../components/FilterModal";
 
 interface Props {
     store: LocalImagesStore;
@@ -45,7 +46,7 @@ export const ImagesView: FC<Props> = ({
     const [searchDebounce, setSearchDebounce] = useState<string>("");
     const [search, setSearch] = useState<string>("");
     const [bulkDeleteSelecting, setBulkDeleteSelecting] = useState(false);
-    const [censorNSFW, setCensorNSFW] = useState(true);
+    // const [censorNSFW, setCensorNSFW] = useState(true);
     const [bulkDeleteIds, setBulkDeleteIds] = useState<{
         [key: string]: boolean;
     }>({});
@@ -53,6 +54,20 @@ export const ImagesView: FC<Props> = ({
     const [hasMore, setHasMore] = useState<boolean>(true);
     const [showPendingImages, setShowPendingImages] = useState(false);
     const [showDeletedImages, setShowDeletedImages] = useState(false);
+    const [filterConfig, setFilterConfig] = useState<FilterConfig>({
+        nsfw: "blur",
+    });
+    const [editingFilterConfig, setEditingFilterConfig] = useState(false);
+
+    useEffect(() => {
+        const configStr = localStorage.getItem("filterConfig");
+        if (configStr) {
+            // TODO: fill in defaults if we add new items here
+            setFilterConfig(JSON.parse(configStr));
+            return;
+        }
+        setFilterConfig({ nsfw: "blur" });
+    }, []);
 
     const onConfirmBulkDelete = async (remote: boolean) => {
         try {
@@ -163,7 +178,15 @@ export const ImagesView: FC<Props> = ({
                 ...image,
                 nsfw: !image.nsfw,
             };
-            await store.saveImage(updatedImage);
+            setImages((images) => {
+                return images.map((i) => {
+                    if (i.id === image.id) {
+                        return updatedImage;
+                    }
+                    return i;
+                });
+            });
+            onSelectImage(updatedImage);
             if (onUpdateImage) {
                 onUpdateImage(updatedImage);
             }
@@ -236,7 +259,12 @@ export const ImagesView: FC<Props> = ({
         ? jobs.filter((job) => job.status === "processing")
         : [];
 
-    const filteredImages = images.filter((image) => !image.deleted_at);
+    const filteredImages = images.filter((image) => {
+        if (filterConfig.nsfw === "hide" && image.nsfw) {
+            return false;
+        }
+        return !image.deleted_at;
+    });
 
     return (
         <>
@@ -269,15 +297,10 @@ export const ImagesView: FC<Props> = ({
                                         style={{ display: "inline" }}
                                         className="btn btn-primary image-popup-button"
                                         onClick={() =>
-                                            setCensorNSFW(!censorNSFW)
+                                            setEditingFilterConfig(true)
                                         }
                                     >
-                                        {!censorNSFW && (
-                                            <i className="fas fa-eye"></i>
-                                        )}
-                                        {censorNSFW && (
-                                            <i className="fas fa-eye-slash"></i>
-                                        )}
+                                        <i className="fas fa-filter"></i>
                                     </button>
                                     <Dropdown
                                         style={{
@@ -320,7 +343,7 @@ export const ImagesView: FC<Props> = ({
                                         Cancel
                                     </button>
                                     {connected ? (
-                                        <Dropdown style={{display: "inline", marginLeft: "8px"}}>
+                                        <Dropdown style={{ display: "inline", marginLeft: "8px" }}>
                                             <Dropdown.Toggle variant="danger" className="image-popup-delete-button">
                                                 Delete
                                             </Dropdown.Toggle>
@@ -389,7 +412,7 @@ export const ImagesView: FC<Props> = ({
                             bulkDelete={
                                 bulkDeleteSelecting && bulkDeleteIds[image.id]
                             }
-                            censorNSFW={censorNSFW}
+                            censorNSFW={filterConfig.nsfw === "blur"}
                         />
                     ))}
                 </InfiniteScroll>
@@ -405,8 +428,8 @@ export const ImagesView: FC<Props> = ({
                     onDeleteRemote={
                         connected
                             ? (image) => {
-                                  onDelete(image, true);
-                              }
+                                onDelete(image, true);
+                            }
                             : undefined
                     }
                     onFork={(image) => {
@@ -419,7 +442,7 @@ export const ImagesView: FC<Props> = ({
                     onNSFW={(image) => {
                         onNSFW(image);
                     }}
-                    censorNSFW={censorNSFW}
+                    censorNSFW={filterConfig.nsfw === "blur"}
                     onSwipe={onSwipe}
                 />
             )}
@@ -440,6 +463,15 @@ export const ImagesView: FC<Props> = ({
                     onHide={() => setShowDeletedImages(false)}
                 />
             )}
+            <FilterModal
+                filterConfig={filterConfig}
+                onCancel={() => setEditingFilterConfig(false)}
+                onUpdate={(newConfig) => {
+                    setFilterConfig(newConfig);
+                    setEditingFilterConfig(false);
+                }}
+                show={editingFilterConfig}
+            />
         </>
     );
 };

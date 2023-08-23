@@ -107,3 +107,7 @@ export interface User {
     id: number;
     kudos: number;
 }
+
+export interface FilterConfig {
+    nsfw: 'show' | 'blur' | 'hide';
+}
