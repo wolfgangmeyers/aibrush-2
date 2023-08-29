@@ -36,6 +36,7 @@ import {
     LoraConfig,
 } from "../../lib/models";
 import { HordeGenerator } from "../../lib/hordegenerator";
+import { HordeClient } from "../../lib/hordeclient";
 
 const anonymousClient = axios.create();
 
@@ -565,6 +566,7 @@ export class InpaintTool extends BaseTool implements Tool {
 
 interface ControlsProps {
     generator: HordeGenerator;
+    hordeClient: HordeClient;
     image: LocalImage;
     renderer: Renderer;
     tool: InpaintTool;
@@ -573,6 +575,7 @@ interface ControlsProps {
 export const InpaintControls: FC<ControlsProps> = ({
     // TODO: alternative source of horde model reference
     generator,
+    hordeClient,
     image,
     renderer,
     tool,
@@ -955,6 +958,7 @@ export const InpaintControls: FC<ControlsProps> = ({
                     onSelectModel={onSelectModel}
                     initialSelectedModel={model}
                     inpainting={true}
+                    hordeClient={hordeClient}
                 />
             )}
             {selectingLora && (

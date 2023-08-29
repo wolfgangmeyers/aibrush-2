@@ -37,6 +37,7 @@ import {
 } from "../../lib/models";
 import { HordeGenerator } from "../../lib/hordegenerator";
 import { Rect } from "./models";
+import { HordeClient } from "../../lib/hordeclient";
 
 const anonymousClient = axios.create();
 
@@ -658,6 +659,7 @@ export class EnhanceTool extends BaseTool implements Tool {
 
 interface ControlsProps {
     generator: HordeGenerator;
+    hordeClient: HordeClient;
     image: LocalImage;
     renderer: Renderer;
     tool: EnhanceTool;
@@ -665,6 +667,7 @@ interface ControlsProps {
 
 export const EnhanceControls: FC<ControlsProps> = ({
     generator,
+    hordeClient,
     image,
     renderer,
     tool,
@@ -1056,6 +1059,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     }}
                     initialSelectedModel={model}
                     inpainting={false}
+                    hordeClient={hordeClient}
                 />
             )}
             {selectingLora && (

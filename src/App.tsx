@@ -193,6 +193,7 @@ function App() {
                             <Route path="/image-editor/:id">
                                 <ImageEditor
                                     generator={generator}
+                                    hordeClient={hordeClient}
                                     localImages={localImages}
                                     savedImages={savedImagesStore}
                                 />

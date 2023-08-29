@@ -29,6 +29,7 @@ import { HordeGenerator } from "../../lib/hordegenerator";
 import { ImageClient } from "../../lib/savedimages";
 import moment from "moment";
 import { createEncodedThumbnail } from "../../lib/imageutil";
+import { HordeClient } from "../../lib/hordeclient";
 
 interface CanPreventDefault {
     preventDefault: () => void;
@@ -36,6 +37,7 @@ interface CanPreventDefault {
 
 interface Props {
     generator: HordeGenerator;
+    hordeClient: HordeClient;
     localImages: LocalImagesStore;
     savedImages: LocalImagesStore;
 }
@@ -53,6 +55,7 @@ delete anonymousClient.defaults.headers.common["Authorization"];
 
 export const ImageEditor: React.FC<Props> = ({
     generator,
+    hordeClient,
     localImages,
     savedImages,
 }) => {
@@ -70,6 +73,7 @@ export const ImageEditor: React.FC<Props> = ({
                         tool={t as InpaintTool}
                         renderer={renderer}
                         generator={generator}
+                        hordeClient={hordeClient}
                         image={image!}
                     />
                 );
@@ -90,6 +94,7 @@ export const ImageEditor: React.FC<Props> = ({
                         renderer={renderer}
                         image={image!}
                         generator={generator}
+                        hordeClient={hordeClient}
                     />
                 );
             },
