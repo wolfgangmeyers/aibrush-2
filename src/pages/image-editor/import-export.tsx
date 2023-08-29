@@ -42,7 +42,7 @@ export const ImportExportControls: FC<Props> = ({ renderer, tool }) => {
                 intArray[i] = byteString.charCodeAt(i);
             }
             const blob = new Blob([intArray], { type: `image/${format}` });
-            saveAs(blob, "image.webp");
+            saveAs(blob, `image.${format}`);
         }
     };
 
