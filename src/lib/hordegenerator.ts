@@ -161,7 +161,7 @@ export class HordeGenerator {
             nsfw: true,
             censor_nsfw: false,
             trusted_workers: false,
-            slow_workers: false,
+            slow_workers: this.client.isAnonymous(),
             r2: true,
             models: [input.model],
             source_processing: "img2img",

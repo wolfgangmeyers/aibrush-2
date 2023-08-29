@@ -87,6 +87,9 @@ export class HordeClient {
     //         progressEvent.loaded / progressEvent.total;
     //     setUploadingProgress(percentCompleted);
     // },
+    isAnonymous(): boolean {
+        return this.apiKey === "0000000000";
+    }
 
     async initiateImageGeneration(
         payload: GenerateRequestPayload,
