@@ -63,11 +63,7 @@ function App() {
     const init = async () => {
         console.log("App.init");
         // remove legacy saved images kvstore
-        const databases = await indexedDB.databases();
-        const savedImagesDb = databases.find((db) => db.name === "saved-images");
-        if (savedImagesDb) {
-            await deleteSavedImagesDb();
-        }
+        deleteSavedImagesDb();
 
         await localImages.init();
         await savedImagesStore.init();
