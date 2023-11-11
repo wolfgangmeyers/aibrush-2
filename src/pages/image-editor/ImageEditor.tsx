@@ -348,20 +348,14 @@ export const ImageEditor: React.FC<Props> = ({
             buttonClass = `btn btn-primary image-editor-tool-button`;
         }
         return (
-            <>
-                <button
-                    style={{ margin: "4px" }}
-                    className={buttonClass}
-                    onClick={() => onSelectTool(t)}
-                >
-                    <i className={t.iconClass}></i>
-                </button>
-                {/* capitalize tool name */}
-                {/* <label>
-                    {t.name.charAt(0).toUpperCase() + t.name.slice(1)}
-                </label>
-                {isSelected && t.renderControls(tool!, renderer!)} */}
-            </>
+            <button
+                style={{ margin: "4px" }}
+                className={buttonClass}
+                onClick={() => onSelectTool(t)}
+                key={`tool-button-${t.name}`}
+            >
+                <i className={t.iconClass}></i>
+            </button>
         );
     }
 

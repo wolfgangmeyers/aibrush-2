@@ -304,9 +304,9 @@ export class Renderer {
         // Determine the aspect ratios of the image and canvas
         const imageAspectRatio = this.width / this.height;
         const canvasAspectRatio = this.canvas.width / this.canvas.height;
-    
+
         let zoom, offsetX, offsetY;
-    
+
         if (imageAspectRatio > canvasAspectRatio) {
             // The image is wider than the canvas, so we should fit the image to the width of the canvas
             zoom = this.canvas.width / this.width;
@@ -320,11 +320,11 @@ export class Renderer {
             // Calculate the amount of empty space in the width (in image coordinate space), and divide by 2 to center
             offsetX = (this.width - (this.canvas.width / zoom)) / -2;
         }
-    
+
         this.updateZoomAndOffset(zoom, offsetX, offsetY);
     }
-    
-    
+
+
 
     setEditImage(imageData: ImageData | null) {
         this.hasSelection = !!imageData;
@@ -623,14 +623,36 @@ export class Renderer {
     }
 
     commitSelection() {
-        // draw the selection overlay on the base image layer
+        // This Rube Goldberg machine of a function is necessary because of a browser bug
+        // introduced some time in 2023. It uses a temporary canvas to properly blend the
+        // edit layer with the base image layer - for some reason if I don't, the base image
+        // layer gets completely overwritten by the edit layer. I can't seem to reproduce the
+        // issue outside this codebase, so there is the workaround.
         const context = this.baseImageLayer.getContext("2d");
         if (context) {
-            context.drawImage(this.editLayer, 0, 0);
+            // Create a temporary canvas
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = this.baseImageLayer.width;
+            tempCanvas.height = this.baseImageLayer.height;
+            const tempContext = tempCanvas.getContext("2d");
+
+            // Ensure the temporary context is valid
+            if (tempContext) {
+                // Draw the base image layer on the temporary canvas
+                tempContext.drawImage(this.baseImageLayer, 0, 0);
+
+                // Draw the edit layer on top of the base image in the temporary canvas
+                tempContext.drawImage(this.editLayer, 0, 0);
+
+                // Now draw the combined image from the temporary canvas back onto the base image layer
+                context.drawImage(tempCanvas, 0, 0);
+            }
+
             this.setEditImage(null);
             this.snapshot();
         }
     }
+
 
     drawPoint(
         x: number,
@@ -705,7 +727,7 @@ export class Renderer {
 
                 const distance = Math.sqrt(
                     Math.pow(x - brushSize / 2, 2) +
-                        Math.pow(y - brushSize / 2, 2)
+                    Math.pow(y - brushSize / 2, 2)
                 );
                 if (distance < brushSize / 2) {
                     imageData.data[i + 3] = 0;
@@ -795,7 +817,7 @@ export class Renderer {
                         const index = (y * imageData.width + x) * 4;
                         const distance = Math.sqrt(
                             (x - brushSize / 2) * (x - brushSize / 2) +
-                                (y - brushSize / 2) * (y - brushSize / 2)
+                            (y - brushSize / 2) * (y - brushSize / 2)
                         );
                         if (distance <= brushSize / 2) {
                             // get the pixel value from the image data
@@ -821,7 +843,7 @@ export class Renderer {
                         const index = (y * imageData.width + x) * 4;
                         const distance = Math.sqrt(
                             (x - brushSize / 2) * (x - brushSize / 2) +
-                                (y - brushSize / 2) * (y - brushSize / 2)
+                            (y - brushSize / 2) * (y - brushSize / 2)
                         );
                         if (distance <= brushSize / 2) {
                             imageData.data[index] =
