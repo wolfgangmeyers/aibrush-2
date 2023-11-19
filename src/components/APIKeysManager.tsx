@@ -8,13 +8,15 @@ interface Props {
   client: HordeClient;
   onHordeConnected: (apiKey: string, user: User) => void;
   onHordeUserUpdated: (user: User) => void;
+  onOpenAIConnected: (apiKey: string) => void;
 }
 
-const HordeUser = ({client, onHordeConnected: onApiKeyChange, onHordeUserUpdated}: Props) => {
+const APIKeysManager = ({client, onHordeConnected: onApiKeyChange, onHordeUserUpdated, onOpenAIConnected}: Props) => {
     const [user, setUser] = useState<User | null>(null);
-    const [apiKey, setApiKey] = useState<string | null>(null);
+    const [hordeApiKey, setHordeApiKey] = useState<string | null>(null);
     const [showModal, setShowModal] = useState(false);
-    const [apiKeyInput, setApiKeyInput] = useState("");
+    const [hordeApiKeyInput, setHordeApiKeyInput] = useState("");
+    const [openAIKeyInput, setOpenAIKeyInput] = useState("");
     const [error, setError] = useState<string | null>(null);
 
     const loadUserFromHorde = async (apiKey: string) => {
@@ -24,7 +26,7 @@ const HordeUser = ({client, onHordeConnected: onApiKeyChange, onHordeUserUpdated
                 headers: {
                     accept: "application/json",
                     "Client-Agent": "unknown:0:unknown",
-                    apikey: apiKeyInput,
+                    apikey: hordeApiKeyInput,
                 },
             }
         );
@@ -35,22 +37,28 @@ const HordeUser = ({client, onHordeConnected: onApiKeyChange, onHordeUserUpdated
 
     const loadUserFromStorage = async () => {
         const storedUser = localStorage.getItem("user");
-        const storedApiKey = localStorage.getItem("apiKey");
+        const storedHordeApiKey = localStorage.getItem("apiKey");
+        const storedOpenaiApiKey = localStorage.getItem("openaiKey");
 
-        if (storedUser && storedApiKey) {
+        if (storedUser && storedHordeApiKey) {
             let user = JSON.parse(storedUser) as User;
             setUser(user);
-            setApiKey(storedApiKey);
-            setApiKeyInput(storedApiKey);
-            client.updateApiKey(storedApiKey);
-            onApiKeyChange(storedApiKey, user);
+            setHordeApiKey(storedHordeApiKey);
+            setHordeApiKeyInput(storedHordeApiKey);
+            client.updateApiKey(storedHordeApiKey);
+            onApiKeyChange(storedHordeApiKey, user);
+        }
+
+        if (storedOpenaiApiKey) {
+            onOpenAIConnected(storedOpenaiApiKey);
+            setOpenAIKeyInput(storedOpenaiApiKey);
         }
     };
 
     useEffect(() => {
-        if (apiKey) {
+        if (hordeApiKey) {
             const reloadUser = async () => {
-                const user = await loadUserFromHorde(apiKey);
+                const user = await loadUserFromHorde(hordeApiKey);
                 setUser(user);
                 localStorage.setItem("user", JSON.stringify(user));
                 onHordeUserUpdated(user);
@@ -64,22 +72,30 @@ const HordeUser = ({client, onHordeConnected: onApiKeyChange, onHordeUserUpdated
             loadUserFromStorage();
         }
         
-    }, [apiKey]);
+    }, [hordeApiKey]);
 
-    const validateApiKey = async () => {
-        try {
-            const user = await loadUserFromHorde(apiKeyInput);
-            setUser(user);
-            setApiKey(apiKeyInput);
-            localStorage.setItem("user", JSON.stringify(user));
-            localStorage.setItem("apiKey", apiKeyInput);
-            client.updateApiKey(apiKeyInput);
-            setShowModal(false);
-            setError(null);
-            onApiKeyChange(apiKeyInput, user);
-        } catch (err) {
-            setError("Invalid API key");
+    const onSaveKeys = async () => {
+        if (hordeApiKeyInput) {
+            try {
+                const user = await loadUserFromHorde(hordeApiKeyInput);
+                setUser(user);
+                setHordeApiKey(hordeApiKeyInput);
+                localStorage.setItem("user", JSON.stringify(user));
+                localStorage.setItem("apiKey", hordeApiKeyInput);
+                client.updateApiKey(hordeApiKeyInput);
+                setShowModal(false);
+                setError(null);
+                onApiKeyChange(hordeApiKeyInput, user);
+            } catch (err) {
+                setError("Invalid Horde API key");
+            }
         }
+
+        if (openAIKeyInput) {
+            localStorage.setItem("openaiKey", openAIKeyInput);
+            onOpenAIConnected(openAIKeyInput);
+        }
+        
     };
 
     return (
@@ -95,25 +111,41 @@ const HordeUser = ({client, onHordeConnected: onApiKeyChange, onHordeUserUpdated
 
             <Modal show={showModal} onHide={() => setShowModal(false)}>
                 <Modal.Header closeButton>
-                    <Modal.Title>Enter API Key</Modal.Title>
+                    <Modal.Title>API Keys</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {/* info about how users can register for an api key at https://aihorde.net/register. Blue info icon */}
                     <p>
                         <i className="fas fa-info-circle"></i>&nbsp; You can register to get
-                        an API key at&nbsp;<a target="_blank" href="https://aihorde.net/register">https://aihorde.net/register</a>
+                        a Horde API key at&nbsp;<a target="_blank" href="https://aihorde.net/register">https://aihorde.net/register</a>
                     </p>
                     <Form>
                         <Form.Group controlId="formApiKey">
-                            <Form.Label>API Key</Form.Label>
+                            <Form.Label>Horde API Key</Form.Label>
                             <Form.Control
                                 type="text"
                                 placeholder="Enter API Key"
-                                value={apiKeyInput}
-                                onChange={(e) => setApiKeyInput(e.target.value)}
+                                value={hordeApiKeyInput}
+                                onChange={(e) => setHordeApiKeyInput(e.target.value)}
                             />
                         </Form.Group>
                         {error && <p style={{ color: "red" }}>{error}</p>}
+                    </Form>
+
+                    <p>
+                        {/* https://platform.openai.com/api-keys */}
+                        <i className="fas fa-info-circle"></i>&nbsp; You can get an OpenAI API key at&nbsp;<a target="_blank" href="https://platform.openai.com/api-keys">https://platform.openai.com/api-keys</a>
+                    </p>
+                    <Form>
+                        <Form.Group controlId="formApiKey">
+                            <Form.Label>OpenAI API Key</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="Enter API Key"
+                                value={openAIKeyInput}
+                                onChange={(e) => setOpenAIKeyInput(e.target.value)}
+                            />
+                        </Form.Group>
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
@@ -123,7 +155,7 @@ const HordeUser = ({client, onHordeConnected: onApiKeyChange, onHordeUserUpdated
                     >
                         Cancel
                     </Button>
-                    <Button variant="primary" onClick={validateApiKey}>
+                    <Button variant="primary" onClick={onSaveKeys}>
                         Save
                     </Button>
                 </Modal.Footer>
@@ -132,4 +164,4 @@ const HordeUser = ({client, onHordeConnected: onApiKeyChange, onHordeUserUpdated
     );
 };
 
-export default HordeUser;
+export default APIKeysManager;

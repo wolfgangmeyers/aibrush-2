@@ -20,12 +20,15 @@ import { ImageClient } from "../lib/savedimages";
 import { ImagesView } from "../components/ImagesView";
 import DropboxHelper from "../lib/dropbox";
 import { sleep } from "../lib/sleep";
+import { Dalle3Generator } from "../lib/dalle3generator";
+import { ImageGenerator } from "../lib/imagegenerator";
 
 export const anonymousClient = axios.create();
 delete anonymousClient.defaults.headers.common["Authorization"];
 
 interface Props {
     generator: HordeGenerator;
+    dalle3Generator: Dalle3Generator | undefined;
     localImages: LocalImagesStore;
     savedImages: LocalImagesStore;
     dropboxHelper?: DropboxHelper;
@@ -33,6 +36,7 @@ interface Props {
 
 export const Homepage: FC<Props> = ({
     generator,
+    dalle3Generator,
     localImages,
     savedImages,
     dropboxHelper,
@@ -90,7 +94,8 @@ export const Homepage: FC<Props> = ({
                     "jpeg"
                 );
             }
-            const job = await generator.generateImages(input, (progress) => {
+            const imageGenerator = new ImageGenerator(generator, dalle3Generator);
+            const job = await imageGenerator.generateImages(input, (progress) => {
                 setUploadingProgress(progress.loaded / progress.total);
             });
             setJobs((jobs) => [...jobs, job]);
@@ -160,6 +165,8 @@ export const Homepage: FC<Props> = ({
     useEffect(() => {
         let lock = false;
 
+        const imageGenerator = new ImageGenerator(generator, dalle3Generator);
+
         const pollImages = async () => {
             if (lock) {
                 return;
@@ -167,7 +174,7 @@ export const Homepage: FC<Props> = ({
             lock = true;
 
             try {
-                const updatedJobs = await generator.checkGenerationJobs(jobs);
+                const updatedJobs = await imageGenerator.checkGenerationJobs(jobs);
                 let pendingJobs: GenerationJob[] = [];
                 for (let job of updatedJobs) {
                     if (
@@ -188,6 +195,11 @@ export const Homepage: FC<Props> = ({
                             // small pause so that updated_at timestamps are different
                             await sleep(100);
                         }
+                    } else if (job.status === "error") {
+                        onError(
+                            job.error ||
+                                "Some images failed to generate, please make sure your prompt doesn't violate our terms of service"
+                        );
                     }
                 }
                 setJobs(pendingJobs);
@@ -205,7 +217,7 @@ export const Homepage: FC<Props> = ({
         return () => {
             clearInterval(timerHandle);
         };
-    }, [generator, jobs]);
+    }, [generator, dalle3Generator, jobs]);
 
     // load parent image from saved images if an id is on the query string
     useEffect(() => {
@@ -327,6 +339,7 @@ export const Homepage: FC<Props> = ({
                 parent={parentImage}
                 onCancel={() => handleCancelFork()}
                 hordeClient={generator.client}
+                openaiEnabled={!!dalle3Generator}
             />
             <hr />
 

@@ -29,6 +29,7 @@ export interface GenerationJob {
     images?: LocalImage[];
     created_at: number;
     count: number;
+    backend: "horde" | "openai";
 }
 
 export interface CheckResult {

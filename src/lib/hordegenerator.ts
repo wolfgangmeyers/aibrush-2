@@ -114,14 +114,6 @@ function combinePrompts(prompt: string, negativePrompt: string): string {
 export class HordeGenerator {
     constructor(readonly client: HordeClient) {}
 
-    // TODO: pass in onProgress callback
-    // onUploadProgress: (progressEvent: any) => {
-    //     const percentCompleted =
-    //         progressEvent.loaded / progressEvent.total;
-    //     setUploadingProgress(percentCompleted);
-    // },
-
-    // TODO: optimize with n > 1
     async generateImages(
         input: GenerateImageInput,
         onUploadProgress?: (progressEvent: any) => void
@@ -189,6 +181,7 @@ export class HordeGenerator {
             created_at: moment().valueOf(),
             progress: 0,
             count: input.count,
+            backend: "horde",
         };
     }
 

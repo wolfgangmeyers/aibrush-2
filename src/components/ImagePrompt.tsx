@@ -36,6 +36,7 @@ interface Props {
     onEdit: (input: GenerateImageInput) => void;
     onCancel: () => void;
     hordeClient: HordeClient;
+    openaiEnabled: boolean;
 }
 
 export function defaultArgs(): GenerateImageInput {
@@ -70,6 +71,7 @@ export const ImagePrompt: FC<Props> = ({
     onCancel,
     onEdit,
     hordeClient,
+    openaiEnabled,
 }) => {
     const [prompt, setPrompt] = useState<string>("");
     const [negativePrompt, setNegativePrompt] = useState<string>(
@@ -201,6 +203,9 @@ export const ImagePrompt: FC<Props> = ({
     const onSelectModel = (model: string) => {
         setModel(model);
         setSelectingModel(false);
+        if (model === "dall-e-3") {
+            setCount(1);
+        }
     };
 
     const onImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -274,7 +279,11 @@ export const ImagePrompt: FC<Props> = ({
             setParentId(parent.id);
             setAdvancedView(true);
             setVariationStrength(parent.params.denoising_strength || 0.75);
-            setModel(parent.model);
+            let model = parent.model;
+            if (model === "dall-e-3") {
+                model = "Epic Diffusion";
+            }
+            setModel(model);
             setCfgScale(parent.params.cfg_scale || 7.5);
             if (parent.params.loras && parent.params.loras.length > 0) {
                 selectedLorasFromConfigs(parent.params.loras).then((loras) => {
@@ -375,6 +384,7 @@ export const ImagePrompt: FC<Props> = ({
                                 onChange={(e) =>
                                     setCount(parseInt(e.target.value))
                                 }
+                                disabled={model === "dall-e-3"}
                             />
                             <span className="helptext">
                                 This is how many images you want to generate
@@ -406,7 +416,7 @@ export const ImagePrompt: FC<Props> = ({
                     </div>
                     {advancedView && (
                         <div className="homepage-prompt-advanced">
-                            {encodedImage && (
+                            {model !== "dall-e-3" && encodedImage && (
                                 <div className="form-group">
                                     <label>Init Image</label>
                                     <img
@@ -420,7 +430,7 @@ export const ImagePrompt: FC<Props> = ({
                                     />
                                 </div>
                             )}
-                            {!parent && !encodedImage && (
+                            {model !== "dall-e-3" && !parent && !encodedImage && (
                                 <AspectRatioSelector
                                     aspectRatio={aspectRatio}
                                     onChange={(aspectRatioId) => {
@@ -431,7 +441,7 @@ export const ImagePrompt: FC<Props> = ({
                                     }}
                                 />
                             )}
-                            <div className="form-group">
+                            {model !== "dall-e-3" && <div className="form-group">
                                 <div
                                     style={{
                                         display: "block",
@@ -472,7 +482,7 @@ export const ImagePrompt: FC<Props> = ({
                                         </label>
                                     )}
                                 </div>
-                            </div>
+                            </div>}
                             <div className="form-group">
                                 <label htmlFor="model">Model</label>
                                 <div>
@@ -486,7 +496,7 @@ export const ImagePrompt: FC<Props> = ({
                                     </button>
                                 </div>
                             </div>
-                            <div className="form-group">
+                            {model !== "dall-e-3" && <div className="form-group">
                                 {/* loras */}
                                 <label htmlFor="loras">Loras</label>
                                 <div>
@@ -514,8 +524,8 @@ export const ImagePrompt: FC<Props> = ({
                                         </button>
                                     )}
                                 </div>
-                            </div>
-                            <div className="form-group">
+                            </div>}
+                            {model !== "dall-e-3" && <div className="form-group">
                                 {/* negative prompt */}
                                 <label htmlFor="negativePrompt">
                                     Negative Prompt
@@ -539,9 +549,9 @@ export const ImagePrompt: FC<Props> = ({
                                     Try descriptive words like "blurry" or
                                     "distorted"
                                 </span>
-                            </div>
+                            </div>}
                             {/* size slider */}
-                            <div className="form-group">
+                            {model !== "dall-e-3" && <div className="form-group">
                                 <label htmlFor="size">
                                     Size: {scaledAspectRatio.width} x{" "}
                                     {scaledAspectRatio.height}
@@ -563,9 +573,9 @@ export const ImagePrompt: FC<Props> = ({
                                     This allows you to adjust the size of your
                                     images. Larger images cost more credits.
                                 </span>
-                            </div>
+                            </div>}
 
-                            {(parentId || encodedImage) && (
+                            {model !== "dall-e-3" && (parentId || encodedImage) && (
                                 <div className="form-group">
                                     {/* variation strength */}
                                     <label htmlFor="variationStrength">
@@ -592,7 +602,7 @@ export const ImagePrompt: FC<Props> = ({
                                     </span>
                                 </div>
                             )}
-                            {encodedImage && (
+                            {model !== "dall-e-3" && encodedImage && (
                                 // controlnet type - canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough
                                 <div className="form-group">
                                     <label htmlFor="controlNetType">
@@ -630,7 +640,7 @@ export const ImagePrompt: FC<Props> = ({
                                 </div>
                             )}
                             {/* cfg scale. Slider from 1 to 20 in increments of 0.1 */}
-                            <div className="form-group">
+                            {model !== "dall-e-3" && <div className="form-group">
                                 <label>CFG Scale: {cfgScale.toFixed(1)}</label>
                                 <input
                                     type="range"
@@ -647,10 +657,10 @@ export const ImagePrompt: FC<Props> = ({
                                     Adjust the CFG scale to control how much the
                                     image looks like the prompt.
                                 </span>
-                            </div>
-                            <SeedInput seed={seed} setSeed={setSeed} />
+                            </div>}
+                            {model !== "dall-e-3" && <SeedInput seed={seed} setSeed={setSeed} />}
                             {/* hires fix checkbox */}
-                            <div className="form-group">
+                            {model !== "dall-e-3" && <div className="form-group">
                                 <div className="form-check">
                                     <input
                                         className="form-check-input"
@@ -672,7 +682,7 @@ export const ImagePrompt: FC<Props> = ({
                                 <span className="helptext">
                                     Helps with proportions in high resolution images.
                                 </span>
-                            </div>
+                            </div>}
 
 
                             <div
@@ -707,7 +717,7 @@ export const ImagePrompt: FC<Props> = ({
                                         &nbsp;PAINT
                                     </button>
 
-                                    <button
+                                    {model !== "dall-e-3" && <button
                                         type="button"
                                         className="btn btn-secondary light-button"
                                         onClick={handleEdit}
@@ -716,7 +726,7 @@ export const ImagePrompt: FC<Props> = ({
                                     >
                                         <i className="fas fa-edit"></i>
                                         &nbsp;EDIT
-                                    </button>
+                                    </button>}
                                 </div>
                             </div>
                         </div>
@@ -730,6 +740,7 @@ export const ImagePrompt: FC<Props> = ({
                     initialSelectedModel={model}
                     inpainting={false}
                     hordeClient={hordeClient}
+                    openaiEnabled={openaiEnabled}
                 />
             )}
             {selectingLora && (

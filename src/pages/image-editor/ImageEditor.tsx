@@ -75,6 +75,7 @@ export const ImageEditor: React.FC<Props> = ({
                         generator={generator}
                         hordeClient={hordeClient}
                         image={image!}
+                        key={"inpaint-controls"}
                     />
                 );
             },
@@ -95,6 +96,7 @@ export const ImageEditor: React.FC<Props> = ({
                         image={image!}
                         generator={generator}
                         hordeClient={hordeClient}
+                        key={"enhance-controls"}
                     />
                 );
             },
@@ -110,6 +112,7 @@ export const ImageEditor: React.FC<Props> = ({
                         tool={t as PencilTool}
                         renderer={renderer}
                         colors={defaultColors}
+                        key={"pencil-controls"}
                     />
                 );
             },
@@ -125,6 +128,7 @@ export const ImageEditor: React.FC<Props> = ({
                     <SmudgeControls
                         tool={t as SmudgeTool}
                         renderer={renderer}
+                        key={"smudge-controls"}
                     />
                 );
             },
@@ -139,6 +143,7 @@ export const ImageEditor: React.FC<Props> = ({
                     <ImportExportControls
                         renderer={renderer}
                         tool={t as BaseTool}
+                        key={"import-export-controls"}
                     />
                 );
             },
@@ -155,6 +160,7 @@ export const ImageEditor: React.FC<Props> = ({
                         tool={t as BaseTool}
                         generator={generator}
                         image={image!}
+                        key={"augment-controls"}
                     />
                 );
             },
@@ -206,7 +212,7 @@ export const ImageEditor: React.FC<Props> = ({
         }
         setBusyMessage("Saving image...");
         // make sure to make this png so the thumbnail doesn't try to convert to webp
-        encodedImage = `data:image/png;base64,${encodedImage}`
+        encodedImage = `data:image/png;base64,${encodedImage}`;
         const encodedThumbanil = await createEncodedThumbnail(encodedImage);
         try {
             const newImage: LocalImage = {
