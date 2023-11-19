@@ -959,6 +959,7 @@ export const InpaintControls: FC<ControlsProps> = ({
                     initialSelectedModel={model}
                     inpainting={true}
                     hordeClient={hordeClient}
+                    openaiEnabled={false}
                 />
             )}
             {selectingLora && (
