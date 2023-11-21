@@ -285,6 +285,12 @@ export const ImagePrompt: FC<Props> = ({
             }
             setModel(model);
             setCfgScale(parent.params.cfg_scale || 7.5);
+            const bestMatch = getClosestAspectRatio(
+                parent.params.width!,
+                parent.params.height!
+            );
+            setAspectRatio(bestMatch.id);
+            setAspectRatioDetails(bestMatch);
             if (parent.params.loras && parent.params.loras.length > 0) {
                 selectedLorasFromConfigs(parent.params.loras).then((loras) => {
                     setSelectedLoras(loras);

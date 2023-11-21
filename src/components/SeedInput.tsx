@@ -26,7 +26,7 @@ export const SeedInput: FC<Props> = ({ seed, setSeed }) => {
     };
 
     return (
-        <Form>
+        <>
             <FormGroup>
                 <FormCheck
                     type="checkbox"
@@ -59,6 +59,6 @@ export const SeedInput: FC<Props> = ({ seed, setSeed }) => {
                     </span>
                 </FormGroup>
             )}
-        </Form>
+        </>
     );
 };

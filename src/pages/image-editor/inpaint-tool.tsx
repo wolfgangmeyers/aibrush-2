@@ -10,15 +10,11 @@ import { SelectionTool } from "./selection-tool";
 import { Cursor, Rect } from "./models";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
 import {
-    applyAlphaMask,
-    featherEdges,
     ImageUtilWorker,
     loadImageDataElement,
 } from "../../lib/imageutil";
-import { ApiSocket, NOTIFICATION_IMAGE_UPDATED } from "../../lib/apisocket";
 import moment from "moment";
 import { ProgressBar } from "../../components/ProgressBar";
-import { calculateImagesCost } from "../../lib/credits";
 import { CostIndicator } from "../../components/CostIndicator";
 import ModelSelector from "../../components/ModelSelector";
 import { ResetToDefaultIcon } from "../../components/ResetToDefaultIcon";
