@@ -481,7 +481,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         const selectionOverlay = this.renderer.getSelectionOverlay();
         let encodedImage = this.renderer.getEncodedImage(
             selectionOverlay!,
-            "webp"
+            "jpeg"
         );
         if (!encodedImage) {
             console.error("No selection");
