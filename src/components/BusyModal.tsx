@@ -1,8 +1,8 @@
-import React, { FC, useEffect, useRef, useState } from "react";
+import React, { FC, PropsWithChildren, useEffect, useRef, useState } from "react";
 import { Modal } from "react-bootstrap";
 import { propTypes } from "react-bootstrap/esm/Image";
 
-interface Props {
+interface Props extends PropsWithChildren<any> {
     show: boolean;
     title?: string;
 }
