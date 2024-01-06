@@ -31,6 +31,7 @@ import DropboxHelper from "./lib/dropbox";
 import { User } from "./lib/models";
 import { KudosBalance } from "./components/KudosBalance";
 import { Dalle3Generator } from "./lib/dalle3generator";
+import { OverlayTrigger, Tooltip } from "react-bootstrap";
 
 const localImages = new LocalImagesStore();
 const savedImagesStore = new LocalImagesStore("saved_images");
@@ -123,39 +124,62 @@ function App() {
                             <div className="col-lg-12">
                                 <>
                                     {/* saved images */}
-                                    <Link
-                                        className="btn btn-primary top-button"
-                                        to="/saved"
-                                    >
-                                        {/* font awesome save icon */}
-                                        <i className="fas fa-save"></i>
-                                    </Link>
+                                    <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-disabled">View saved images</Tooltip>}>
+                                        <Link
+                                            className="btn btn-primary top-button"
+                                            to="/saved"
+                                        >
+                                            {/* font awesome save icon */}
+                                            <i className="fas fa-save"></i>
+                                        </Link>
+                                    </OverlayTrigger>
                                     {/* home button */}
-                                    <Link
-                                        className="btn btn-primary top-button"
-                                        to="/"
-                                    >
-                                        {/* font awesome home icon */}
-                                        <i className="fas fa-home"></i>
-                                    </Link>
+                                    <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-disabled">Generate new Images</Tooltip>}>
+                                        <Link
+                                            className="btn btn-primary top-button"
+                                            to="/"
+                                        >
+                                            {/* font awesome home icon */}
+                                            <i className="fas fa-home"></i>
+                                        </Link>
+                                    </OverlayTrigger>
                                     {/* Link to discord */}
-                                    <a
-                                        className="btn btn-primary top-button"
-                                        href="https://discord.gg/HYcFpDeqKJ"
-                                        target="_blank"
-                                    >
-                                        {/* font awesome discord icon */}
-                                        <i className="fab fa-discord"></i>
-                                    </a>
+                                    <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-disabled">Join our discord server!</Tooltip>}>
+                                        <a
+                                            className="btn btn-primary top-button"
+                                            href="https://discord.gg/HYcFpDeqKJ"
+                                            target="_blank"
+                                        >
+                                            {/* font awesome discord icon */}
+                                            <i className="fab fa-discord"></i>
+                                        </a>
+                                    </OverlayTrigger>
                                     {/* link to github */}
-                                    <a
-                                        className="btn btn-primary top-button"
-                                        href="https://github.com/wolfgangmeyers/aibrush-2"
-                                        target="_blank"
-                                    >
-                                        {/* font awesome github icon */}
-                                        <i className="fab fa-github"></i>
-                                    </a>
+                                    <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-disabled">Check out the source code!</Tooltip>}>
+                                        <a
+                                            className="btn btn-primary top-button"
+                                            href="https://github.com/wolfgangmeyers/aibrush-2"
+                                            target="_blank"
+
+                                        >
+                                            {/* font awesome github icon */}
+                                            <i className="fab fa-github"></i>
+                                        </a>
+                                    </OverlayTrigger>
+                                    {/* merch store (t-shirt icon) */}
+                                    <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-disabled">Check out the Merch at CatLogic!</Tooltip>}>
+                                        <a
+                                            className="btn top-button"
+                                            href="https://catlogic.threadless.com"
+                                            target="_blank"
+                                            style={{
+                                                animation: "color 5s ease infinite"
+                                            }}
+                                        >
+                                            {/* font awesome t-shirt icon */}
+                                            <i className="fas fa-tshirt"></i>
+                                        </a>
+                                    </OverlayTrigger>
                                     <APIKeysManager client={hordeClient} onHordeConnected={onHordeConnected} onHordeUserUpdated={setUser} onOpenAIConnected={onOpenAIConnected} />
                                 </>
                             </div>
@@ -163,9 +187,9 @@ function App() {
                                 className="col-lg-12"
                                 style={{ textAlign: "right" }}
                             >
-                                {/* TODO: replace with KudosBalance */}
                                 {user && <KudosBalance user={user} />}
                             </div>
+
                         </div>
 
                         {/* if credentials are set, show the rest of the app */}
@@ -252,6 +276,7 @@ function App() {
                             >
                                 Privacy Policy
                             </NavLink>
+
                             <NavLink to="/terms-of-service">
                                 Terms of Service
                             </NavLink>
@@ -276,8 +301,9 @@ function App() {
                         </div>
                     </div>
                 </BrowserRouter>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }
 
