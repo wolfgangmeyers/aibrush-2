@@ -562,13 +562,13 @@ export const ImagePrompt: FC<Props> = ({
                                     Size: {scaledAspectRatio.width} x{" "}
                                     {scaledAspectRatio.height}
                                 </label>
-                                {/* range slider from 1 to 2 in increments of 0.1 */}
+                                {/* range slider from 1 to 4 in increments of 0.1 */}
                                 <input
                                     type="range"
                                     className="form-control-range"
                                     id="size"
                                     min="1"
-                                    max="2"
+                                    max="4"
                                     step="0.1"
                                     value={size}
                                     onChange={(e) =>

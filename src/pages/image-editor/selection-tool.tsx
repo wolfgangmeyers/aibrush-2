@@ -281,13 +281,13 @@ export const Controls: React.FC<ControlsProps> = ({
                         {Math.round(size * 100)}%
                     </small>
                 </label>
-                {/* range from 0.1 to 1 */}
+                {/* range from 0.1 to 4 */}
                 <input
                     type="range"
                     className="form-control-range"
                     id="size"
                     min="1"
-                    max="2"
+                    max="4"
                     step="0.1"
                     value={size}
                     onChange={(event) => {
