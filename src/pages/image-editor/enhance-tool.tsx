@@ -7,10 +7,9 @@ import { defaultArgs } from "../../components/ImagePrompt";
 import { Tool, BaseTool } from "./tool";
 import { Renderer } from "./renderer";
 import {
-    convertImageFormat,
-    ImageUtilWorker,
-    ImageWorkerRequest,
     loadImageDataElement,
+    applyAlphaMask,
+    featherEdges,
 } from "../../lib/imageutil";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { getUpscaleLevel } from "../../lib/upscale";
@@ -38,6 +37,7 @@ import {
 import { HordeGenerator } from "../../lib/hordegenerator";
 import { Rect } from "./models";
 import { HordeClient } from "../../lib/hordeclient";
+import { getSteps, setSteps } from "../../lib/settings";
 
 const anonymousClient = axios.create();
 
@@ -67,10 +67,9 @@ export class EnhanceTool extends BaseTool implements Tool {
     private model: string = "Epic Diffusion";
     private count: number = 4;
     private variationStrength: number = 0.35;
+    private steps: number = 20;
     private loras: LoraConfig[] = [];
     private _dirty = false;
-    private worker: ImageUtilWorker;
-    private idCounter = 0;
 
     private _state: EnhanceToolState = "default";
     private stateHandler: (state: EnhanceToolState) => void = () => {};
@@ -185,7 +184,6 @@ export class EnhanceTool extends BaseTool implements Tool {
         });
         // unset the cursor from the pencil tool (hack)
         this.renderer.setCursor(undefined);
-        this.worker = new ImageUtilWorker();
     }
 
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
@@ -355,6 +353,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.model = args.model || "Epic Diffusion";
         this.count = args.count || 4;
         this.variationStrength = args.variationStrength || 0.75;
+        this.steps = args.steps || 20;
         this.loras = args.loras || [];
         console.log("updateArgs", args);
     }
@@ -373,10 +372,6 @@ export class EnhanceTool extends BaseTool implements Tool {
 
     onProgress(listener: (progress: number) => void): void {
         this.progressListener = listener;
-    }
-
-    private newId(): string {
-        return `${this.idCounter++}`;
     }
 
     private async loadImageData(
@@ -405,29 +400,22 @@ export class EnhanceTool extends BaseTool implements Tool {
             selectionOverlay.width,
             selectionOverlay.height
         );
-        const id = this.newId();
-        const req: ImageWorkerRequest = {
-            id,
-            alphaMode: "none",
-            feather: true,
-            height: this.renderer.getHeight(),
-            width: this.renderer.getWidth(),
-            pixels: imageData.data,
-            selectionOverlay,
-        };
+
+        // Apply mask using GPU-accelerated function (if mask exists)
         if (maskData) {
-            req.alphaMode = "mask";
-            req.alphaPixels = maskData.data;
+            applyAlphaMask(imageData, maskData, true);  // true = invert
         }
-        const resp = await this.worker.processRequest(req);
-        const updatedImageData = new ImageData(
-            resp.pixels,
-            imageData.width,
-            imageData.height
+
+        // Apply feathering
+        featherEdges(
+            selectionOverlay,
+            this.renderer.getWidth(),
+            this.renderer.getHeight(),
+            imageData
         );
-        // remove canvas
+
         canvas.remove();
-        return updatedImageData;
+        return imageData;
     }
 
     cancel() {
@@ -518,6 +506,7 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.params.width = Math.ceil(input.params.width / 64) * 64;
         input.params.height = Math.ceil(input.params.height / 64) * 64;
         input.params.loras = this.loras;
+        input.params.steps = this.steps;
 
         let job: GenerationJob | undefined;
         this.state = "uploading";
@@ -652,7 +641,6 @@ export class EnhanceTool extends BaseTool implements Tool {
             this.renderer.deleteMask();
         }
         this.renderer.setCursor(undefined);
-        this.worker.destroy();
         return true;
     }
 }
@@ -675,6 +663,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
     const [count, setCount] = useState(4);
     const [dirty, setDirty] = useState(false);
     const [variationStrength, setVariationStrength] = useState(0.35);
+    const [steps, setStepsState] = useState(getSteps());
     const [prompt, setPrompt] = useState(image.params.prompt || "");
     const [negativePrompt, setNegativePrompt] = useState(
         image.params.negative_prompt || ""
@@ -896,6 +885,28 @@ export const EnhanceControls: FC<ControlsProps> = ({
                         </small>
                     </div>
                     <div className="form-group">
+                        <label htmlFor="steps">
+                            Steps: {steps}
+                        </label>
+                        <input
+                            type="range"
+                            className="form-control-range"
+                            id="steps"
+                            min="1"
+                            max="150"
+                            step="1"
+                            value={steps}
+                            onChange={(e) => {
+                                const newSteps = parseInt(e.target.value);
+                                setStepsState(newSteps);
+                                setSteps(newSteps);
+                            }}
+                        />
+                        <small className="form-text text-muted">
+                            More steps can improve quality but increases time
+                        </small>
+                    </div>
+                    <div className="form-group">
                         <label htmlFor="model">Model</label>
                         <div>
                             <button
@@ -1014,6 +1025,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                                 tool.updateArgs({
                                     count,
                                     variationStrength,
+                                    steps,
                                     prompt,
                                     negativePrompt,
                                     model,

@@ -16,6 +16,7 @@ import ModelSelector from "./ModelSelector";
 import { calculateImagesCost } from "../lib/credits";
 import { CostIndicator } from "./CostIndicator";
 import { recentPrompts, recentNegativePrompts } from "../lib/recentList";
+import { getSteps, setSteps } from "../lib/settings";
 import TextInputWithHistory from "./TextInputWithHistory";
 import {
     LoraModal,
@@ -96,6 +97,7 @@ export const ImagePrompt: FC<Props> = ({
 
     const [selectingLora, setSelectingLora] = useState<boolean>(false);
     const [selectedLoras, setSelectedLoras] = useState<SelectedLora[]>([]);
+    const [steps, setStepsState] = useState<number>(getSteps());
 
     const defaultAspectRatio = aspectRatios[DEFAULT_ASPECT_RATIO];
 
@@ -141,6 +143,7 @@ export const ImagePrompt: FC<Props> = ({
         args.model = model;
         args.params.controlnet_type = controlnetType as any;
         args.params.cfg_scale = cfgScale;
+        args.params.steps = steps;
         args.params.seed = seed || undefined;
         args.params.loras = selectedLoras.map((l) => l.config);
         args.hires_fix = hiresFix;
@@ -185,6 +188,7 @@ export const ImagePrompt: FC<Props> = ({
         args.params.width = originalWidth;
         args.params.height = originalHeight;
         args.params.cfg_scale = cfgScale;
+        args.params.steps = steps;
         args.params.loras = selectedLoras.map((l) => l.config);
         args.model = model;
         if (encodedImage) {
@@ -662,6 +666,26 @@ export const ImagePrompt: FC<Props> = ({
                                 <span className="helptext">
                                     Adjust the CFG scale to control how much the
                                     image looks like the prompt.
+                                </span>
+                            </div>}
+                            {model !== "dall-e-3" && <div className="form-group">
+                                <label>Steps: {steps}</label>
+                                <input
+                                    type="range"
+                                    className="form-control-range"
+                                    min="1"
+                                    max="150"
+                                    step="1"
+                                    value={steps}
+                                    onChange={(e) => {
+                                        const newSteps = parseInt(e.target.value);
+                                        setStepsState(newSteps);
+                                        setSteps(newSteps);
+                                    }}
+                                />
+                                <span className="helptext">
+                                    More steps can improve image quality but
+                                    increases generation time.
                                 </span>
                             </div>}
                             {model !== "dall-e-3" && <SeedInput seed={seed} setSeed={setSeed} />}

@@ -576,6 +576,26 @@ export class Renderer {
         return mask;
     }
 
+    private convertMaskToErasure(mask: ImageData): ImageData {
+        // Convert RGB mask (white=masked) to alpha-based erasure (transparent=masked)
+        const erasure = mask;
+        for (let i = 0; i < mask.data.length; i += 4) {
+            let white = mask.data[i] === 255;
+            if (white) {
+                erasure.data[i] = 255;
+                erasure.data[i + 1] = 255;
+                erasure.data[i + 2] = 255;
+                erasure.data[i + 3] = 0;
+            } else {
+                erasure.data[i] = 0;
+                erasure.data[i + 1] = 0;
+                erasure.data[i + 2] = 0;
+                erasure.data[i + 3] = 255;
+            }
+        }
+        return erasure;
+    }
+
     getEncodedMask(
         selection: Rect | null,
         layer: "base" | "mask" = "base"
@@ -612,12 +632,15 @@ export class Renderer {
         }
         let context = imageLayer.getContext("2d");
         if (context) {
-            const imageData = context.getImageData(
+            let imageData = context.getImageData(
                 selection.x,
                 selection.y,
                 selection.width,
                 selection.height
             );
+            if (layer === "mask") {
+                imageData = this.convertMaskToErasure(imageData);
+            }
             return imageData;
         }
     }

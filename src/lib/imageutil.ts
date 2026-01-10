@@ -292,45 +292,71 @@ export function featherEdges(
     }
 }
 
-export function applyAlphaMask(imageData: ImageData, alphaMask: ImageData) {
+/**
+ * GPU-accelerated alpha mask application using Canvas blur filter.
+ * This is dramatically faster than the old pixel-by-pixel approach.
+ *
+ * @param imageData - The image data to apply the mask to (modified in place)
+ * @param alphaMask - The alpha mask to apply
+ * @param invert - If true, inverts the mask (areas with transparency become opaque and vice versa)
+ */
+export function applyAlphaMask(imageData: ImageData, alphaMask: ImageData, invert: boolean = true) {
     if (
         imageData.width != alphaMask.width ||
         imageData.height != alphaMask.height
     ) {
         throw new Error("imageData and alphaMask are not the same size");
     }
-    const spread = 10;
-    for (let x = 0; x < imageData.width; x++) {
-        for (let y = 0; y < imageData.height; y++) {
-            // r, g, b, a
-            // if transparency within 10 pixels, set alpha to 1, otherwise to zero.
-            // binary alpha inversion with spread
-            let alpha = false;
-            for (
-                let x2 = Math.max(0, x - spread);
-                x2 < Math.min(imageData.width, x + spread);
-                x2++
-            ) {
-                for (
-                    let y2 = Math.max(0, y - spread);
-                    y2 < Math.min(imageData.height, y + spread);
-                    y2++
-                ) {
-                    const alphaValue =
-                        alphaMask.data[y2 * alphaMask.width * 4 + x2 * 4 + 3];
-                    if (alphaValue < 255) {
-                        alpha = true;
-                    }
-                }
+
+    const blurRadius = 10;
+    const edgeWidth = blurRadius * 3;  // Prevent edge artifacts
+
+    // Create alpha canvas with padding for blur overflow
+    const alphaCanvas = document.createElement("canvas");
+    alphaCanvas.width = imageData.width + edgeWidth * 2;
+    alphaCanvas.height = imageData.height + edgeWidth * 2;
+    const alphaCtx = alphaCanvas.getContext("2d");
+    if (!alphaCtx) {
+        throw new Error("Could not get alpha canvas context");
+    }
+    alphaCtx.putImageData(alphaMask, edgeWidth, edgeWidth);
+
+    // Create image canvas for blur operation
+    const imageCanvas = document.createElement("canvas");
+    imageCanvas.width = imageData.width + edgeWidth * 2;
+    imageCanvas.height = imageData.height + edgeWidth * 2;
+    const imageCtx = imageCanvas.getContext("2d");
+    if (!imageCtx) {
+        throw new Error("Could not get image canvas context");
+    }
+    imageCtx.fillStyle = 'white';
+    imageCtx.fillRect(0, 0, imageCanvas.width, imageCanvas.height);
+
+    // GPU-ACCELERATED BLUR: The key optimization
+    imageCtx.filter = `blur(${blurRadius}px)`;
+    imageCtx.globalCompositeOperation = "destination-in";
+    imageCtx.drawImage(alphaCanvas, 0, 0);
+
+    // Extract blurred alpha and apply to image data
+    const alphaData = imageCtx.getImageData(edgeWidth, edgeWidth, alphaMask.width, alphaMask.height);
+    for (let i = 0; i < alphaData.data.length; i += 4) {
+        let alpha = alphaData.data[i + 3];
+        if (invert) {
+            alpha = 255 - alpha;
+            if (alpha < 255) {
+                alpha = Math.min(255, alpha * 2);
             }
-            const alphaIndex = y * imageData.width * 4 + x * 4 + 3;
-            if (alpha) {
-                imageData.data[alphaIndex] = 255;
-            } else {
-                imageData.data[alphaIndex] = 0;
+        } else {
+            if (alpha > 0) {
+                alpha = Math.max(255 - (255 - alpha) * 2, 0);
             }
         }
+        imageData.data[i + 3] = alpha;
     }
+
+    // Clean up
+    alphaCanvas.remove();
+    imageCanvas.remove();
 }
 
 export function createBlankImage(

@@ -10,8 +10,9 @@ import { SelectionTool } from "./selection-tool";
 import { Cursor, Rect } from "./models";
 import { getClosestAspectRatio } from "../../lib/aspecRatios";
 import {
-    ImageUtilWorker,
     loadImageDataElement,
+    applyAlphaMask,
+    featherEdges,
 } from "../../lib/imageutil";
 import moment from "moment";
 import { ProgressBar } from "../../components/ProgressBar";
@@ -33,6 +34,7 @@ import {
 } from "../../lib/models";
 import { HordeGenerator } from "../../lib/hordegenerator";
 import { HordeClient } from "../../lib/hordeclient";
+import { getSteps, setSteps } from "../../lib/settings";
 
 const anonymousClient = axios.create();
 
@@ -55,10 +57,9 @@ export class InpaintTool extends BaseTool implements Tool {
     private negativePrompt: string = "";
     private count: number = 4;
     private brushSize: number = 10;
+    private steps: number = 20;
     private loras: LoraConfig[] = [];
     private _dirty = false;
-    private worker: ImageUtilWorker;
-    private idCounter = 0;
 
     private _state: InpaintToolState;
     private stateHandler: (state: InpaintToolState) => void = () => {};
@@ -82,10 +83,6 @@ export class InpaintTool extends BaseTool implements Tool {
 
     get dirty() {
         return this._dirty;
-    }
-
-    private newId(): string {
-        return `${this.idCounter++}`;
     }
 
     onError(handler: (error: string | null) => void) {
@@ -160,7 +157,6 @@ export class InpaintTool extends BaseTool implements Tool {
         } else {
             this.state = "erase";
         }
-        this.worker = new ImageUtilWorker();
     }
 
     onMouseDown(event: React.MouseEvent<HTMLCanvasElement, MouseEvent>) {
@@ -265,6 +261,7 @@ export class InpaintTool extends BaseTool implements Tool {
         this.negativePrompt = args.negativePrompt || "";
         this.count = args.count || 4;
         this.brushSize = args.brushSize || 10;
+        this.steps = args.steps || 20;
         this.loras = args.loras || [];
 
         this.updateCursor(
@@ -315,26 +312,20 @@ export class InpaintTool extends BaseTool implements Tool {
             selectionOverlay.height
         );
 
-        const id = this.newId();
-        const resp = await this.worker.processRequest({
-            id,
-            alphaMode: "alpha",
-            alphaPixels: alphaMask.data,
-            feather: true,
-            height: this.renderer.getHeight(),
-            width: this.renderer.getWidth(),
-            pixels: imageData.data,
+        // Apply alpha mask using GPU-accelerated function
+        applyAlphaMask(imageData, alphaMask, true);  // true = invert
+
+        // Apply feathering
+        featherEdges(
             selectionOverlay,
-            featherWidth: 10,
-        });
-        const updatedImageData = new ImageData(
-            resp.pixels,
-            imageData.width,
-            imageData.height
+            this.renderer.getWidth(),
+            this.renderer.getHeight(),
+            imageData,
+            10  // featherWidth
         );
-        // remove canvas
+
         canvas.remove();
-        return updatedImageData;
+        return imageData;
     }
 
     cancel() {
@@ -416,6 +407,7 @@ export class InpaintTool extends BaseTool implements Tool {
         input.params.width = closestAspectRatio.width;
         input.params.height = closestAspectRatio.height;
         input.params.loras = this.loras;
+        input.params.steps = this.steps;
 
         let job: GenerationJob | undefined;
 
@@ -555,7 +547,6 @@ export class InpaintTool extends BaseTool implements Tool {
         }
         this.renderer.setCursor(undefined);
         this.renderer.setEditImage(null);
-        this.worker.destroy();
         return true;
     }
 }
@@ -591,6 +582,7 @@ export const InpaintControls: FC<ControlsProps> = ({
     );
     const [model, setModel] = useState("Deliberate Inpainting");
     const [selectingModel, setSelectingModel] = useState(false);
+    const [steps, setStepsState] = useState(getSteps());
 
     const [selectingLora, setSelectingLora] = useState<boolean>(false);
     const [selectedLoras, setSelectedLoras] = useState<SelectedLora[]>([]);
@@ -818,6 +810,28 @@ export const InpaintControls: FC<ControlsProps> = ({
                             Number of inpaint options
                         </small>
                     </div>
+                    <div className="form-group">
+                        <label htmlFor="steps">
+                            Steps: {steps}
+                        </label>
+                        <input
+                            type="range"
+                            className="form-control-range"
+                            id="steps"
+                            min="1"
+                            max="150"
+                            step="1"
+                            value={steps}
+                            onChange={(e) => {
+                                const newSteps = parseInt(e.target.value);
+                                setStepsState(newSteps);
+                                setSteps(newSteps);
+                            }}
+                        />
+                        <small className="form-text text-muted">
+                            More steps can improve quality (inpainting models use 50)
+                        </small>
+                    </div>
                     {/* select model dropdown */}
                     {/* options: stable_diffusion_inpainting, "Epic Diffusion", "Deliberate" */}
                     <div className="form-group">
@@ -933,6 +947,7 @@ export const InpaintControls: FC<ControlsProps> = ({
                         onClick={() => {
                             tool.updateArgs({
                                 count,
+                                steps,
                                 prompt,
                                 negativePrompt,
                             });
