@@ -403,7 +403,9 @@ export class EnhanceTool extends BaseTool implements Tool {
 
         // Apply mask using GPU-accelerated function (if mask exists)
         if (maskData) {
-            applyAlphaMask(imageData, maskData, true);  // true = invert
+            // Convert RGB mask to alpha-based format for applyAlphaMask
+            const alphaMask = this.renderer.convertMaskForAlphaApplication(maskData);
+            applyAlphaMask(imageData, alphaMask, true);  // true = invert
         }
 
         // Apply feathering

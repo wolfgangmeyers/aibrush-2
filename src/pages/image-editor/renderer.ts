@@ -608,6 +608,8 @@ export class Renderer {
             const mask = this.convertErasureToMask(imageData);
             return this.imageDataToEncodedImage(mask, "webp");
         } else {
+            // For horde API: send raw RGB mask (white=regenerate, black=keep)
+            // Don't convert to alpha-based format here
             return this.imageDataToEncodedImage(imageData, "webp");
         }
     }
@@ -632,17 +634,19 @@ export class Renderer {
         }
         let context = imageLayer.getContext("2d");
         if (context) {
-            let imageData = context.getImageData(
+            const imageData = context.getImageData(
                 selection.x,
                 selection.y,
                 selection.width,
                 selection.height
             );
-            if (layer === "mask") {
-                imageData = this.convertMaskToErasure(imageData);
-            }
             return imageData;
         }
+    }
+
+    // Convert RGB mask (white=masked) to alpha-based format for applyAlphaMask
+    convertMaskForAlphaApplication(mask: ImageData): ImageData {
+        return this.convertMaskToErasure(mask);
     }
 
     commitSelection() {
