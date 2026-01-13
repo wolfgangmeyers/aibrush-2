@@ -2,6 +2,9 @@
     "name": "aibrush-frontend",
     "version": "0.1.0",
     "private": true,
+    "engines": {
+        "node": "22.x"
+    },
     "dependencies": {
         "@stripe/stripe-js": "^1.52.1",
         "@testing-library/jest-dom": "^5.11.4",
