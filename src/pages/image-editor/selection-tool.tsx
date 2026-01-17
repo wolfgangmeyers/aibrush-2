@@ -11,6 +11,7 @@ import {
 } from "../../lib/aspecRatios";
 import { ZoomHelper } from "./zoomHelper";
 import { runInThisContext } from "vm";
+import { useCache } from "../../lib/localcache";
 
 export class SelectionTool extends BaseTool implements Tool {
     private selectionOverlay: Rect | undefined;
@@ -172,6 +173,7 @@ export const Controls: React.FC<ControlsProps> = ({
     );
     const [aspectRatio, setAspectRatio] = useState(DEFAULT_ASPECT_RATIO);
     const [size, setSize] = useState(1);
+    const [focus, setFocus] = useCache("selection-focus", false);
 
     useEffect(() => {
         const upscaleLevel = getUpscaleLevel(
@@ -219,18 +221,18 @@ export const Controls: React.FC<ControlsProps> = ({
         }
     }, [tool]);
 
-    function onChange(aspectRatioId: number, size: number) {
+    function onChange(aspectRatioId: number, size: number, focusMode: boolean) {
+        // Focus mode multiplier: halves the dimensions when enabled
+        const focusMultiplier = focusMode ? 0.5 : 1;
         const args = tool.getArgs();
         const aspectRatio = aspectRatios[aspectRatioId];
         if (args.selectionOverlay) {
-            const xDiff =
-                args.selectionOverlay.width - aspectRatio.width * size;
-            const yDiff =
-                args.selectionOverlay.height - aspectRatio.height * size;
-            args.selectionOverlay.width = Math.round(aspectRatio.width * size);
-            args.selectionOverlay.height = Math.round(
-                aspectRatio.height * size
-            );
+            const newWidth = Math.round(aspectRatio.width * size * focusMultiplier);
+            const newHeight = Math.round(aspectRatio.height * size * focusMultiplier);
+            const xDiff = args.selectionOverlay.width - newWidth;
+            const yDiff = args.selectionOverlay.height - newHeight;
+            args.selectionOverlay.width = newWidth;
+            args.selectionOverlay.height = newHeight;
             args.selectionOverlay.x += xDiff / 2;
             args.selectionOverlay.y += yDiff / 2;
             if (!outpaint) {
@@ -266,7 +268,7 @@ export const Controls: React.FC<ControlsProps> = ({
                 <AspectRatioSelector
                     aspectRatio={aspectRatio}
                     onChange={(aspectRatioId) => {
-                        onChange(aspectRatioId, size);
+                        onChange(aspectRatioId, size, focus);
                         setAspectRatio(aspectRatioId);
                     }}
                 />
@@ -291,10 +293,26 @@ export const Controls: React.FC<ControlsProps> = ({
                     step="0.1"
                     value={size}
                     onChange={(event) => {
-                        onChange(aspectRatio, parseFloat(event.target.value));
+                        onChange(aspectRatio, parseFloat(event.target.value), focus);
                         setSize(parseFloat(event.target.value));
                     }}
                 />
+            </div>
+            <div className="form-group form-check">
+                <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="focus"
+                    checked={focus}
+                    onChange={(event) => {
+                        const newFocus = event.target.checked;
+                        setFocus(newFocus);
+                        onChange(aspectRatio, size, newFocus);
+                    }}
+                />
+                <label className="form-check-label" htmlFor="focus">
+                    Focus (half size for detailed work)
+                </label>
             </div>
         </>
     );

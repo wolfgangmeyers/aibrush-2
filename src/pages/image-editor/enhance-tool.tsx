@@ -10,6 +10,7 @@ import {
     loadImageDataElement,
     applyAlphaMask,
     featherEdges,
+    resizeEncodedImage,
 } from "../../lib/imageutil";
 import { SelectionTool, Controls as SelectionControls } from "./selection-tool";
 import { getUpscaleLevel } from "../../lib/upscale";
@@ -487,6 +488,30 @@ export class EnhanceTool extends BaseTool implements Tool {
             maskData = this.renderer.getImageData(selectionOverlay!, "mask");
         }
 
+        // Focus mode: If selection is smaller than 1 megapixel, upscale to 1024x1024
+        // before sending to the API. This allows the AI to work at its native resolution
+        // while focusing on a smaller area of the image.
+        const selectionArea = selectionOverlay!.width * selectionOverlay!.height;
+        const targetSize = 1024;
+        const isFocusMode = selectionArea < targetSize * targetSize;
+
+        if (isFocusMode) {
+            encodedImage = await resizeEncodedImage(
+                encodedImage,
+                targetSize,
+                targetSize,
+                "jpeg"
+            );
+            if (encodedMask) {
+                encodedMask = await resizeEncodedImage(
+                    encodedMask,
+                    targetSize,
+                    targetSize,
+                    "png"
+                );
+            }
+        }
+
         const input: GenerateImageInput = defaultArgs();
         input.encoded_image = encodedImage;
 
@@ -502,11 +527,17 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.count = this.count;
         input.model = this.model;
 
-        input.params.width = selectionOverlay!.width;
-        input.params.height = selectionOverlay!.height;
-        // round width and height up to the nearest multiple of 64
-        input.params.width = Math.ceil(input.params.width / 64) * 64;
-        input.params.height = Math.ceil(input.params.height / 64) * 64;
+        // In focus mode, send 1024x1024 to the API since we upscaled the image
+        if (isFocusMode) {
+            input.params.width = targetSize;
+            input.params.height = targetSize;
+        } else {
+            input.params.width = selectionOverlay!.width;
+            input.params.height = selectionOverlay!.height;
+            // round width and height up to the nearest multiple of 64
+            input.params.width = Math.ceil(input.params.width / 64) * 64;
+            input.params.height = Math.ceil(input.params.height / 64) * 64;
+        }
         input.params.loras = this.loras;
         input.params.steps = this.steps;
 
