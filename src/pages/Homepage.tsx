@@ -20,7 +20,7 @@ import { ImageClient } from "../lib/savedimages";
 import { ImagesView } from "../components/ImagesView";
 import DropboxHelper from "../lib/dropbox";
 import { sleep } from "../lib/sleep";
-import { Dalle3Generator } from "../lib/dalle3generator";
+import { NanoGPTGenerator } from "../lib/nanogptgenerator";
 import { ImageGenerator } from "../lib/imagegenerator";
 
 export const anonymousClient = axios.create();
@@ -28,7 +28,8 @@ delete anonymousClient.defaults.headers.common["Authorization"];
 
 interface Props {
     generator: HordeGenerator;
-    dalle3Generator: Dalle3Generator | undefined;
+    nanoGPTGenerator?: NanoGPTGenerator;
+    selectedBackend: "horde" | "nanogpt";
     localImages: LocalImagesStore;
     savedImages: LocalImagesStore;
     dropboxHelper?: DropboxHelper;
@@ -36,7 +37,8 @@ interface Props {
 
 export const Homepage: FC<Props> = ({
     generator,
-    dalle3Generator,
+    nanoGPTGenerator,
+    selectedBackend,
     localImages,
     savedImages,
     dropboxHelper,
@@ -94,7 +96,7 @@ export const Homepage: FC<Props> = ({
                     "jpeg"
                 );
             }
-            const imageGenerator = new ImageGenerator(generator, dalle3Generator);
+            const imageGenerator = new ImageGenerator(generator, nanoGPTGenerator);
             const job = await imageGenerator.generateImages(input, (progress) => {
                 setUploadingProgress(progress.loaded / progress.total);
             });
@@ -165,7 +167,7 @@ export const Homepage: FC<Props> = ({
     useEffect(() => {
         let lock = false;
 
-        const imageGenerator = new ImageGenerator(generator, dalle3Generator);
+        const imageGenerator = new ImageGenerator(generator, nanoGPTGenerator);
 
         const pollImages = async () => {
             if (lock) {
@@ -217,7 +219,7 @@ export const Homepage: FC<Props> = ({
         return () => {
             clearInterval(timerHandle);
         };
-    }, [generator, dalle3Generator, jobs]);
+    }, [generator, nanoGPTGenerator, jobs]);
 
     // load parent image from saved images if an id is on the query string
     useEffect(() => {
@@ -256,7 +258,9 @@ export const Homepage: FC<Props> = ({
     };
 
     const onDeleteJob = async (job: GenerationJob) => {
-        await generator.client.deleteImageRequest(job.id);
+        if (job.backend !== "nanogpt") {
+            await generator.client.deleteImageRequest(job.id);
+        }
         setJobs((jobs) => jobs.filter((j) => j.id !== job.id));
     };
 
@@ -339,7 +343,7 @@ export const Homepage: FC<Props> = ({
                 parent={parentImage}
                 onCancel={() => handleCancelFork()}
                 hordeClient={generator.client}
-                openaiEnabled={!!dalle3Generator}
+                selectedBackend={selectedBackend}
             />
             <hr />
 

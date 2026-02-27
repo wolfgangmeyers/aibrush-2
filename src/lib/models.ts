@@ -29,7 +29,7 @@ export interface GenerationJob {
     images?: LocalImage[];
     created_at: number;
     count: number;
-    backend: "horde" | "openai";
+    backend: "horde" | "nanogpt";
 }
 
 export interface CheckResult {
@@ -70,6 +70,7 @@ export interface GenerateImageInput {
     params: ImageParams;
     count: number;
     hires_fix: boolean;
+    backend?: "horde" | "nanogpt";
 }
 
 export interface AugmentImageInput {
@@ -101,6 +102,16 @@ export interface StableDiffusionModel {
     'available': boolean;
     'inpainting': boolean;
     activeModel: ActiveModel;
+    /** Human-readable display label (NanoGPT models only) */
+    displayName?: string;
+    /** Base price per image in USD (NanoGPT models only) */
+    pricePerImage?: number;
+    /** NanoGPT model capabilities */
+    nanogptCapabilities?: {
+        image_to_image: boolean;
+        inpainting: boolean;
+        nsfw: boolean;
+    };
 }
 
 export interface User {

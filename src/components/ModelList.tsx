@@ -42,11 +42,16 @@ export const ModelList: FC<Props> = ({ models, onSelectModel, selectedModel }) =
                     key={model.name}
                     active={selectedModel === model.name}
                     onClick={() => onSelectModel(model)}
-                    style={{
-                        cursor: "pointer",
-                    }}
+                    style={{ cursor: "pointer" }}
                 >
-                    {model.name}
+                    <div className="d-flex justify-content-between align-items-center">
+                        <span>{model.displayName || model.name}</span>
+                        {model.pricePerImage !== undefined && (
+                            <small className="text-muted ms-2 flex-shrink-0">
+                                ${model.pricePerImage.toFixed(4)}
+                            </small>
+                        )}
+                    </div>
                 </ListGroup.Item>
             ))}
         </ListGroup>

@@ -8,7 +8,6 @@ import {
     NavLink,
     useHistory,
 } from "react-router-dom";
-import OpenAI from "openai";
 import "./App.css";
 import "./bootstrap.min.css";
 import { LocalImagesStore } from "./lib/localImagesStore";
@@ -30,7 +29,9 @@ import { Dropbox } from "dropbox";
 import DropboxHelper from "./lib/dropbox";
 import { User } from "./lib/models";
 import { KudosBalance } from "./components/KudosBalance";
-import { Dalle3Generator } from "./lib/dalle3generator";
+import { NanoGPTClient } from "./lib/nanogptclient";
+import { NanoGPTGenerator } from "./lib/nanogptgenerator";
+import BackendSelector from "./components/BackendSelector";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 
 const localImages = new LocalImagesStore();
@@ -47,12 +48,21 @@ const imageClient = new ImageClient(
     manifestId
 );
 
+function getStoredBackend(): "horde" | "nanogpt" {
+    const stored = localStorage.getItem("selectedBackend");
+    // Only restore nanogpt if a key is actually present; otherwise the
+    // BackendSelector hides itself (nanogptEnabled=false) and the user has
+    // no way to switch back to Horde.
+    if (stored === "nanogpt" && localStorage.getItem("nanogptKey")) return "nanogpt";
+    return "horde";
+}
+
 function App() {
     const [initialized, setInitialized] = useState(false);
     const [dropboxHelper, setDropboxHelper] = useState<DropboxHelper | undefined>();
     const [user, setUser] = useState<User | undefined>();
-    const [openaiClient, setOpenaiClient] = useState<OpenAI | undefined>(undefined);
-    const [dalle3Generator, setDalle3Generator] = useState<Dalle3Generator | undefined>(undefined);
+    const [nanoGPTGenerator, setNanoGPTGenerator] = useState<NanoGPTGenerator | undefined>(undefined);
+    const [selectedBackend, setSelectedBackend] = useState<"horde" | "nanogpt">(getStoredBackend);
 
     const deleteSavedImagesDb = () => {
         return new Promise<void>((resolve, reject) => {
@@ -86,14 +96,21 @@ function App() {
         setUser(user);
     };
 
-    const onOpenAIConnected = (apiKey: string) => {
-        const openaiClient = new OpenAI({
-            apiKey,
-            dangerouslyAllowBrowser: true,
-        });
-        setOpenaiClient(openaiClient);
-        setDalle3Generator(new Dalle3Generator(openaiClient));
-    }
+    const onNanoGPTConnected = (apiKey: string) => {
+        if (!apiKey) {
+            setNanoGPTGenerator(undefined);
+            setSelectedBackend("horde");
+            localStorage.setItem("selectedBackend", "horde");
+            return;
+        }
+        const client = new NanoGPTClient(apiKey);
+        setNanoGPTGenerator(new NanoGPTGenerator(client));
+    };
+
+    const onBackendChange = (backend: "horde" | "nanogpt") => {
+        setSelectedBackend(backend);
+        localStorage.setItem("selectedBackend", backend);
+    };
 
     useEffect(() => {
         init();
@@ -180,7 +197,12 @@ function App() {
                                             <i className="fas fa-tshirt"></i>
                                         </a>
                                     </OverlayTrigger>
-                                    <APIKeysManager client={hordeClient} onHordeConnected={onHordeConnected} onHordeUserUpdated={setUser} onOpenAIConnected={onOpenAIConnected} />
+                                    <BackendSelector
+                                        selectedBackend={selectedBackend}
+                                        onBackendChange={onBackendChange}
+                                        nanogptEnabled={!!nanoGPTGenerator}
+                                    />
+                                    <APIKeysManager client={hordeClient} onHordeConnected={onHordeConnected} onHordeUserUpdated={setUser} onNanoGPTConnected={onNanoGPTConnected} />
                                 </>
                             </div>
                             <div
@@ -202,7 +224,8 @@ function App() {
                                     savedImages={savedImagesStore}
                                     generator={generator}
                                     dropboxHelper={dropboxHelper}
-                                    dalle3Generator={dalle3Generator}
+                                    nanoGPTGenerator={nanoGPTGenerator}
+                                    selectedBackend={selectedBackend}
                                 />
                             </Route>
                             <Route path="/images/:id">
@@ -211,7 +234,8 @@ function App() {
                                     savedImages={savedImagesStore}
                                     generator={generator}
                                     dropboxHelper={dropboxHelper}
-                                    dalle3Generator={dalle3Generator}
+                                    nanoGPTGenerator={nanoGPTGenerator}
+                                    selectedBackend={selectedBackend}
                                 />
                             </Route>
                             <Route path="/saved" exact={true}>

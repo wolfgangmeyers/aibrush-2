@@ -1,41 +1,53 @@
-import { Dalle3Generator } from "./dalle3generator";
 import { HordeGenerator } from "./hordegenerator";
+import { NanoGPTGenerator } from "./nanogptgenerator";
 import { GenerateImageInput, GenerationJob } from "./models";
 
 export class ImageGenerator {
-    constructor(private hordeGenerator: HordeGenerator, private dalle3Generator?: Dalle3Generator) {}
+    constructor(
+        private hordeGenerator: HordeGenerator,
+        private nanoGPTGenerator?: NanoGPTGenerator
+    ) {}
 
     async generateImages(input: GenerateImageInput, onUploadProgress?: (progressEvent: any) => void): Promise<GenerationJob> {
-        if (input.model === "dall-e-3") {
-            if (!this.dalle3Generator) {
-                throw new Error("Dall-e-3 generator not available");
+        if (input.backend === 'nanogpt') {
+            if (!this.nanoGPTGenerator) {
+                throw new Error('NanoGPT is not configured. Please add your NanoGPT API key in settings.');
             }
-            return this.dalle3Generator.generateImages(input);
+            return this.nanoGPTGenerator.generateImages(input);
         }
         return this.hordeGenerator.generateImages(input, onUploadProgress);
     }
 
     async checkGenerationJob(job: GenerationJob): Promise<GenerationJob> {
-        if (job.model === "dall-e-3") {
-            if (!this.dalle3Generator) {
-                throw new Error("Dall-e-3 generator not available");
+        if (job.backend === 'nanogpt') {
+            if (!this.nanoGPTGenerator) {
+                throw new Error('NanoGPT generator not available');
             }
-            return this.dalle3Generator.checkGenerationJob(job);
+            return this.nanoGPTGenerator.checkGenerationJob(job);
         }
         return this.hordeGenerator.checkGenerationJob(job);
     }
 
     async checkGenerationJobs(jobs: GenerationJob[]): Promise<GenerationJob[]> {
-        // split into two lists and check separately, then join the results
-        const dalleJobs = jobs.filter((job) => job.model === "dall-e-3");
-        const hordeJobs = jobs.filter((job) => job.model !== "dall-e-3");
-        if (dalleJobs.length > 0 && !this.dalle3Generator) {
-            throw new Error("Dall-e-3 generator not available");
+        const nanoJobs = jobs.filter((j) => j.backend === 'nanogpt');
+        const hordeJobs = jobs.filter((j) => j.backend !== 'nanogpt');
+
+        if (nanoJobs.length > 0 && !this.nanoGPTGenerator) {
+            // Mark all orphaned NanoGPT jobs as error rather than silently dropping them
+            const errored = nanoJobs.map((j) => ({
+                ...j,
+                status: 'error' as const,
+                error: 'NanoGPT generator not available',
+            }));
+            const hordeResults = await Promise.all(hordeJobs.map((j) => this.hordeGenerator.checkGenerationJob(j)));
+            return [...errored, ...hordeResults];
         }
-        const dallePromises = dalleJobs.map((job) => this.dalle3Generator!.checkGenerationJob(job));
-        const hordePromises = hordeJobs.map((job) => this.hordeGenerator.checkGenerationJob(job));
-        const dalleResults = await Promise.all(dallePromises);
-        const hordeResults = await Promise.all(hordePromises);
-        return dalleResults.concat(hordeResults);
+
+        const nanoResults = nanoJobs.length > 0
+            ? await Promise.all(nanoJobs.map((j) => this.nanoGPTGenerator!.checkGenerationJob(j)))
+            : [];
+        const hordeResults = await Promise.all(hordeJobs.map((j) => this.hordeGenerator.checkGenerationJob(j)));
+
+        return [...nanoResults, ...hordeResults];
     }
 }

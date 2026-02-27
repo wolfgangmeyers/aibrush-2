@@ -41,7 +41,9 @@
     "scripts": {
         "start": "vite",
         "build": "vite build",
-        "serve": "vite preview"
+        "serve": "vite preview",
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "eslintConfig": {
         "extends": [
@@ -77,6 +79,8 @@
         "@types/uuid": "^9.0.1",
         "@vercel/node": "^2.15.6",
         "@vitejs/plugin-react": "^4.0.3",
-        "vite": "^4.4.6"
+        "@vitest/ui": "^4.0.18",
+        "vite": "^4.4.6",
+        "vitest": "^4.0.18"
     }
 }

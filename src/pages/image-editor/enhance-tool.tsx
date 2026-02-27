@@ -1105,7 +1105,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     initialSelectedModel={model}
                     inpainting={false}
                     hordeClient={hordeClient}
-                    openaiEnabled={false}
+                    selectedBackend={"horde"}
                 />
             )}
             {selectingLora && (

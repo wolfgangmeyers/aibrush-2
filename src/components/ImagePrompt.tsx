@@ -28,6 +28,7 @@ import { LoraTriggers } from "./LoraTriggers";
 import { recentLoras } from "../lib/recentLoras";
 import { Item } from "../lib/civit_loras";
 import { HordeClient } from "../lib/hordeclient";
+import { NANOGPT_FEATURED_MODELS } from "../lib/nanogptclient";
 
 interface Props {
     parent: LocalImage | null;
@@ -37,7 +38,7 @@ interface Props {
     onEdit: (input: GenerateImageInput) => void;
     onCancel: () => void;
     hordeClient: HordeClient;
-    openaiEnabled: boolean;
+    selectedBackend: "horde" | "nanogpt";
 }
 
 export function defaultArgs(): GenerateImageInput {
@@ -72,8 +73,9 @@ export const ImagePrompt: FC<Props> = ({
     onCancel,
     onEdit,
     hordeClient,
-    openaiEnabled,
+    selectedBackend,
 }) => {
+    const isNanoGPT = selectedBackend === "nanogpt";
     const [prompt, setPrompt] = useState<string>("");
     const [negativePrompt, setNegativePrompt] = useState<string>(
         defaultNegativePrompt()
@@ -171,6 +173,7 @@ export const ImagePrompt: FC<Props> = ({
             );
         }
 
+        args.backend = selectedBackend;
         resetState();
         onSubmit(args);
     };
@@ -195,6 +198,7 @@ export const ImagePrompt: FC<Props> = ({
             args.encoded_image = encodedImage;
         }
 
+        args.backend = selectedBackend;
         resetState();
         onEdit(args);
     };
@@ -207,9 +211,6 @@ export const ImagePrompt: FC<Props> = ({
     const onSelectModel = (model: string) => {
         setModel(model);
         setSelectingModel(false);
-        if (model === "dall-e-3") {
-            setCount(1);
-        }
     };
 
     const onImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -307,6 +308,14 @@ export const ImagePrompt: FC<Props> = ({
         }
     }, [parent]);
 
+    useEffect(() => {
+        if (selectedBackend === "nanogpt") {
+            setModel(NANOGPT_FEATURED_MODELS[0].name);
+        } else {
+            setModel("Epic Diffusion");
+        }
+    }, [selectedBackend]);
+
     // unset controlnet when encodedImage is null
     useEffect(() => {
         if (!encodedImage) {
@@ -394,7 +403,7 @@ export const ImagePrompt: FC<Props> = ({
                                 onChange={(e) =>
                                     setCount(parseInt(e.target.value))
                                 }
-                                disabled={model === "dall-e-3"}
+                                disabled={false}
                             />
                             <span className="helptext">
                                 This is how many images you want to generate
@@ -426,7 +435,7 @@ export const ImagePrompt: FC<Props> = ({
                     </div>
                     {advancedView && (
                         <div className="homepage-prompt-advanced">
-                            {model !== "dall-e-3" && encodedImage && (
+                            {!isNanoGPT && encodedImage && (
                                 <div className="form-group">
                                     <label>Init Image</label>
                                     <img
@@ -440,7 +449,7 @@ export const ImagePrompt: FC<Props> = ({
                                     />
                                 </div>
                             )}
-                            {model !== "dall-e-3" && !parent && !encodedImage && (
+                            {!isNanoGPT && !parent && !encodedImage && (
                                 <AspectRatioSelector
                                     aspectRatio={aspectRatio}
                                     onChange={(aspectRatioId) => {
@@ -451,7 +460,7 @@ export const ImagePrompt: FC<Props> = ({
                                     }}
                                 />
                             )}
-                            {model !== "dall-e-3" && <div className="form-group">
+                            {!isNanoGPT && <div className="form-group">
                                 <div
                                     style={{
                                         display: "block",
@@ -506,7 +515,7 @@ export const ImagePrompt: FC<Props> = ({
                                     </button>
                                 </div>
                             </div>
-                            {model !== "dall-e-3" && <div className="form-group">
+                            {!isNanoGPT && <div className="form-group">
                                 {/* loras */}
                                 <label htmlFor="loras">Loras</label>
                                 <div>
@@ -535,7 +544,7 @@ export const ImagePrompt: FC<Props> = ({
                                     )}
                                 </div>
                             </div>}
-                            {model !== "dall-e-3" && <div className="form-group">
+                            {!isNanoGPT && <div className="form-group">
                                 {/* negative prompt */}
                                 <label htmlFor="negativePrompt">
                                     Negative Prompt
@@ -561,7 +570,7 @@ export const ImagePrompt: FC<Props> = ({
                                 </span>
                             </div>}
                             {/* size slider */}
-                            {model !== "dall-e-3" && <div className="form-group">
+                            {!isNanoGPT && <div className="form-group">
                                 <label htmlFor="size">
                                     Size: {scaledAspectRatio.width} x{" "}
                                     {scaledAspectRatio.height}
@@ -585,7 +594,7 @@ export const ImagePrompt: FC<Props> = ({
                                 </span>
                             </div>}
 
-                            {model !== "dall-e-3" && (parentId || encodedImage) && (
+                            {!isNanoGPT && (parentId || encodedImage) && (
                                 <div className="form-group">
                                     {/* variation strength */}
                                     <label htmlFor="variationStrength">
@@ -612,7 +621,7 @@ export const ImagePrompt: FC<Props> = ({
                                     </span>
                                 </div>
                             )}
-                            {model !== "dall-e-3" && encodedImage && (
+                            {!isNanoGPT && encodedImage && (
                                 // controlnet type - canny, hed, depth, normal, openpose, seg, scribble, fakescribbles, hough
                                 <div className="form-group">
                                     <label htmlFor="controlNetType">
@@ -650,7 +659,7 @@ export const ImagePrompt: FC<Props> = ({
                                 </div>
                             )}
                             {/* cfg scale. Slider from 1 to 20 in increments of 0.1 */}
-                            {model !== "dall-e-3" && <div className="form-group">
+                            {!isNanoGPT && <div className="form-group">
                                 <label>CFG Scale: {cfgScale.toFixed(1)}</label>
                                 <input
                                     type="range"
@@ -668,7 +677,7 @@ export const ImagePrompt: FC<Props> = ({
                                     image looks like the prompt.
                                 </span>
                             </div>}
-                            {model !== "dall-e-3" && <div className="form-group">
+                            {!isNanoGPT && <div className="form-group">
                                 <label>Steps: {steps}</label>
                                 <input
                                     type="range"
@@ -688,9 +697,9 @@ export const ImagePrompt: FC<Props> = ({
                                     increases generation time.
                                 </span>
                             </div>}
-                            {model !== "dall-e-3" && <SeedInput seed={seed} setSeed={setSeed} />}
+                            {!isNanoGPT && <SeedInput seed={seed} setSeed={setSeed} />}
                             {/* hires fix checkbox */}
-                            {model !== "dall-e-3" && <div className="form-group">
+                            {!isNanoGPT && <div className="form-group">
                                 <div className="form-check">
                                     <input
                                         className="form-check-input"
@@ -747,7 +756,7 @@ export const ImagePrompt: FC<Props> = ({
                                         &nbsp;PAINT
                                     </button>
 
-                                    {model !== "dall-e-3" && <button
+                                    {!isNanoGPT && <button
                                         type="button"
                                         className="btn btn-secondary light-button"
                                         onClick={handleEdit}
@@ -770,7 +779,7 @@ export const ImagePrompt: FC<Props> = ({
                     initialSelectedModel={model}
                     inpainting={false}
                     hordeClient={hordeClient}
-                    openaiEnabled={openaiEnabled}
+                    selectedBackend={selectedBackend}
                 />
             )}
             {selectingLora && (
