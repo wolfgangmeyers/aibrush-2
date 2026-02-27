@@ -233,32 +233,30 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                     <Modal.Title>Select Model</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <div className="d-flex gap-2 align-items-center flex-wrap">
-                        <Form.Control
-                            type="text"
-                            placeholder="Search"
-                            value={searchTerm}
-                            onChange={handleSearch}
-                        />
-                        {selectedBackend === "nanogpt" && (
-                            <div className="d-flex align-items-center gap-2 flex-shrink-0">
-                                <Form.Label className="mb-0 text-nowrap text-secondary small">
-                                    Sort by price:
-                                </Form.Label>
-                                <Form.Select
-                                    size="sm"
-                                    style={{ width: "auto" }}
-                                    value={nanoGPTSort}
-                                    onChange={(e) => setNanoGPTSort(e.target.value as "default" | "price-asc" | "price-desc")}
-                                    aria-label="Sort models by price"
-                                >
-                                    <option value="default">Default</option>
-                                    <option value="price-asc">Low to High</option>
-                                    <option value="price-desc">High to Low</option>
-                                </Form.Select>
-                            </div>
-                        )}
-                    </div>
+                    <Form.Control
+                        type="text"
+                        placeholder="Search"
+                        value={searchTerm}
+                        onChange={handleSearch}
+                    />
+                    {selectedBackend === "nanogpt" && (
+                        <div className="d-flex align-items-center gap-2 mt-2">
+                            <span className="text-nowrap text-light small">Sort by price:</span>
+                            <select
+                                className="form-control form-control-sm bg-dark text-light border-secondary"
+                                style={{ width: "auto" }}
+                                value={nanoGPTSort}
+                                onChange={(e) =>
+                                    setNanoGPTSort(e.target.value as "default" | "price-asc" | "price-desc")
+                                }
+                                aria-label="Sort models by price"
+                            >
+                                <option value="default">Default</option>
+                                <option value="price-asc">Low → High</option>
+                                <option value="price-desc">High → Low</option>
+                            </select>
+                        </div>
+                    )}
                     {nanoGPTError && (
                         <p className="text-warning mt-2" style={{ fontSize: "0.9em" }}>
                             <i className="fas fa-exclamation-triangle" />&nbsp;{nanoGPTError}
