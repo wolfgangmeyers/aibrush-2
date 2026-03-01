@@ -460,6 +460,20 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.maskHandler(false);
     }
 
+    deleteSelected() {
+        if (this.selectedImageDataIndex < 0) return;
+        this.imageData.splice(this.selectedImageDataIndex, 1);
+        if (this.selectedImageDataIndex >= this.imageData.length) {
+            this.selectedImageDataIndex = this.imageData.length - 1;
+        }
+        if (this.imageData.length === 0) {
+            this.state = this.selectSupported() ? "select" : "default";
+            this.renderer.setEditImage(null);
+        } else {
+            this.renderer.setEditImage(this.imageData[this.selectedImageDataIndex]);
+        }
+    }
+
     private updateProgress(progress: number) {
         if (this.progressListener) {
             this.progressListener(progress);
@@ -1047,6 +1061,37 @@ export const EnhanceControls: FC<ControlsProps> = ({
                             style={{ marginRight: "8px" }}
                         >
                             <i className="fa fa-eraser"></i>&nbsp; Erase
+                        </button>
+                    </>
+                )}
+                {state === "confirm" && (
+                    <>
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => {
+                                tool.updateArgs({
+                                    count,
+                                    variationStrength,
+                                    steps,
+                                    prompt,
+                                    negativePrompt,
+                                    model,
+                                    loras: selectedLoras.map(
+                                        (lora) => lora.config
+                                    ),
+                                });
+                                tool.submit(generator, image);
+                            }}
+                            style={{ marginRight: "8px" }}
+                        >
+                            <i className="fas fa-redo"></i>&nbsp; Retry
+                        </button>
+                        <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => tool.deleteSelected()}
+                            style={{ marginRight: "8px" }}
+                        >
+                            <i className="fas fa-trash"></i>&nbsp; Delete
                         </button>
                     </>
                 )}
