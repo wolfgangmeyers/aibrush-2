@@ -9,6 +9,9 @@ export interface NanoGPTImageRequest {
     guidance_scale?: number;
     num_inference_steps?: number;
     seed?: number;
+    imageDataUrl?: string;    // full data URL for base image (img2img)
+    maskDataUrl?: string;     // full data URL for inpainting mask
+    strength?: number;        // denoising strength 0.0–1.0
 }
 
 export interface NanoGPTImageData {
@@ -63,6 +66,27 @@ export function extractPricePerImage(pricing: NanoGPTModel['pricing']): number |
     if (!p) return undefined;
     return p['auto'] ?? p['1024x1024'] ?? p['1024*1024'] ?? p['1:1'] ?? Object.values(p)[0];
 }
+
+/**
+ * Model IDs documented by NanoGPT as supporting image-to-image generation.
+ * Source: https://docs.nano-gpt.com/api-reference/image-generation
+ * Use this allowlist instead of the unreliable `image_to_image` capability flag.
+ */
+export const NANOGPT_IMG2IMG_MODELS: ReadonlySet<string> = new Set([
+    // Single-image input models
+    'flux-dev-image-to-image',
+    'ghiblify',
+    'gemini-flash-edit',
+    'hidream-edit',
+    'bagel',
+    'SDXL-ArliMix-v1',
+    'Upscaler',
+    // Multi-image input models (also accept imageDataUrl)
+    'flux-kontext',
+    'flux-kontext/dev',
+    'gpt-4o-image',
+    'gpt-image-1',
+]);
 
 export const NANOGPT_FEATURED_MODELS: NanoGPTDisplayModel[] = [
     { name: 'flux-2-max', description: 'FLUX.2 [max] — Production flagship model', featured: true },

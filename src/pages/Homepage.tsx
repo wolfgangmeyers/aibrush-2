@@ -89,7 +89,7 @@ export const Homepage: FC<Props> = ({
         window.scrollTo(0, 0);
         setUploadingProgress(0);
         try {
-            if (input.encoded_image) {
+            if (input.encoded_image && input.backend !== "nanogpt") {
                 input.encoded_image = await convertImageFormat(
                     input.encoded_image,
                     "webp",

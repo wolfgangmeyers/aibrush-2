@@ -45,7 +45,12 @@ export const ModelList: FC<Props> = ({ models, onSelectModel, selectedModel }) =
                     style={{ cursor: "pointer" }}
                 >
                     <div className="d-flex justify-content-between align-items-center">
-                        <span>{model.displayName || model.name}</span>
+                        <span>
+                            {model.displayName || model.name}
+                            {model.displayName && model.displayName !== model.name && (
+                                <><br /><small className="text-muted">{model.name}</small></>
+                            )}
+                        </span>
                         {model.pricePerImage !== undefined && (
                             <small className="text-muted ms-2 flex-shrink-0">
                                 ${model.pricePerImage.toFixed(4)}

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Button, Modal, Form, Row, Col } from "react-bootstrap";
 import axios from "axios";
 import { StableDiffusionModel } from "../lib/models";
-import { NanoGPTDisplayModel, NanoGPTClient, NANOGPT_FEATURED_MODELS, extractPricePerImage } from "../lib/nanogptclient";
+import { NanoGPTDisplayModel, NanoGPTClient, NANOGPT_FEATURED_MODELS, NANOGPT_IMG2IMG_MODELS, extractPricePerImage } from "../lib/nanogptclient";
 import { ModelList } from "./ModelList";
 import { useCache } from "../lib/localcache";
 import { recentModels } from "../lib/recentList";
@@ -19,6 +19,7 @@ interface ModelSelectorProps {
     inpainting: boolean;
     hordeClient: HordeClient;
     selectedBackend: "horde" | "nanogpt";
+    hasInitImage?: boolean;
 }
 
 // Adapt NanoGPTDisplayModel to StableDiffusionModel shape for ModelList compatibility
@@ -51,6 +52,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     inpainting,
     hordeClient,
     selectedBackend,
+    hasInitImage,
 }) => {
     const [hordeModels, setHordeModels] = useCache<StableDiffusionModel[]>("models", []);
     const [nanoGPTModels, setNanoGPTModels] = useCache<NanoGPTDisplayModel[]>("nanogpt_models_v2", []);
@@ -76,12 +78,24 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         selectedBackend === "nanogpt" ? getNanoGPTModels() : hordeModels;
 
     const filteredModels = (() => {
-        const base = models.filter(
-            (model) =>
-                (selectedBackend === "nanogpt" || model.inpainting === inpainting) &&
-                (model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (model.displayName || "").toLowerCase().includes(searchTerm.toLowerCase()))
-        );
+        const base = models.filter((model) => {
+            if (selectedBackend === "nanogpt") {
+                // For inpainting/img2img, strictly require the capability flag.
+                // For text-to-image, show all models.
+                if (inpainting) {
+                    if (model.nanogptCapabilities && !model.nanogptCapabilities.inpainting) return false;
+                } else if (hasInitImage) {
+                    if (!NANOGPT_IMG2IMG_MODELS.has(model.name)) return false;
+                }
+                // text-to-image: no capability filter (show all)
+            } else {
+                if (model.inpainting !== inpainting) return false;
+            }
+            return (
+                model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (model.displayName || "").toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        });
         if (selectedBackend !== "nanogpt" || nanoGPTSort === "default") return base;
         return [...base].sort((a, b) => {
             const pa = a.pricePerImage ?? Infinity;
@@ -277,6 +291,9 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
                                     {/* NanoGPT-specific info */}
                                     {isNanoGPTModel && (
                                         <>
+                                            {selectedModel.displayName && selectedModel.displayName !== selectedModel.name && (
+                                                <p className="text-muted small mb-1"><code>{selectedModel.name}</code></p>
+                                            )}
                                             {selectedModel.pricePerImage !== undefined && (
                                                 <p>
                                                     <b>Price:</b>&nbsp;

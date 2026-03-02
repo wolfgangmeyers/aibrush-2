@@ -29,6 +29,7 @@ import { Dropbox } from "dropbox";
 import DropboxHelper from "./lib/dropbox";
 import { User } from "./lib/models";
 import { KudosBalance } from "./components/KudosBalance";
+import { NanoGPTBalance } from "./components/NanoGPTBalance";
 import { NanoGPTClient } from "./lib/nanogptclient";
 import { NanoGPTGenerator } from "./lib/nanogptgenerator";
 import BackendSelector from "./components/BackendSelector";
@@ -209,7 +210,10 @@ function App() {
                                 className="col-lg-12"
                                 style={{ textAlign: "right" }}
                             >
-                                {user && <KudosBalance user={user} />}
+                                {selectedBackend === "nanogpt" && nanoGPTGenerator
+                                    ? <NanoGPTBalance generator={nanoGPTGenerator} />
+                                    : user && <KudosBalance user={user} />
+                                }
                             </div>
 
                         </div>
@@ -257,6 +261,8 @@ function App() {
                             <Route path="/image-editor/:id">
                                 <ImageEditor
                                     generator={generator}
+                                    nanoGPTGenerator={nanoGPTGenerator}
+                                    selectedBackend={selectedBackend}
                                     hordeClient={hordeClient}
                                     localImages={localImages}
                                     savedImages={savedImagesStore}

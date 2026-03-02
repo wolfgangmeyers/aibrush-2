@@ -9,6 +9,9 @@ function makeHordeGenerator(): HordeGenerator {
         generateImages: vi.fn().mockResolvedValue({ id: 'horde-1', backend: 'horde', status: 'pending' }),
         checkGenerationJob: vi.fn().mockResolvedValue({ id: 'horde-1', backend: 'horde', status: 'completed' }),
         checkGenerationJobs: vi.fn().mockResolvedValue([{ id: 'horde-1', backend: 'horde', status: 'completed' }]),
+        client: {
+            deleteImageRequest: vi.fn().mockResolvedValue(undefined),
+        },
     } as unknown as HordeGenerator;
 }
 
@@ -88,6 +91,25 @@ describe('ImageGenerator', () => {
         it('throws when nanogpt job but no generator', async () => {
             const ig = new ImageGenerator(hordeGen);
             await expect(ig.checkGenerationJob(makeJob('nanogpt'))).rejects.toThrow();
+        });
+    });
+
+    describe('deleteJob', () => {
+        it('calls hordeGenerator.client.deleteImageRequest for horde jobs', async () => {
+            const ig = new ImageGenerator(hordeGen, nanoGen);
+            await ig.deleteJob(makeJob('horde'));
+            expect((hordeGen as any).client.deleteImageRequest).toHaveBeenCalledWith('job-1');
+        });
+
+        it('does NOT call deleteImageRequest for nanogpt jobs (no-op)', async () => {
+            const ig = new ImageGenerator(hordeGen, nanoGen);
+            await ig.deleteJob(makeJob('nanogpt'));
+            expect((hordeGen as any).client.deleteImageRequest).not.toHaveBeenCalled();
+        });
+
+        it('resolves silently for nanogpt jobs', async () => {
+            const ig = new ImageGenerator(hordeGen, nanoGen);
+            await expect(ig.deleteJob(makeJob('nanogpt'))).resolves.toBeUndefined();
         });
     });
 

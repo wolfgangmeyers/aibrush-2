@@ -35,7 +35,7 @@ import {
     LocalImage,
     LoraConfig,
 } from "../../lib/models";
-import { HordeGenerator } from "../../lib/hordegenerator";
+import { ImageGenerator } from "../../lib/imagegenerator";
 import { Rect } from "./models";
 import { HordeClient } from "../../lib/hordeclient";
 import { getSteps, setSteps } from "../../lib/settings";
@@ -66,7 +66,7 @@ export class EnhanceTool extends BaseTool implements Tool {
     private prompt: string = "";
     private negativePrompt: string = "";
     private model: string = "Epic Diffusion";
-    private count: number = 4;
+    private count: number = 1;
     private variationStrength: number = 0.35;
     private steps: number = 20;
     private loras: LoraConfig[] = [];
@@ -352,11 +352,10 @@ export class EnhanceTool extends BaseTool implements Tool {
         this.prompt = args.prompt || "";
         this.negativePrompt = args.negativePrompt || "";
         this.model = args.model || "Epic Diffusion";
-        this.count = args.count || 4;
+        this.count = args.count || 1;
         this.variationStrength = args.variationStrength || 0.75;
         this.steps = args.steps || 20;
         this.loras = args.loras || [];
-        console.log("updateArgs", args);
     }
 
     onChangeState(handler: (state: EnhanceToolState) => void) {
@@ -378,7 +377,8 @@ export class EnhanceTool extends BaseTool implements Tool {
     private async loadImageData(
         image: LocalImage,
         maskData: ImageData | undefined,
-        selectionOverlay: Rect
+        selectionOverlay: Rect,
+        sourceRect?: Rect,
     ): Promise<ImageData> {
         const imageElement = await loadImageDataElement(image);
         const canvas = document.createElement("canvas");
@@ -388,13 +388,21 @@ export class EnhanceTool extends BaseTool implements Tool {
         if (!ctx) {
             throw new Error("Failed to get canvas context");
         }
-        ctx.drawImage(
-            imageElement,
-            0,
-            0,
-            selectionOverlay.width,
-            selectionOverlay.height
-        );
+        if (sourceRect) {
+            ctx.drawImage(
+                imageElement,
+                sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height,
+                0, 0, selectionOverlay.width, selectionOverlay.height
+            );
+        } else {
+            ctx.drawImage(
+                imageElement,
+                0,
+                0,
+                selectionOverlay.width,
+                selectionOverlay.height
+            );
+        }
         const imageData = ctx.getImageData(
             0,
             0,
@@ -466,49 +474,53 @@ export class EnhanceTool extends BaseTool implements Tool {
         }
     }
 
-    async submit(generator: HordeGenerator, image: LocalImage) {
+    async submit(generator: ImageGenerator, image: LocalImage, selectedBackend: "horde" | "nanogpt") {
         this.dirty = true;
         this.notifyError(null);
         const selectionOverlay = this.renderer.getSelectionOverlay();
-        let encodedImage = this.renderer.getEncodedImage(
-            selectionOverlay!,
-            "jpeg"
-        );
-        if (!encodedImage) {
-            console.error("No selection");
-            return;
-        }
+        const targetSize = 1024;
+
+        let encodedImage: string | undefined;
         let encodedMask: string | undefined;
         let maskData: ImageData | undefined;
-        if (this.renderer.isMasked()) {
-            encodedMask = this.renderer.getEncodedMask(
-                selectionOverlay!,
-                "mask"
-            );
-            maskData = this.renderer.getImageData(selectionOverlay!, "mask");
-        }
+        let nanogptSourceRect: Rect | undefined;
 
-        // Focus mode: If selection is smaller than 1 megapixel, upscale to 1024x1024
-        // before sending to the API. This allows the AI to work at its native resolution
-        // while focusing on a smaller area of the image.
-        const selectionArea = selectionOverlay!.width * selectionOverlay!.height;
-        const targetSize = 1024;
-        const isFocusMode = selectionArea < targetSize * targetSize;
+        if (selectedBackend === "nanogpt") {
+            // Send the full canvas so the model has scene context. Extract only the
+            // selection area from the returned image using nanogptSourceRect.
+            const fullImage = this.renderer.getEncodedImage(null, "png");
+            if (!fullImage) {
+                console.error("No image");
+                return;
+            }
+            encodedImage = await resizeEncodedImage(fullImage, targetSize, targetSize, "png");
+            const canvasW = this.renderer.getWidth();
+            const canvasH = this.renderer.getHeight();
+            nanogptSourceRect = {
+                x: Math.round(selectionOverlay!.x * targetSize / canvasW),
+                y: Math.round(selectionOverlay!.y * targetSize / canvasH),
+                width: Math.round(selectionOverlay!.width * targetSize / canvasW),
+                height: Math.round(selectionOverlay!.height * targetSize / canvasH),
+            };
+        } else {
+            encodedImage = this.renderer.getEncodedImage(selectionOverlay!, "jpeg");
+            if (!encodedImage) {
+                console.error("No selection");
+                return;
+            }
+            if (this.renderer.isMasked()) {
+                encodedMask = this.renderer.getEncodedMask(selectionOverlay!, "mask");
+                maskData = this.renderer.getImageData(selectionOverlay!, "mask");
+            }
 
-        if (isFocusMode) {
-            encodedImage = await resizeEncodedImage(
-                encodedImage,
-                targetSize,
-                targetSize,
-                "jpeg"
-            );
-            if (encodedMask) {
-                encodedMask = await resizeEncodedImage(
-                    encodedMask,
-                    targetSize,
-                    targetSize,
-                    "png"
-                );
+            // Focus mode: If selection is smaller than 1 megapixel, upscale to 1024x1024
+            const selectionArea = selectionOverlay!.width * selectionOverlay!.height;
+            const isFocusMode = selectionArea < targetSize * targetSize;
+            if (isFocusMode) {
+                encodedImage = await resizeEncodedImage(encodedImage, targetSize, targetSize, "jpeg");
+                if (encodedMask) {
+                    encodedMask = await resizeEncodedImage(encodedMask, targetSize, targetSize, "png");
+                }
             }
         }
 
@@ -526,20 +538,11 @@ export class EnhanceTool extends BaseTool implements Tool {
         input.params.denoising_strength = this.variationStrength;
         input.count = this.count;
         input.model = this.model;
-
-        // In focus mode, send 1024x1024 to the API since we upscaled the image
-        if (isFocusMode) {
-            input.params.width = targetSize;
-            input.params.height = targetSize;
-        } else {
-            input.params.width = selectionOverlay!.width;
-            input.params.height = selectionOverlay!.height;
-            // round width and height up to the nearest multiple of 64
-            input.params.width = Math.ceil(input.params.width / 64) * 64;
-            input.params.height = Math.ceil(input.params.height / 64) * 64;
-        }
+        input.params.width = targetSize;
+        input.params.height = targetSize;
         input.params.loras = this.loras;
         input.params.steps = this.steps;
+        input.backend = selectedBackend;
 
         let job: GenerationJob | undefined;
         this.state = "uploading";
@@ -581,11 +584,17 @@ export class EnhanceTool extends BaseTool implements Tool {
                             const imageData = await this.loadImageData(
                                 img,
                                 maskData,
-                                selectionOverlay!
+                                selectionOverlay!,
+                                nanogptSourceRect,
                             );
                             img.data = imageData;
                         })
                     );
+                } else if (job.status === "error") {
+                    completed = true;
+                    this.notifyError(job.error || "Generation failed");
+                    this.state = "default";
+                    return;
                 }
             } catch (err: any) {
                 console.error("Error checking job", err);
@@ -595,11 +604,11 @@ export class EnhanceTool extends BaseTool implements Tool {
                     "Failed to check job";
                 this.notifyError(errMessage);
             }
-            
+
             // timeout of 2 minutes
             if (moment().diff(startTime, "minutes") > 2) {
                 completed = true;
-                await generator.client.deleteImageRequest(job.id);
+                await generator.deleteJob(job);
             }
         }
 
@@ -679,11 +688,12 @@ export class EnhanceTool extends BaseTool implements Tool {
 }
 
 interface ControlsProps {
-    generator: HordeGenerator;
+    generator: ImageGenerator;
     hordeClient: HordeClient;
     image: LocalImage;
     renderer: Renderer;
     tool: EnhanceTool;
+    selectedBackend: "horde" | "nanogpt";
 }
 
 export const EnhanceControls: FC<ControlsProps> = ({
@@ -692,8 +702,9 @@ export const EnhanceControls: FC<ControlsProps> = ({
     image,
     renderer,
     tool,
+    selectedBackend,
 }) => {
-    const [count, setCount] = useState(4);
+    const [count, setCount] = useState(1);
     const [dirty, setDirty] = useState(false);
     const [variationStrength, setVariationStrength] = useState(0.35);
     const [steps, setStepsState] = useState(getSteps());
@@ -1066,7 +1077,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                                         (lora) => lora.config
                                     ),
                                 });
-                                tool.submit(generator, image);
+                                tool.submit(generator, image, selectedBackend);
                             }}
                             style={{ marginRight: "8px" }}
                         >
@@ -1105,7 +1116,8 @@ export const EnhanceControls: FC<ControlsProps> = ({
                     initialSelectedModel={model}
                     inpainting={false}
                     hordeClient={hordeClient}
-                    selectedBackend={"horde"}
+                    selectedBackend={selectedBackend}
+                    hasInitImage={true}
                 />
             )}
             {selectingLora && (

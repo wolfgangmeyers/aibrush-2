@@ -54,7 +54,7 @@ export function defaultArgs(): GenerateImageInput {
         encoded_image: "",
         encoded_mask: "",
         model: "Epic Diffusion",
-        count: 4,
+        count: 1,
         hires_fix: false,
     };
 }
@@ -80,7 +80,7 @@ export const ImagePrompt: FC<Props> = ({
     const [negativePrompt, setNegativePrompt] = useState<string>(
         defaultNegativePrompt()
     );
-    const [count, setCount] = useState<number>(4);
+    const [count, setCount] = useState<number>(1);
     const [variationStrength, setVariationStrength] = useState<number>(0.75);
     const [aspectRatio, setAspectRatio] =
         useState<number>(DEFAULT_ASPECT_RATIO);
@@ -164,13 +164,15 @@ export const ImagePrompt: FC<Props> = ({
             args.params.width = bestMatch.width;
             args.params.height = bestMatch.height;
         }
+        console.log('[imageprompt] handleSubmit: encodedImage present?', !!encodedImage, 'length:', encodedImage?.length, 'isNanoGPT:', isNanoGPT);
         if (encodedImage) {
             args.encoded_image = await resizeEncodedImage(
                 encodedImage,
                 args.params.width,
                 args.params.height,
-                "webp",
+                isNanoGPT ? "png" : "webp",
             );
+            console.log('[imageprompt] after resize: encoded_image length:', args.encoded_image?.length);
         }
 
         args.backend = selectedBackend;
@@ -280,7 +282,7 @@ export const ImagePrompt: FC<Props> = ({
             setNegativePrompt(
                 parent.params.negative_prompt || defaultNegativePrompt()
             );
-            setCount(4);
+            setCount(1);
             setParentId(parent.id);
             setAdvancedView(true);
             setVariationStrength(parent.params.denoising_strength || 0.75);
@@ -435,7 +437,7 @@ export const ImagePrompt: FC<Props> = ({
                     </div>
                     {advancedView && (
                         <div className="homepage-prompt-advanced">
-                            {!isNanoGPT && encodedImage && (
+                            {encodedImage && (
                                 <div className="form-group">
                                     <label>Init Image</label>
                                     <img
@@ -460,7 +462,7 @@ export const ImagePrompt: FC<Props> = ({
                                     }}
                                 />
                             )}
-                            {!isNanoGPT && <div className="form-group">
+                            <div className="form-group">
                                 <div
                                     style={{
                                         display: "block",
@@ -501,7 +503,7 @@ export const ImagePrompt: FC<Props> = ({
                                         </label>
                                     )}
                                 </div>
-                            </div>}
+                            </div>
                             <div className="form-group">
                                 <label htmlFor="model">Model</label>
                                 <div>
@@ -594,7 +596,7 @@ export const ImagePrompt: FC<Props> = ({
                                 </span>
                             </div>}
 
-                            {!isNanoGPT && (parentId || encodedImage) && (
+                            {(parentId || encodedImage) && (
                                 <div className="form-group">
                                     {/* variation strength */}
                                     <label htmlFor="variationStrength">
@@ -780,6 +782,7 @@ export const ImagePrompt: FC<Props> = ({
                     inpainting={false}
                     hordeClient={hordeClient}
                     selectedBackend={selectedBackend}
+                    hasInitImage={!!encodedImage}
                 />
             )}
             {selectingLora && (

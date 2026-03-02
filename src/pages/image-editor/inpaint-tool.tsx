@@ -32,7 +32,7 @@ import {
     LocalImage,
     LoraConfig,
 } from "../../lib/models";
-import { HordeGenerator } from "../../lib/hordegenerator";
+import { ImageGenerator } from "../../lib/imagegenerator";
 import { HordeClient } from "../../lib/hordeclient";
 import { getSteps, setSteps } from "../../lib/settings";
 
@@ -55,7 +55,7 @@ export class InpaintTool extends BaseTool implements Tool {
     private selectionTool: SelectionTool;
     private prompt: string = "";
     private negativePrompt: string = "";
-    private count: number = 4;
+    private count: number = 1;
     private brushSize: number = 10;
     private steps: number = 20;
     private loras: LoraConfig[] = [];
@@ -259,7 +259,7 @@ export class InpaintTool extends BaseTool implements Tool {
         super.updateArgs(args);
         this.prompt = args.prompt || "";
         this.negativePrompt = args.negativePrompt || "";
-        this.count = args.count || 4;
+        this.count = args.count || 1;
         this.brushSize = args.brushSize || 10;
         this.steps = args.steps || 20;
         this.loras = args.loras || [];
@@ -348,7 +348,7 @@ export class InpaintTool extends BaseTool implements Tool {
         }
     }
 
-    async submit(generator: HordeGenerator, image: LocalImage, model: string) {
+    async submit(generator: ImageGenerator, image: LocalImage, model: string, selectedBackend: "horde" | "nanogpt") {
         this.notifyError(null);
         let selectionOverlay = this.renderer.getSelectionOverlay();
         if (!selectionOverlay) {
@@ -384,12 +384,10 @@ export class InpaintTool extends BaseTool implements Tool {
 
         const encodedImage = this.renderer.getEncodedImage(
             selectionOverlay,
-            "webp"
+            selectedBackend === "nanogpt" ? "png" : "webp"
         );
 
         const input: GenerateImageInput = defaultArgs();
-        // input.encoded_image = encodedImage;
-        // input.encoded_mask = encodedMask;
         input.encoded_image = encodedImage;
         input.encoded_mask = encodedMask;
         input.parent = image.id;
@@ -408,6 +406,7 @@ export class InpaintTool extends BaseTool implements Tool {
         input.params.height = closestAspectRatio.height;
         input.params.loras = this.loras;
         input.params.steps = this.steps;
+        input.backend = selectedBackend;
 
         let job: GenerationJob | undefined;
 
@@ -452,6 +451,11 @@ export class InpaintTool extends BaseTool implements Tool {
                             img.data = imageData;
                         })
                     );
+                } else if (job.status === "error") {
+                    completed = true;
+                    this.notifyError(job.error || "Generation failed");
+                    this.state = "select";
+                    return;
                 }
             } catch (err: any) {
                 console.error("Error checking job", err);
@@ -461,11 +465,10 @@ export class InpaintTool extends BaseTool implements Tool {
                     "Failed to check job";
                 this.notifyError(errMessage);
             }
-            
 
             if (moment().diff(startTime, "minutes") > 2) {
                 completed = true;
-                await generator.client.deleteImageRequest(job.id);
+                await generator.deleteJob(job);
             }
         }
 
@@ -552,11 +555,12 @@ export class InpaintTool extends BaseTool implements Tool {
 }
 
 interface ControlsProps {
-    generator: HordeGenerator;
+    generator: ImageGenerator;
     hordeClient: HordeClient;
     image: LocalImage;
     renderer: Renderer;
     tool: InpaintTool;
+    selectedBackend: "horde" | "nanogpt";
 }
 
 export const InpaintControls: FC<ControlsProps> = ({
@@ -566,8 +570,9 @@ export const InpaintControls: FC<ControlsProps> = ({
     image,
     renderer,
     tool,
+    selectedBackend,
 }) => {
-    const [count, setCount] = useState(4);
+    const [count, setCount] = useState(1);
     const [prompt, setPrompt] = useState(image.params.prompt || "");
     const [negativePrompt, setNegativePrompt] = useState(
         image.params.negative_prompt || ""
@@ -951,7 +956,7 @@ export const InpaintControls: FC<ControlsProps> = ({
                                 prompt,
                                 negativePrompt,
                             });
-                            tool.submit(generator, image, model);
+                            tool.submit(generator, image, model, selectedBackend);
                         }}
                     >
                         {/* paint icon */}
@@ -970,7 +975,7 @@ export const InpaintControls: FC<ControlsProps> = ({
                     initialSelectedModel={model}
                     inpainting={true}
                     hordeClient={hordeClient}
-                    selectedBackend={"horde"}
+                    selectedBackend={selectedBackend}
                 />
             )}
             {selectingLora && (

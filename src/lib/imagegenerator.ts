@@ -28,6 +28,11 @@ export class ImageGenerator {
         return this.hordeGenerator.checkGenerationJob(job);
     }
 
+    async deleteJob(job: GenerationJob): Promise<void> {
+        if (job.backend === "nanogpt") return; // NanoGPT has no delete API; no-op
+        return this.hordeGenerator.client.deleteImageRequest(job.id);
+    }
+
     async checkGenerationJobs(jobs: GenerationJob[]): Promise<GenerationJob[]> {
         const nanoJobs = jobs.filter((j) => j.backend === 'nanogpt');
         const hordeJobs = jobs.filter((j) => j.backend !== 'nanogpt');
