@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import axios, { AxiosInstance } from "axios";
 import * as uuid from "uuid";
@@ -26,6 +26,8 @@ import { LocalImagesStore } from "../../lib/localImagesStore";
 import { LocalImage } from "../../lib/models";
 import { render } from "@testing-library/react";
 import { HordeGenerator } from "../../lib/hordegenerator";
+import { NanoGPTGenerator } from "../../lib/nanogptgenerator";
+import { ImageGenerator } from "../../lib/imagegenerator";
 import { ImageClient } from "../../lib/savedimages";
 import moment from "moment";
 import { createEncodedThumbnail } from "../../lib/imageutil";
@@ -37,6 +39,8 @@ interface CanPreventDefault {
 
 interface Props {
     generator: HordeGenerator;
+    nanoGPTGenerator?: NanoGPTGenerator;
+    selectedBackend: "horde" | "nanogpt";
     hordeClient: HordeClient;
     localImages: LocalImagesStore;
     savedImages: LocalImagesStore;
@@ -55,10 +59,16 @@ delete anonymousClient.defaults.headers.common["Authorization"];
 
 export const ImageEditor: React.FC<Props> = ({
     generator,
+    nanoGPTGenerator,
+    selectedBackend,
     hordeClient,
     localImages,
     savedImages,
 }) => {
+    const imageGenerator = useMemo(
+        () => new ImageGenerator(generator, nanoGPTGenerator),
+        [generator, nanoGPTGenerator]
+    );
     const [showSelectionControls, setShowSelectionControls] = useState(false);
     const tools: Array<ToolConfig> = [
         {
@@ -72,9 +82,10 @@ export const ImageEditor: React.FC<Props> = ({
                     <InpaintControls
                         tool={t as InpaintTool}
                         renderer={renderer}
-                        generator={generator}
+                        generator={imageGenerator}
                         hordeClient={hordeClient}
                         image={image!}
+                        selectedBackend={selectedBackend}
                         key={"inpaint-controls"}
                     />
                 );
@@ -94,8 +105,9 @@ export const ImageEditor: React.FC<Props> = ({
                         tool={t as EnhanceTool}
                         renderer={renderer}
                         image={image!}
-                        generator={generator}
+                        generator={imageGenerator}
                         hordeClient={hordeClient}
+                        selectedBackend={selectedBackend}
                         key={"enhance-controls"}
                     />
                 );
@@ -159,6 +171,8 @@ export const ImageEditor: React.FC<Props> = ({
                         renderer={renderer}
                         tool={t as BaseTool}
                         generator={generator}
+                        nanoGPTGenerator={nanoGPTGenerator}
+                        selectedBackend={selectedBackend}
                         image={image!}
                         key={"augment-controls"}
                     />

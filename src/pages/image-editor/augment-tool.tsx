@@ -20,6 +20,8 @@ import { calculateImagesCost } from "../../lib/credits";
 import { CostIndicator } from "../../components/CostIndicator";
 import { LocalImage } from "../../lib/models";
 import { HordeGenerator } from "../../lib/hordegenerator";
+import { NanoGPTGenerator } from "../../lib/nanogptgenerator";
+import { performNanoGPTUpscale } from "../../lib/nanogptupscale";
 
 export const anonymousClient = axios.create();
 
@@ -27,10 +29,12 @@ interface Props {
     renderer: Renderer;
     tool: BaseTool;
     generator: HordeGenerator;
+    nanoGPTGenerator?: NanoGPTGenerator;
+    selectedBackend: "horde" | "nanogpt";
     image: LocalImage;
 }
 
-export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image }) => {
+export const AugmentControls: FC<Props> = ({ renderer, tool, generator, nanoGPTGenerator, selectedBackend, image }) => {
     const [backupImage, setBackupImage] = useState<string | undefined>();
     const [activeAugmentation, setActiveAugmentation] = useState<
         "upscale" | "face_restore" | null
@@ -56,6 +60,29 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image })
         if (!imageWorker) {
             throw new Error("Image worker not initialized");
         }
+
+        // NanoGPT upscale path
+        if (selectedBackend === "nanogpt" && nanoGPTGenerator && augmentation === "upscale") {
+            const c = imageDataToCanvas(imageData);
+            // PNG encoding required for NanoGPT img2img
+            const encodedImage = c.toDataURL("image/png").split(",")[1];
+            c.remove();
+
+            const resultDataUrl = await performNanoGPTUpscale(encodedImage, nanoGPTGenerator);
+
+            const img = await decodeImage(resultDataUrl);
+            const outCanvas = document.createElement("canvas");
+            // Resize result to 2x input dimensions
+            outCanvas.width = imageData.width * 2;
+            outCanvas.height = imageData.height * 2;
+            const ctx = outCanvas.getContext("2d")!;
+            ctx.drawImage(img, 0, 0, outCanvas.width, outCanvas.height);
+            const newImageData = ctx.getImageData(0, 0, outCanvas.width, outCanvas.height);
+            outCanvas.remove();
+            return newImageData;
+        }
+
+        // Horde path
         let c = imageDataToCanvas(imageData);
         let encodedImage = c.toDataURL("image/webp").split(",")[1];
         c.remove();
@@ -187,8 +214,6 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image })
         );
     }
 
-    const cost = calculateImagesCost(1, image.params.width!, image.params.height!);
-
     // Show buttons for import and export and "save a copy"
     return (
         <>
@@ -205,21 +230,25 @@ export const AugmentControls: FC<Props> = ({ renderer, tool, generator, image })
                     <i className="fas fa-arrows-alt"></i>&nbsp; Upscale Image 2x
                 </button>
             </div>
-            <div className="form-group" style={{ marginTop: "16px" }}>
-                <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                        onAugment("face_restore");
-                    }}
-                    style={{ marginLeft: "8px" }}
-                >
-                    {/* face restore icon */}
-                    <i className="fas fa-smile"></i>&nbsp; Restore Faces
-                </button>
-            </div>
-            <div className="form-group" style={{ marginTop: "16px" }}>
-                <CostIndicator imagesCost={cost} />
-            </div>
+            {selectedBackend !== "nanogpt" && (
+                <div className="form-group" style={{ marginTop: "16px" }}>
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                            onAugment("face_restore");
+                        }}
+                        style={{ marginLeft: "8px" }}
+                    >
+                        {/* face restore icon */}
+                        <i className="fas fa-smile"></i>&nbsp; Restore Faces
+                    </button>
+                </div>
+            )}
+            {selectedBackend !== "nanogpt" && (
+                <div className="form-group" style={{ marginTop: "16px" }}>
+                    <CostIndicator imagesCost={calculateImagesCost(1, image.params.width!, image.params.height!)} />
+                </div>
+            )}
         </>
     );
 };

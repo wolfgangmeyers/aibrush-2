@@ -69,7 +69,7 @@ export interface GenerateImageInput {
     model: string;
     params: ImageParams;
     count: number;
-    hires_fix: boolean;
+    hires_fix?: boolean;
     backend?: "horde" | "nanogpt";
 }
 

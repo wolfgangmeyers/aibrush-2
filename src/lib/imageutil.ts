@@ -515,6 +515,9 @@ export function decodeImage(encodedImage: string): Promise<HTMLImageElement> {
         image.onload = () => {
             resolve(image);
         };
+        image.onerror = () => {
+            reject(new Error("Failed to decode image"));
+        };
     });
 }
 
