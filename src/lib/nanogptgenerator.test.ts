@@ -67,6 +67,14 @@ describe('NanoGPTGenerator', () => {
             expect(updated.images![0].imageData).toBe('data:image/png;base64,AAAA');
         });
 
+        it('sends output_format: png in every request', async () => {
+            await generator.generateImages(makeInput());
+            await new Promise((r) => setTimeout(r, 10));
+            expect(client.generateImage).toHaveBeenCalledWith(
+                expect.objectContaining({ output_format: 'png' })
+            );
+        });
+
         it('returns deep copy of in-progress job (not live ref)', async () => {
             // Slow API so job stays pending/processing
             const slowClient = makeClient({

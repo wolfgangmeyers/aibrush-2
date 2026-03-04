@@ -41,6 +41,7 @@ export class NanoGPTGenerator {
                 size,
                 response_format: 'b64_json',
                 seed,
+                output_format: 'png',
             };
 
             const imgInput = this.imageInputMap.get(jobId);

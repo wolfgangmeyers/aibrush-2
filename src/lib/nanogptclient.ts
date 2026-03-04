@@ -12,6 +12,7 @@ export interface NanoGPTImageRequest {
     imageDataUrl?: string;    // full data URL for base image (img2img)
     maskDataUrl?: string;     // full data URL for inpainting mask
     strength?: number;        // denoising strength 0.0–1.0
+    output_format?: 'png' | 'jpeg' | 'webp';
 }
 
 export interface NanoGPTImageData {
