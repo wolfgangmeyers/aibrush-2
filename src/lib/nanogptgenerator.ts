@@ -3,6 +3,8 @@ import moment from 'moment';
 import { NanoGPTClient, NanoGPTImageRequest } from './nanogptclient';
 import { GenerateImageInput, GenerationJob, LocalImage } from './models';
 
+const BALANCE_STORAGE_KEY = 'nanogptBalance';
+
 export class NanoGPTGenerator {
     lastKnownBalance: number | null = null;
     private jobs: { [id: string]: GenerationJob } = {};
@@ -12,7 +14,19 @@ export class NanoGPTGenerator {
         denoisingStrength?: number;
     }>();
 
-    constructor(readonly client: NanoGPTClient) {}
+    constructor(readonly client: NanoGPTClient) {
+        const cached = localStorage.getItem(BALANCE_STORAGE_KEY);
+        if (cached !== null) {
+            const parsed = parseFloat(cached);
+            if (!isNaN(parsed)) this.lastKnownBalance = parsed;
+        }
+    }
+
+    private persistBalance() {
+        if (this.lastKnownBalance !== null) {
+            localStorage.setItem(BALANCE_STORAGE_KEY, String(this.lastKnownBalance));
+        }
+    }
 
     private async generate(jobId: string): Promise<void> {
         const job = this.jobs[jobId];
@@ -54,7 +68,10 @@ export class NanoGPTGenerator {
             }
 
             const resp = await this.client.generateImage(request);
-            if (resp.remainingBalance != null) this.lastKnownBalance = resp.remainingBalance;
+            if (resp.remainingBalance != null) {
+                this.lastKnownBalance = resp.remainingBalance;
+                this.persistBalance();
+            }
 
             job.images = [];
             resp.data.forEach((img) => {

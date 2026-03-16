@@ -39,6 +39,7 @@ import { ImageGenerator } from "../../lib/imagegenerator";
 import { Rect } from "./models";
 import { HordeClient } from "../../lib/hordeclient";
 import { getSteps, setSteps } from "../../lib/settings";
+import { NANOGPT_FEATURED_MODELS } from "../../lib/nanogptclient";
 
 const anonymousClient = axios.create();
 
@@ -726,11 +727,19 @@ export const EnhanceControls: FC<ControlsProps> = ({
     const [negativePrompt, setNegativePrompt] = useState(
         image.params.negative_prompt || ""
     );
-    const [model, setModel] = useState(
-        image.model == "swinir" || image.model == "stable_diffusion"
+    const [model, setModel] = useState(() => {
+        if (selectedBackend === "nanogpt") {
+            // If the image's model is a legacy Horde name, default to first featured NanoGPT model
+            if (image.model === "swinir" || image.model === "stable_diffusion") {
+                return NANOGPT_FEATURED_MODELS[0]?.name || "flux-2-max";
+            }
+            return image.model;
+        }
+        // Horde backend
+        return image.model === "swinir" || image.model === "stable_diffusion"
             ? "Epic Diffusion"
-            : image.model
-    );
+            : image.model;
+    });
     const [selectingModel, setSelectingModel] = useState<boolean>(false);
     const [state, setState] = useState<EnhanceToolState>(tool.state);
     const [isMasked, setIsMasked] = useState<boolean>(tool.renderer.isMasked());
@@ -1091,7 +1100,7 @@ export const EnhanceControls: FC<ControlsProps> = ({
                                         (lora) => lora.config
                                     ),
                                 });
-                                tool.submit(generator, image);
+                                tool.submit(generator, image, selectedBackend);
                             }}
                             style={{ marginRight: "8px" }}
                         >
