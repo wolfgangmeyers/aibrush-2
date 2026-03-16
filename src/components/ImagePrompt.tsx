@@ -287,9 +287,6 @@ export const ImagePrompt: FC<Props> = ({
             setAdvancedView(true);
             setVariationStrength(parent.params.denoising_strength || 0.75);
             let model = parent.model;
-            if (model === "dall-e-3") {
-                model = "Epic Diffusion";
-            }
             setModel(model);
             setCfgScale(parent.params.cfg_scale || 7.5);
             const bestMatch = getClosestAspectRatio(
